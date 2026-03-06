@@ -29,6 +29,7 @@ import { useSearchParams } from 'react-router-dom';
 import { StatCard } from '@/components/dashboard/StatCard';
 import AiConfigSection from '@/components/super/AiConfigSection';
 import ConfigSectionForm from '@/components/super/ConfigSectionForm';
+import UsersTable from '@/components/super/UsersTable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,7 +46,7 @@ const CONFIG_SECTIONS = [
   { key: 'Application', label: 'Application' },
 ] as const;
 
-const VALID_TABS = ['dashboard', ...CONFIG_SECTIONS.map((s) => s.key.toLowerCase())];
+const VALID_TABS = ['dashboard', 'users', ...CONFIG_SECTIONS.map((s) => s.key.toLowerCase())];
 const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
 
 const TAB_STYLE =
@@ -225,6 +226,10 @@ const SuperDashboardPage = () => {
             <LayoutDashboard className="size-4 hidden sm:block" />
             Dashboard
           </TabsTrigger>
+          <TabsTrigger value="users" className={TAB_STYLE}>
+            <Users className="size-4 hidden sm:block" />
+            Users
+          </TabsTrigger>
           {CONFIG_SECTIONS.map(({ key, label }) => (
             <TabsTrigger key={key} value={key.toLowerCase()} className={TAB_STYLE}>
               {label}
@@ -237,6 +242,11 @@ const SuperDashboardPage = () => {
           <StatsSection title="Users & Growth" items={userStats} loading={statsLoading} />
           <StatsSection title="Workspaces" items={workspaceStats} loading={statsLoading} />
           <StatsSection title="Content" items={contentStats} loading={statsLoading} />
+        </TabsContent>
+
+        {/* Users Tab */}
+        <TabsContent value="users" className="mt-6">
+          <UsersTable />
         </TabsContent>
 
         {/* Config Tabs */}

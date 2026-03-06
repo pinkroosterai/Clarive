@@ -30,10 +30,14 @@ const LoginPage = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [allowRegistration, setAllowRegistration] = useState(true);
+  const [emailEnabled, setEmailEnabled] = useState(true);
 
   useEffect(() => {
     getSetupStatus()
-      .then((s) => setAllowRegistration(s.allowRegistration))
+      .then((s) => {
+        setAllowRegistration(s.allowRegistration);
+        setEmailEnabled(s.emailEnabled);
+      })
       .catch(() => {});
   }, []);
 
@@ -130,12 +134,14 @@ const LoginPage = () => {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Password</FormLabel>
-                      <Link
-                        to="/forgot-password"
-                        className="text-xs text-primary hover:text-primary/80 underline-offset-4 hover:underline"
-                      >
-                        Forgot password?
-                      </Link>
+                      {emailEnabled && (
+                        <Link
+                          to="/forgot-password"
+                          className="text-xs text-primary hover:text-primary/80 underline-offset-4 hover:underline"
+                        >
+                          Forgot password?
+                        </Link>
+                      )}
                     </div>
                     <FormControl>
                       <div className="relative">

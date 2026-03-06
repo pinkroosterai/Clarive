@@ -1,10 +1,14 @@
+using System.Security.Cryptography;
+using Clarive.Api.Auth;
 using Clarive.Api.Data;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
+using Clarive.Api.Models.Responses;
+using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Clarive.Api.Auth;
 
 namespace Clarive.Api.Endpoints;
 
@@ -19,6 +23,9 @@ public static class SuperEndpoints
         group.MapGet("/stats", HandleGetStats);
         group.MapGet("/maintenance", HandleGetMaintenance);
         group.MapPost("/maintenance", HandleSetMaintenance);
+        group.MapGet("/users", HandleGetUsers);
+        group.MapDelete("/users/{userId}", HandleDeleteUser);
+        group.MapPost("/users/{userId}/reset-password", HandleResetPassword);
 
         return group;
     }
@@ -130,5 +137,117 @@ public static class SuperEndpoints
             ct);
 
         return Results.Ok(new { enabled = maintenanceMode.IsEnabled });
+    }
+
+    private static async Task<IResult> HandleGetUsers(
+        HttpContext ctx,
+        IUserRepository userRepo,
+        ClariveDbContext db,
+        int page = 1,
+        int pageSize = 20,
+        string? search = null,
+        string? sortBy = null,
+        bool sortDesc = true,
+        CancellationToken ct = default)
+    {
+        var (users, total) = await userRepo.GetAllUsersPagedAsync(page, pageSize, search, sortBy, sortDesc, ct);
+
+        var userIds = users.Select(u => u.Id).ToList();
+
+        var memberships = await db.TenantMemberships
+            .IgnoreQueryFilters()
+            .Where(m => userIds.Contains(m.UserId))
+            .Join(db.Tenants,
+                m => m.TenantId,
+                t => t.Id,
+                (m, t) => new { m.UserId, m.TenantId, TenantName = t.Name, m.Role, m.IsPersonal })
+            .ToListAsync(ct);
+
+        var membershipsByUser = memberships
+            .GroupBy(m => m.UserId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var response = users.Select(u =>
+        {
+            var workspaces = membershipsByUser.TryGetValue(u.Id, out var ms)
+                ? ms.Select(m => new SuperUserWorkspace(m.TenantId, m.TenantName, m.Role.ToString())).ToList()
+                : [];
+
+            return new SuperUserResponse(
+                u.Id,
+                u.Name,
+                u.Email,
+                u.Role.ToString(),
+                u.EmailVerified,
+                u.GoogleId != null,
+                u.IsSuperUser,
+                u.AvatarPath != null ? $"/api/users/{u.Id}/avatar" : null,
+                u.CreatedAt,
+                u.DeleteScheduledAt,
+                workspaces);
+        }).ToList();
+
+        return Results.Ok(new SuperUsersPagedResponse(response, total, page, pageSize));
+    }
+
+    private static async Task<IResult> HandleDeleteUser(
+        HttpContext ctx,
+        Guid userId,
+        IUserRepository userRepo,
+        ClariveDbContext db,
+        bool hard = false,
+        CancellationToken ct = default)
+    {
+        var currentUserId = ctx.GetUserId();
+        if (currentUserId == userId)
+            return ctx.ErrorResult(409, "CANNOT_DELETE_SELF", "Cannot delete your own account.");
+
+        var user = await userRepo.GetByIdCrossTenantsAsync(userId, ct);
+        if (user is null)
+            return Results.NotFound();
+
+        if (hard)
+        {
+            var memberships = await db.TenantMemberships
+                .IgnoreQueryFilters()
+                .Where(m => m.UserId == userId)
+                .ToListAsync(ct);
+            db.TenantMemberships.RemoveRange(memberships);
+            db.Users.Remove(user);
+            await db.SaveChangesAsync(ct);
+        }
+        else
+        {
+            user.DeleteScheduledAt = DateTime.UtcNow;
+            await userRepo.UpdateAsync(user, ct);
+        }
+
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> HandleResetPassword(
+        HttpContext ctx,
+        Guid userId,
+        IUserRepository userRepo,
+        PasswordHasher passwordHasher,
+        CancellationToken ct = default)
+    {
+        var user = await userRepo.GetByIdCrossTenantsAsync(userId, ct);
+        if (user is null)
+            return Results.NotFound();
+
+        if (user.GoogleId != null)
+            return ctx.ErrorResult(400, "GOOGLE_ACCOUNT", "Cannot reset password for Google accounts.");
+
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        var passwordChars = new char[16];
+        for (var i = 0; i < passwordChars.Length; i++)
+            passwordChars[i] = chars[RandomNumberGenerator.GetInt32(chars.Length)];
+        var password = new string(passwordChars);
+
+        user.PasswordHash = passwordHasher.Hash(password);
+        await userRepo.UpdateAsync(user, ct);
+
+        return Results.Ok(new ResetPasswordResponse(NewPassword: password));
     }
 }

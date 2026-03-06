@@ -82,4 +82,35 @@ public class EfUserRepository(ClariveDbContext db) : IUserRepository
 
     public async Task<bool> AnyUsersExistAsync(CancellationToken ct = default)
         => await db.Users.IgnoreQueryFilters().AnyAsync(ct);
+
+    public async Task<(List<User> Users, int Total)> GetAllUsersPagedAsync(
+        int page, int pageSize, string? search, string? sortBy, bool sortDesc, CancellationToken ct = default)
+    {
+        var query = db.Users.IgnoreQueryFilters().AsNoTracking()
+            .Where(u => u.DeletedAt == null);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = $"%{search}%";
+            query = query.Where(u =>
+                EF.Functions.ILike(u.Name, pattern) ||
+                EF.Functions.ILike(u.Email, pattern));
+        }
+
+        query = sortBy?.ToLowerInvariant() switch
+        {
+            "name" => sortDesc ? query.OrderByDescending(u => u.Name) : query.OrderBy(u => u.Name),
+            "email" => sortDesc ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+            "role" => sortDesc ? query.OrderByDescending(u => u.Role) : query.OrderBy(u => u.Role),
+            _ => sortDesc ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
+        };
+
+        var total = await query.CountAsync(ct);
+        var users = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (users, total);
+    }
 }

@@ -80,8 +80,9 @@ export async function cancelDeletion(): Promise<void> {
 export async function getSetupStatus(): Promise<{
   isSetupComplete: boolean;
   allowRegistration: boolean;
+  emailEnabled: boolean;
 }> {
-  return api.get<{ isSetupComplete: boolean; allowRegistration: boolean }>(
+  return api.get<{ isSetupComplete: boolean; allowRegistration: boolean; emailEnabled: boolean }>(
     '/api/auth/setup-status'
   );
 }

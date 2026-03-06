@@ -15,4 +15,5 @@ public interface IUserRepository
     Task<User> UpdateAsync(User user, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid tenantId, Guid userId, CancellationToken ct = default);
     Task<bool> AnyUsersExistAsync(CancellationToken ct = default);
+    Task<(List<User> Users, int Total)> GetAllUsersPagedAsync(int page, int pageSize, string? search, string? sortBy, bool sortDesc, CancellationToken ct = default);
 }

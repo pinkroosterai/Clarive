@@ -428,7 +428,9 @@ public static class AuthEndpoints
     {
         var isSetupComplete = await userRepo.AnyUsersExistAsync(ct);
         var allowRegistration = !isSetupComplete || IsRegistrationAllowed(configuration);
-        return Results.Ok(new { isSetupComplete, allowRegistration });
+        var emailProvider = configuration["Email:Provider"] ?? "none";
+        var emailEnabled = !string.Equals(emailProvider, "none", StringComparison.OrdinalIgnoreCase);
+        return Results.Ok(new { isSetupComplete, allowRegistration, emailEnabled });
     }
 
     private static bool IsRegistrationAllowed(IConfiguration configuration)
