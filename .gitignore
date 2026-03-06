@@ -38,6 +38,7 @@ backups/
 
 # Claude Code
 .claude/
+claudedocs/
 
 # Root screenshots (Playwright artifacts)
 /*.png
