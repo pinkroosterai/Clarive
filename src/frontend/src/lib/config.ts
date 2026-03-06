@@ -10,7 +10,7 @@ const rc = (window as unknown as Record<string, unknown>).__CLARIVE_CONFIG__ as
   | Record<string, unknown>
   | undefined;
 
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = '0.1.1';
 
 export const config: AppConfig = {
   apiUrl: (rc?.apiUrl as string) || import.meta.env.VITE_API_URL || '',
