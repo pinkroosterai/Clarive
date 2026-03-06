@@ -85,6 +85,6 @@ export async function cancelDeletion(): Promise<void> {
   await api.post<void>("/api/account/cancel-deletion");
 }
 
-export async function getSetupStatus(): Promise<{ isSetupComplete: boolean }> {
-  return api.get<{ isSetupComplete: boolean }>("/api/auth/setup-status");
+export async function getSetupStatus(): Promise<{ isSetupComplete: boolean; allowRegistration: boolean }> {
+  return api.get<{ isSetupComplete: boolean; allowRegistration: boolean }>("/api/auth/setup-status");
 }

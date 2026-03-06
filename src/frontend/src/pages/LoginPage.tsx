@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/services";
+import { getSetupStatus } from "@/services/api/authService";
 import { getActiveWorkspaceId } from "@/services/api/apiClient";
 import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
 import { config } from "@/lib/config";
@@ -21,6 +22,13 @@ const LoginPage = () => {
   const { isAuthenticated, setUser, setWorkspaces, switchWorkspace } = useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
+  const [allowRegistration, setAllowRegistration] = useState(true);
+
+  useEffect(() => {
+    getSetupStatus()
+      .then((s) => setAllowRegistration(s.allowRegistration))
+      .catch(() => {});
+  }, []);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -151,12 +159,14 @@ const LoginPage = () => {
             </form>
           </Form>
         </div>
-        <p className="mt-4 text-center text-sm text-foreground-muted">
-          Don&apos;t have an account?{" "}
-          <Link to="/register" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
-            Register
-          </Link>
-        </p>
+        {allowRegistration && (
+          <p className="mt-4 text-center text-sm text-foreground-muted">
+            Don&apos;t have an account?{" "}
+            <Link to="/register" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+              Register
+            </Link>
+          </p>
+        )}
         <p className="mt-3 text-center text-xs text-foreground-muted">
           <Link to="/terms" className="hover:text-foreground-secondary underline-offset-4 hover:underline">
             Terms

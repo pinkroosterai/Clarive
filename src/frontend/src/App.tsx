@@ -44,10 +44,14 @@ import { useAuthStore } from "@/store/authStore";
 function SetupGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
+  const [allowRegistration, setAllowRegistration] = useState(true);
 
   useEffect(() => {
     getSetupStatus()
-      .then((s) => setSetupComplete(s.isSetupComplete))
+      .then((s) => {
+        setSetupComplete(s.isSetupComplete);
+        setAllowRegistration(s.allowRegistration);
+      })
       .catch(() => setSetupComplete(true)); // assume setup done on error
   }, [location.pathname]);
 
@@ -60,6 +64,11 @@ function SetupGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (setupComplete && location.pathname === "/setup") {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect /register to /login when registration is disabled
+  if (!allowRegistration && location.pathname === "/register") {
     return <Navigate to="/login" replace />;
   }
 

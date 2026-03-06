@@ -37,6 +37,7 @@ All configuration is done via environment variables, loaded from `deploy/envs/<e
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET environment | `Production` |
 | `CORS_ORIGINS` | Allowed CORS origin (frontend URL) | (required) |
 | `VITE_API_URL` | API URL for frontend | `/api` |
+| `ALLOW_REGISTRATION` | Allow new user self-registration (`true` or `false`) | `true` |
 | `CONFIG_ENCRYPTION_KEY` | AES-256-GCM key for secret storage | (required) |
 
 ## Email

@@ -137,14 +137,20 @@ public static class AuthEndpoints
         ILoginSessionRepository sessionRepo,
         ITenantMembershipRepository membershipRepo,
         ITenantRepository tenantRepo,
+        IUserRepository userRepo,
         IEmailService emailService,
         IOptions<AppSettings> appSettings,
+        IConfiguration configuration,
         JwtService jwtService,
         CancellationToken ct)
     {
         if (Validator.RequireValidEmail(request.Email) is { } emailErr) return emailErr;
         if (Validator.RequireString(request.Name, "Name") is { } nameErr) return nameErr;
         if (Validator.RequirePassword(request.Password) is { } pwErr) return pwErr;
+
+        // Block registration if disabled (always allow first user for initial setup)
+        if (!IsRegistrationAllowed(configuration) && await userRepo.AnyUsersExistAsync(ct))
+            return ctx.ErrorResult(403, "REGISTRATION_DISABLED", "New account registration is currently disabled.");
 
         var result = await accountService.RegisterAsync(request.Email, request.Name, request.Password, ct);
         if (result is null)
@@ -357,6 +363,8 @@ public static class AuthEndpoints
         ILoginSessionRepository sessionRepo,
         ITenantMembershipRepository membershipRepo,
         ITenantRepository tenantRepo,
+        IUserRepository userRepo,
+        IConfiguration configuration,
         JwtService jwtService,
         CancellationToken ct)
     {
@@ -365,6 +373,23 @@ public static class AuthEndpoints
 
         if (string.IsNullOrWhiteSpace(request.IdToken))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "ID token is required.");
+
+        // Pre-check: if registration is disabled, verify the Google user already has an account
+        if (!IsRegistrationAllowed(configuration))
+        {
+            try
+            {
+                var googleUser = await googleAuthService.ValidateIdTokenAsync(request.IdToken, ct);
+                var existsByGoogle = await userRepo.GetByGoogleIdAsync(googleUser.GoogleId, ct);
+                var existsByEmail = existsByGoogle ?? await userRepo.GetByEmailAsync(googleUser.Email, ct);
+                if (existsByEmail is null)
+                    return ctx.ErrorResult(403, "REGISTRATION_DISABLED", "New account registration is currently disabled.");
+            }
+            catch (Exception)
+            {
+                return ctx.ErrorResult(401, "INVALID_GOOGLE_TOKEN", "Google ID token is invalid or expired.");
+            }
+        }
 
         GoogleAuthResult result;
         try
@@ -398,10 +423,19 @@ public static class AuthEndpoints
 
     private static async Task<IResult> HandleSetupStatus(
         IUserRepository userRepo,
+        IConfiguration configuration,
         CancellationToken ct)
     {
         var isSetupComplete = await userRepo.AnyUsersExistAsync(ct);
-        return Results.Ok(new { isSetupComplete });
+        var allowRegistration = !isSetupComplete || IsRegistrationAllowed(configuration);
+        return Results.Ok(new { isSetupComplete, allowRegistration });
+    }
+
+    private static bool IsRegistrationAllowed(IConfiguration configuration)
+    {
+        var value = configuration["App:AllowRegistration"];
+        // Default to true if not explicitly set to "false"
+        return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
     }
 
     private static async Task<IResult> HandleGetMe(

@@ -147,6 +147,12 @@ public static class ConfigRegistry
             VisibleWhen: new ConfigVisibleWhen("Email:Provider", ["resend", "smtp"])),
 
         // ── Application › General ──
+        new ConfigDefinition("App:AllowRegistration", "Allow New Registrations",
+            "Allow new users to create accounts. When disabled, only invited users and existing accounts can log in. The first user can always register.",
+            ConfigSection.Application, false, false,
+            SubGroup: "General",
+            InputType: ConfigInputType.Select, SelectOptions: ["true", "false"]),
+
         new ConfigDefinition("App:FrontendUrl", "Frontend URL",
             "Public URL of the frontend application, used in email links and invitations",
             ConfigSection.Application, false, false,

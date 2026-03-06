@@ -186,6 +186,7 @@ All configuration is done via environment variables. Copy `.env.example` to `.en
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | No | — |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | No | — |
 | `CORS_ORIGINS` | Allowed CORS origins | No | `http://localhost:8080` |
+| `ALLOW_REGISTRATION` | Allow new user registration | No | `true` |
 | `FRONTEND_PORT` | Frontend port | No | `8080` |
 | `BACKEND_PORT` | Backend port | No | `5000` |
 | `EMAIL_PROVIDER` | `none`, `console`, `resend`, or `smtp` | No | `none` |

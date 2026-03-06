@@ -36,6 +36,7 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE:-Clarive}
       Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
       App__FrontendUrl: ${CORS_ORIGINS:-http://localhost:8080}
+      App__AllowRegistration: ${ALLOW_REGISTRATION:-true}
       Ai__OpenAiApiKey: ${OPENAI_API_KEY:-}
       Ai__EndpointUrl: ${AI_ENDPOINT_URL:-}
       Ai__DefaultModel: ${AI_DEFAULT_MODEL:-gpt-4o-mini}
