@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft,
   Users,
   UserPlus,
   BadgeCheck,
@@ -20,21 +19,18 @@ import {
   Archive,
   Bot,
   BotMessageSquare,
-  Coins,
-  CreditCard,
-  TrendingDown,
-  Receipt,
   Key,
   Power,
-  ShieldAlert,
-  Settings,
-  MessageSquare,
-  ChevronLeft,
-  ChevronRight,
+  LayoutDashboard,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,10 +43,28 @@ import {
 } from "@/components/ui/alert-dialog";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { getSuperStats, getMaintenanceStatus, setMaintenanceMode } from "@/services/api/superService";
-import { getFeedbackList, type FeedbackEntry } from "@/services/api/feedbackService";
-import { Badge } from "@/components/ui/badge";
+import { getAllConfig, type ConfigSetting } from "@/services/api/configService";
+import ConfigSectionForm from "@/components/super/ConfigSectionForm";
+import AiConfigSection from "@/components/super/AiConfigSection";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+
+// ── Config sections ──
+
+const CONFIG_SECTIONS = [
+  { key: "Authentication", label: "Authentication" },
+  { key: "Ai", label: "AI" },
+  { key: "Email", label: "Email" },
+  { key: "Application", label: "Application" },
+] as const;
+
+const VALID_TABS = ["dashboard", ...CONFIG_SECTIONS.map((s) => s.key.toLowerCase())];
+const RESTART_STORAGE_KEY = "cl_pending_restart_keys";
+
+const TAB_STYLE =
+  "gap-1.5 min-h-[44px] text-foreground-muted hover:text-foreground-secondary data-[state=active]:bg-surface data-[state=active]:elevation-1 data-[state=active]:rounded-md data-[state=active]:text-foreground";
+
+// ── Stats helpers ──
 
 interface StatItem {
   icon: LucideIcon;
@@ -75,104 +89,47 @@ function StatsSection({ title, items, loading }: { title: string; items: StatIte
   );
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Bug: "bg-error-bg text-error-text border-error-border",
-  FeatureRequest: "bg-info-bg text-info-text border-info-border",
-  General: "bg-status-historical-bg text-status-historical-text border-status-historical-border",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  Bug: "Bug",
-  FeatureRequest: "Feature Request",
-  General: "General",
-};
-
-function FeedbackSection() {
-  const [page, setPage] = useState(1);
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["super", "feedback", page],
-    queryFn: () => getFeedbackList(page, 10),
-  });
-
-  const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between border-b border-border pb-2">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <MessageSquare className="size-4" />
-          User Feedback
-          {data && (
-            <span className="text-sm font-normal text-foreground-muted">({data.total})</span>
-          )}
-        </h2>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="text-xs text-foreground-muted px-1">
-              {page}/{totalPages}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
-          ))}
-        </div>
-      ) : !data?.entries.length ? (
-        <p className="text-sm text-foreground-muted py-4 text-center">No feedback yet.</p>
-      ) : (
-        <div className="space-y-2">
-          {data.entries.map((entry: FeedbackEntry) => (
-            <Card key={entry.id} className="rounded-xl elevation-1 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium">{entry.userName}</span>
-                    <span className="text-xs text-foreground-muted">{entry.userEmail}</span>
-                    <Badge variant="outline" className={CATEGORY_COLORS[entry.category] ?? ""}>
-                      {CATEGORY_LABELS[entry.category] ?? entry.category}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-foreground/80 whitespace-pre-wrap">{entry.message}</p>
-                  <div className="flex items-center gap-3 text-xs text-foreground-muted">
-                    <span>{new Date(entry.createdAt).toLocaleString()}</span>
-                    {entry.pageUrl && <span>Page: {entry.pageUrl}</span>}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// ── Page ──
 
 const SuperDashboardPage = () => {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const activeTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : "dashboard";
+
   const [showConfirm, setShowConfirm] = useState(false);
+  const [restartKeys, setRestartKeys] = useState<string[]>([]);
   const setStoreMaintenanceMode = useAuthStore((s) => s.setMaintenanceMode);
+
+  useEffect(() => {
+    document.title = "Clarive — Super Admin";
+  }, []);
+
+  // Load restart-required keys from sessionStorage
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || "[]") as string[];
+      setRestartKeys(stored);
+    } catch {
+      setRestartKeys([]);
+    }
+  }, []);
+
+  const refreshRestartKeys = () => {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || "[]") as string[];
+      setRestartKeys(stored);
+    } catch {
+      setRestartKeys([]);
+    }
+  };
+
+  const clearRestartKeys = () => {
+    sessionStorage.removeItem(RESTART_STORAGE_KEY);
+    setRestartKeys([]);
+  };
+
+  // ── Dashboard data ──
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["super", "stats"],
@@ -216,6 +173,28 @@ const SuperDashboardPage = () => {
 
   const isEnabled = maintenance?.enabled ?? false;
 
+  // ── Config data ──
+
+  const { data: settings, isLoading: configLoading, isError: configError } = useQuery({
+    queryKey: ["super", "config"],
+    queryFn: getAllConfig,
+  });
+
+  const settingsBySection = useMemo(() => {
+    if (!settings) return {} as Record<string, ConfigSetting[]>;
+    return settings.reduce(
+      (acc, setting) => {
+        const section = setting.section.toLowerCase();
+        if (!acc[section]) acc[section] = [];
+        acc[section].push(setting);
+        return acc;
+      },
+      {} as Record<string, ConfigSetting[]>,
+    );
+  }, [settings]);
+
+  // ── Stat definitions ──
+
   const userStats: StatItem[] = [
     { icon: Users, label: "Total Users", value: stats?.totalUsers ?? 0 },
     { icon: UserPlus, label: "New Users (7d)", value: stats?.newUsers7d ?? 0 },
@@ -241,97 +220,118 @@ const SuperDashboardPage = () => {
     { icon: Archive, label: "Trashed Entries", value: stats?.trashedEntries ?? 0 },
     { icon: Bot, label: "Total AI Sessions", value: stats?.totalAiSessions ?? 0 },
     { icon: BotMessageSquare, label: "AI Sessions (7d)", value: stats?.aiSessions7d ?? 0 },
-  ];
-
-  const creditStats: StatItem[] = [
-    { icon: Coins, label: "Total Free Credits", value: stats?.totalFreeCredits ?? 0 },
-    { icon: CreditCard, label: "Total Purchased Credits", value: stats?.totalPurchasedCredits ?? 0 },
-    { icon: TrendingDown, label: "Credits Used (30d)", value: stats?.creditsUsed30d ?? 0 },
-    { icon: Receipt, label: "Total Transactions", value: stats?.totalTransactions ?? 0 },
     { icon: Key, label: "Total API Keys", value: stats?.totalApiKeys ?? 0 },
   ];
 
   return (
-    <div className="mx-auto max-w-6xl p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="size-4" />
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2">
-          <ShieldAlert className="size-6 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight">Super Admin Dashboard</h1>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold tracking-tight">Super Admin</h1>
 
-      {/* Operations */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className={`rounded-xl elevation-1 ${isEnabled ? "border-warning-border bg-warning-bg" : ""}`}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Maintenance Mode</CardTitle>
-            <Power className={`size-4 ${isEnabled ? "text-warning-text" : "text-foreground-muted"}`} />
-          </CardHeader>
-          <CardContent>
-            {maintenanceLoading ? (
-              <div className="h-8 w-24 animate-pulse rounded bg-muted" />
-            ) : (
-              <>
-                <div className={`text-lg font-semibold ${isEnabled ? "text-warning-text" : "text-success-text"}`}>
-                  {isEnabled ? "Active" : "Inactive"}
+      {/* Restart Banner */}
+      {restartKeys.length > 0 && (
+        <Alert className="border-warning-border bg-warning-bg">
+          <AlertTriangle className="size-4 text-warning-text" />
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-sm">
+              Settings changed that require a restart to take effect. Restart the backend container to apply.
+            </span>
+            <Button variant="ghost" size="icon" onClick={clearRestartKeys} className="shrink-0 size-6">
+              <X className="size-3" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs value={activeTab} onValueChange={(tab) => setSearchParams({ tab }, { replace: true })} className="w-full">
+        <TabsList className="w-full h-auto justify-start flex-wrap bg-elevated rounded-lg p-1">
+          <TabsTrigger value="dashboard" className={TAB_STYLE}>
+            <LayoutDashboard className="size-4 hidden sm:block" />
+            Dashboard
+          </TabsTrigger>
+          {CONFIG_SECTIONS.map(({ key, label }) => (
+            <TabsTrigger key={key} value={key.toLowerCase()} className={TAB_STYLE}>
+              {label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {/* Dashboard Tab */}
+        <TabsContent value="dashboard" className="mt-6 space-y-6">
+          {/* Maintenance Card */}
+          <Card className={`rounded-xl elevation-1 ${isEnabled ? "border-warning-border bg-warning-bg" : ""}`}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Maintenance Mode</CardTitle>
+              <Power className={`size-4 ${isEnabled ? "text-warning-text" : "text-foreground-muted"}`} />
+            </CardHeader>
+            <CardContent>
+              {maintenanceLoading ? (
+                <div className="h-8 w-24 animate-pulse rounded bg-muted" />
+              ) : (
+                <>
+                  <div className={`text-lg font-semibold ${isEnabled ? "text-warning-text" : "text-success-text"}`}>
+                    {isEnabled ? "Active" : "Inactive"}
+                  </div>
+                  <CardDescription className="mt-1">
+                    {isEnabled
+                      ? "Regular users are blocked from accessing the system"
+                      : "All users can access the system normally"}
+                  </CardDescription>
+                  <Button
+                    variant={isEnabled ? "default" : "destructive"}
+                    size="sm"
+                    className="mt-3"
+                    onClick={handleToggle}
+                    disabled={toggleMutation.isPending}
+                  >
+                    {toggleMutation.isPending
+                      ? "Toggling..."
+                      : isEnabled
+                        ? "Disable Maintenance"
+                        : "Enable Maintenance"}
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Stats */}
+          <StatsSection title="Users & Growth" items={userStats} loading={statsLoading} />
+          <StatsSection title="Workspaces" items={workspaceStats} loading={statsLoading} />
+          <StatsSection title="Content" items={contentStats} loading={statsLoading} />
+        </TabsContent>
+
+        {/* Config Tabs */}
+        {CONFIG_SECTIONS.map(({ key }) => {
+          const sectionSettings = settingsBySection[key.toLowerCase()] ?? [];
+          return (
+            <TabsContent key={key} value={key.toLowerCase()} className="mt-6">
+              {configLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-64 w-full" />
                 </div>
-                <CardDescription className="mt-1">
-                  {isEnabled
-                    ? "Regular users are blocked from accessing the system"
-                    : "All users can access the system normally"}
-                </CardDescription>
-                <Button
-                  variant={isEnabled ? "default" : "destructive"}
-                  size="sm"
-                  className="mt-3"
-                  onClick={handleToggle}
-                  disabled={toggleMutation.isPending}
-                >
-                  {toggleMutation.isPending
-                    ? "Toggling..."
-                    : isEnabled
-                      ? "Disable Maintenance"
-                      : "Enable Maintenance"}
-                </Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              ) : configError ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="size-4" />
+                  <AlertDescription>
+                    Failed to load configuration settings. Check that the backend is running and the database migration has been applied.
+                  </AlertDescription>
+                </Alert>
+              ) : sectionSettings.length > 0 ? (
+                key === "Ai" ? (
+                  <AiConfigSection settings={sectionSettings} onSaved={refreshRestartKeys} />
+                ) : (
+                  <ConfigSectionForm settings={sectionSettings} onSaved={refreshRestartKeys} />
+                )
+              ) : (
+                <p className="text-sm text-foreground-muted">No settings in this section.</p>
+              )}
+            </TabsContent>
+          );
+        })}
+      </Tabs>
 
-        <Card className="rounded-xl elevation-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Service Configuration</CardTitle>
-            <Settings className="size-4 text-foreground-muted" />
-          </CardHeader>
-          <CardContent>
-            <CardDescription>
-              Configure external services, API keys, and application settings
-            </CardDescription>
-            <Link to="/super/config">
-              <Button variant="outline" size="sm" className="mt-3">
-                Manage Configuration
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Metric Sections */}
-      <StatsSection title="Users & Growth" items={userStats} loading={statsLoading} />
-      <StatsSection title="Workspaces" items={workspaceStats} loading={statsLoading} />
-      <StatsSection title="Content" items={contentStats} loading={statsLoading} />
-      <StatsSection title="Credits" items={creditStats} loading={statsLoading} />
-
-      {/* Feedback */}
-      <FeedbackSection />
-
-      {/* Confirmation Dialog */}
+      {/* Maintenance Confirmation Dialog */}
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { RotateCcw, AlertTriangle, Check, Minus, Save, Server, Database } from "lucide-react";
+import { RotateCcw, AlertTriangle, Check, ChevronsUpDown, Minus, Save, Server, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { setConfigValue, resetConfigValue, type ConfigSetting } from "@/services/api/configService";
 import { handleApiError } from "@/lib/handleApiError";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const RESTART_STORAGE_KEY = "cl_pending_restart_keys";
 
@@ -49,6 +52,24 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
     onError: (err) => handleApiError(err, { fallback: "Failed to reset setting" }),
   });
 
+  const getEffectiveValue = useCallback(
+    (key: string): string | null => {
+      if (dirtyValues[key] !== undefined) return dirtyValues[key];
+      const setting = settings.find((s) => s.key === key);
+      return setting?.value ?? null;
+    },
+    [dirtyValues, settings],
+  );
+
+  const isVisible = useCallback(
+    (setting: ConfigSetting): boolean => {
+      if (!setting.visibleWhen) return true;
+      const effectiveValue = getEffectiveValue(setting.visibleWhen.key);
+      return setting.visibleWhen.values.includes(effectiveValue ?? "");
+    },
+    [getEffectiveValue],
+  );
+
   const handleChange = (key: string, newValue: string, originalValue: string | null, isSecret: boolean) => {
     if (!isSecret && newValue === (originalValue ?? "")) {
       setDirtyValues((prev) => {
@@ -63,7 +84,16 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
         return next;
       });
     } else {
-      setDirtyValues((prev) => ({ ...prev, [key]: newValue }));
+      setDirtyValues((prev) => {
+        const next = { ...prev, [key]: newValue };
+        // Clear dirty values for fields that become hidden due to this change
+        for (const s of settings) {
+          if (s.visibleWhen?.key === key && !s.visibleWhen.values.includes(newValue)) {
+            delete next[s.key];
+          }
+        }
+        return next;
+      });
     }
   };
 
@@ -89,9 +119,10 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
       queryClient.invalidateQueries({ queryKey: ["super", "config"] });
 
       if (hadRestartRequired) {
-        toast.success(`${savedCount} setting${savedCount > 1 ? "s" : ""} saved. Some changes require a restart to take effect.`, {
-          duration: 6000,
-        });
+        toast.success(
+          `${savedCount} setting${savedCount > 1 ? "s" : ""} saved. Some changes require a restart to take effect.`,
+          { duration: 6000 },
+        );
       } else {
         toast.success(`${savedCount} setting${savedCount > 1 ? "s" : ""} saved`);
       }
@@ -104,18 +135,53 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
     }
   };
 
+  // Group visible settings by subGroup
+  const groups = useMemo(() => {
+    const visible = settings.filter(isVisible);
+    const result: { label: string | null; settings: ConfigSetting[] }[] = [];
+    let currentGroup: string | null = null;
+    let currentSettings: ConfigSetting[] = [];
+
+    for (const setting of visible) {
+      if (setting.subGroup !== currentGroup) {
+        if (currentSettings.length > 0) {
+          result.push({ label: currentGroup, settings: currentSettings });
+        }
+        currentGroup = setting.subGroup;
+        currentSettings = [setting];
+      } else {
+        currentSettings.push(setting);
+      }
+    }
+    if (currentSettings.length > 0) {
+      result.push({ label: currentGroup, settings: currentSettings });
+    }
+    return result;
+  }, [settings, isVisible]);
+
   return (
-    <div className="space-y-1">
-      {settings.map((setting, index) => (
-        <div key={setting.key}>
-          {index > 0 && <Separator className="my-4" />}
-          <ConfigField
-            setting={setting}
-            dirtyValue={dirtyValues[setting.key]}
-            onChange={(value) => handleChange(setting.key, value, setting.value, setting.isSecret)}
-            onReset={() => resetMutation.mutate(setting.key)}
-            isResetting={resetMutation.isPending && resetMutation.variables === setting.key}
-          />
+    <div className="space-y-6">
+      {groups.map((group, gi) => (
+        <div key={group.label ?? gi}>
+          {group.label && (
+            <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider mb-3 border-b border-border pb-2">
+              {group.label}
+            </h3>
+          )}
+          <div className="space-y-1">
+            {group.settings.map((setting, index) => (
+              <div key={setting.key}>
+                {index > 0 && <Separator className="my-4" />}
+                <ConfigField
+                  setting={setting}
+                  dirtyValue={dirtyValues[setting.key]}
+                  onChange={(value) => handleChange(setting.key, value, setting.value, setting.isSecret)}
+                  onReset={() => resetMutation.mutate(setting.key)}
+                  isResetting={resetMutation.isPending && resetMutation.variables === setting.key}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       ))}
 
@@ -163,29 +229,13 @@ function ConfigField({ setting, dirtyValue, onChange, onReset, isResetting }: Co
       <p className="text-xs text-foreground-muted">{setting.description}</p>
 
       <div className="flex items-center gap-2">
-        {setting.isSecret ? (
-          <SecretInput setting={setting} dirtyValue={dirtyValue} onChange={onChange} />
-        ) : (
-          <Input
-            type="text"
-            value={dirtyValue ?? setting.value ?? ""}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={setting.validationHint ?? ""}
-            className="max-w-md"
-          />
-        )}
+        <ConfigInput setting={setting} dirtyValue={dirtyValue} onChange={onChange} />
 
         {setting.source === "dashboard" && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onReset}
-                  disabled={isResetting}
-                  className="shrink-0"
-                >
+                <Button variant="ghost" size="icon" onClick={onReset} disabled={isResetting} className="shrink-0">
                   <RotateCcw className={`size-4 ${isResetting ? "animate-spin" : ""}`} />
                 </Button>
               </TooltipTrigger>
@@ -197,32 +247,113 @@ function ConfigField({ setting, dirtyValue, onChange, onReset, isResetting }: Co
         )}
       </div>
 
-      {setting.validationHint && !setting.isSecret && (
+      {setting.validationHint && !setting.isSecret && setting.inputType === "text" && (
         <p className="text-xs text-foreground-muted/70">{setting.validationHint}</p>
       )}
     </div>
   );
 }
 
-interface SecretInputProps {
+// ── Input rendering based on type ──
+
+function ConfigInput({
+  setting,
+  dirtyValue,
+  onChange,
+}: {
   setting: ConfigSetting;
   dirtyValue: string | undefined;
   onChange: (value: string) => void;
-}
-
-function SecretInput({ setting, dirtyValue, onChange }: SecretInputProps) {
-  return (
-    <div className="flex items-center gap-3 max-w-md w-full">
+}) {
+  if (setting.isSecret) {
+    return (
       <Input
         type="password"
         value={dirtyValue ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={setting.validationHint ?? "Enter new value..."}
-        className="flex-1"
+        className="max-w-md"
       />
-    </div>
+    );
+  }
+
+  if (setting.inputType === "select" && setting.selectOptions) {
+    return <SelectInput options={setting.selectOptions} value={dirtyValue ?? setting.value ?? ""} onChange={onChange} />;
+  }
+
+  if (setting.inputType === "number") {
+    return (
+      <Input
+        type="number"
+        value={dirtyValue ?? setting.value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={setting.validationHint ?? ""}
+        className="max-w-md"
+        min={1}
+      />
+    );
+  }
+
+  return (
+    <Input
+      type={setting.inputType === "email" ? "email" : "text"}
+      value={dirtyValue ?? setting.value ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={setting.validationHint ?? ""}
+      className="max-w-md"
+    />
   );
 }
+
+// ── Select input using combobox ──
+
+function SelectInput({
+  options,
+  value,
+  onChange,
+}: {
+  options: string[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} className="max-w-md w-full justify-between">
+          {value || <span className="text-foreground-muted">Select...</span>}
+          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="max-w-md w-full p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search..." />
+          <CommandList>
+            <CommandEmpty>No options found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option}
+                  value={option}
+                  onSelect={(selected) => {
+                    onChange(selected);
+                    setOpen(false);
+                  }}
+                >
+                  <Check className={cn("mr-2 size-4", value === option ? "opacity-100" : "opacity-0")} />
+                  {option}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ── Source badge ──
 
 function SourceBadge({ source }: { source: ConfigSetting["source"] }) {
   switch (source) {

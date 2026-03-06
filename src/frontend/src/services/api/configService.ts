@@ -1,5 +1,12 @@
 import { api } from "./apiClient";
 
+export type ConfigInputType = "text" | "number" | "email" | "password" | "select" | "url";
+
+export interface ConfigVisibleWhen {
+  key: string;
+  values: string[];
+}
+
 export interface ConfigSetting {
   key: string;
   label: string;
@@ -12,6 +19,10 @@ export interface ConfigSetting {
   isOverridden: boolean;
   isConfigured: boolean;
   source: "none" | "environment" | "dashboard";
+  inputType: ConfigInputType;
+  selectOptions: string[] | null;
+  subGroup: string | null;
+  visibleWhen: ConfigVisibleWhen | null;
 }
 
 export interface SetConfigResult {
@@ -35,4 +46,28 @@ export async function setConfigValue(key: string, value: string): Promise<SetCon
 
 export async function resetConfigValue(key: string): Promise<ResetConfigResult> {
   return api.delete<ResetConfigResult>(`/api/super/config/${encodeURIComponent(key)}`);
+}
+
+// ── AI Config ──
+
+export interface ValidateAiRequest {
+  apiKey: string;
+  endpointUrl?: string;
+}
+
+export interface ValidateAiResponse {
+  valid: boolean;
+  error?: string;
+}
+
+export interface AiModelsResponse {
+  models: string[];
+}
+
+export async function validateAiConfig(req: ValidateAiRequest): Promise<ValidateAiResponse> {
+  return api.post<ValidateAiResponse>("/api/super/config/validate-ai", req);
+}
+
+export async function getAiModels(req: { apiKey?: string; endpointUrl?: string } = {}): Promise<AiModelsResponse> {
+  return api.post<AiModelsResponse>("/api/super/config/ai-models", req);
 }
