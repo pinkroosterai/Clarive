@@ -1,0 +1,8 @@
+<Project>
+
+  <!-- Relax TreatWarningsAsErrors for test projects -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>
