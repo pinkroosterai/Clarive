@@ -50,6 +50,7 @@ services:
       target: dev
     restart: no
     environment:
+      VITE_API_URL: ""
       VITE_API_PROXY_TARGET: http://backend:5000
     volumes:
       - ../src/frontend:/app

@@ -1,6 +1,5 @@
 import { AlertTriangle, X } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import { useAuthStore } from '@/store/authStore';
 
@@ -15,12 +14,7 @@ export function AiNotConfiguredBanner() {
     <div className="flex items-center justify-between gap-2 bg-warning-bg border-b border-warning-border px-4 py-2 text-sm text-warning-text">
       <div className="flex items-center gap-2">
         <AlertTriangle className="size-4 shrink-0" />
-        <span>
-          AI features are disabled — no API key is configured.{' '}
-          <Link to="/super" className="underline hover:no-underline">
-            Configure in Super Admin
-          </Link>
-        </span>
+        <span>AI features are disabled — no API key is configured.</span>
       </div>
       <button
         onClick={() => setDismissed(true)}

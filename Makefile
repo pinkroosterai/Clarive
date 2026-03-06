@@ -11,7 +11,7 @@ BE_DIR  := $(ROOT)/src/backend/Clarive.Api
 DEPLOY  := $(ROOT)/deploy
 
 # Dev compose (all Docker, hot reload via volume mounts)
-DEV_COMPOSE = docker compose -p clarive-dev -f $(DEPLOY)/docker-compose.yml -f $(DEPLOY)/docker-compose.dev.yml
+DEV_COMPOSE = docker compose -p clarive-dev --env-file $(ROOT)/.env -f $(DEPLOY)/docker-compose.yml -f $(DEPLOY)/docker-compose.dev.yml
 
 # Production compose
 PROD_COMPOSE = docker compose -p clarive --env-file $(DEPLOY)/.env -f $(DEPLOY)/docker-compose.yml
@@ -50,7 +50,8 @@ help: ## Show this help
 
 dev: ## Start all services with hot reload
 	@printf "$(C_CYAN)Starting development environment...$(C_RESET)\n"
-	@$(DEV_COMPOSE) up --build -d
+	@env -u OPENAI_API_KEY -u GOOGLE_CLIENT_ID -u GOOGLE_CLIENT_SECRET -u EMAIL_API_KEY \
+		$(DEV_COMPOSE) up --build --force-recreate -d
 	@printf "\n$(C_BOLD)$(C_GREEN)Development environment started.$(C_RESET)\n"
 	@printf "  Frontend: $(C_CYAN)http://localhost:8080$(C_RESET)  (Vite HMR)\n"
 	@printf "  Backend:  $(C_CYAN)http://localhost:5000$(C_RESET)  (dotnet watch)\n"

@@ -40,6 +40,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setMaintenanceMode: (enabled: boolean) => set({ maintenanceMode: enabled }),
   setUser: (user: User) => {
     set({ currentUser: user, isAuthenticated: true, isInitialized: true });
+    // Fetch system status (AI config, maintenance) after login
+    getSystemStatus()
+      .then((status) => {
+        if (status.maintenance) set({ maintenanceMode: true });
+        if (status.aiConfigured === false) set({ aiConfigured: false });
+      })
+      .catch(() => {});
   },
   setWorkspaces: (workspaces: Workspace[]) => {
     const activeId = getActiveWorkspaceId();
