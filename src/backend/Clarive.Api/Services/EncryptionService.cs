@@ -18,21 +18,29 @@ public class EncryptionService : IEncryptionService
             return;
         }
 
+        byte[] decoded;
         try
         {
-            _key = Convert.FromBase64String(keyBase64);
+            decoded = Convert.FromBase64String(keyBase64);
         }
         catch (FormatException)
         {
-            throw new InvalidOperationException(
-                "CONFIG_ENCRYPTION_KEY is not valid base64. Generate one with: " +
-                "openssl rand -base64 32");
+            logger.LogWarning("CONFIG_ENCRYPTION_KEY is not valid base64 — encryption disabled. " +
+                              "Generate a valid key with: openssl rand -base64 32");
+            _key = null;
+            return;
         }
 
-        if (_key.Length != 32)
-            throw new InvalidOperationException(
-                $"CONFIG_ENCRYPTION_KEY must be exactly 32 bytes (256 bits) when decoded. " +
-                $"Got {_key.Length} bytes. Generate one with: openssl rand -base64 32");
+        if (decoded.Length != 32)
+        {
+            logger.LogWarning("CONFIG_ENCRYPTION_KEY must be exactly 32 bytes (256 bits) when decoded. " +
+                              "Got {KeyLength} bytes — encryption disabled. Generate a valid key with: openssl rand -base64 32",
+                              decoded.Length);
+            _key = null;
+            return;
+        }
+
+        _key = decoded;
     }
 
     public bool IsAvailable => _key is not null;
