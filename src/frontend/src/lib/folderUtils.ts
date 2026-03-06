@@ -1,14 +1,14 @@
-import type { Folder } from "@/types";
+import type { Folder } from '@/types';
 
 /** Recursively find a folder's name by ID, returning "Root" for null/missing. */
 export function findFolderName(tree: Folder[], id: string | null): string {
-  if (!id) return "Root";
+  if (!id) return 'Root';
   for (const f of tree) {
     if (f.id === id) return f.name;
     const found = findFolderName(f.children, id);
-    if (found !== "Root") return found;
+    if (found !== 'Root') return found;
   }
-  return "Root";
+  return 'Root';
 }
 
 /** Flatten a folder tree into a Record mapping id → name. */

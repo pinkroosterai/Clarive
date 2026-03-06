@@ -1,8 +1,9 @@
-import type { Extensions } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { Markdown } from "@tiptap/markdown";
-import Placeholder from "@tiptap/extension-placeholder";
-import { TemplateHighlight } from "./templateMark";
+import Placeholder from '@tiptap/extension-placeholder';
+import { Markdown } from '@tiptap/markdown';
+import type { Extensions } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+
+import { TemplateHighlight } from './templateMark';
 
 interface ExtensionOptions {
   placeholder?: string;
@@ -19,9 +20,7 @@ export function buildExtensions(options: ExtensionOptions): Extensions {
   ];
 
   if (options.placeholder) {
-    extensions.push(
-      Placeholder.configure({ placeholder: options.placeholder }),
-    );
+    extensions.push(Placeholder.configure({ placeholder: options.placeholder }));
   }
 
   if (options.templateHighlight) {

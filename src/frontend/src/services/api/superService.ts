@@ -1,4 +1,4 @@
-import { api } from "./apiClient";
+import { api } from './apiClient';
 
 export interface SuperStats {
   totalUsers: number;
@@ -31,17 +31,17 @@ export interface SystemStatus {
 }
 
 export async function getSuperStats(): Promise<SuperStats> {
-  return api.get<SuperStats>("/api/super/stats");
+  return api.get<SuperStats>('/api/super/stats');
 }
 
 export async function getMaintenanceStatus(): Promise<MaintenanceStatus> {
-  return api.get<MaintenanceStatus>("/api/super/maintenance");
+  return api.get<MaintenanceStatus>('/api/super/maintenance');
 }
 
 export async function setMaintenanceMode(enabled: boolean): Promise<MaintenanceStatus> {
-  return api.post<MaintenanceStatus>("/api/super/maintenance", { enabled });
+  return api.post<MaintenanceStatus>('/api/super/maintenance', { enabled });
 }
 
 export async function getSystemStatus(): Promise<SystemStatus> {
-  return api.get<SystemStatus>("/api/status");
+  return api.get<SystemStatus>('/api/status');
 }

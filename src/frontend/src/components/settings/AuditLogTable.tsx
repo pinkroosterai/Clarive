@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { format, formatDistanceToNow } from "date-fns";
-import { Info, ScrollText } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { format, formatDistanceToNow } from 'date-fns';
+import { Info, ScrollText } from 'lucide-react';
+import { useState } from 'react';
 
-import { auditService } from "@/services";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from '@/components/common/EmptyState';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -14,43 +14,53 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { EmptyState } from "@/components/common/EmptyState";
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { auditService } from '@/services';
 
 const PAGE_SIZE = 20;
 
 const actionStyles: Record<string, { color: string; label: string }> = {
-  entry_published: { color: "bg-success-bg text-success-text border border-success-border", label: "Published" },
-  entry_created:   { color: "bg-info-bg text-info-text border border-info-border", label: "Created" },
-  entry_updated:   { color: "bg-warning-bg text-warning-text border border-warning-border", label: "Updated" },
-  entry_trashed:   { color: "bg-error-bg text-error-text border border-error-border", label: "Trashed" },
-  entry_restored:  { color: "bg-success-bg text-success-text border border-success-border", label: "Restored" },
-  entry_deleted:   { color: "bg-error-bg text-error-text border border-error-border", label: "Deleted" },
+  entry_published: {
+    color: 'bg-success-bg text-success-text border border-success-border',
+    label: 'Published',
+  },
+  entry_created: { color: 'bg-info-bg text-info-text border border-info-border', label: 'Created' },
+  entry_updated: {
+    color: 'bg-warning-bg text-warning-text border border-warning-border',
+    label: 'Updated',
+  },
+  entry_trashed: {
+    color: 'bg-error-bg text-error-text border border-error-border',
+    label: 'Trashed',
+  },
+  entry_restored: {
+    color: 'bg-success-bg text-success-text border border-success-border',
+    label: 'Restored',
+  },
+  entry_deleted: {
+    color: 'bg-error-bg text-error-text border border-error-border',
+    label: 'Deleted',
+  },
 };
 
 function getActionColor(action: string) {
-  return actionStyles[action]?.color ?? "bg-elevated text-foreground-muted";
+  return actionStyles[action]?.color ?? 'bg-elevated text-foreground-muted';
 }
 
 function formatAction(action: string) {
-  return actionStyles[action]?.label ?? action.replace(/_/g, " ");
+  return actionStyles[action]?.label ?? action.replace(/_/g, ' ');
 }
 
 function formatEntity(entityType: string) {
-  return entityType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return entityType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default function AuditLogTable() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["auditLog", page],
+    queryKey: ['auditLog', page],
     queryFn: () => auditService.getAuditLogPage(page, PAGE_SIZE),
   });
 
@@ -78,53 +88,51 @@ export default function AuditLogTable() {
       ) : (
         <TooltipProvider>
           <div className="bg-surface rounded-xl elevation-1 border border-border-subtle overflow-clip">
-          <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Entity</TableHead>
-                <TableHead>Details</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.entries.map((entry) => {
-                const date = new Date(entry.timestamp);
-                return (
-                  <TableRow key={entry.id}>
-                    <TableCell className="text-foreground-muted text-sm whitespace-nowrap">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-default">
-                            {formatDistanceToNow(date, { addSuffix: true })}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>{format(date, "PPpp")}</TooltipContent>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell className="font-medium">{entry.userName}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={`border-0 ${getActionColor(entry.action)}`}
-                      >
-                        {formatAction(entry.action)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {formatEntity(entry.entityType)}
-                    </TableCell>
-                    <TableCell className="text-sm text-foreground-muted">
-                      {entry.details ?? "—"}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>Details</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {data.entries.map((entry) => {
+                    const date = new Date(entry.timestamp);
+                    return (
+                      <TableRow key={entry.id}>
+                        <TableCell className="text-foreground-muted text-sm whitespace-nowrap">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-default">
+                                {formatDistanceToNow(date, { addSuffix: true })}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>{format(date, 'PPpp')}</TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell className="font-medium">{entry.userName}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`border-0 ${getActionColor(entry.action)}`}
+                          >
+                            {formatAction(entry.action)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{formatEntity(entry.entityType)}</TableCell>
+                        <TableCell className="text-sm text-foreground-muted">
+                          {entry.details ?? '—'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </TooltipProvider>
       )}

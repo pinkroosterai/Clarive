@@ -1,8 +1,10 @@
-import { render, act } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { OnboardingTour } from "./OnboardingTour";
-import { useAuthStore } from "@/store/authStore";
-import { createUser } from "@/test/factories";
+import { render, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+
+import { OnboardingTour } from './OnboardingTour';
+
+import { useAuthStore } from '@/store/authStore';
+import { createUser } from '@/test/factories';
 
 // Mock driver.js
 const mockDrive = vi.fn();
@@ -36,29 +38,30 @@ const mockDriverInstance = {
   refresh: vi.fn(),
 };
 
-const mockDriverFn = vi.fn(() => mockDriverInstance);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockDriverFn = vi.fn((..._args: any[]) => mockDriverInstance);
 
-vi.mock("driver.js", () => ({
+vi.mock('driver.js', () => ({
   driver: (...args: unknown[]) => mockDriverFn(...args),
 }));
 
-vi.mock("driver.js/dist/driver.css", () => ({}));
-vi.mock("./onboardingTheme.css", () => ({}));
+vi.mock('driver.js/dist/driver.css', () => ({}));
+vi.mock('./onboardingTheme.css', () => ({}));
 
 const mockCompleteOnboarding = vi.fn(() => Promise.resolve());
-vi.mock("@/services/api/authService", () => ({
+vi.mock('@/services/api/authService', () => ({
   completeOnboarding: () => mockCompleteOnboarding(),
 }));
 
-function renderWithRouter(initialEntry = "/") {
+function renderWithRouter(initialEntry = '/') {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <OnboardingTour />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
-describe("OnboardingTour", () => {
+describe('OnboardingTour', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsActive.mockReturnValue(true);
@@ -70,15 +73,15 @@ describe("OnboardingTour", () => {
     });
   });
 
-  it("renders nothing (null) for all states", () => {
+  it('renders nothing (null) for all states', () => {
     useAuthStore.setState({
       currentUser: createUser({ onboardingCompleted: false }),
     });
     const { container } = renderWithRouter();
-    expect(container.innerHTML).toBe("");
+    expect(container.innerHTML).toBe('');
   });
 
-  it("does not load driver.js when onboardingCompleted is true", async () => {
+  it('does not load driver.js when onboardingCompleted is true', async () => {
     useAuthStore.setState({
       currentUser: createUser({ onboardingCompleted: true }),
     });
@@ -91,7 +94,7 @@ describe("OnboardingTour", () => {
     expect(mockDriverFn).not.toHaveBeenCalled();
   });
 
-  it("does not load driver.js when there is no current user", async () => {
+  it('does not load driver.js when there is no current user', async () => {
     useAuthStore.setState({ currentUser: null });
 
     renderWithRouter();
@@ -101,12 +104,12 @@ describe("OnboardingTour", () => {
     expect(mockDriverFn).not.toHaveBeenCalled();
   });
 
-  it("loads driver.js and starts tour for new user on dashboard", async () => {
+  it('loads driver.js and starts tour for new user on dashboard', async () => {
     useAuthStore.setState({
       currentUser: createUser({ onboardingCompleted: false }),
     });
 
-    renderWithRouter("/");
+    renderWithRouter('/');
 
     // Wait for dynamic import + requestAnimationFrame
     await act(() => new Promise((r) => setTimeout(r, 50)));
@@ -115,32 +118,32 @@ describe("OnboardingTour", () => {
     expect(mockDriverFn).toHaveBeenCalledWith(
       expect.objectContaining({
         animate: true,
-        popoverClass: "tour-popover",
+        popoverClass: 'tour-popover',
         showProgress: false,
         allowClose: true,
-      }),
+      })
     );
     expect(mockDrive).toHaveBeenCalled();
   });
 
-  it("does not start tour when not on dashboard", async () => {
+  it('does not start tour when not on dashboard', async () => {
     useAuthStore.setState({
       currentUser: createUser({ onboardingCompleted: false }),
     });
 
-    renderWithRouter("/library");
+    renderWithRouter('/library');
 
     await act(() => new Promise((r) => setTimeout(r, 50)));
 
     expect(mockDriverFn).not.toHaveBeenCalled();
   });
 
-  it("configures onCloseClick to call completeOnboarding", async () => {
+  it('configures onCloseClick to call completeOnboarding', async () => {
     useAuthStore.setState({
       currentUser: createUser({ onboardingCompleted: false }),
     });
 
-    renderWithRouter("/");
+    renderWithRouter('/');
 
     await act(() => new Promise((r) => setTimeout(r, 50)));
 
@@ -156,12 +159,12 @@ describe("OnboardingTour", () => {
     expect(mockCompleteOnboarding).toHaveBeenCalled();
   });
 
-  it("configures onNextClick handler", async () => {
+  it('configures onNextClick handler', async () => {
     useAuthStore.setState({
       currentUser: createUser({ onboardingCompleted: false }),
     });
 
-    renderWithRouter("/");
+    renderWithRouter('/');
 
     await act(() => new Promise((r) => setTimeout(r, 50)));
 
@@ -169,12 +172,12 @@ describe("OnboardingTour", () => {
     expect(config.onNextClick).toBeDefined();
   });
 
-  it("configures onPopoverRender for progress dots", async () => {
+  it('configures onPopoverRender for progress dots', async () => {
     useAuthStore.setState({
       currentUser: createUser({ onboardingCompleted: false }),
     });
 
-    renderWithRouter("/");
+    renderWithRouter('/');
 
     await act(() => new Promise((r) => setTimeout(r, 50)));
 
@@ -182,12 +185,12 @@ describe("OnboardingTour", () => {
     expect(config.onPopoverRender).toBeDefined();
   });
 
-  it("destroys driver on unmount", async () => {
+  it('destroys driver on unmount', async () => {
     useAuthStore.setState({
       currentUser: createUser({ onboardingCompleted: false }),
     });
 
-    const { unmount } = renderWithRouter("/");
+    const { unmount } = renderWithRouter('/');
 
     await act(() => new Promise((r) => setTimeout(r, 50)));
 

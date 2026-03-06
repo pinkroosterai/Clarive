@@ -1,22 +1,15 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, X, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { invitationService } from "@/services";
-import { useAuthStore } from "@/store/authStore";
-import { handleApiError } from "@/lib/handleApiError";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import type { PendingWorkspaceInvitation } from "@/types";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Bell, Check, X, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { handleApiError } from '@/lib/handleApiError';
+import { invitationService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
+import type { PendingWorkspaceInvitation } from '@/types';
 
 export function InvitationNotificationBell() {
   const [open, setOpen] = useState(false);
@@ -26,13 +19,13 @@ export function InvitationNotificationBell() {
   const workspaces = useAuthStore((s) => s.workspaces);
 
   const { data: count = 0 } = useQuery({
-    queryKey: ["invitation-pending-count"],
+    queryKey: ['invitation-pending-count'],
     queryFn: invitationService.getPendingCount,
     refetchInterval: 60_000,
   });
 
   const { data: invitations = [], isLoading } = useQuery({
-    queryKey: ["invitation-pending-list"],
+    queryKey: ['invitation-pending-list'],
     queryFn: invitationService.getPendingInvitations,
     enabled: open,
   });
@@ -46,11 +39,11 @@ export function InvitationNotificationBell() {
         setWorkspaces([...workspaces, result.workspace]);
         toast.success(`Joined ${invitation.workspaceName}`);
       } else {
-        toast.success("Invitation declined");
+        toast.success('Invitation declined');
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["invitation-pending-count"] });
-      await queryClient.invalidateQueries({ queryKey: ["invitation-pending-list"] });
+      await queryClient.invalidateQueries({ queryKey: ['invitation-pending-count'] });
+      await queryClient.invalidateQueries({ queryKey: ['invitation-pending-list'] });
     } catch (err) {
       handleApiError(err);
     } finally {
@@ -73,11 +66,7 @@ export function InvitationNotificationBell() {
               </span>
             </SidebarMenuButton>
           </PopoverTrigger>
-          <PopoverContent
-            side="right"
-            align="end"
-            className="w-80 p-0"
-          >
+          <PopoverContent side="right" align="end" className="w-80 p-0">
             <div className="border-b px-4 py-3">
               <h4 className="text-sm font-semibold">Pending Invitations</h4>
             </div>
@@ -100,9 +89,7 @@ export function InvitationNotificationBell() {
                       {inv.workspaceName.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {inv.workspaceName}
-                      </p>
+                      <p className="truncate text-sm font-medium">{inv.workspaceName}</p>
                       <p className="text-xs text-foreground-muted">
                         {inv.invitedBy} &middot; {inv.role}
                       </p>

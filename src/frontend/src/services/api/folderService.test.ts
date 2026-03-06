@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock("@/services/api/apiClient", () => ({
+vi.mock('@/services/api/apiClient', () => ({
   api: {
     get: vi.fn(),
     post: vi.fn(),
@@ -14,15 +14,16 @@ vi.mock("@/services/api/apiClient", () => ({
   setRefreshToken: vi.fn(),
 }));
 
-import { api } from "@/services/api/apiClient";
 import {
   getFoldersTree,
   createFolder,
   renameFolder,
   moveFolder,
   deleteFolder,
-} from "./folderService";
-import { createFolder as createFolderFactory, createFolderTree } from "@/test/factories";
+} from './folderService';
+
+import { api } from '@/services/api/apiClient';
+import { createFolder as createFolderFactory, createFolderTree } from '@/test/factories';
 
 const mockApi = vi.mocked(api);
 
@@ -32,18 +33,18 @@ beforeEach(() => {
 
 // ── getFoldersTree ──
 
-describe("getFoldersTree", () => {
-  it("calls GET /api/folders", async () => {
+describe('getFoldersTree', () => {
+  it('calls GET /api/folders', async () => {
     const tree = createFolderTree();
     mockApi.get.mockResolvedValue(tree);
 
     const result = await getFoldersTree();
 
-    expect(mockApi.get).toHaveBeenCalledWith("/api/folders");
+    expect(mockApi.get).toHaveBeenCalledWith('/api/folders');
     expect(result).toEqual(tree);
   });
 
-  it("returns empty array when no folders exist", async () => {
+  it('returns empty array when no folders exist', async () => {
     mockApi.get.mockResolvedValue([]);
 
     const result = await getFoldersTree();
@@ -54,53 +55,53 @@ describe("getFoldersTree", () => {
 
 // ── createFolder ──
 
-describe("createFolder", () => {
-  it("calls POST /api/folders with name and null parentId", async () => {
-    const folder = createFolderFactory({ name: "New Folder" });
+describe('createFolder', () => {
+  it('calls POST /api/folders with name and null parentId', async () => {
+    const folder = createFolderFactory({ name: 'New Folder' });
     mockApi.post.mockResolvedValue(folder);
 
-    const result = await createFolder("New Folder");
+    const result = await createFolder('New Folder');
 
-    expect(mockApi.post).toHaveBeenCalledWith("/api/folders", {
-      name: "New Folder",
+    expect(mockApi.post).toHaveBeenCalledWith('/api/folders', {
+      name: 'New Folder',
       parentId: null,
     });
     expect(result).toEqual(folder);
   });
 
-  it("passes parentId when provided", async () => {
-    const folder = createFolderFactory({ name: "Child", parentId: "p1" });
+  it('passes parentId when provided', async () => {
+    const folder = createFolderFactory({ name: 'Child', parentId: 'p1' });
     mockApi.post.mockResolvedValue(folder);
 
-    const result = await createFolder("Child", "p1");
+    const result = await createFolder('Child', 'p1');
 
-    expect(mockApi.post).toHaveBeenCalledWith("/api/folders", {
-      name: "Child",
-      parentId: "p1",
+    expect(mockApi.post).toHaveBeenCalledWith('/api/folders', {
+      name: 'Child',
+      parentId: 'p1',
     });
     expect(result).toEqual(folder);
   });
 
-  it("defaults null parentId when explicitly passed null", async () => {
-    const folder = createFolderFactory({ name: "Root" });
+  it('defaults null parentId when explicitly passed null', async () => {
+    const folder = createFolderFactory({ name: 'Root' });
     mockApi.post.mockResolvedValue(folder);
 
-    await createFolder("Root", null);
+    await createFolder('Root', null);
 
-    expect(mockApi.post).toHaveBeenCalledWith("/api/folders", {
-      name: "Root",
+    expect(mockApi.post).toHaveBeenCalledWith('/api/folders', {
+      name: 'Root',
       parentId: null,
     });
   });
 
-  it("defaults null parentId when passed undefined", async () => {
-    const folder = createFolderFactory({ name: "Root" });
+  it('defaults null parentId when passed undefined', async () => {
+    const folder = createFolderFactory({ name: 'Root' });
     mockApi.post.mockResolvedValue(folder);
 
-    await createFolder("Root", undefined);
+    await createFolder('Root', undefined);
 
-    expect(mockApi.post).toHaveBeenCalledWith("/api/folders", {
-      name: "Root",
+    expect(mockApi.post).toHaveBeenCalledWith('/api/folders', {
+      name: 'Root',
       parentId: null,
     });
   });
@@ -108,15 +109,15 @@ describe("createFolder", () => {
 
 // ── renameFolder ──
 
-describe("renameFolder", () => {
-  it("calls PATCH /api/folders/:id with new name", async () => {
-    const folder = createFolderFactory({ id: "f1", name: "Renamed" });
+describe('renameFolder', () => {
+  it('calls PATCH /api/folders/:id with new name', async () => {
+    const folder = createFolderFactory({ id: 'f1', name: 'Renamed' });
     mockApi.patch.mockResolvedValue(folder);
 
-    const result = await renameFolder("f1", "Renamed");
+    const result = await renameFolder('f1', 'Renamed');
 
-    expect(mockApi.patch).toHaveBeenCalledWith("/api/folders/f1", {
-      name: "Renamed",
+    expect(mockApi.patch).toHaveBeenCalledWith('/api/folders/f1', {
+      name: 'Renamed',
     });
     expect(result).toEqual(folder);
   });
@@ -124,26 +125,26 @@ describe("renameFolder", () => {
 
 // ── moveFolder ──
 
-describe("moveFolder", () => {
-  it("calls POST /api/folders/:id/move with new parentId", async () => {
-    const folder = createFolderFactory({ id: "f1", parentId: "f2" });
+describe('moveFolder', () => {
+  it('calls POST /api/folders/:id/move with new parentId', async () => {
+    const folder = createFolderFactory({ id: 'f1', parentId: 'f2' });
     mockApi.post.mockResolvedValue(folder);
 
-    const result = await moveFolder("f1", "f2");
+    const result = await moveFolder('f1', 'f2');
 
-    expect(mockApi.post).toHaveBeenCalledWith("/api/folders/f1/move", {
-      parentId: "f2",
+    expect(mockApi.post).toHaveBeenCalledWith('/api/folders/f1/move', {
+      parentId: 'f2',
     });
     expect(result).toEqual(folder);
   });
 
-  it("passes null to move folder to root", async () => {
-    const folder = createFolderFactory({ id: "f1", parentId: null });
+  it('passes null to move folder to root', async () => {
+    const folder = createFolderFactory({ id: 'f1', parentId: null });
     mockApi.post.mockResolvedValue(folder);
 
-    await moveFolder("f1", null);
+    await moveFolder('f1', null);
 
-    expect(mockApi.post).toHaveBeenCalledWith("/api/folders/f1/move", {
+    expect(mockApi.post).toHaveBeenCalledWith('/api/folders/f1/move', {
       parentId: null,
     });
   });
@@ -151,12 +152,12 @@ describe("moveFolder", () => {
 
 // ── deleteFolder ──
 
-describe("deleteFolder", () => {
-  it("calls DELETE /api/folders/:id", async () => {
+describe('deleteFolder', () => {
+  it('calls DELETE /api/folders/:id', async () => {
     mockApi.delete.mockResolvedValue(undefined);
 
-    await deleteFolder("f1");
+    await deleteFolder('f1');
 
-    expect(mockApi.delete).toHaveBeenCalledWith("/api/folders/f1");
+    expect(mockApi.delete).toHaveBeenCalledWith('/api/folders/f1');
   });
 });

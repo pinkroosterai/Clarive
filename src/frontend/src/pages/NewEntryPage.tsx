@@ -1,35 +1,36 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Sparkles, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
+import { useQuery } from '@tanstack/react-query';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-
-import { entryService, folderService } from "@/services";
-import { flattenFolders } from "@/lib/folderUtils";
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { flattenFolders } from '@/lib/folderUtils';
+import { handleApiError } from '@/lib/handleApiError';
+import { entryService, folderService } from '@/services';
 
 const NewEntryPage = () => {
-  useEffect(() => { document.title = "Clarive — New Entry"; }, []);
+  useEffect(() => {
+    document.title = 'Clarive — New Entry';
+  }, []);
   const navigate = useNavigate();
-  const [title, setTitle] = useState("");
-  const [folderId, setFolderId] = useState("__root__");
+  const [title, setTitle] = useState('');
+  const [folderId, setFolderId] = useState('__root__');
   const [isCreating, setIsCreating] = useState(false);
 
   const { data: folders = [] } = useQuery({
-    queryKey: ["folders"],
+    queryKey: ['folders'],
     queryFn: folderService.getFoldersTree,
   });
 
@@ -41,12 +42,12 @@ const NewEntryPage = () => {
     try {
       const entry = await entryService.createEntry({
         title: title.trim(),
-        folderId: folderId === "__root__" ? null : folderId,
+        folderId: folderId === '__root__' ? null : folderId,
       });
-      toast.success("Entry created");
+      toast.success('Entry created');
       navigate(`/entry/${entry.id}`);
     } catch (err) {
-      handleApiError(err, { title: "Failed to create entry" });
+      handleApiError(err, { title: 'Failed to create entry' });
     } finally {
       setIsCreating(false);
     }
@@ -68,7 +69,7 @@ const NewEntryPage = () => {
               onChange={(e) => setTitle(e.target.value)}
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreate();
+                if (e.key === 'Enter') handleCreate();
               }}
             />
           </div>
@@ -83,18 +84,14 @@ const NewEntryPage = () => {
                 <SelectItem value="__root__">Root (no folder)</SelectItem>
                 {flatFolders.map((f) => (
                   <SelectItem key={f.id} value={f.id}>
-                    {"\u00A0\u00A0".repeat(f.depth) + f.name}
+                    {'\u00A0\u00A0'.repeat(f.depth) + f.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <Button
-            className="w-full"
-            onClick={handleCreate}
-            disabled={!title.trim() || isCreating}
-          >
+          <Button className="w-full" onClick={handleCreate} disabled={!title.trim() || isCreating}>
             {isCreating && <Loader2 className="animate-spin" />}
             Create Entry
           </Button>

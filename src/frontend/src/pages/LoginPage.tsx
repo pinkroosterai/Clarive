@@ -1,21 +1,28 @@
-import { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Loader2, Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AnvilIcon } from "@/components/icons/AnvilIcon";
-import { handleApiError } from "@/lib/handleApiError";
-import { loginSchema, type LoginFormData } from "@/lib/validationSchemas";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { useAuthStore } from "@/store/authStore";
-import { authService } from "@/services";
-import { getSetupStatus } from "@/services/api/authService";
-import { getActiveWorkspaceId } from "@/services/api/apiClient";
-import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
-import { config } from "@/lib/config";
+import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
+import { AnvilIcon } from '@/components/icons/AnvilIcon';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { config } from '@/lib/config';
+import { handleApiError } from '@/lib/handleApiError';
+import { loginSchema, type LoginFormData } from '@/lib/validationSchemas';
+import { authService } from '@/services';
+import { getActiveWorkspaceId } from '@/services/api/apiClient';
+import { getSetupStatus } from '@/services/api/authService';
+import { useAuthStore } from '@/store/authStore';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -32,7 +39,7 @@ const LoginPage = () => {
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: '', password: '' },
   });
 
   if (isAuthenticated) {
@@ -47,22 +54,26 @@ const LoginPage = () => {
 
       if (res.workspaces && res.workspaces.length > 1) {
         const rememberedId = getActiveWorkspaceId();
-        const rememberPref = localStorage.getItem("cl_remember_workspace");
-        if (rememberedId && rememberPref === "true" && res.workspaces.some((w) => w.id === rememberedId)) {
+        const rememberPref = localStorage.getItem('cl_remember_workspace');
+        if (
+          rememberedId &&
+          rememberPref === 'true' &&
+          res.workspaces.some((w) => w.id === rememberedId)
+        ) {
           try {
             await switchWorkspace(rememberedId);
-            navigate("/");
+            navigate('/');
           } catch {
-            navigate("/select-workspace");
+            navigate('/select-workspace');
           }
         } else {
-          navigate("/select-workspace");
+          navigate('/select-workspace');
         }
       } else {
-        navigate("/");
+        navigate('/');
       }
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Login failed" });
+      handleApiError(err, { fallback: 'Login failed' });
     }
   };
 
@@ -129,7 +140,7 @@ const LoginPage = () => {
                     <FormControl>
                       <div className="relative">
                         <Input
-                          type={showPassword ? "text" : "password"}
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="current-password"
                           className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
@@ -142,9 +153,13 @@ const LoginPage = () => {
                           className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                           onClick={() => setShowPassword(!showPassword)}
                           tabIndex={-1}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
-                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                          {showPassword ? (
+                            <EyeOff className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
                         </Button>
                       </div>
                     </FormControl>
@@ -161,18 +176,27 @@ const LoginPage = () => {
         </div>
         {allowRegistration && (
           <p className="mt-4 text-center text-sm text-foreground-muted">
-            Don&apos;t have an account?{" "}
-            <Link to="/register" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+            Don&apos;t have an account?{' '}
+            <Link
+              to="/register"
+              className="text-primary hover:text-primary/80 underline-offset-4 hover:underline"
+            >
               Register
             </Link>
           </p>
         )}
         <p className="mt-3 text-center text-xs text-foreground-muted">
-          <Link to="/terms" className="hover:text-foreground-secondary underline-offset-4 hover:underline">
+          <Link
+            to="/terms"
+            className="hover:text-foreground-secondary underline-offset-4 hover:underline"
+          >
             Terms
           </Link>
           <span className="mx-1.5">&middot;</span>
-          <Link to="/privacy" className="hover:text-foreground-secondary underline-offset-4 hover:underline">
+          <Link
+            to="/privacy"
+            className="hover:text-foreground-secondary underline-offset-4 hover:underline"
+          >
             Privacy
           </Link>
         </p>

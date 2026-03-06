@@ -1,14 +1,8 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Loader2, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { useAuthStore } from "@/store/authStore";
-import { authService } from "@/services";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -17,7 +11,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { handleApiError } from '@/lib/handleApiError';
+import { authService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 export default function AccountDeletionSection() {
   const navigate = useNavigate();
@@ -25,25 +25,25 @@ export default function AccountDeletionSection() {
   const currentUser = useAuthStore((s) => s.currentUser);
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [confirmation, setConfirmation] = useState("");
+  const [confirmation, setConfirmation] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isAdmin = currentUser?.role === "admin";
-  const canDelete = confirmation === "DELETE";
+  const isAdmin = currentUser?.role === 'admin';
+  const canDelete = confirmation === 'DELETE';
 
   const handleDelete = async () => {
     setLoading(true);
     try {
-      await authService.deleteAccount("DELETE");
-      toast.success("Account scheduled for deletion. You have 30 days to cancel.");
+      await authService.deleteAccount('DELETE');
+      toast.success('Account scheduled for deletion. You have 30 days to cancel.');
       logout();
-      navigate("/login");
+      navigate('/login');
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Failed to delete account" });
+      handleApiError(err, { fallback: 'Failed to delete account' });
     } finally {
       setLoading(false);
       setDialogOpen(false);
-      setConfirmation("");
+      setConfirmation('');
     }
   };
 
@@ -70,7 +70,13 @@ export default function AccountDeletionSection() {
         Delete Account
       </Button>
 
-      <AlertDialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setConfirmation(""); }}>
+      <AlertDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setConfirmation('');
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-error-text">
@@ -81,12 +87,9 @@ export default function AccountDeletionSection() {
               <div className="space-y-3">
                 <p>
                   This will schedule your account for permanent deletion. All your data — entries,
-                  folders, tools, and API keys — will be permanently removed after
-                  30 days.
+                  folders, tools, and API keys — will be permanently removed after 30 days.
                 </p>
-                <p>
-                  You can cancel this within the 30-day grace period by signing in again.
-                </p>
+                <p>You can cancel this within the 30-day grace period by signing in again.</p>
                 <div className="space-y-2">
                   <Label htmlFor="delete-confirm" className="text-foreground">
                     Type <strong>DELETE</strong> to confirm
@@ -105,11 +108,7 @@ export default function AccountDeletionSection() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <Button
-              variant="destructive"
-              disabled={!canDelete || loading}
-              onClick={handleDelete}
-            >
+            <Button variant="destructive" disabled={!canDelete || loading} onClick={handleDelete}>
               {loading && <Loader2 className="animate-spin mr-1 size-3" />}
               Delete Account
             </Button>

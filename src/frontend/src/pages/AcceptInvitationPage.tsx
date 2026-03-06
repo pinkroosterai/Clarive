@@ -1,32 +1,32 @@
-import { useEffect, useState, FormEvent } from "react";
-import { useSearchParams, useNavigate, Navigate } from "react-router-dom";
-import { Loader2, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
-import { AnvilIcon } from "@/components/icons/AnvilIcon";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
+import { Loader2, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
+import { useEffect, useState, FormEvent } from 'react';
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/authStore";
-import { invitationService } from "@/services";
-import type { InvitationInfo } from "@/services/api/invitationService";
+import { AnvilIcon } from '@/components/icons/AnvilIcon';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { handleApiError } from '@/lib/handleApiError';
+import { invitationService } from '@/services';
+import type { InvitationInfo } from '@/services/api/invitationService';
+import { useAuthStore } from '@/store/authStore';
 
-type PageState = "validating" | "form" | "expired" | "submitting" | "success";
+type PageState = 'validating' | 'form' | 'expired' | 'submitting' | 'success';
 
 const AcceptInvitationPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get("token") ?? "";
+  const token = searchParams.get('token') ?? '';
   const { isAuthenticated, setUser, setWorkspaces } = useAuthStore();
 
-  const [state, setState] = useState<PageState>(token ? "validating" : "expired");
+  const [state, setState] = useState<PageState>(token ? 'validating' : 'expired');
   const [info, setInfo] = useState<InvitationInfo | null>(null);
-  const [errorMessage, setErrorMessage] = useState("Invalid or missing invitation link.");
+  const [errorMessage, setErrorMessage] = useState('Invalid or missing invitation link.');
 
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -40,16 +40,18 @@ const AcceptInvitationPage = () => {
         const result = await invitationService.validateToken(token);
         if (!cancelled) {
           setInfo(result);
-          setState("form");
+          setState('form');
         }
       } catch {
         if (!cancelled) {
-          setState("expired");
-          setErrorMessage("This invitation link is invalid or has expired.");
+          setState('expired');
+          setErrorMessage('This invitation link is invalid or has expired.');
         }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token, isAuthenticated]);
 
   // If already authenticated, redirect
@@ -61,21 +63,21 @@ const AcceptInvitationPage = () => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error('Passwords do not match');
       return;
     }
 
-    setState("submitting");
+    setState('submitting');
     try {
       const res = await invitationService.acceptInvitation(token, name, password);
       setUser(res.user);
       if (res.workspaces) setWorkspaces(res.workspaces);
-      setState("success");
-      toast.success("Welcome to the team!");
-      setTimeout(() => navigate("/", { replace: true }), 1500);
+      setState('success');
+      toast.success('Welcome to the team!');
+      setTimeout(() => navigate('/', { replace: true }), 1500);
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Failed to accept invitation" });
-      setState("form");
+      handleApiError(err, { fallback: 'Failed to accept invitation' });
+      setState('form');
     }
   };
 
@@ -86,24 +88,26 @@ const AcceptInvitationPage = () => {
           <div className="text-center space-y-2 mb-6">
             <AnvilIcon className="mx-auto mb-3 size-16" />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {state === "success" ? "You're in!" : "Join your team"}
+              {state === 'success' ? "You're in!" : 'Join your team'}
             </h1>
-            {info && state !== "success" && (
+            {info && state !== 'success' && (
               <p className="text-foreground-muted text-sm">
-                You've been invited to <span className="font-medium text-foreground-secondary">{info.workspaceName}</span> as {info.role === "editor" ? "an" : "a"} {info.role}
+                You've been invited to{' '}
+                <span className="font-medium text-foreground-secondary">{info.workspaceName}</span>{' '}
+                as {info.role === 'editor' ? 'an' : 'a'} {info.role}
               </p>
             )}
           </div>
 
           <div className="space-y-4">
-            {state === "validating" && (
+            {state === 'validating' && (
               <div className="text-center space-y-4">
                 <Loader2 className="mx-auto size-8 animate-spin text-primary" />
                 <p className="text-foreground-muted text-sm">Validating invitation...</p>
               </div>
             )}
 
-            {state === "expired" && (
+            {state === 'expired' && (
               <div className="text-center space-y-4">
                 <XCircle className="mx-auto size-12 text-error-text" />
                 <p className="text-foreground-secondary text-sm">{errorMessage}</p>
@@ -113,7 +117,7 @@ const AcceptInvitationPage = () => {
               </div>
             )}
 
-            {state === "success" && (
+            {state === 'success' && (
               <div className="text-center space-y-4">
                 <CheckCircle2 className="mx-auto size-12 text-success-text" />
                 <p className="text-foreground-secondary text-sm">
@@ -122,14 +126,14 @@ const AcceptInvitationPage = () => {
               </div>
             )}
 
-            {(state === "form" || state === "submitting") && (
+            {(state === 'form' || state === 'submitting') && (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="invite-email">Email</Label>
                   <Input
                     id="invite-email"
                     type="email"
-                    value={info?.email ?? ""}
+                    value={info?.email ?? ''}
                     disabled
                     className="bg-elevated border-border opacity-60"
                   />
@@ -153,7 +157,7 @@ const AcceptInvitationPage = () => {
                   <div className="relative">
                     <Input
                       id="invite-password"
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -168,7 +172,7 @@ const AcceptInvitationPage = () => {
                       className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                       onClick={() => setShowPassword(!showPassword)}
                       tabIndex={-1}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                     </Button>
@@ -179,7 +183,7 @@ const AcceptInvitationPage = () => {
                   <div className="relative">
                     <Input
                       id="invite-confirm"
-                      type={showConfirm ? "text" : "password"}
+                      type={showConfirm ? 'text' : 'password'}
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -194,14 +198,14 @@ const AcceptInvitationPage = () => {
                       className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                       onClick={() => setShowConfirm(!showConfirm)}
                       tabIndex={-1}
-                      aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                      aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
                     >
                       {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={state === "submitting"}>
-                  {state === "submitting" && <Loader2 className="animate-spin" />}
+                <Button type="submit" className="w-full" disabled={state === 'submitting'}>
+                  {state === 'submitting' && <Loader2 className="animate-spin" />}
                   Create account & join
                 </Button>
               </form>

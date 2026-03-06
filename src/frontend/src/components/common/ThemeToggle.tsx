@@ -1,9 +1,10 @@
-import { Sun, Moon, Monitor } from "lucide-react";
-import { useTheme, type ThemePreference } from "@/hooks/useTheme";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Sun, Moon, Monitor } from 'lucide-react';
 
-const cycle: ThemePreference[] = ["dark", "light", "system"];
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTheme, type ThemePreference } from '@/hooks/useTheme';
+
+const cycle: ThemePreference[] = ['dark', 'light', 'system'];
 
 const icons: Record<ThemePreference, typeof Sun> = {
   light: Sun,
@@ -12,9 +13,9 @@ const icons: Record<ThemePreference, typeof Sun> = {
 };
 
 const labels: Record<ThemePreference, string> = {
-  light: "Light mode",
-  dark: "Dark mode",
-  system: "System theme",
+  light: 'Light mode',
+  dark: 'Dark mode',
+  system: 'System theme',
 };
 
 export function ThemeToggle() {

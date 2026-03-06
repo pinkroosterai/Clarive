@@ -1,26 +1,20 @@
-import { memo, useState } from "react";
-import {
-  ArrowUp,
-  ArrowDown,
-  Copy,
-  HelpCircle,
-  Trash2,
-} from "lucide-react";
-import { toast } from "sonner";
+import { ArrowUp, ArrowDown, Copy, HelpCircle, Trash2 } from 'lucide-react';
+import { memo, useState } from 'react';
+import { toast } from 'sonner';
 
-import type { Prompt } from "@/types";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { MarkdownEditor } from "@/components/editor/MarkdownEditor";
-import { copyToClipboard } from "@/lib/utils";
+import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { copyToClipboard } from '@/lib/utils';
+import type { Prompt } from '@/types';
 
 const SYNTAX_ROWS = [
-  { type: "string", example: "{{topic}}", description: "Text input (default)" },
-  { type: "int", example: "{{count|int:1-100}}", description: "Integer with range" },
-  { type: "float", example: "{{temp|float:0-2}}", description: "Decimal with range" },
-  { type: "enum", example: "{{tone|enum:formal,casual}}", description: "Dropdown select" },
+  { type: 'string', example: '{{topic}}', description: 'Text input (default)' },
+  { type: 'int', example: '{{count|int:1-100}}', description: 'Integer with range' },
+  { type: 'float', example: '{{temp|float:0-2}}', description: 'Decimal with range' },
+  { type: 'enum', example: '{{tone|enum:formal,casual}}', description: 'Dropdown select' },
 ] as const;
 
 function TemplateSyntaxHelp() {
@@ -28,7 +22,7 @@ function TemplateSyntaxHelp() {
     <div className="rounded-lg bg-surface border border-border p-3 text-xs">
       <p className="mb-2 font-medium text-foreground">Template tag syntax</p>
       <code className="mb-2 block text-foreground-muted">
-        {"{{name}}  {{name|type}}  {{name|type:options}}"}
+        {'{{name}}  {{name|type}}  {{name|type:options}}'}
       </code>
       <table className="w-full text-left">
         <thead>
@@ -87,21 +81,20 @@ export const PromptCard = memo(function PromptCard({
   const handleCopy = async () => {
     try {
       await copyToClipboard(prompt.content);
-      toast.success("Copied to clipboard");
+      toast.success('Copied to clipboard');
     } catch {
-      toast.error("Failed to copy");
+      toast.error('Failed to copy');
     }
   };
 
-  const borderColor = index === 1 ? "border-l-blue-500" : index === 2 ? "border-l-cyan-500" : "border-l-emerald-500";
+  const borderColor =
+    index === 1 ? 'border-l-blue-500' : index === 2 ? 'border-l-cyan-500' : 'border-l-emerald-500';
 
   return (
     <Card className={`border-l-2 ${borderColor}`}>
       <Collapsible open={helpOpen} onOpenChange={setHelpOpen}>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-          <span className="text-sm font-medium text-foreground">
-            Prompt #{index}
-          </span>
+          <span className="text-sm font-medium text-foreground">Prompt #{index}</span>
           <div className="flex items-center gap-2">
             {!isReadOnly && (
               <CollapsibleTrigger asChild>

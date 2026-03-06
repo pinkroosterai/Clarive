@@ -1,24 +1,20 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
-import type { VersionInfo } from "@/types";
-import { entryService } from "@/services";
-import { DiffBlock } from "./DiffBlock";
-import { Badge } from "@/components/ui/badge";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DiffBlock } from './DiffBlock';
+
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
+import { entryService } from '@/services';
+import type { VersionInfo } from '@/types';
 
 interface VersionDiffDialogProps {
   entryId: string;
@@ -37,8 +33,8 @@ export function VersionDiffDialog({
 }: VersionDiffDialogProps) {
   // Default selection: right = current working version, left = most recent other
   const workingVersion =
-    versions.find((v) => v.versionState === "draft") ??
-    versions.find((v) => v.versionState === "published");
+    versions.find((v) => v.versionState === 'draft') ??
+    versions.find((v) => v.versionState === 'published');
 
   const defaultRight = currentVersion ?? workingVersion?.version ?? versions[0]?.version;
   const defaultLeft = versions.find((v) => v.version !== defaultRight)?.version ?? defaultRight;
@@ -59,13 +55,13 @@ export function VersionDiffDialog({
   }, [open, currentVersion, versions, workingVersion]);
 
   const leftQuery = useQuery({
-    queryKey: ["version", entryId, leftVersion],
+    queryKey: ['version', entryId, leftVersion],
     queryFn: () => entryService.getVersion(entryId, leftVersion),
     enabled: open && leftVersion !== undefined,
   });
 
   const rightQuery = useQuery({
-    queryKey: ["version", entryId, rightVersion],
+    queryKey: ['version', entryId, rightVersion],
     queryFn: () => entryService.getVersion(entryId, rightVersion),
     enabled: open && rightVersion !== undefined,
   });
@@ -81,7 +77,12 @@ export function VersionDiffDialog({
     const rightPrompts = [...right.prompts].sort((a, b) => a.order - b.order);
     const maxLen = Math.max(leftPrompts.length, rightPrompts.length);
 
-    const diffs: { label: string; oldText: string; newText: string; badge?: "added" | "removed" }[] = [];
+    const diffs: {
+      label: string;
+      oldText: string;
+      newText: string;
+      badge?: 'added' | 'removed';
+    }[] = [];
     for (let i = 0; i < maxLen; i++) {
       const lp = leftPrompts[i];
       const rp = rightPrompts[i];
@@ -95,16 +96,16 @@ export function VersionDiffDialog({
       } else if (!lp && rp) {
         diffs.push({
           label: `Prompt #${i + 1}`,
-          oldText: "",
+          oldText: '',
           newText: rp.content,
-          badge: "added",
+          badge: 'added',
         });
       } else if (lp && !rp) {
         diffs.push({
           label: `Prompt #${i + 1}`,
           oldText: lp.content,
-          newText: "",
-          badge: "removed",
+          newText: '',
+          badge: 'removed',
         });
       }
     }
@@ -121,10 +122,7 @@ export function VersionDiffDialog({
         <div className="flex items-center gap-3 pt-2">
           <div className="flex-1 space-y-1">
             <label className="text-xs text-foreground-muted">Left (old)</label>
-            <Select
-              value={String(leftVersion)}
-              onValueChange={(v) => setLeftVersion(Number(v))}
-            >
+            <Select value={String(leftVersion)} onValueChange={(v) => setLeftVersion(Number(v))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -140,10 +138,7 @@ export function VersionDiffDialog({
           <span className="text-foreground-muted pt-5">vs</span>
           <div className="flex-1 space-y-1">
             <label className="text-xs text-foreground-muted">Right (new)</label>
-            <Select
-              value={String(rightVersion)}
-              onValueChange={(v) => setRightVersion(Number(v))}
-            >
+            <Select value={String(rightVersion)} onValueChange={(v) => setRightVersion(Number(v))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -171,15 +166,19 @@ export function VersionDiffDialog({
             {(left.systemMessage !== null || right.systemMessage !== null) && (
               <div className="space-y-1.5">
                 {left.systemMessage === null && right.systemMessage !== null && (
-                  <Badge variant="draft" className="text-xs">System message added</Badge>
+                  <Badge variant="draft" className="text-xs">
+                    System message added
+                  </Badge>
                 )}
                 {left.systemMessage !== null && right.systemMessage === null && (
-                  <Badge variant="historical" className="text-xs">System message removed</Badge>
+                  <Badge variant="historical" className="text-xs">
+                    System message removed
+                  </Badge>
                 )}
                 <DiffBlock
                   label="System Message"
-                  oldText={left.systemMessage ?? ""}
-                  newText={right.systemMessage ?? ""}
+                  oldText={left.systemMessage ?? ''}
+                  newText={right.systemMessage ?? ''}
                 />
               </div>
             )}
@@ -187,11 +186,15 @@ export function VersionDiffDialog({
             {/* Prompt diffs */}
             {promptDiffs.map((diff, i) => (
               <div key={i} className="space-y-1.5">
-                {diff.badge === "added" && (
-                  <Badge variant="draft" className="text-xs">Prompt added</Badge>
+                {diff.badge === 'added' && (
+                  <Badge variant="draft" className="text-xs">
+                    Prompt added
+                  </Badge>
                 )}
-                {diff.badge === "removed" && (
-                  <Badge variant="historical" className="text-xs">Prompt removed</Badge>
+                {diff.badge === 'removed' && (
+                  <Badge variant="historical" className="text-xs">
+                    Prompt removed
+                  </Badge>
                 )}
                 <DiffBlock label={diff.label} oldText={diff.oldText} newText={diff.newText} />
               </div>

@@ -1,11 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { useAuthStore } from "@/store/authStore";
-import { updateProfile } from "@/services/api/profileService";
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-export type Theme = "light" | "dark";
-export type ThemePreference = "light" | "dark" | "system";
+import { updateProfile } from '@/services/api/profileService';
+import { useAuthStore } from '@/store/authStore';
 
-const STORAGE_KEY = "cl_theme";
+export type Theme = 'light' | 'dark';
+export type ThemePreference = 'light' | 'dark' | 'system';
+
+const STORAGE_KEY = 'cl_theme';
 
 export interface ThemeContextValue {
   theme: Theme;
@@ -16,43 +17,37 @@ export interface ThemeContextValue {
 export const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function resolveTheme(pref: ThemePreference): Theme {
-  if (pref === "light" || pref === "dark") return pref;
-  return window.matchMedia("(prefers-color-scheme: light)").matches
-    ? "light"
-    : "dark";
+  if (pref === 'light' || pref === 'dark') return pref;
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
 function getStoredPreference(): ThemePreference {
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark" || stored === "system")
-    return stored;
-  return "system";
+  if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+  return 'system';
 }
 
 function applyTheme(theme: Theme, animate: boolean) {
   const root = document.documentElement;
 
   if (animate) {
-    root.classList.add("theme-transitioning");
+    root.classList.add('theme-transitioning');
   }
 
-  if (theme === "dark") {
-    root.classList.add("dark");
+  if (theme === 'dark') {
+    root.classList.add('dark');
   } else {
-    root.classList.remove("dark");
+    root.classList.remove('dark');
   }
 
   if (animate) {
-    setTimeout(() => root.classList.remove("theme-transitioning"), 200);
+    setTimeout(() => root.classList.remove('theme-transitioning'), 200);
   }
 }
 
 export function useThemeProvider(): ThemeContextValue {
-  const [themePreference, setThemePreferenceState] =
-    useState<ThemePreference>(getStoredPreference);
-  const [theme, setTheme] = useState<Theme>(() =>
-    resolveTheme(getStoredPreference()),
-  );
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>(getStoredPreference);
+  const [theme, setTheme] = useState<Theme>(() => resolveTheme(getStoredPreference()));
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const currentUser = useAuthStore((s) => s.currentUser);
 
@@ -72,16 +67,16 @@ export function useThemeProvider(): ThemeContextValue {
 
   // Listen for OS preference changes when set to "system"
   useEffect(() => {
-    if (themePreference !== "system") return;
+    if (themePreference !== 'system') return;
 
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => {
-      const resolved = resolveTheme("system");
+      const resolved = resolveTheme('system');
       setTheme(resolved);
       applyTheme(resolved, true);
     };
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
   }, [themePreference]);
 
   // Apply theme on mount (covers React hydration after inline script)
@@ -104,7 +99,7 @@ export function useThemeProvider(): ThemeContextValue {
         });
       }
     },
-    [isAuthenticated],
+    [isAuthenticated]
   );
 
   return { theme, themePreference, setThemePreference };
@@ -112,7 +107,6 @@ export function useThemeProvider(): ThemeContextValue {
 
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
-  if (!ctx)
-    throw new Error("useTheme must be used within a ThemeProvider");
+  if (!ctx) throw new Error('useTheme must be used within a ThemeProvider');
   return ctx;
 }

@@ -1,27 +1,35 @@
-import { useMemo, useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Sparkles, FileText, Search, FolderOpen, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Plus,
+  Sparkles,
+  FileText,
+  Search,
+  FolderOpen,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { entryService, folderService } from "@/services";
-import type { PromptEntry } from "@/types";
-import { useDebounce } from "@/hooks/useDebounce";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { EmptyState } from '@/components/common/EmptyState';
+import { EntryCard } from '@/components/library/EntryCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { EntryCard } from "@/components/library/EntryCard";
-import { EmptyState } from "@/components/common/EmptyState";
+} from '@/components/ui/select';
+import { useDebounce } from '@/hooks/useDebounce';
+import { handleApiError } from '@/lib/handleApiError';
+import { entryService, folderService } from '@/services';
+import type { PromptEntry } from '@/types';
 
-type StatusFilter = "all" | "draft" | "published";
-type SortBy = "recent" | "alphabetical" | "oldest";
+type StatusFilter = 'all' | 'draft' | 'published';
+type SortBy = 'recent' | 'alphabetical' | 'oldest';
 
 const PAGE_SIZE = 50;
 
@@ -29,7 +37,7 @@ function filterAndSort(
   entries: PromptEntry[],
   search: string,
   status: StatusFilter,
-  sort: SortBy,
+  sort: SortBy
 ): PromptEntry[] {
   let result = entries;
 
@@ -38,17 +46,17 @@ function filterAndSort(
     result = result.filter((e) => e.title.toLowerCase().includes(q));
   }
 
-  if (status !== "all") {
+  if (status !== 'all') {
     result = result.filter((e) => e.versionState === status);
   }
 
   return [...result].sort((a, b) => {
     switch (sort) {
-      case "alphabetical":
+      case 'alphabetical':
         return a.title.localeCompare(b.title);
-      case "oldest":
+      case 'oldest':
         return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-      case "recent":
+      case 'recent':
       default:
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }
@@ -59,7 +67,10 @@ function SkeletonCards() {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="rounded-xl bg-elevated skeleton-shimmer h-[180px] border border-border-subtle" />
+        <div
+          key={i}
+          className="rounded-xl bg-elevated skeleton-shimmer h-[180px] border border-border-subtle"
+        />
       ))}
     </div>
   );
@@ -69,26 +80,28 @@ export default function LibraryPage() {
   const { folderId } = useParams<{ folderId: string }>();
 
   useEffect(() => {
-    document.title = "Clarive — Library";
+    document.title = 'Clarive — Library';
   }, []);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [sortBy, setSortBy] = useState<SortBy>("recent");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Reset search and page when navigating to a different folder
   const resetFilters = useCallback(() => {
-    setSearchQuery("");
+    setSearchQuery('');
     setPage(1);
   }, []);
-  useEffect(() => { resetFilters(); }, [folderId, resetFilters]);
+  useEffect(() => {
+    resetFilters();
+  }, [folderId, resetFilters]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["entries", folderId ?? null, page],
+    queryKey: ['entries', folderId ?? null, page],
     queryFn: () => entryService.getEntriesList(folderId ?? null, page, PAGE_SIZE),
   });
 
@@ -97,7 +110,7 @@ export default function LibraryPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const { data: folders } = useQuery({
-    queryKey: ["folders"],
+    queryKey: ['folders'],
     queryFn: folderService.getFoldersTree,
     enabled: !!folderId,
   });
@@ -117,16 +130,16 @@ export default function LibraryPage() {
 
   const filtered = useMemo(
     () => (entries ? filterAndSort(entries, debouncedSearch, statusFilter, sortBy) : []),
-    [entries, debouncedSearch, statusFilter, sortBy],
+    [entries, debouncedSearch, statusFilter, sortBy]
   );
   const pageItemCount = entries?.length ?? 0;
-  const hasActiveFilters = debouncedSearch !== "" || statusFilter !== "all";
+  const hasActiveFilters = debouncedSearch !== '' || statusFilter !== 'all';
 
   const trashMutation = useMutation({
     mutationFn: (id: string) => entryService.trashEntry(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
-      toast.success("Moved to trash");
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      toast.success('Moved to trash');
     },
     onError: (err: unknown) => handleApiError(err),
   });
@@ -140,30 +153,27 @@ export default function LibraryPage() {
         folderId: source.folderId,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
-      toast.success("Entry duplicated");
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      toast.success('Entry duplicated');
     },
     onError: (err: unknown) => handleApiError(err),
   });
 
   const handleDuplicate = useCallback(
     (e: PromptEntry) => duplicateMutation.mutate(e),
-    [duplicateMutation],
+    [duplicateMutation]
   );
 
-  const handleTrash = useCallback(
-    (id: string) => trashMutation.mutate(id),
-    [trashMutation],
-  );
+  const handleTrash = useCallback((id: string) => trashMutation.mutate(id), [trashMutation]);
 
-  const heading = folderName ?? "All Prompts";
+  const heading = folderName ?? 'All Prompts';
 
   const emptyStateActions = (
     <>
-      <Button onClick={() => navigate("/entry/new")}>
+      <Button onClick={() => navigate('/entry/new')}>
         <Plus className="size-4 mr-1.5" /> New Entry
       </Button>
-      <Button variant="secondary" onClick={() => navigate("/entry/new/wizard")}>
+      <Button variant="secondary" onClick={() => navigate('/entry/new/wizard')}>
         <Sparkles className="size-4 mr-1.5" /> AI Wizard
       </Button>
     </>
@@ -173,7 +183,7 @@ export default function LibraryPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
-        <Button variant="secondary" onClick={() => navigate("/entry/new/wizard")}>
+        <Button variant="secondary" onClick={() => navigate('/entry/new/wizard')}>
           <Sparkles className="size-4 mr-1.5" /> AI Wizard
         </Button>
       </div>
@@ -246,7 +256,10 @@ export default function LibraryPage() {
       ) : (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((entry, index) => (
-            <div key={entry.id} {...(index === 0 ? { "data-tour": "entry-card", "data-entry-id": entry.id } : {})}>
+            <div
+              key={entry.id}
+              {...(index === 0 ? { 'data-tour': 'entry-card', 'data-entry-id': entry.id } : {})}
+            >
               <EntryCard
                 entry={entry}
                 index={index}

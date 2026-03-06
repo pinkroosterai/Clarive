@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { AlertTriangle, X } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
+import { AlertTriangle, X } from 'lucide-react';
+import { useState } from 'react';
+
+import { useAuthStore } from '@/store/authStore';
 
 export function MaintenanceBanner() {
   const [dismissed, setDismissed] = useState(false);

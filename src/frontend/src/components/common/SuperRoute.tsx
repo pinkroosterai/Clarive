@@ -1,8 +1,9 @@
-import { useEffect } from "react";
-import { Navigate } from "react-router-dom";
-import { useAuthStore } from "@/store/authStore";
-import { AppShell } from "@/components/layout/AppShell";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
+
+import { AppShell } from '@/components/layout/AppShell';
+import { useAuthStore } from '@/store/authStore';
 
 const SuperRoute = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);

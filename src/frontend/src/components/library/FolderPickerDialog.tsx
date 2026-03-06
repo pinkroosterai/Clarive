@@ -1,12 +1,9 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Folder, FolderOpen, Home } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { ChevronRight, Folder, FolderOpen, Home } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
-import { folderService } from "@/services";
-import type { Folder as FolderType } from "@/types";
-import { cn } from "@/lib/utils";
-import { collectDescendantIds, findFolder } from "@/lib/dnd/validation";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -14,12 +11,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from '@/components/ui/dialog';
+import { collectDescendantIds, findFolder } from '@/lib/dnd/validation';
+import { cn } from '@/lib/utils';
+import { folderService } from '@/services';
+import type { Folder as FolderType } from '@/types';
 
 // ── PickerNode ───────────────────────────────────────────────────────────────
 function PickerNode({
@@ -46,8 +42,8 @@ function PickerNode({
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div
         className={cn(
-          "flex items-center gap-1 rounded-md py-1 pr-2 cursor-pointer hover:bg-accent",
-          isSelected && "bg-primary/10 text-primary"
+          'flex items-center gap-1 rounded-md py-1 pr-2 cursor-pointer hover:bg-accent',
+          isSelected && 'bg-primary/10 text-primary'
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect(folder.id)}
@@ -59,9 +55,9 @@ function PickerNode({
           >
             <ChevronRight
               className={cn(
-                "size-3.5 text-foreground-muted transition-transform duration-200",
-                isOpen && "rotate-90",
-                !hasVisibleChildren && "invisible"
+                'size-3.5 text-foreground-muted transition-transform duration-200',
+                isOpen && 'rotate-90',
+                !hasVisibleChildren && 'invisible'
               )}
             />
           </button>
@@ -107,7 +103,7 @@ export function FolderPickerDialog({
   }, [open]);
 
   const { data: folders = [] } = useQuery({
-    queryKey: ["folders"],
+    queryKey: ['folders'],
     queryFn: folderService.getFoldersTree,
     enabled: open,
   });
@@ -133,8 +129,8 @@ export function FolderPickerDialog({
           {/* Root option */}
           <div
             className={cn(
-              "flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer hover:bg-accent text-sm",
-              isRootSelected && "bg-primary/10 text-primary"
+              'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer hover:bg-accent text-sm',
+              isRootSelected && 'bg-primary/10 text-primary'
             )}
             onClick={() => setSelectedId(null)}
           >

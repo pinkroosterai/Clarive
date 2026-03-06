@@ -1,30 +1,37 @@
-import { useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { Loader2, Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AnvilIcon } from "@/components/icons/AnvilIcon";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
-import { resetPasswordSchema, type ResetPasswordFormData } from "@/lib/validationSchemas";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { authService } from "@/services";
-import { PasswordStrengthBar } from "@/components/common/PasswordStrengthBar";
+import { PasswordStrengthBar } from '@/components/common/PasswordStrengthBar';
+import { AnvilIcon } from '@/components/icons/AnvilIcon';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { handleApiError } from '@/lib/handleApiError';
+import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validationSchemas';
+import { authService } from '@/services';
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  const token = searchParams.get('token') ?? '';
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const form = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { password: "", confirmPassword: "" },
+    defaultValues: { password: '', confirmPassword: '' },
   });
 
   if (!token) {
@@ -37,7 +44,9 @@ const ResetPasswordPage = () => {
               This password reset link is invalid or has expired.
             </p>
             <Link to="/forgot-password">
-              <Button variant="outline" className="w-full">Request a new link</Button>
+              <Button variant="outline" className="w-full">
+                Request a new link
+              </Button>
             </Link>
           </div>
         </div>
@@ -48,14 +57,14 @@ const ResetPasswordPage = () => {
   const onSubmit = async (data: ResetPasswordFormData) => {
     try {
       await authService.resetPassword(token, data.password);
-      toast.success("Password reset successfully. Please sign in.");
-      navigate("/login");
+      toast.success('Password reset successfully. Please sign in.');
+      navigate('/login');
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Failed to reset password" });
+      handleApiError(err, { fallback: 'Failed to reset password' });
     }
   };
 
-  const passwordValue = form.watch("password");
+  const passwordValue = form.watch('password');
 
   return (
     <div className="flex min-h-screen items-center justify-center auth-bg bg-background px-4">
@@ -64,7 +73,9 @@ const ResetPasswordPage = () => {
           <div className="text-center space-y-2 mb-6">
             <AnvilIcon className="mx-auto mb-3 size-16" />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Set new password</h1>
-            <p className="text-foreground-muted text-sm">Choose a strong password for your account</p>
+            <p className="text-foreground-muted text-sm">
+              Choose a strong password for your account
+            </p>
           </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -77,7 +88,7 @@ const ResetPasswordPage = () => {
                     <FormControl>
                       <div className="relative">
                         <Input
-                          type={showPassword ? "text" : "password"}
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="new-password"
                           className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
@@ -91,7 +102,11 @@ const ResetPasswordPage = () => {
                           onClick={() => setShowPassword(!showPassword)}
                           tabIndex={-1}
                         >
-                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                          {showPassword ? (
+                            <EyeOff className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
                         </Button>
                       </div>
                     </FormControl>
@@ -109,7 +124,7 @@ const ResetPasswordPage = () => {
                     <FormControl>
                       <div className="relative">
                         <Input
-                          type={showConfirm ? "text" : "password"}
+                          type={showConfirm ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="new-password"
                           className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
@@ -139,8 +154,11 @@ const ResetPasswordPage = () => {
           </Form>
         </div>
         <p className="mt-4 text-center text-sm text-foreground-muted">
-          Remember your password?{" "}
-          <Link to="/login" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+          Remember your password?{' '}
+          <Link
+            to="/login"
+            className="text-primary hover:text-primary/80 underline-offset-4 hover:underline"
+          >
             Sign in
           </Link>
         </p>

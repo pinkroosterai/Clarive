@@ -1,5 +1,12 @@
-import type { PromptEntry, Prompt, ClarificationQuestion, Evaluation, IterationScore } from "@/types";
-import { api } from "./apiClient";
+import { api } from './apiClient';
+
+import type {
+  PromptEntry,
+  Prompt,
+  ClarificationQuestion,
+  Evaluation,
+  IterationScore,
+} from '@/types';
 
 export interface PreGenClarifyResult {
   sessionId: string;
@@ -56,7 +63,7 @@ interface PreGenClarifyApiResponse {
 function apiDraftToEntry(draft: ApiDraft): PromptEntry {
   const now = new Date().toISOString();
   return {
-    id: "",
+    id: '',
     title: draft.title,
     systemMessage: draft.systemMessage,
     prompts: draft.prompts.map((p, i) => ({
@@ -66,11 +73,11 @@ function apiDraftToEntry(draft: ApiDraft): PromptEntry {
     })),
     folderId: draft.folderId,
     version: 1,
-    versionState: "draft",
+    versionState: 'draft',
     isTrashed: false,
     createdAt: now,
     updatedAt: now,
-    createdBy: "",
+    createdBy: '',
     isTemplate: draft.prompts.some((p) => p.isTemplate),
     isChain: draft.prompts.length > 1,
   };
@@ -95,7 +102,7 @@ export async function preGenClarify(
     generateChain?: boolean;
     toolIds?: string[];
   },
-  onProgress?: (stage: string) => void,
+  onProgress?: (stage: string) => void
 ): Promise<PreGenClarifyResult> {
   const body = {
     description,
@@ -105,8 +112,8 @@ export async function preGenClarify(
     toolIds: options?.toolIds,
   };
   const res = onProgress
-    ? await api.postSSE<PreGenClarifyApiResponse>("/api/ai/pre-gen-clarify", body, onProgress)
-    : await api.post<PreGenClarifyApiResponse>("/api/ai/pre-gen-clarify", body);
+    ? await api.postSSE<PreGenClarifyApiResponse>('/api/ai/pre-gen-clarify', body, onProgress)
+    : await api.post<PreGenClarifyApiResponse>('/api/ai/pre-gen-clarify', body);
   return {
     sessionId: res.sessionId,
     questions: res.questions,
@@ -125,7 +132,7 @@ export async function generatePrompt(
     preGenAnswers?: Array<{ questionIndex: number; answer: string }>;
     selectedEnhancements?: number[];
   },
-  onProgress?: (stage: string) => void,
+  onProgress?: (stage: string) => void
 ): Promise<WizardResult> {
   const body = {
     description,
@@ -138,8 +145,8 @@ export async function generatePrompt(
     selectedEnhancements: options?.selectedEnhancements,
   };
   const res = onProgress
-    ? await api.postSSE<GenerateApiResponse>("/api/ai/generate", body, onProgress)
-    : await api.post<GenerateApiResponse>("/api/ai/generate", body);
+    ? await api.postSSE<GenerateApiResponse>('/api/ai/generate', body, onProgress)
+    : await api.post<GenerateApiResponse>('/api/ai/generate', body);
   return toWizardResult(res);
 }
 
@@ -147,7 +154,7 @@ export async function refinePrompt(
   sessionId: string,
   answers?: Array<{ questionIndex: number; answer: string }>,
   selectedEnhancements?: number[],
-  onProgress?: (stage: string) => void,
+  onProgress?: (stage: string) => void
 ): Promise<WizardResult> {
   const body = {
     sessionId,
@@ -155,38 +162,33 @@ export async function refinePrompt(
     selectedEnhancements,
   };
   const res = onProgress
-    ? await api.postSSE<GenerateApiResponse>("/api/ai/refine", body, onProgress)
-    : await api.post<GenerateApiResponse>("/api/ai/refine", body);
+    ? await api.postSSE<GenerateApiResponse>('/api/ai/refine', body, onProgress)
+    : await api.post<GenerateApiResponse>('/api/ai/refine', body);
   return toWizardResult(res);
 }
 
 export async function enhanceEntry(
   entryId: string,
-  onProgress?: (stage: string) => void,
+  onProgress?: (stage: string) => void
 ): Promise<WizardResult> {
   const body = { entryId };
   const res = onProgress
-    ? await api.postSSE<GenerateApiResponse>("/api/ai/enhance", body, onProgress)
-    : await api.post<GenerateApiResponse>("/api/ai/enhance", body);
+    ? await api.postSSE<GenerateApiResponse>('/api/ai/enhance', body, onProgress)
+    : await api.post<GenerateApiResponse>('/api/ai/enhance', body);
   return toWizardResult(res);
 }
 
-export async function generateSystemMessage(
-  entryId: string,
-): Promise<string> {
-  const res = await api.post<{ systemMessage: string }>(
-    "/api/ai/generate-system-message",
-    { entryId },
-  );
+export async function generateSystemMessage(entryId: string): Promise<string> {
+  const res = await api.post<{ systemMessage: string }>('/api/ai/generate-system-message', {
+    entryId,
+  });
   return res.systemMessage;
 }
 
-export async function decomposeToChain(
-  entryId: string,
-): Promise<Prompt[]> {
+export async function decomposeToChain(entryId: string): Promise<Prompt[]> {
   const res = await api.post<{
     prompts: Array<{ content: string }>;
-  }>("/api/ai/decompose", { entryId });
+  }>('/api/ai/decompose', { entryId });
 
   return res.prompts.map((p, i) => ({
     id: `decomposed-${i}`,

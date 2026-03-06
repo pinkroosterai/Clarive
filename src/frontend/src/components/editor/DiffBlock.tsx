@@ -1,4 +1,4 @@
-import { diffLines } from "diff";
+import { diffLines } from 'diff';
 
 interface DiffBlockProps {
   label: string;
@@ -23,8 +23,8 @@ export function DiffBlock({ label, oldText, newText }: DiffBlockProps) {
             return (
               <div key={i} className="bg-success-bg text-success-text">
                 {part.value
-                  .split("\n")
-                  .filter((line, j, arr) => j < arr.length - 1 || line !== "")
+                  .split('\n')
+                  .filter((line, j, arr) => j < arr.length - 1 || line !== '')
                   .map((line, j) => (
                     <div key={j}>+ {line}</div>
                   ))}
@@ -35,8 +35,8 @@ export function DiffBlock({ label, oldText, newText }: DiffBlockProps) {
             return (
               <div key={i} className="bg-error-bg text-error-text">
                 {part.value
-                  .split("\n")
-                  .filter((line, j, arr) => j < arr.length - 1 || line !== "")
+                  .split('\n')
+                  .filter((line, j, arr) => j < arr.length - 1 || line !== '')
                   .map((line, j) => (
                     <div key={j}>- {line}</div>
                   ))}
@@ -46,10 +46,10 @@ export function DiffBlock({ label, oldText, newText }: DiffBlockProps) {
           return (
             <div key={i} className="text-foreground-muted">
               {part.value
-                .split("\n")
-                .filter((line, j, arr) => j < arr.length - 1 || line !== "")
+                .split('\n')
+                .filter((line, j, arr) => j < arr.length - 1 || line !== '')
                 .map((line, j) => (
-                  <div key={j}>  {line}</div>
+                  <div key={j}> {line}</div>
                 ))}
             </div>
           );

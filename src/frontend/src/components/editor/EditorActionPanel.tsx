@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { format } from 'date-fns';
 import {
   Save,
   Upload,
@@ -12,14 +12,10 @@ import {
   Undo2,
   Redo2,
   Copy,
-} from "lucide-react";
-import { format } from "date-fns";
-import { toast } from "sonner";
-import { copyToClipboard } from "@/lib/utils";
+} from 'lucide-react';
+import type { ReactNode } from 'react';
+import { toast } from 'sonner';
 
-import type { PromptEntry, VersionInfo } from "@/types";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,12 +26,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { copyToClipboard } from '@/lib/utils';
+import type { PromptEntry, VersionInfo } from '@/types';
 
 export interface EditorActionPanelProps {
   entry: PromptEntry;
@@ -88,8 +84,8 @@ export function EditorActionPanel({
   versions,
   versionPanel,
 }: EditorActionPanelProps) {
-  const hasDraft = versions.some((v) => v.versionState === "draft");
-  const publishedVersion = versions.find((v) => v.versionState === "published")?.version;
+  const hasDraft = versions.some((v) => v.versionState === 'draft');
+  const publishedVersion = versions.find((v) => v.versionState === 'published')?.version;
   return (
     <div className="space-y-4">
       {!isReadOnly && (
@@ -131,13 +127,9 @@ export function EditorActionPanel({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                className="w-full gap-2"
-                onClick={onSave}
-                disabled={!isDirty || isSaving}
-              >
+              <Button className="w-full gap-2" onClick={onSave} disabled={!isDirty || isSaving}>
                 <Save className="size-4" />
-                {isSaving ? "Saving…" : "Save Draft"}
+                {isSaving ? 'Saving…' : 'Save Draft'}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">
@@ -148,7 +140,10 @@ export function EditorActionPanel({
           {isDirty && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" className="w-full gap-2 text-destructive hover:text-destructive">
+                <Button
+                  variant="ghost"
+                  className="w-full gap-2 text-destructive hover:text-destructive"
+                >
                   <RotateCcw className="size-4" />
                   Discard Changes
                 </Button>
@@ -162,7 +157,10 @@ export function EditorActionPanel({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDiscard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  <AlertDialogAction
+                    onClick={onDiscard}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
                     Discard
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -174,14 +172,18 @@ export function EditorActionPanel({
             <Tooltip>
               <AlertDialogTrigger asChild>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" className="w-full gap-2 hover:border-primary/30 transition-all" disabled={isPublishing || !hasDraft}>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 hover:border-primary/30 transition-all"
+                    disabled={isPublishing || !hasDraft}
+                  >
                     <Upload className="size-4" />
                     Publish
                   </Button>
                 </TooltipTrigger>
               </AlertDialogTrigger>
               <TooltipContent side="left">
-                {hasDraft ? <kbd className="text-xs">Ctrl+Enter</kbd> : "No draft to publish"}
+                {hasDraft ? <kbd className="text-xs">Ctrl+Enter</kbd> : 'No draft to publish'}
               </TooltipContent>
             </Tooltip>
             <AlertDialogContent>
@@ -200,7 +202,11 @@ export function EditorActionPanel({
             </AlertDialogContent>
           </AlertDialog>
 
-          <Button variant="outline" className="w-full gap-2 hover:border-primary/30 transition-all" onClick={onEnhance}>
+          <Button
+            variant="outline"
+            className="w-full gap-2 hover:border-primary/30 transition-all"
+            onClick={onEnhance}
+          >
             <Sparkles className="size-4" />
             AI Enhance
           </Button>
@@ -213,7 +219,7 @@ export function EditorActionPanel({
               disabled={isGeneratingSystemMessage}
             >
               <Wand2 className="size-4" />
-              {isGeneratingSystemMessage ? "Generating…" : "Generate System Message"}
+              {isGeneratingSystemMessage ? 'Generating…' : 'Generate System Message'}
             </Button>
           )}
 
@@ -226,22 +232,20 @@ export function EditorActionPanel({
                   disabled={isDecomposing}
                 >
                   <Wand2 className="size-4" />
-                  {isDecomposing ? "Decomposing…" : "Decompose to Chain"}
+                  {isDecomposing ? 'Decomposing…' : 'Decompose to Chain'}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Decompose to chain?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will split your prompt into a multi-step chain. The original
-                    prompt will be preserved as the first step.
+                    This will split your prompt into a multi-step chain. The original prompt will be
+                    preserved as the first step.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDecomposeToChain}>
-                    Decompose
-                  </AlertDialogAction>
+                  <AlertDialogAction onClick={onDecomposeToChain}>Decompose</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -259,7 +263,9 @@ export function EditorActionPanel({
       )}
 
       <div className="space-y-3 text-sm">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">Metadata</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+          Metadata
+        </h3>
         <div className="flex items-center gap-2 text-foreground-muted">
           <Calendar className="size-3.5" />
           <span>Created {format(new Date(entry.createdAt), "MMM d, yyyy 'at' h:mm a")}</span>
@@ -279,9 +285,9 @@ export function EditorActionPanel({
           onClick={async () => {
             try {
               await copyToClipboard(entry.id);
-              toast.success("Entry ID copied to clipboard");
+              toast.success('Entry ID copied to clipboard');
             } catch {
-              toast.error("Failed to copy entry ID");
+              toast.error('Failed to copy entry ID');
             }
           }}
         >
@@ -293,7 +299,9 @@ export function EditorActionPanel({
       <Separator />
 
       <div className="space-y-2 text-sm">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">Folder</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+          Folder
+        </h3>
         <div className="flex items-center justify-between">
           <span className="text-foreground-muted">{folderName}</span>
           {!isReadOnly && (

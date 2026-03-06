@@ -1,11 +1,12 @@
-import { useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from 'lucide-react';
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+
+import { Button } from '@/components/ui/button';
 
 const PrivacyPage = () => {
   useEffect(() => {
-    document.title = "Clarive — Privacy Policy";
+    document.title = 'Clarive — Privacy Policy';
     window.scrollTo(0, 0);
   }, []);
 
@@ -19,22 +20,20 @@ const PrivacyPage = () => {
           </Link>
         </Button>
 
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">
-          Privacy Policy
-        </h1>
-        <p className="text-sm text-foreground-muted mb-10">
-          Last updated: March 2, 2026
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Privacy Policy</h1>
+        <p className="text-sm text-foreground-muted mb-10">Last updated: March 2, 2026</p>
 
         <div className="space-y-8 text-foreground-secondary text-[15px] leading-relaxed">
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">1. Information We Collect</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">
+              1. Information We Collect
+            </h2>
             <p className="mb-3">We collect the following types of information:</p>
             <ul className="list-disc pl-6 space-y-1">
               <li>
-                <strong className="text-foreground">Account information:</strong> name, email address,
-                and hashed password when you create an account. If you sign in with Google, we
-                receive your name, email, and Google account ID.
+                <strong className="text-foreground">Account information:</strong> name, email
+                address, and hashed password when you create an account. If you sign in with Google,
+                we receive your name, email, and Google account ID.
               </li>
               <li>
                 <strong className="text-foreground">Content:</strong> prompts, templates, folder
@@ -51,19 +50,24 @@ const PrivacyPage = () => {
                 details directly.
               </li>
               <li>
-                <strong className="text-foreground">Technical data:</strong> IP address, browser type,
-                and request metadata collected via server logs.
+                <strong className="text-foreground">Technical data:</strong> IP address, browser
+                type, and request metadata collected via server logs.
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">2. How We Use Your Information</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">
+              2. How We Use Your Information
+            </h2>
             <ul className="list-disc pl-6 space-y-1">
               <li>To provide, maintain, and improve the Service</li>
               <li>To authenticate your identity and secure your account</li>
               <li>To process payments if applicable</li>
-              <li>To send transactional emails (verification, password reset, account deletion notices)</li>
+              <li>
+                To send transactional emails (verification, password reset, account deletion
+                notices)
+              </li>
               <li>To enforce our Terms of Service and detect abuse</li>
               <li>To generate anonymized, aggregated analytics about Service usage</li>
             </ul>
@@ -80,23 +84,37 @@ const PrivacyPage = () => {
               </li>
               <li>
                 <strong className="text-foreground">Stripe:</strong> payment data may be processed
-                by Stripe if payment features are enabled. See{" "}
-                <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+                by Stripe if payment features are enabled. See{' '}
+                <a
+                  href="https://stripe.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary/80 underline-offset-4 hover:underline"
+                >
                   Stripe's Privacy Policy
-                </a>.
+                </a>
+                .
               </li>
               <li>
                 <strong className="text-foreground">Google:</strong> if you use Google sign-in,
-                authentication data is exchanged with Google. See{" "}
-                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+                authentication data is exchanged with Google. See{' '}
+                <a
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary/80 underline-offset-4 hover:underline"
+                >
                   Google's Privacy Policy
-                </a>.
+                </a>
+                .
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">4. Data Storage and Security</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">
+              4. Data Storage and Security
+            </h2>
             <p>
               Your data is stored in PostgreSQL databases with encryption at rest. Passwords are
               hashed using BCrypt. API keys are stored as SHA-256 hashes. Refresh tokens are hashed
@@ -109,7 +127,9 @@ const PrivacyPage = () => {
             <ul className="list-disc pl-6 space-y-1">
               <li>Account data is retained for as long as your account is active</li>
               <li>Trashed prompts remain recoverable until permanently deleted by the user</li>
-              <li>Audit logs are retained according to our retention policy and automatically purged</li>
+              <li>
+                Audit logs are retained according to our retention policy and automatically purged
+              </li>
               <li>Expired authentication tokens are automatically cleaned up within 6 hours</li>
               <li>AI session data is automatically deleted after 24 hours</li>
             </ul>
@@ -129,8 +149,8 @@ const PrivacyPage = () => {
               </li>
               <li>
                 <strong className="text-foreground">Delete your data:</strong> request account
-                deletion through Settings. A 30-day grace period allows cancellation before permanent
-                deletion of all associated data.
+                deletion through Settings. A 30-day grace period allows cancellation before
+                permanent deletion of all associated data.
               </li>
               <li>
                 <strong className="text-foreground">Correct your data:</strong> update your profile
@@ -140,7 +160,9 @@ const PrivacyPage = () => {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">7. Cookies and Local Storage</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">
+              7. Cookies and Local Storage
+            </h2>
             <p>
               The Service uses browser local storage to maintain your authentication session (JWT
               tokens). We do not use tracking cookies or third-party analytics cookies. No
@@ -151,14 +173,16 @@ const PrivacyPage = () => {
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-3">8. Children's Privacy</h2>
             <p>
-              The Service is not intended for users under the age of 13. We do not knowingly
-              collect personal information from children under 13. If we become aware that we have
-              collected data from a child under 13, we will take steps to delete that information.
+              The Service is not intended for users under the age of 13. We do not knowingly collect
+              personal information from children under 13. If we become aware that we have collected
+              data from a child under 13, we will take steps to delete that information.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">9. Changes to This Policy</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">
+              9. Changes to This Policy
+            </h2>
             <p>
               We may update this Privacy Policy from time to time. We will notify users of material
               changes via email or through the Service. The "Last updated" date at the top of this
@@ -169,16 +193,23 @@ const PrivacyPage = () => {
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-3">10. Contact</h2>
             <p>
-              If you have questions about this Privacy Policy or your data, please contact us at{" "}
-              <a href="mailto:privacy@clarive.app" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+              If you have questions about this Privacy Policy or your data, please contact us at{' '}
+              <a
+                href="mailto:privacy@clarive.app"
+                className="text-primary hover:text-primary/80 underline-offset-4 hover:underline"
+              >
                 privacy@clarive.app
-              </a>.
+              </a>
+              .
             </p>
           </section>
         </div>
 
         <div className="mt-12 pt-8 border-t border-border text-sm text-foreground-muted">
-          <Link to="/terms" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+          <Link
+            to="/terms"
+            className="text-primary hover:text-primary/80 underline-offset-4 hover:underline"
+          >
             Terms of Service
           </Link>
         </div>

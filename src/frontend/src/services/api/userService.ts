@@ -1,15 +1,13 @@
-import type { TeamMember, User } from "@/types";
-import { api } from "./apiClient";
+import { api } from './apiClient';
+
+import type { TeamMember, User } from '@/types';
 
 export async function getUsersList(): Promise<TeamMember[]> {
-  const res = await api.get<{ items: TeamMember[] }>("/api/users");
+  const res = await api.get<{ items: TeamMember[] }>('/api/users');
   return res.items;
 }
 
-export async function updateUserRole(
-  id: string,
-  role: User["role"],
-): Promise<User> {
+export async function updateUserRole(id: string, role: User['role']): Promise<User> {
   return api.patch<User>(`/api/users/${id}/role`, { role });
 }
 
@@ -19,12 +17,12 @@ export async function removeUser(id: string): Promise<void> {
 
 export async function transferOwnership(
   targetUserId: string,
-  confirmation: string,
+  confirmation: string
 ): Promise<{
   previousAdmin: { id: string; email: string; role: string };
   newAdmin: { id: string; email: string; role: string };
 }> {
-  return api.post("/api/users/transfer-ownership", {
+  return api.post('/api/users/transfer-ownership', {
     targetUserId,
     confirmation,
   });

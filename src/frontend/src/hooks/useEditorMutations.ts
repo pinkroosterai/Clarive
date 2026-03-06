@@ -1,10 +1,10 @@
-import { useState, useCallback, type RefObject } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, type RefObject } from 'react';
+import { toast } from 'sonner';
 
-import type { PromptEntry } from "@/types";
-import { entryService, wizardService } from "@/services";
+import { handleApiError } from '@/lib/handleApiError';
+import { entryService, wizardService } from '@/services';
+import type { PromptEntry } from '@/types';
 
 interface UseEditorMutationsOptions {
   entryId: string | undefined;
@@ -24,36 +24,35 @@ export function useEditorMutations({
   const queryClient = useQueryClient();
 
   const saveMutation = useMutation({
-    mutationFn: (data: PromptEntry) =>
-      entryService.updateEntry(data.id, data),
+    mutationFn: (data: PromptEntry) => entryService.updateEntry(data.id, data),
     onSuccess: () => {
       onSaveSuccess();
-      queryClient.invalidateQueries({ queryKey: ["entry", entryId] });
-      queryClient.invalidateQueries({ queryKey: ["versions", entryId] });
-      toast.success("Draft saved");
+      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
+      toast.success('Draft saved');
     },
-    onError: (err: unknown) => handleApiError(err, { title: "Failed to save" }),
+    onError: (err: unknown) => handleApiError(err, { title: 'Failed to save' }),
   });
 
   const publishMutation = useMutation({
     mutationFn: () => entryService.publishEntry(entryId!),
     onSuccess: () => {
       onPublishSuccess();
-      queryClient.invalidateQueries({ queryKey: ["entry", entryId] });
-      queryClient.invalidateQueries({ queryKey: ["versions", entryId] });
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
-      toast.success("Entry published");
+      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      toast.success('Entry published');
     },
-    onError: (err: unknown) => handleApiError(err, { title: "Failed to publish" }),
+    onError: (err: unknown) => handleApiError(err, { title: 'Failed to publish' }),
   });
 
   const moveMutation = useMutation({
     mutationFn: ({ folderId }: { folderId: string | null }) =>
       entryService.moveEntry(entryId!, folderId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["entry", entryId] });
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
-      toast.success("Entry moved");
+      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      toast.success('Entry moved');
     },
   });
 
@@ -77,9 +76,9 @@ export function useEditorMutations({
     try {
       const result = await wizardService.generateSystemMessage(entryId);
       handleChange({ systemMessage: result }, { force: true });
-      toast.success("System message generated");
+      toast.success('System message generated');
     } catch (err) {
-      handleApiError(err, { title: "Failed to generate system message" });
+      handleApiError(err, { title: 'Failed to generate system message' });
     } finally {
       setIsGeneratingSystemMessage(false);
     }
@@ -93,7 +92,7 @@ export function useEditorMutations({
       handleChange({ prompts: result }, { force: true });
       toast.success(`Prompt decomposed into ${result.length} steps`);
     } catch (err) {
-      handleApiError(err, { title: "Failed to decompose prompt" });
+      handleApiError(err, { title: 'Failed to decompose prompt' });
     } finally {
       setIsDecomposing(false);
     }

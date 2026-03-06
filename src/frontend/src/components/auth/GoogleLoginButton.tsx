@@ -1,13 +1,14 @@
-import { useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { config } from "@/lib/config";
+import { useCallback } from 'react';
 
-const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+import { Button } from '@/components/ui/button';
+import { config } from '@/lib/config';
+
+const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
 function generateNonce(): string {
   const array = new Uint8Array(16);
   crypto.getRandomValues(array);
-  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 export function GoogleLoginButton() {
@@ -18,15 +19,15 @@ export function GoogleLoginButton() {
     }
 
     const nonce = generateNonce();
-    sessionStorage.setItem("google_nonce", nonce);
+    sessionStorage.setItem('google_nonce', nonce);
 
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: `${window.location.origin}/auth/google/callback`,
-      response_type: "id_token",
-      scope: "openid email profile",
+      response_type: 'id_token',
+      scope: 'openid email profile',
       nonce,
-      prompt: "select_account",
+      prompt: 'select_account',
     });
 
     window.location.href = `${GOOGLE_AUTH_URL}?${params.toString()}`;

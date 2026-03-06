@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import type { Editor } from "@tiptap/react";
+import { useEditor, EditorContent } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
+import { useEffect, useMemo, useRef } from 'react';
 
-import { buildExtensions } from "@/lib/tiptap/extensions";
-import { debounce } from "@/lib/debounce";
-import { cn } from "@/lib/utils";
-import { EditorBubbleMenu } from "@/components/editor/EditorBubbleMenu";
+import { EditorBubbleMenu } from '@/components/editor/EditorBubbleMenu';
+import { debounce } from '@/lib/debounce';
+import { buildExtensions } from '@/lib/tiptap/extensions';
+import { cn } from '@/lib/utils';
 
 interface MarkdownEditorProps {
   /** Markdown string (the source of truth, owned by parent) */
@@ -32,7 +32,7 @@ export function MarkdownEditor({
   editable,
   placeholder,
   templateHighlight = false,
-  minHeightClass = "min-h-[120px]",
+  minHeightClass = 'min-h-[120px]',
   className,
   autoFocus = false,
 }: MarkdownEditorProps) {
@@ -48,24 +48,25 @@ export function MarkdownEditor({
 
   const extensions = useMemo(
     () => buildExtensions({ placeholder, templateHighlight }),
-    [placeholder, templateHighlight],
+    [placeholder, templateHighlight]
   );
 
   const debouncedUpdate = useMemo(
     () =>
-      debounce((ed: Editor) => {
+      debounce((...args: unknown[]) => {
+        const ed = args[0] as Editor;
         isLocalUpdate.current = true;
         onContentChangeRef.current(ed.getMarkdown());
       }, 150),
-    [],
+    []
   );
 
   const editor = useEditor({
     extensions,
     content: initialContent.current,
-    contentType: "markdown",
+    contentType: 'markdown',
     editable,
-    autofocus: autoFocus ? "end" : false,
+    autofocus: autoFocus ? 'end' : false,
     onUpdate: ({ editor: ed }) => {
       debouncedUpdate(ed);
     },
@@ -86,7 +87,7 @@ export function MarkdownEditor({
       const editorMarkdown = editor.getMarkdown();
 
       if (content !== editorMarkdown) {
-        editor.commands.setContent(content, { emitUpdate: false, contentType: "markdown" });
+        editor.commands.setContent(content, { emitUpdate: false, contentType: 'markdown' });
       }
     }
   }, [content, editor]);
@@ -112,9 +113,9 @@ export function MarkdownEditor({
   return (
     <div
       className={cn(
-        "rounded-md border border-border bg-elevated focus-within:ring-2 focus-within:ring-primary/30 transition-shadow",
+        'rounded-md border border-border bg-elevated focus-within:ring-2 focus-within:ring-primary/30 transition-shadow',
         minHeightClass,
-        className,
+        className
       )}
     >
       <EditorContent editor={editor} className="px-3 py-2" />

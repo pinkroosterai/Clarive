@@ -1,13 +1,9 @@
-import { useState, useEffect } from "react";
-import { ChevronDown, MessageSquare, Plus, X } from "lucide-react";
+import { ChevronDown, MessageSquare, Plus, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { MarkdownEditor } from "@/components/editor/MarkdownEditor";
+import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface SystemMessageSectionProps {
   systemMessage: string | null;
@@ -37,7 +33,7 @@ export function SystemMessageSection({
           className="gap-2"
           onClick={() => {
             setShouldAutoFocus(true);
-            onChange("");
+            onChange('');
           }}
         >
           <Plus className="size-4" />
@@ -56,12 +52,7 @@ export function SystemMessageSection({
           System Message
         </CollapsibleTrigger>
         {!isReadOnly && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            onClick={() => onChange(null)}
-          >
+          <Button variant="ghost" size="icon" className="size-6" onClick={() => onChange(null)}>
             <X className="size-3.5" />
           </Button>
         )}

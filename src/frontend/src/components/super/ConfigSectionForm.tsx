@@ -1,24 +1,41 @@
-import { useCallback, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { RotateCcw, AlertTriangle, Check, ChevronsUpDown, Minus, Save, Server, Database } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { setConfigValue, resetConfigValue, type ConfigSetting } from "@/services/api/configService";
-import { handleApiError } from "@/lib/handleApiError";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  RotateCcw,
+  AlertTriangle,
+  Check,
+  ChevronsUpDown,
+  Minus,
+  Save,
+  Server,
+  Database,
+} from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
-const RESTART_STORAGE_KEY = "cl_pending_restart_keys";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { handleApiError } from '@/lib/handleApiError';
+import { cn } from '@/lib/utils';
+import { setConfigValue, resetConfigValue, type ConfigSetting } from '@/services/api/configService';
+
+const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
 
 function addRestartKey(key: string) {
   try {
-    const existing = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || "[]") as string[];
+    const existing = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || '[]') as string[];
     if (!existing.includes(key)) {
       existing.push(key);
       sessionStorage.setItem(RESTART_STORAGE_KEY, JSON.stringify(existing));
@@ -47,9 +64,9 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
         delete next[key];
         return next;
       });
-      queryClient.invalidateQueries({ queryKey: ["super", "config"] });
+      queryClient.invalidateQueries({ queryKey: ['super', 'config'] });
     },
-    onError: (err) => handleApiError(err, { fallback: "Failed to reset setting" }),
+    onError: (err) => handleApiError(err, { fallback: 'Failed to reset setting' }),
   });
 
   const getEffectiveValue = useCallback(
@@ -58,26 +75,31 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
       const setting = settings.find((s) => s.key === key);
       return setting?.value ?? null;
     },
-    [dirtyValues, settings],
+    [dirtyValues, settings]
   );
 
   const isVisible = useCallback(
     (setting: ConfigSetting): boolean => {
       if (!setting.visibleWhen) return true;
       const effectiveValue = getEffectiveValue(setting.visibleWhen.key);
-      return setting.visibleWhen.values.includes(effectiveValue ?? "");
+      return setting.visibleWhen.values.includes(effectiveValue ?? '');
     },
-    [getEffectiveValue],
+    [getEffectiveValue]
   );
 
-  const handleChange = (key: string, newValue: string, originalValue: string | null, isSecret: boolean) => {
-    if (!isSecret && newValue === (originalValue ?? "")) {
+  const handleChange = (
+    key: string,
+    newValue: string,
+    originalValue: string | null,
+    isSecret: boolean
+  ) => {
+    if (!isSecret && newValue === (originalValue ?? '')) {
       setDirtyValues((prev) => {
         const next = { ...prev };
         delete next[key];
         return next;
       });
-    } else if (isSecret && newValue === "") {
+    } else if (isSecret && newValue === '') {
       setDirtyValues((prev) => {
         const next = { ...prev };
         delete next[key];
@@ -116,20 +138,20 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
       }
 
       setDirtyValues({});
-      queryClient.invalidateQueries({ queryKey: ["super", "config"] });
+      queryClient.invalidateQueries({ queryKey: ['super', 'config'] });
 
       if (hadRestartRequired) {
         toast.success(
-          `${savedCount} setting${savedCount > 1 ? "s" : ""} saved. Some changes require a restart to take effect.`,
-          { duration: 6000 },
+          `${savedCount} setting${savedCount > 1 ? 's' : ''} saved. Some changes require a restart to take effect.`,
+          { duration: 6000 }
         );
       } else {
-        toast.success(`${savedCount} setting${savedCount > 1 ? "s" : ""} saved`);
+        toast.success(`${savedCount} setting${savedCount > 1 ? 's' : ''} saved`);
       }
 
       onSaved();
     } catch (err) {
-      handleApiError(err, { fallback: "Failed to save settings" });
+      handleApiError(err, { fallback: 'Failed to save settings' });
     } finally {
       setSaving(false);
     }
@@ -175,7 +197,9 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
                 <ConfigField
                   setting={setting}
                   dirtyValue={dirtyValues[setting.key]}
-                  onChange={(value) => handleChange(setting.key, value, setting.value, setting.isSecret)}
+                  onChange={(value) =>
+                    handleChange(setting.key, value, setting.value, setting.isSecret)
+                  }
                   onReset={() => resetMutation.mutate(setting.key)}
                   isResetting={resetMutation.isPending && resetMutation.variables === setting.key}
                 />
@@ -188,7 +212,7 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
       <div className="pt-4">
         <Button onClick={handleSave} disabled={!hasDirty || saving} size="sm">
           <Save className="size-4 mr-1.5" />
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
     </div>
@@ -212,7 +236,10 @@ function ConfigField({ setting, dirtyValue, onChange, onReset, isResetting }: Co
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Badge variant="outline" className="text-warning-text border-warning-border gap-1 text-xs">
+                <Badge
+                  variant="outline"
+                  className="text-warning-text border-warning-border gap-1 text-xs"
+                >
                   <AlertTriangle className="size-3" />
                   Restart
                 </Badge>
@@ -231,12 +258,18 @@ function ConfigField({ setting, dirtyValue, onChange, onReset, isResetting }: Co
       <div className="flex items-center gap-2">
         <ConfigInput setting={setting} dirtyValue={dirtyValue} onChange={onChange} />
 
-        {setting.source === "dashboard" && (
+        {setting.source === 'dashboard' && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={onReset} disabled={isResetting} className="shrink-0">
-                  <RotateCcw className={`size-4 ${isResetting ? "animate-spin" : ""}`} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onReset}
+                  disabled={isResetting}
+                  className="shrink-0"
+                >
+                  <RotateCcw className={`size-4 ${isResetting ? 'animate-spin' : ''}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -247,7 +280,7 @@ function ConfigField({ setting, dirtyValue, onChange, onReset, isResetting }: Co
         )}
       </div>
 
-      {setting.validationHint && !setting.isSecret && setting.inputType === "text" && (
+      {setting.validationHint && !setting.isSecret && setting.inputType === 'text' && (
         <p className="text-xs text-foreground-muted/70">{setting.validationHint}</p>
       )}
     </div>
@@ -269,25 +302,31 @@ function ConfigInput({
     return (
       <Input
         type="password"
-        value={dirtyValue ?? ""}
+        value={dirtyValue ?? ''}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={setting.validationHint ?? "Enter new value..."}
+        placeholder={setting.validationHint ?? 'Enter new value...'}
         className="max-w-md"
       />
     );
   }
 
-  if (setting.inputType === "select" && setting.selectOptions) {
-    return <SelectInput options={setting.selectOptions} value={dirtyValue ?? setting.value ?? ""} onChange={onChange} />;
+  if (setting.inputType === 'select' && setting.selectOptions) {
+    return (
+      <SelectInput
+        options={setting.selectOptions}
+        value={dirtyValue ?? setting.value ?? ''}
+        onChange={onChange}
+      />
+    );
   }
 
-  if (setting.inputType === "number") {
+  if (setting.inputType === 'number') {
     return (
       <Input
         type="number"
-        value={dirtyValue ?? setting.value ?? ""}
+        value={dirtyValue ?? setting.value ?? ''}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={setting.validationHint ?? ""}
+        placeholder={setting.validationHint ?? ''}
         className="max-w-md"
         min={1}
       />
@@ -296,10 +335,10 @@ function ConfigInput({
 
   return (
     <Input
-      type={setting.inputType === "email" ? "email" : "text"}
-      value={dirtyValue ?? setting.value ?? ""}
+      type={setting.inputType === 'email' ? 'email' : 'text'}
+      value={dirtyValue ?? setting.value ?? ''}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={setting.validationHint ?? ""}
+      placeholder={setting.validationHint ?? ''}
       className="max-w-md"
     />
   );
@@ -321,7 +360,12 @@ function SelectInput({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className="max-w-md w-full justify-between">
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="max-w-md w-full justify-between"
+        >
           {value || <span className="text-foreground-muted">Select...</span>}
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
@@ -341,7 +385,9 @@ function SelectInput({
                     setOpen(false);
                   }}
                 >
-                  <Check className={cn("mr-2 size-4", value === option ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn('mr-2 size-4', value === option ? 'opacity-100' : 'opacity-0')}
+                  />
                   {option}
                 </CommandItem>
               ))}
@@ -355,9 +401,9 @@ function SelectInput({
 
 // ── Source badge ──
 
-function SourceBadge({ source }: { source: ConfigSetting["source"] }) {
+function SourceBadge({ source }: { source: ConfigSetting['source'] }) {
   switch (source) {
-    case "dashboard":
+    case 'dashboard':
       return (
         <TooltipProvider>
           <Tooltip>
@@ -373,12 +419,15 @@ function SourceBadge({ source }: { source: ConfigSetting["source"] }) {
           </Tooltip>
         </TooltipProvider>
       );
-    case "environment":
+    case 'environment':
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-success-text border-success-border gap-1 text-xs">
+              <Badge
+                variant="outline"
+                className="text-success-text border-success-border gap-1 text-xs"
+              >
                 <Server className="size-3" />
                 Environment
               </Badge>
@@ -389,10 +438,13 @@ function SourceBadge({ source }: { source: ConfigSetting["source"] }) {
           </Tooltip>
         </TooltipProvider>
       );
-    case "none":
+    case 'none':
     default:
       return (
-        <Badge variant="outline" className="text-foreground-muted border-foreground-muted/30 gap-1 text-xs">
+        <Badge
+          variant="outline"
+          className="text-foreground-muted border-foreground-muted/30 gap-1 text-xs"
+        >
           <Minus className="size-3" />
           Not configured
         </Badge>

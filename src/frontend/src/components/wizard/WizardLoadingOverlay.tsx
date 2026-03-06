@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from 'react';
 
-export type GeneratingOperation = "clarify" | "generate" | "refine" | "enhance";
+export type GeneratingOperation = 'clarify' | 'generate' | 'refine' | 'enhance';
 
 interface WizardLoadingOverlayProps {
   operation: GeneratingOperation;
@@ -8,38 +8,34 @@ interface WizardLoadingOverlayProps {
 }
 
 const MESSAGES: Record<GeneratingOperation, string[]> = {
-  clarify: [
-    "Understanding your request\u2026",
-    "Preparing questions\u2026",
-    "Almost ready\u2026",
-  ],
+  clarify: ['Understanding your request\u2026', 'Preparing questions\u2026', 'Almost ready\u2026'],
   generate: [
-    "Analyzing your description\u2026",
-    "Crafting your prompt\u2026",
-    "Evaluating quality\u2026",
-    "Polishing the result\u2026",
+    'Analyzing your description\u2026',
+    'Crafting your prompt\u2026',
+    'Evaluating quality\u2026',
+    'Polishing the result\u2026',
   ],
   refine: [
-    "Applying your feedback\u2026",
-    "Refining prompt\u2026",
-    "Re-evaluating quality\u2026",
-    "Polishing the result\u2026",
+    'Applying your feedback\u2026',
+    'Refining prompt\u2026',
+    'Re-evaluating quality\u2026',
+    'Polishing the result\u2026',
   ],
   enhance: [
-    "Analyzing existing entry\u2026",
-    "Identifying improvements\u2026",
-    "Generating enhancements\u2026",
-    "Evaluating quality\u2026",
+    'Analyzing existing entry\u2026',
+    'Identifying improvements\u2026',
+    'Generating enhancements\u2026',
+    'Evaluating quality\u2026',
   ],
 };
 
 const STAGE_MESSAGES: Record<string, string> = {
-  preparing: "Preparing your request…",
-  clarifying: "Generating clarification questions…",
-  generating: "Crafting your prompt…",
-  evaluating: "Evaluating quality…",
-  refining: "Refining your prompt…",
-  bootstrapping: "Analyzing existing entry…",
+  preparing: 'Preparing your request…',
+  clarifying: 'Generating clarification questions…',
+  generating: 'Crafting your prompt…',
+  evaluating: 'Evaluating quality…',
+  refining: 'Refining your prompt…',
+  bootstrapping: 'Analyzing existing entry…',
 };
 
 const ROTATION_INTERVAL = 2500;
@@ -87,16 +83,14 @@ export function WizardLoadingOverlay({ operation, currentStage }: WizardLoadingO
       {/* Status message */}
       <p
         className={`text-sm font-medium text-foreground-secondary transition-opacity duration-200 ${
-          fading ? "opacity-0" : "opacity-100"
+          fading ? 'opacity-0' : 'opacity-100'
         }`}
       >
         {stageMessage ?? messages[messageIndex]}
       </p>
 
       {/* Elapsed time */}
-      <span className="text-xs text-foreground-muted tabular-nums">
-        {elapsed}s
-      </span>
+      <span className="text-xs text-foreground-muted tabular-nums">{elapsed}s</span>
     </div>
   );
 }

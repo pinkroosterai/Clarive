@@ -1,13 +1,13 @@
-import { useRef, useState } from "react";
-import { Download, Upload, X, CheckCircle2, Loader2, FolderOpen } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
+import { useQueryClient } from '@tanstack/react-query';
+import { Download, Upload, X, CheckCircle2, Loader2, FolderOpen } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 
-import { importExportService } from "@/services";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderPickerDialog } from "@/components/library/FolderPickerDialog";
+import { FolderPickerDialog } from '@/components/library/FolderPickerDialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { handleApiError } from '@/lib/handleApiError';
+import { importExportService } from '@/services';
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -17,7 +17,7 @@ function formatFileSize(bytes: number): string {
 
 function triggerDownload(blob: Blob) {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = `clarive-export-${new Date().toISOString().slice(0, 10)}.yaml`;
   document.body.appendChild(a);
@@ -41,9 +41,9 @@ export default function ImportExportPanel() {
     try {
       const blob = await importExportService.exportEntries();
       triggerDownload(blob);
-      toast.success("Exported entries");
+      toast.success('Exported entries');
     } catch (err) {
-      handleApiError(err, { title: "Export failed" });
+      handleApiError(err, { title: 'Export failed' });
     } finally {
       setIsExporting(false);
     }
@@ -56,9 +56,9 @@ export default function ImportExportPanel() {
     try {
       const blob = await importExportService.exportEntries([folderId]);
       triggerDownload(blob);
-      toast.success("Exported entries");
+      toast.success('Exported entries');
     } catch (err) {
-      handleApiError(err, { title: "Export failed" });
+      handleApiError(err, { title: 'Export failed' });
     } finally {
       setIsExporting(false);
     }
@@ -68,7 +68,7 @@ export default function ImportExportPanel() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!/\.ya?ml$/i.test(file.name)) {
-      toast.error("Please select a .yaml or .yml file");
+      toast.error('Please select a .yaml or .yml file');
       return;
     }
     setSelectedFile(file);
@@ -81,10 +81,10 @@ export default function ImportExportPanel() {
     try {
       const result = await importExportService.importEntries(selectedFile);
       setImportResult({ imported: result.imported });
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
       toast.success(`Imported ${result.imported} entries as drafts`);
     } catch (err) {
-      handleApiError(err, { title: "Import failed — check the file format" });
+      handleApiError(err, { title: 'Import failed — check the file format' });
     } finally {
       setIsImporting(false);
     }
@@ -93,7 +93,7 @@ export default function ImportExportPanel() {
   const clearFile = () => {
     setSelectedFile(null);
     setImportResult(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -106,10 +106,18 @@ export default function ImportExportPanel() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <Button onClick={handleExportAll} disabled={isExporting}>
-            {isExporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+            {isExporting ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
             Export All Entries
           </Button>
-          <Button variant="outline" onClick={() => setFolderPickerOpen(true)} disabled={isExporting}>
+          <Button
+            variant="outline"
+            onClick={() => setFolderPickerOpen(true)}
+            disabled={isExporting}
+          >
             <FolderOpen className="size-4" />
             Export Folder…
           </Button>
@@ -146,14 +154,20 @@ export default function ImportExportPanel() {
             <div className="flex items-center gap-3">
               <div className="flex-1 truncate text-sm">
                 <span className="font-medium">{selectedFile.name}</span>
-                <span className="ml-2 text-foreground-muted">{formatFileSize(selectedFile.size)}</span>
+                <span className="ml-2 text-foreground-muted">
+                  {formatFileSize(selectedFile.size)}
+                </span>
               </div>
               <Button size="sm" variant="ghost" onClick={clearFile} disabled={isImporting}>
                 <X className="size-4" />
               </Button>
               <Button size="sm" onClick={handleImport} disabled={isImporting}>
-                {isImporting ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-                {isImporting ? "Importing…" : "Import"}
+                {isImporting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Upload className="size-4" />
+                )}
+                {isImporting ? 'Importing…' : 'Import'}
               </Button>
             </div>
           )}

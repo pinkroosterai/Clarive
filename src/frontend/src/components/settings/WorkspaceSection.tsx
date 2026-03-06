@@ -1,17 +1,9 @@
-import { useRef, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { Camera, Loader2, LogOut, Trash2 } from "lucide-react";
-import { tenantService, workspaceService } from "@/services";
-import { useAuthStore } from "@/store/authStore";
-import { handleApiError } from "@/lib/handleApiError";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Camera, Loader2, LogOut, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,24 +14,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { handleApiError } from '@/lib/handleApiError';
+import { tenantService, workspaceService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 export default function WorkspaceSection() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isAdmin = useAuthStore((s) => s.currentUser?.role === "admin");
+  const isAdmin = useAuthStore((s) => s.currentUser?.role === 'admin');
   const activeWorkspace = useAuthStore((s) => s.activeWorkspace);
   const workspaces = useAuthStore((s) => s.workspaces);
   const setWorkspaces = useAuthStore((s) => s.setWorkspaces);
   const switchWorkspace = useAuthStore((s) => s.switchWorkspace);
 
   const { data: tenant, isLoading } = useQuery({
-    queryKey: ["tenant"],
+    queryKey: ['tenant'],
     queryFn: tenantService.getTenant,
   });
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [initialized, setInitialized] = useState(false);
 
   // Sync initial value once loaded
@@ -51,8 +52,8 @@ export default function WorkspaceSection() {
   const updateMutation = useMutation({
     mutationFn: () => tenantService.updateTenantName(name.trim()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenant"] });
-      toast.success("Workspace name updated");
+      queryClient.invalidateQueries({ queryKey: ['tenant'] });
+      toast.success('Workspace name updated');
     },
     onError: (err: unknown) => handleApiError(err),
   });
@@ -60,36 +61,32 @@ export default function WorkspaceSection() {
   const avatarUpload = useMutation({
     mutationFn: (file: File) => tenantService.uploadWorkspaceAvatar(file),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["tenant"] });
+      queryClient.invalidateQueries({ queryKey: ['tenant'] });
       // Update the active workspace avatarUrl in authStore
       if (activeWorkspace) {
         const updated = workspaces.map((w) =>
-          w.id === activeWorkspace.id
-            ? { ...w, avatarUrl: data.avatarUrl }
-            : w,
+          w.id === activeWorkspace.id ? { ...w, avatarUrl: data.avatarUrl } : w
         );
         setWorkspaces(updated);
       }
-      toast.success("Workspace avatar updated");
+      toast.success('Workspace avatar updated');
     },
-    onError: (err: unknown) =>
-      handleApiError(err, { fallback: "Failed to upload avatar" }),
+    onError: (err: unknown) => handleApiError(err, { fallback: 'Failed to upload avatar' }),
   });
 
   const avatarDelete = useMutation({
     mutationFn: () => tenantService.deleteWorkspaceAvatar(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenant"] });
+      queryClient.invalidateQueries({ queryKey: ['tenant'] });
       if (activeWorkspace) {
         const updated = workspaces.map((w) =>
-          w.id === activeWorkspace.id ? { ...w, avatarUrl: null } : w,
+          w.id === activeWorkspace.id ? { ...w, avatarUrl: null } : w
         );
         setWorkspaces(updated);
       }
-      toast.success("Workspace avatar removed");
+      toast.success('Workspace avatar removed');
     },
-    onError: (err: unknown) =>
-      handleApiError(err, { fallback: "Failed to remove avatar" }),
+    onError: (err: unknown) => handleApiError(err, { fallback: 'Failed to remove avatar' }),
   });
 
   const leaveMutation = useMutation({
@@ -108,7 +105,7 @@ export default function WorkspaceSection() {
       }
       queryClient.clear();
       toast.success(`You have left ${leftName}`);
-      navigate("/", { replace: true });
+      navigate('/', { replace: true });
     },
     onError: (err: unknown) => handleApiError(err),
   });
@@ -117,24 +114,24 @@ export default function WorkspaceSection() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Unsupported format. Use JPEG, PNG, or WebP.");
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Unsupported format. Use JPEG, PNG, or WebP.');
       return;
     }
     if (file.size > 3 * 1024 * 1024) {
-      toast.error("Image exceeds the 3 MB size limit.");
+      toast.error('Image exceeds the 3 MB size limit.');
       return;
     }
 
     avatarUpload.mutate(file);
-    e.target.value = "";
+    e.target.value = '';
   }
 
   if (isLoading) {
     return <Skeleton className="h-10 w-64" />;
   }
 
-  const isDirty = name.trim() !== (tenant?.name ?? "");
+  const isDirty = name.trim() !== (tenant?.name ?? '');
   const canLeave = activeWorkspace && !activeWorkspace.isPersonal;
   const avatarBusy = avatarUpload.isPending || avatarDelete.isPending;
   const avatarUrl = tenant?.avatarUrl ?? activeWorkspace?.avatarUrl;
@@ -150,7 +147,7 @@ export default function WorkspaceSection() {
               <Avatar className="h-20 w-20 rounded-lg">
                 {avatarUrl && <AvatarImage src={avatarUrl} alt="Workspace avatar" />}
                 <AvatarFallback className="rounded-lg text-2xl">
-                  {(tenant?.name ?? activeWorkspace?.name ?? "W").charAt(0).toUpperCase()}
+                  {(tenant?.name ?? activeWorkspace?.name ?? 'W').charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               {avatarBusy && (
@@ -182,9 +179,7 @@ export default function WorkspaceSection() {
                   </Button>
                 )}
               </div>
-              <p className="text-xs text-foreground-muted">
-                JPEG, PNG, or WebP. Max 3 MB.
-              </p>
+              <p className="text-xs text-foreground-muted">JPEG, PNG, or WebP. Max 3 MB.</p>
             </div>
             <input
               ref={fileInputRef}
@@ -218,7 +213,7 @@ export default function WorkspaceSection() {
               disabled={!isDirty || !name.trim() || updateMutation.isPending}
               onClick={() => updateMutation.mutate()}
             >
-              {updateMutation.isPending ? "Saving..." : "Save"}
+              {updateMutation.isPending ? 'Saving...' : 'Save'}
             </Button>
           )}
         </div>
@@ -255,9 +250,9 @@ export default function WorkspaceSection() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Leave workspace?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to leave <strong>{activeWorkspace.name}</strong>? You will
-                      lose access to all prompts and data in this workspace. An admin will need to
-                      re-invite you to regain access.
+                      Are you sure you want to leave <strong>{activeWorkspace.name}</strong>? You
+                      will lose access to all prompts and data in this workspace. An admin will need
+                      to re-invite you to regain access.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

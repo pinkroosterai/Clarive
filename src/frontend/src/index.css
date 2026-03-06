@@ -1,4 +1,4 @@
-@import "./lib/tiptap/editorStyles.css";
+@import './lib/tiptap/editorStyles.css';
 
 @tailwind base;
 @tailwind components;
@@ -12,111 +12,111 @@
   /* ── Light Mode (default) ── */
   :root {
     /* ── Background Layers ── */
-    --background:           45 24% 96%;         /* #F7F6F2 */
-    --background-surface:   0 0% 100%;          /* #FFFFFF */
-    --background-elevated:  43 20% 92%;         /* #EFEDE8 — Surface Alt */
-    --background-overlay:   40 12% 84%;         /* slightly darker for overlays */
+    --background: 45 24% 96%; /* #F7F6F2 */
+    --background-surface: 0 0% 100%; /* #FFFFFF */
+    --background-elevated: 43 20% 92%; /* #EFEDE8 — Surface Alt */
+    --background-overlay: 40 12% 84%; /* slightly darker for overlays */
 
     /* ── Foreground / Text ── */
-    --foreground:           240 28% 14%;        /* #1A1A2E */
-    --foreground-secondary: 240 8% 46%;         /* #6B6B80 — Text Muted */
-    --foreground-muted:     240 8% 46%;         /* #6B6B80 */
+    --foreground: 240 28% 14%; /* #1A1A2E */
+    --foreground-secondary: 240 8% 46%; /* #6B6B80 — Text Muted */
+    --foreground-muted: 240 8% 46%; /* #6B6B80 */
 
     /* ── Brand Accent (Indigo) ── */
-    --primary:              231 44% 56%;        /* #5C6AC4 */
-    --primary-hover:        231 44% 48%;
-    --primary-foreground:   0 0% 100%;          /* white on indigo */
-    --primary-glow:         231 44% 56%;
+    --primary: 231 44% 56%; /* #5C6AC4 */
+    --primary-hover: 231 44% 48%;
+    --primary-foreground: 0 0% 100%; /* white on indigo */
+    --primary-glow: 231 44% 56%;
 
     /* ── Card ── */
-    --card:                 0 0% 100%;          /* white */
-    --card-foreground:      240 28% 14%;
+    --card: 0 0% 100%; /* white */
+    --card-foreground: 240 28% 14%;
 
     /* ── Popover ── */
-    --popover:              0 0% 100%;
-    --popover-foreground:   240 28% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 28% 14%;
 
     /* ── Secondary ── */
-    --secondary:            43 20% 92%;         /* Surface Alt */
+    --secondary: 43 20% 92%; /* Surface Alt */
     --secondary-foreground: 240 28% 14%;
 
     /* ── Muted ── */
-    --muted:                43 20% 92%;         /* Surface Alt */
-    --muted-foreground:     240 8% 46%;         /* Text Muted */
+    --muted: 43 20% 92%; /* Surface Alt */
+    --muted-foreground: 240 8% 46%; /* Text Muted */
 
     /* ── Accent (hover backgrounds) ── */
-    --accent:               233 72% 95%;        /* #E8EAFB — Accent Soft */
-    --accent-foreground:    240 28% 14%;
+    --accent: 233 72% 95%; /* #E8EAFB — Accent Soft */
+    --accent-foreground: 240 28% 14%;
 
     /* ── Destructive ── */
-    --destructive:          0 72% 51%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
     /* ── Borders & Rings ── */
-    --border:               45 10% 85%;         /* #DDDBD5 */
-    --border-subtle:        45 10% 85%;
-    --input:                45 10% 85%;
-    --ring:                 234 70% 87%;        /* #C7CCF5 — Highlight */
+    --border: 45 10% 85%; /* #DDDBD5 */
+    --border-subtle: 45 10% 85%;
+    --input: 45 10% 85%;
+    --ring: 234 70% 87%; /* #C7CCF5 — Highlight */
 
     /* ── Sidebar ── */
-    --sidebar-background:   43 20% 92%;
-    --sidebar-foreground:   240 8% 36%;
-    --sidebar-primary:      231 44% 56%;
+    --sidebar-background: 43 20% 92%;
+    --sidebar-foreground: 240 8% 36%;
+    --sidebar-primary: 231 44% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent:       233 72% 95%;
+    --sidebar-accent: 233 72% 95%;
     --sidebar-accent-foreground: 240 28% 14%;
-    --sidebar-border:       45 10% 85%;
-    --sidebar-ring:         231 44% 56%;
+    --sidebar-border: 45 10% 85%;
+    --sidebar-ring: 231 44% 56%;
 
     /* ── Status (base + text/bg/border triplets) ── */
-    --status-draft:              38 92% 50%;
-    --status-draft-text:         38 92% 36%;
-    --status-draft-bg:           38 92% 50% / 0.10;
-    --status-draft-border:       38 92% 50% / 0.25;
+    --status-draft: 38 92% 50%;
+    --status-draft-text: 38 92% 36%;
+    --status-draft-bg: 38 92% 50% / 0.1;
+    --status-draft-border: 38 92% 50% / 0.25;
 
-    --status-published:          142 71% 45%;
-    --status-published-text:     142 71% 30%;
-    --status-published-bg:       142 71% 45% / 0.10;
-    --status-published-border:   142 71% 45% / 0.25;
+    --status-published: 142 71% 45%;
+    --status-published-text: 142 71% 30%;
+    --status-published-bg: 142 71% 45% / 0.1;
+    --status-published-border: 142 71% 45% / 0.25;
 
-    --status-historical:         240 4% 46%;
-    --status-historical-text:    240 4% 36%;
-    --status-historical-bg:      240 4% 46% / 0.10;
-    --status-historical-border:  240 4% 46% / 0.25;
+    --status-historical: 240 4% 46%;
+    --status-historical-text: 240 4% 36%;
+    --status-historical-bg: 240 4% 46% / 0.1;
+    --status-historical-border: 240 4% 46% / 0.25;
 
     /* ── Semantic Feedback Colors ── */
-    --success-text:         142 71% 30%;
-    --success-bg:           142 71% 45% / 0.10;
-    --success-border:       142 71% 45% / 0.25;
+    --success-text: 142 71% 30%;
+    --success-bg: 142 71% 45% / 0.1;
+    --success-border: 142 71% 45% / 0.25;
 
-    --warning-text:         38 92% 36%;
-    --warning-bg:           38 92% 50% / 0.10;
-    --warning-border:       38 92% 50% / 0.25;
+    --warning-text: 38 92% 36%;
+    --warning-bg: 38 92% 50% / 0.1;
+    --warning-border: 38 92% 50% / 0.25;
 
-    --error-text:           0 72% 45%;
-    --error-bg:             0 72% 51% / 0.10;
-    --error-border:         0 72% 51% / 0.25;
+    --error-text: 0 72% 45%;
+    --error-bg: 0 72% 51% / 0.1;
+    --error-border: 0 72% 51% / 0.25;
 
-    --info-text:            217 91% 45%;
-    --info-bg:              217 91% 60% / 0.10;
-    --info-border:          217 91% 60% / 0.25;
+    --info-text: 217 91% 45%;
+    --info-bg: 217 91% 60% / 0.1;
+    --info-border: 217 91% 60% / 0.25;
 
     /* ── Role Colors ── */
-    --role-admin-text:      231 44% 46%;
-    --role-admin-bg:        231 44% 56% / 0.10;
-    --role-admin-border:    231 44% 56% / 0.25;
+    --role-admin-text: 231 44% 46%;
+    --role-admin-bg: 231 44% 56% / 0.1;
+    --role-admin-border: 231 44% 56% / 0.25;
 
-    --role-editor-text:     217 91% 45%;
-    --role-editor-bg:       217 91% 60% / 0.10;
-    --role-editor-border:   217 91% 60% / 0.25;
+    --role-editor-text: 217 91% 45%;
+    --role-editor-bg: 217 91% 60% / 0.1;
+    --role-editor-border: 217 91% 60% / 0.25;
 
-    --role-viewer-text:     240 4% 36%;
-    --role-viewer-bg:       240 4% 46% / 0.10;
-    --role-viewer-border:   240 4% 46% / 0.25;
+    --role-viewer-text: 240 4% 36%;
+    --role-viewer-bg: 240 4% 46% / 0.1;
+    --role-viewer-border: 240 4% 46% / 0.25;
 
     /* ── Disabled / Overlay ── */
-    --foreground-disabled:  240 8% 53%;
-    --overlay-bg:           45 24% 96% / 0.80;
+    --foreground-disabled: 240 8% 53%;
+    --overlay-bg: 45 24% 96% / 0.8;
 
     /* ── Radius ── */
     --radius: 0.625rem;
@@ -131,97 +131,97 @@
 
   /* ── Dark Mode ── */
   .dark {
-    --background:           240 30% 8%;         /* #0E0E1A */
-    --background-surface:   240 30% 13%;        /* #16162A */
-    --background-elevated:  240 29% 16%;        /* #1E1E35 — Surface Alt */
-    --background-overlay:   240 26% 22%;
+    --background: 240 30% 8%; /* #0E0E1A */
+    --background-surface: 240 30% 13%; /* #16162A */
+    --background-elevated: 240 29% 16%; /* #1E1E35 — Surface Alt */
+    --background-overlay: 240 26% 22%;
 
-    --foreground:           240 45% 93%;        /* #E8E8F5 */
-    --foreground-secondary: 240 14% 60%;        /* #8888A8 */
-    --foreground-muted:     240 14% 60%;        /* #8888A8 */
+    --foreground: 240 45% 93%; /* #E8E8F5 */
+    --foreground-secondary: 240 14% 60%; /* #8888A8 */
+    --foreground-muted: 240 14% 60%; /* #8888A8 */
 
-    --primary:              228 66% 70%;        /* #7B8FE8 */
-    --primary-hover:        228 66% 76%;
-    --primary-foreground:   240 30% 8%;         /* dark bg on light accent */
-    --primary-glow:         228 66% 70%;
+    --primary: 228 66% 70%; /* #7B8FE8 */
+    --primary-hover: 228 66% 76%;
+    --primary-foreground: 240 30% 8%; /* dark bg on light accent */
+    --primary-glow: 228 66% 70%;
 
-    --card:                 240 30% 13%;
-    --card-foreground:      240 45% 93%;
+    --card: 240 30% 13%;
+    --card-foreground: 240 45% 93%;
 
-    --popover:              240 29% 16%;
-    --popover-foreground:   240 45% 93%;
+    --popover: 240 29% 16%;
+    --popover-foreground: 240 45% 93%;
 
-    --secondary:            240 29% 16%;        /* Surface Alt */
+    --secondary: 240 29% 16%; /* Surface Alt */
     --secondary-foreground: 240 45% 93%;
 
-    --muted:                240 29% 16%;
-    --muted-foreground:     240 14% 60%;
+    --muted: 240 29% 16%;
+    --muted-foreground: 240 14% 60%;
 
-    --accent:               235 39% 19%;        /* #1E2145 — Accent Soft dark */
-    --accent-foreground:    240 45% 93%;
+    --accent: 235 39% 19%; /* #1E2145 — Accent Soft dark */
+    --accent-foreground: 240 45% 93%;
 
-    --destructive:          0 72% 51%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border:               240 25% 22%;        /* #2A2A45 */
-    --border-subtle:        240 25% 19%;
-    --input:                240 25% 22%;
-    --ring:                 234 35% 35%;        /* #3A3F7A — Highlight dark */
+    --border: 240 25% 22%; /* #2A2A45 */
+    --border-subtle: 240 25% 19%;
+    --input: 240 25% 22%;
+    --ring: 234 35% 35%; /* #3A3F7A — Highlight dark */
 
-    --sidebar-background:   240 30% 10%;
-    --sidebar-foreground:   240 20% 72%;
-    --sidebar-primary:      228 66% 70%;
+    --sidebar-background: 240 30% 10%;
+    --sidebar-foreground: 240 20% 72%;
+    --sidebar-primary: 228 66% 70%;
     --sidebar-primary-foreground: 240 30% 8%;
-    --sidebar-accent:       235 39% 19%;
+    --sidebar-accent: 235 39% 19%;
     --sidebar-accent-foreground: 240 45% 90%;
-    --sidebar-border:       240 25% 18%;
-    --sidebar-ring:         228 66% 70%;
+    --sidebar-border: 240 25% 18%;
+    --sidebar-ring: 228 66% 70%;
 
-    --status-draft:              38 92% 50%;
-    --status-draft-text:         38 92% 64%;
-    --status-draft-bg:           38 92% 50% / 0.12;
-    --status-draft-border:       38 92% 50% / 0.30;
+    --status-draft: 38 92% 50%;
+    --status-draft-text: 38 92% 64%;
+    --status-draft-bg: 38 92% 50% / 0.12;
+    --status-draft-border: 38 92% 50% / 0.3;
 
-    --status-published:          142 71% 45%;
-    --status-published-text:     142 71% 55%;
-    --status-published-bg:       142 71% 45% / 0.12;
-    --status-published-border:   142 71% 45% / 0.30;
+    --status-published: 142 71% 45%;
+    --status-published-text: 142 71% 55%;
+    --status-published-bg: 142 71% 45% / 0.12;
+    --status-published-border: 142 71% 45% / 0.3;
 
-    --status-historical:         240 4% 46%;
-    --status-historical-text:    240 5% 64%;
-    --status-historical-bg:      240 4% 46% / 0.12;
-    --status-historical-border:  240 4% 46% / 0.30;
+    --status-historical: 240 4% 46%;
+    --status-historical-text: 240 5% 64%;
+    --status-historical-bg: 240 4% 46% / 0.12;
+    --status-historical-border: 240 4% 46% / 0.3;
 
-    --success-text:         142 71% 55%;
-    --success-bg:           142 71% 45% / 0.12;
-    --success-border:       142 71% 45% / 0.30;
+    --success-text: 142 71% 55%;
+    --success-bg: 142 71% 45% / 0.12;
+    --success-border: 142 71% 45% / 0.3;
 
-    --warning-text:         38 92% 64%;
-    --warning-bg:           38 92% 50% / 0.12;
-    --warning-border:       38 92% 50% / 0.30;
+    --warning-text: 38 92% 64%;
+    --warning-bg: 38 92% 50% / 0.12;
+    --warning-border: 38 92% 50% / 0.3;
 
-    --error-text:           0 72% 63%;
-    --error-bg:             0 72% 51% / 0.12;
-    --error-border:         0 72% 51% / 0.30;
+    --error-text: 0 72% 63%;
+    --error-bg: 0 72% 51% / 0.12;
+    --error-border: 0 72% 51% / 0.3;
 
-    --info-text:            217 91% 70%;
-    --info-bg:              217 91% 60% / 0.12;
-    --info-border:          217 91% 60% / 0.30;
+    --info-text: 217 91% 70%;
+    --info-bg: 217 91% 60% / 0.12;
+    --info-border: 217 91% 60% / 0.3;
 
-    --role-admin-text:      228 66% 70%;
-    --role-admin-bg:        228 66% 56% / 0.12;
-    --role-admin-border:    228 66% 56% / 0.30;
+    --role-admin-text: 228 66% 70%;
+    --role-admin-bg: 228 66% 56% / 0.12;
+    --role-admin-border: 228 66% 56% / 0.3;
 
-    --role-editor-text:     217 91% 70%;
-    --role-editor-bg:       217 91% 60% / 0.12;
-    --role-editor-border:   217 91% 60% / 0.30;
+    --role-editor-text: 217 91% 70%;
+    --role-editor-bg: 217 91% 60% / 0.12;
+    --role-editor-border: 217 91% 60% / 0.3;
 
-    --role-viewer-text:     240 5% 64%;
-    --role-viewer-bg:       240 4% 46% / 0.12;
-    --role-viewer-border:   240 4% 46% / 0.30;
+    --role-viewer-text: 240 5% 64%;
+    --role-viewer-bg: 240 4% 46% / 0.12;
+    --role-viewer-border: 240 4% 46% / 0.3;
 
-    --foreground-disabled:  240 14% 48%;
-    --overlay-bg:           240 30% 8% / 0.80;
+    --foreground-disabled: 240 14% 48%;
+    --overlay-bg: 240 30% 8% / 0.8;
 
     --chart-1: 228 66% 70%;
     --chart-2: 217 91% 60%;
@@ -237,12 +237,19 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'DM Sans', sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'DM Sans', sans-serif;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -264,7 +271,7 @@
   }
   .elevation-3 {
     box-shadow:
-      0 8px 24px rgba(0, 0, 0, 0.10),
+      0 8px 24px rgba(0, 0, 0, 0.1),
       0 4px 8px rgba(0, 0, 0, 0.06);
   }
   .elevation-4 {
@@ -310,8 +317,9 @@
   }
   /* ── Transitions ── */
   .transition-lift {
-    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
-                box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+      transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .active-press:active {
     transform: scale(0.97);
@@ -333,7 +341,7 @@
   /* ── Auth Background (Clarive gradient) ── */
   .auth-bg {
     background:
-      linear-gradient(135deg, hsl(231 44% 56% / 0.10) 0%, hsl(221 84% 76% / 0.08) 100%),
+      linear-gradient(135deg, hsl(231 44% 56% / 0.1) 0%, hsl(221 84% 76% / 0.08) 100%),
       radial-gradient(ellipse at 20% 50%, hsl(231 44% 56% / 0.06) 0%, transparent 50%),
       radial-gradient(ellipse at 80% 20%, hsl(221 84% 76% / 0.04) 0%, transparent 50%);
     background-size: 200% 200%;
@@ -354,18 +362,25 @@ html.theme-transitioning,
 html.theme-transitioning *,
 html.theme-transitioning *::before,
 html.theme-transitioning *::after {
-  transition: background-color 150ms ease,
-              color 150ms ease,
-              border-color 150ms ease,
-              box-shadow 150ms ease,
-              fill 150ms ease,
-              stroke 150ms ease !important;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    fill 150ms ease,
+    stroke 150ms ease !important;
 }
 
 /* ── Fade Out (DnD move) ── */
 @keyframes fade-out {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.95); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 }
 .animate-fade-out {
   animation: fade-out 200ms ease-out forwards;

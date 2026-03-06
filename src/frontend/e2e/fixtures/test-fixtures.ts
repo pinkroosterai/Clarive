@@ -1,5 +1,5 @@
-import { test as base, expect, Page } from "@playwright/test";
-import { waitForAppShell } from "../helpers/pages";
+import { test as base, expect, Page } from '@playwright/test';
+import { waitForAppShell } from '../helpers/pages';
 
 /**
  * Custom fixtures that extend Playwright's base test with role-specific pages.
@@ -23,10 +23,10 @@ type RoleFixtures = {
 export const test = base.extend<RoleFixtures>({
   adminPage: async ({ browser }, use) => {
     const context = await browser.newContext({
-      storageState: "e2e/.auth/admin.json",
+      storageState: 'e2e/.auth/admin.json',
     });
     const page = await context.newPage();
-    await page.goto("/library");
+    await page.goto('/library');
     await waitForAppShell(page);
     await use(page);
     await context.close();
@@ -34,10 +34,10 @@ export const test = base.extend<RoleFixtures>({
 
   editorPage: async ({ browser }, use) => {
     const context = await browser.newContext({
-      storageState: "e2e/.auth/editor.json",
+      storageState: 'e2e/.auth/editor.json',
     });
     const page = await context.newPage();
-    await page.goto("/library");
+    await page.goto('/library');
     await waitForAppShell(page);
     await use(page);
     await context.close();
@@ -45,10 +45,10 @@ export const test = base.extend<RoleFixtures>({
 
   viewerPage: async ({ browser }, use) => {
     const context = await browser.newContext({
-      storageState: "e2e/.auth/viewer.json",
+      storageState: 'e2e/.auth/viewer.json',
     });
     const page = await context.newPage();
-    await page.goto("/library");
+    await page.goto('/library');
     await waitForAppShell(page);
     await use(page);
     await context.close();

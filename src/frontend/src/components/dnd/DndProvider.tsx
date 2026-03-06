@@ -1,4 +1,3 @@
-import { useState, useCallback, type ReactNode } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -10,17 +9,19 @@ import {
   type DragStartEvent,
   type DragOverEvent,
   type DragEndEvent,
-} from "@dnd-kit/core";
-import { useQueryClient } from "@tanstack/react-query";
+} from '@dnd-kit/core';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, type ReactNode } from 'react';
 
-import type { Folder } from "@/types";
-import type { DragData } from "@/lib/dnd/types";
-import { parseFolderIdFromDroppable } from "@/lib/dnd/types";
-import { isValidDrop } from "@/lib/dnd/validation";
-import { useDndMutations } from "@/hooks/useDndMutations";
-import { DndStateContext } from "./useDndState";
-import { EntryDragGhost } from "./EntryDragGhost";
-import { FolderDragGhost } from "./FolderDragGhost";
+import { EntryDragGhost } from './EntryDragGhost';
+import { FolderDragGhost } from './FolderDragGhost';
+import { DndStateContext } from './useDndState';
+
+import { useDndMutations } from '@/hooks/useDndMutations';
+import type { DragData } from '@/lib/dnd/types';
+import { parseFolderIdFromDroppable } from '@/lib/dnd/types';
+import { isValidDrop } from '@/lib/dnd/validation';
+import type { Folder } from '@/types';
 
 // ── DndProvider ────────────────────────────────────────────────────────────
 export function DndProvider({ children }: { children: ReactNode }) {
@@ -33,12 +34,12 @@ export function DndProvider({ children }: { children: ReactNode }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { distance: 10 } }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor)
   );
 
   const getFolderTree = useCallback(
-    (): Folder[] => queryClient.getQueryData(["folders"]) ?? [],
-    [queryClient],
+    (): Folder[] => queryClient.getQueryData(['folders']) ?? [],
+    [queryClient]
   );
 
   const isValidTarget = useCallback(
@@ -46,7 +47,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
       if (!activeItem) return false;
       return isValidDrop(activeItem, targetFolderId, getFolderTree());
     },
-    [activeItem, getFolderTree],
+    [activeItem, getFolderTree]
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -71,17 +72,17 @@ export function DndProvider({ children }: { children: ReactNode }) {
       const targetFolderId = parseFolderIdFromDroppable(over.id as string);
       // parseFolderIdFromDroppable returns null for root — but also null for
       // unrecognized IDs. We need to verify it's an actual droppable.
-      if (targetFolderId === null && over.id !== "droppable:root") return;
+      if (targetFolderId === null && over.id !== 'droppable:root') return;
 
       if (!isValidDrop(dragData, targetFolderId, getFolderTree())) return;
 
-      if (dragData.type === "entry") {
+      if (dragData.type === 'entry') {
         moveEntry.mutate({ id: dragData.entry.id, folderId: targetFolderId });
       } else {
         moveFolder.mutate({ id: dragData.folder.id, newParentId: targetFolderId });
       }
     },
-    [activeItem, getFolderTree, moveEntry, moveFolder],
+    [activeItem, getFolderTree, moveEntry, moveFolder]
   );
 
   const handleDragCancel = useCallback(() => {
@@ -100,12 +101,8 @@ export function DndProvider({ children }: { children: ReactNode }) {
       >
         {children}
         <DragOverlay dropAnimation={null}>
-          {activeItem?.type === "entry" && (
-            <EntryDragGhost title={activeItem.entry.title} />
-          )}
-          {activeItem?.type === "folder" && (
-            <FolderDragGhost name={activeItem.folder.name} />
-          )}
+          {activeItem?.type === 'entry' && <EntryDragGhost title={activeItem.entry.title} />}
+          {activeItem?.type === 'folder' && <FolderDragGhost name={activeItem.folder.name} />}
         </DragOverlay>
       </DndContext>
     </DndStateContext.Provider>

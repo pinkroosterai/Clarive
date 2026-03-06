@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Loader2, XCircle } from "lucide-react";
-import { AnvilIcon } from "@/components/icons/AnvilIcon";
-import { toast } from "sonner";
+import { Loader2, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/authStore";
-import { authService } from "@/services";
+import { AnvilIcon } from '@/components/icons/AnvilIcon';
+import { Button } from '@/components/ui/button';
+import { authService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 const GoogleCallbackPage = () => {
   const navigate = useNavigate();
@@ -20,16 +20,16 @@ const GoogleCallbackPage = () => {
       // Extract id_token from the URL hash fragment (OIDC implicit flow)
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
-      const idToken = params.get("id_token");
-      const hashError = params.get("error");
+      const idToken = params.get('id_token');
+      const hashError = params.get('error');
 
       if (hashError) {
-        if (!cancelled) setError(params.get("error_description") ?? "Authentication was denied.");
+        if (!cancelled) setError(params.get('error_description') ?? 'Authentication was denied.');
         return;
       }
 
       if (!idToken) {
-        if (!cancelled) setError("No authentication token received from Google.");
+        if (!cancelled) setError('No authentication token received from Google.');
         return;
       }
 
@@ -39,21 +39,23 @@ const GoogleCallbackPage = () => {
         setUser(res.user);
         if (res.workspaces) setWorkspaces(res.workspaces);
         if (res.isNewUser) {
-          toast.success("Welcome to Clarive!");
+          toast.success('Welcome to Clarive!');
         }
         if (res.workspaces && res.workspaces.length > 1) {
-          navigate("/select-workspace", { replace: true });
+          navigate('/select-workspace', { replace: true });
         } else {
-          navigate("/", { replace: true });
+          navigate('/', { replace: true });
         }
       } catch (err: unknown) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Google sign-in failed.");
+          setError(err instanceof Error ? err.message : 'Google sign-in failed.');
         }
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [navigate, setUser, setWorkspaces]);
 
   if (error) {
@@ -68,7 +70,7 @@ const GoogleCallbackPage = () => {
             <div className="space-y-4 text-center">
               <XCircle className="mx-auto size-12 text-error-text" />
               <p className="text-foreground-secondary text-sm">{error}</p>
-              <Button className="w-full" onClick={() => navigate("/login", { replace: true })}>
+              <Button className="w-full" onClick={() => navigate('/login', { replace: true })}>
                 Back to sign in
               </Button>
             </div>

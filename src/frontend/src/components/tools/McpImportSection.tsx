@@ -1,49 +1,50 @@
-import { useState } from "react";
-import type { ToolDescription } from "@/types";
-import { toolService } from "@/services";
-import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { handleApiError } from "@/lib/handleApiError";
-import { Loader2, Download, CheckCircle2, ChevronDown, ChevronRight, Key } from "lucide-react";
+import { useQueryClient } from '@tanstack/react-query';
+import { Loader2, Download, CheckCircle2, ChevronDown, ChevronRight, Key } from 'lucide-react';
+import { useState } from 'react';
 
-type State = "idle" | "loading" | "results";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { handleApiError } from '@/lib/handleApiError';
+import { toolService } from '@/services';
+import type { ToolDescription } from '@/types';
+
+type State = 'idle' | 'loading' | 'results';
 
 export function McpImportSection() {
-  const [url, setUrl] = useState("");
-  const [bearerToken, setBearerToken] = useState("");
+  const [url, setUrl] = useState('');
+  const [bearerToken, setBearerToken] = useState('');
   const [showAuth, setShowAuth] = useState(false);
-  const [state, setState] = useState<State>("idle");
+  const [state, setState] = useState<State>('idle');
   const [imported, setImported] = useState<ToolDescription[]>([]);
   const [skippedCount, setSkippedCount] = useState(0);
   const queryClient = useQueryClient();
 
   const handleImport = async () => {
     if (!url.trim()) return;
-    setState("loading");
+    setState('loading');
     try {
-      const result = await toolService.importFromMcp(
-        url.trim(),
-        bearerToken.trim() || undefined,
-      );
+      const result = await toolService.importFromMcp(url.trim(), bearerToken.trim() || undefined);
       setImported(result.imported);
       setSkippedCount(result.skippedCount);
-      setState("results");
+      setState('results');
     } catch (err) {
-      handleApiError(err, { title: "Import failed", fallback: "Could not connect to the MCP server." });
-      setState("idle");
+      handleApiError(err, {
+        title: 'Import failed',
+        fallback: 'Could not connect to the MCP server.',
+      });
+      setState('idle');
     }
   };
 
   const handleDone = () => {
     setImported([]);
     setSkippedCount(0);
-    setUrl("");
-    setBearerToken("");
+    setUrl('');
+    setBearerToken('');
     setShowAuth(false);
-    setState("idle");
-    queryClient.invalidateQueries({ queryKey: ["tools"] });
+    setState('idle');
+    queryClient.invalidateQueries({ queryKey: ['tools'] });
   };
 
   return (
@@ -52,7 +53,7 @@ export function McpImportSection() {
         <CardTitle className="text-base">Import from MCP Server</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {state === "idle" && (
+        {state === 'idle' && (
           <div className="space-y-3">
             <div className="flex gap-2">
               <Input
@@ -86,18 +87,18 @@ export function McpImportSection() {
           </div>
         )}
 
-        {state === "loading" && (
+        {state === 'loading' && (
           <div className="flex items-center gap-3 text-foreground-muted">
             <Loader2 className="size-5 animate-spin" />
             <span className="text-sm">Connecting to MCP server and discovering tools…</span>
           </div>
         )}
 
-        {state === "results" && (
+        {state === 'results' && (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <CheckCircle2 className="size-4 text-success-text" />
-              {imported.length} tool{imported.length !== 1 ? "s" : ""} imported
+              {imported.length} tool{imported.length !== 1 ? 's' : ''} imported
               {skippedCount > 0 && (
                 <span className="text-foreground-muted font-normal">
                   , {skippedCount} skipped (already exist)
@@ -110,7 +111,9 @@ export function McpImportSection() {
                   <div key={t.id} className="px-4 py-3 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{t.name}</span>
-                      <span className="font-mono text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md">{t.toolName}</span>
+                      <span className="font-mono text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md">
+                        {t.toolName}
+                      </span>
                     </div>
                     <p className="text-xs text-foreground-secondary">{t.description}</p>
                     <ParamSummary schema={t.inputSchema} />
@@ -131,21 +134,15 @@ function ParamSummary({ schema }: { schema?: Record<string, unknown> }) {
   const properties = schema.properties as Record<string, { type?: string }> | undefined;
   if (!properties) return null;
 
-  const required = new Set(
-    Array.isArray(schema.required) ? (schema.required as string[]) : [],
-  );
+  const required = new Set(Array.isArray(schema.required) ? (schema.required as string[]) : []);
 
   const params = Object.entries(properties).map(([name, def]) => {
-    const type = def?.type ?? "any";
-    const req = required.has(name) ? ", required" : "";
+    const type = def?.type ?? 'any';
+    const req = required.has(name) ? ', required' : '';
     return `${name} (${type}${req})`;
   });
 
   if (params.length === 0) return null;
 
-  return (
-    <p className="text-xs text-foreground-muted/70">
-      Parameters: {params.join(", ")}
-    </p>
-  );
+  return <p className="text-xs text-foreground-muted/70">Parameters: {params.join(', ')}</p>;
 }

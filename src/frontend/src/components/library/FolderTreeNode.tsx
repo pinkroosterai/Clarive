@@ -1,5 +1,4 @@
-import { memo, useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import {
   ChevronRight,
   Folder,
@@ -9,33 +8,27 @@ import {
   Pencil,
   Trash2,
   FileText,
-} from "lucide-react";
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+} from 'lucide-react';
+import { memo, useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import type { Folder as FolderType, PromptEntry } from "@/types";
-import { cn } from "@/lib/utils";
-import { draggableEntryId, draggableFolderId, droppableFolderId } from "@/lib/dnd/types";
-import { useDndState } from "@/components/dnd/useDndState";
-import { DragHandle } from "@/components/dnd/DragHandle";
-import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { InlineInput } from './InlineInput';
+
+import { DragHandle } from '@/components/dnd/DragHandle';
+import { useDndState } from '@/components/dnd/useDndState';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-import { InlineInput } from "./InlineInput";
+} from '@/components/ui/dropdown-menu';
+import { SidebarMenuItem } from '@/components/ui/sidebar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { draggableEntryId, draggableFolderId, droppableFolderId } from '@/lib/dnd/types';
+import { cn } from '@/lib/utils';
+import type { Folder as FolderType, PromptEntry } from '@/types';
 
 export interface FolderActions {
   onCreate: (name: string, parentId: string | null) => void;
@@ -56,8 +49,8 @@ export const EntryTreeItem = memo(function EntryTreeItem({
   const isActive = activeEntryId === entry.id;
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: draggableEntryId(entry.id, "sidebar"),
-    data: { type: "entry", entry } as const,
+    id: draggableEntryId(entry.id, 'sidebar'),
+    data: { type: 'entry', entry } as const,
   });
 
   return (
@@ -65,9 +58,9 @@ export const EntryTreeItem = memo(function EntryTreeItem({
       <div
         ref={setNodeRef}
         className={cn(
-          "group/drag-item flex w-full items-center gap-1 rounded-md py-1 min-h-[44px] text-sm transition-colors duration-150",
-          isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-          isDragging && "opacity-30",
+          'group/drag-item flex w-full items-center gap-1 rounded-md py-1 min-h-[44px] text-sm transition-colors duration-150',
+          isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
+          isDragging && 'opacity-30'
         )}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
       >
@@ -121,7 +114,7 @@ export const FolderTreeNode = memo(function FolderTreeNode({
     isDragging,
   } = useDraggable({
     id: draggableFolderId(folder.id),
-    data: { type: "folder", folder } as const,
+    data: { type: 'folder', folder } as const,
   });
 
   // -- Droppable (this folder as drop target) --
@@ -138,7 +131,7 @@ export const FolderTreeNode = memo(function FolderTreeNode({
       setDragRef(node);
       setDropRef(node);
     },
-    [setDragRef, setDropRef],
+    [setDragRef, setDropRef]
   );
 
   // -- Auto-expand on hover during drag --
@@ -154,10 +147,10 @@ export const FolderTreeNode = memo(function FolderTreeNode({
         <div
           ref={mergedRef}
           className={cn(
-            "group/folder group/drag-item flex w-full items-center gap-1 rounded-md pr-1 min-h-[44px] transition-all duration-150",
-            isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-            isDragging && "opacity-30",
-            showDropHighlight && "ring-1 ring-primary/50 bg-primary/5 glow-brand-sm",
+            'group/folder group/drag-item flex w-full items-center gap-1 rounded-md pr-1 min-h-[44px] transition-all duration-150',
+            isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
+            isDragging && 'opacity-30',
+            showDropHighlight && 'ring-1 ring-primary/50 bg-primary/5 glow-brand-sm'
           )}
           style={{ paddingLeft: `${depth * 12 + 4}px` }}
         >
@@ -170,9 +163,9 @@ export const FolderTreeNode = memo(function FolderTreeNode({
             >
               <ChevronRight
                 className={cn(
-                  "size-3.5 text-foreground-muted transition-transform duration-200",
-                  isOpen && "rotate-90",
-                  !hasChildren && "invisible"
+                  'size-3.5 text-foreground-muted transition-transform duration-200',
+                  isOpen && 'rotate-90',
+                  !hasChildren && 'invisible'
                 )}
               />
             </button>
@@ -201,7 +194,10 @@ export const FolderTreeNode = memo(function FolderTreeNode({
                   <TooltipContent side="right">{folder.name}</TooltipContent>
                 </Tooltip>
                 {entryCount > 0 && (
-                  <Badge variant="secondary" className="ml-auto shrink-0 px-1.5 py-0 text-[10px] font-normal">
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto shrink-0 px-1.5 py-0 text-[10px] font-normal"
+                  >
                     {entryCount}
                   </Badge>
                 )}

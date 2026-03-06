@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface UseEditorKeyboardShortcutsOptions {
   isReadOnly: boolean;
@@ -31,21 +31,21 @@ export function useEditorKeyboardShortcuts({
       if (!mod) return;
 
       // Ctrl/Cmd + S → Save draft
-      if (e.key === "s") {
+      if (e.key === 's') {
         e.preventDefault();
         onSaveRef.current();
         return;
       }
       // Ctrl/Cmd + Enter → Publish
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         onPublishRef.current();
         return;
       }
       // Ctrl/Cmd + Z / Ctrl/Cmd + Shift + Z → Undo/Redo (context-aware)
-      if (e.key === "z" || e.key === "Z") {
+      if (e.key === 'z' || e.key === 'Z') {
         // If a Tiptap editor is focused, let Tiptap handle text-level undo/redo
-        if (document.activeElement?.closest(".tiptap")) return;
+        if (document.activeElement?.closest('.tiptap')) return;
 
         e.preventDefault();
         if (e.shiftKey) {
@@ -55,7 +55,7 @@ export function useEditorKeyboardShortcuts({
         }
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [isReadOnly]);
 }

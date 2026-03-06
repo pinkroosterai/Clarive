@@ -1,32 +1,24 @@
-import { memo } from "react";
-import { formatDistanceToNow } from "date-fns";
-import {
-  Activity,
-  Plus,
-  Pencil,
-  Globe,
-  Trash2,
-  RotateCcw,
-  type LucideIcon,
-} from "lucide-react";
+import { formatDistanceToNow } from 'date-fns';
+import { Activity, Plus, Pencil, Globe, Trash2, RotateCcw, type LucideIcon } from 'lucide-react';
+import { memo } from 'react';
 
-import type { RecentActivity } from "@/types";
+import type { RecentActivity } from '@/types';
 
 interface ActivityFeedProps {
   activities: RecentActivity[];
 }
 
 const actionConfig: Record<string, { icon: LucideIcon; color: string }> = {
-  entry_created:   { icon: Plus, color: "text-info-text" },
-  entry_published: { icon: Globe, color: "text-success-text" },
-  entry_trashed:   { icon: Trash2, color: "text-error-text" },
-  entry_restored:  { icon: RotateCcw, color: "text-success-text" },
-  entry_deleted:   { icon: Trash2, color: "text-error-text" },
-  version_promoted:{ icon: Pencil, color: "text-warning-text" },
+  entry_created: { icon: Plus, color: 'text-info-text' },
+  entry_published: { icon: Globe, color: 'text-success-text' },
+  entry_trashed: { icon: Trash2, color: 'text-error-text' },
+  entry_restored: { icon: RotateCcw, color: 'text-success-text' },
+  entry_deleted: { icon: Trash2, color: 'text-error-text' },
+  version_promoted: { icon: Pencil, color: 'text-warning-text' },
 };
 
 function getActionConfig(action: string) {
-  return actionConfig[action] ?? { icon: Activity, color: "text-foreground-muted" };
+  return actionConfig[action] ?? { icon: Activity, color: 'text-foreground-muted' };
 }
 
 export const ActivityFeed = memo(function ActivityFeed({ activities }: ActivityFeedProps) {
@@ -51,10 +43,11 @@ export const ActivityFeed = memo(function ActivityFeed({ activities }: ActivityF
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-foreground">
-                    {item.details ?? `${item.userName} performed ${item.action.replace(/_/g, " ")}`}
+                    {item.details ?? `${item.userName} performed ${item.action.replace(/_/g, ' ')}`}
                   </p>
                   <p className="text-xs text-foreground-muted mt-0.5">
-                    {item.userName} &middot; {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                    {item.userName} &middot;{' '}
+                    {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                   </p>
                 </div>
               </div>

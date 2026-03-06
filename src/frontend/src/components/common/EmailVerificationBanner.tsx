@@ -1,16 +1,16 @@
-import { useState } from "react";
-import { Mail, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
+import { Mail, Loader2, X } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
-import { useAuthStore } from "@/store/authStore";
-import { authService } from "@/services";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import { authService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 export function EmailVerificationBanner() {
   const currentUser = useAuthStore((s) => s.currentUser);
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(
-    () => sessionStorage.getItem("email-banner-dismissed") === "true"
+    () => sessionStorage.getItem('email-banner-dismissed') === 'true'
   );
 
   if (!currentUser || currentUser.emailVerified || dismissed) return null;
@@ -19,9 +19,9 @@ export function EmailVerificationBanner() {
     setLoading(true);
     try {
       await authService.resendVerification();
-      toast.success("Verification email sent. Check your inbox.");
+      toast.success('Verification email sent. Check your inbox.');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to send verification email";
+      const message = err instanceof Error ? err.message : 'Failed to send verification email';
       toast.error(message);
     } finally {
       setLoading(false);
@@ -40,9 +40,7 @@ export function EmailVerificationBanner() {
           disabled={loading}
           onClick={handleResend}
         >
-          {loading ? (
-            <Loader2 className="size-3 animate-spin mr-1" />
-          ) : null}
+          {loading ? <Loader2 className="size-3 animate-spin mr-1" /> : null}
           Resend verification email
         </Button>
       </div>
@@ -52,7 +50,7 @@ export function EmailVerificationBanner() {
         className="h-6 w-6 text-warning-text hover:text-foreground hover:bg-warning-bg"
         onClick={() => {
           setDismissed(true);
-          sessionStorage.setItem("email-banner-dismissed", "true");
+          sessionStorage.setItem('email-banner-dismissed', 'true');
         }}
       >
         <X className="size-3.5" />

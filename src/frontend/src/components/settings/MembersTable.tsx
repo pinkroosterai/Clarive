@@ -1,13 +1,5 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Trash2, RotateCw, Clock } from 'lucide-react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,27 +10,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Trash2, RotateCw, Clock } from "lucide-react";
-import type { TeamMember, User } from "@/types";
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import type { TeamMember, User } from '@/types';
 
 const roleBadgeClass: Record<string, string> = {
-  admin: "bg-role-admin-bg text-role-admin-text border-role-admin-border",
-  editor: "bg-role-editor-bg text-role-editor-text border-role-editor-border",
-  viewer: "bg-role-viewer-bg text-role-viewer-text border-role-viewer-border",
+  admin: 'bg-role-admin-bg text-role-admin-text border-role-admin-border',
+  editor: 'bg-role-editor-bg text-role-editor-text border-role-editor-border',
+  viewer: 'bg-role-viewer-bg text-role-viewer-text border-role-viewer-border',
 };
 
 function formatExpiry(expiresAt: string | null | undefined): string | null {
   if (!expiresAt) return null;
   const diff = new Date(expiresAt).getTime() - Date.now();
-  if (diff <= 0) return "Expired";
+  if (diff <= 0) return 'Expired';
   const hours = Math.floor(diff / (1000 * 60 * 60));
   if (hours < 24) return `${hours}h left`;
   const days = Math.floor(hours / 24);
@@ -49,7 +50,7 @@ interface MembersTableProps {
   members: TeamMember[];
   isAdmin: boolean;
   currentUserId: string | undefined;
-  onRoleChange: (id: string, role: User["role"]) => void;
+  onRoleChange: (id: string, role: User['role']) => void;
   onResend: (id: string) => void;
   onRevoke: (id: string) => void;
   onRemove: (id: string) => void;
@@ -81,29 +82,23 @@ export function MembersTable({
           </TableHeader>
           <TableBody>
             {members.map((member) => {
-              const isSelf = member.status === "active" && member.id === currentUserId;
-              const isPending = member.status === "pending";
+              const isSelf = member.status === 'active' && member.id === currentUserId;
+              const isPending = member.status === 'pending';
               return (
                 <TableRow
                   key={member.id}
-                  className={isSelf ? "bg-primary/5" : isPending ? "opacity-70" : undefined}
+                  className={isSelf ? 'bg-primary/5' : isPending ? 'opacity-70' : undefined}
                 >
                   <TableCell className="font-medium">
                     {member.name ?? <span className="text-foreground-muted italic">Invited</span>}
-                    {isSelf && (
-                      <span className="ml-2 text-xs text-foreground-muted">
-                        (you)
-                      </span>
-                    )}
+                    {isSelf && <span className="ml-2 text-xs text-foreground-muted">(you)</span>}
                   </TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>
                     {isAdmin && !isSelf && !isPending ? (
                       <Select
                         value={member.role}
-                        onValueChange={(v) =>
-                          onRoleChange(member.id, v as User["role"])
-                        }
+                        onValueChange={(v) => onRoleChange(member.id, v as User['role'])}
                       >
                         <SelectTrigger className="w-28 h-8">
                           <SelectValue />
@@ -115,7 +110,10 @@ export function MembersTable({
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Badge variant="outline" className={roleBadgeClass[member.role] ?? roleBadgeClass.viewer}>
+                      <Badge
+                        variant="outline"
+                        className={roleBadgeClass[member.role] ?? roleBadgeClass.viewer}
+                      >
                         {member.role}
                       </Badge>
                     )}
@@ -123,7 +121,10 @@ export function MembersTable({
                   <TableCell>
                     {isPending ? (
                       <div className="flex items-center gap-1.5">
-                        <Badge variant="outline" className="bg-warning-bg text-warning-text border-warning-border">
+                        <Badge
+                          variant="outline"
+                          className="bg-warning-bg text-warning-text border-warning-border"
+                        >
                           <Clock className="size-3 mr-1" />
                           Pending
                         </Badge>
@@ -134,7 +135,10 @@ export function MembersTable({
                         )}
                       </div>
                     ) : (
-                      <Badge variant="outline" className="bg-success-bg text-success-text border-success-border">
+                      <Badge
+                        variant="outline"
+                        className="bg-success-bg text-success-text border-success-border"
+                      >
                         Active
                       </Badge>
                     )}
@@ -170,8 +174,8 @@ export function MembersTable({
                                   Revoke invitation for {member.email}?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  The invitation link will no longer work. You can
-                                  send a new invitation later.
+                                  The invitation link will no longer work. You can send a new
+                                  invitation later.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -199,12 +203,9 @@ export function MembersTable({
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Remove {member.name}?
-                              </AlertDialogTitle>
+                              <AlertDialogTitle>Remove {member.name}?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                They will lose access to Clarive. This action
-                                cannot be undone.
+                                They will lose access to Clarive. This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

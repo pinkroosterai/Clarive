@@ -1,12 +1,14 @@
-import { Outlet } from "react-router-dom";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "./AppSidebar";
-import { TopBar } from "./TopBar";
-import { DndProvider } from "@/components/dnd/DndProvider";
-import { EmailVerificationBanner } from "@/components/common/EmailVerificationBanner";
-import { MaintenanceBanner } from "@/components/common/MaintenanceBanner";
-import { ErrorBoundary, PageErrorFallback } from "@/components/common/ErrorBoundary";
-import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import { Outlet } from 'react-router-dom';
+
+import { AppSidebar } from './AppSidebar';
+import { TopBar } from './TopBar';
+
+import { EmailVerificationBanner } from '@/components/common/EmailVerificationBanner';
+import { ErrorBoundary, PageErrorFallback } from '@/components/common/ErrorBoundary';
+import { MaintenanceBanner } from '@/components/common/MaintenanceBanner';
+import { DndProvider } from '@/components/dnd/DndProvider';
+import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 export function AppShell() {
   return (

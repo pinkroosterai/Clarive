@@ -1,6 +1,6 @@
 export interface TemplateField {
   name: string;
-  type: "string" | "int" | "float" | "enum";
+  type: 'string' | 'int' | 'float' | 'enum';
   enumValues: string[];
   defaultValue: string | null;
   min: number | null;
@@ -20,7 +20,7 @@ export interface PromptEntry {
   prompts: Prompt[];
   folderId: string | null;
   version: number;
-  versionState: "draft" | "published" | "historical";
+  versionState: 'draft' | 'published' | 'historical';
   isTrashed: boolean;
   createdAt: string;
   updatedAt: string;
@@ -44,13 +44,13 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "editor" | "viewer";
+  role: 'admin' | 'editor' | 'viewer';
   emailVerified: boolean;
   onboardingCompleted: boolean;
   avatarUrl: string | null;
   hasPassword: boolean;
   isSuperUser: boolean;
-  themePreference?: "light" | "dark" | "system" | null;
+  themePreference?: 'light' | 'dark' | 'system' | null;
   createdAt?: string;
 }
 
@@ -58,8 +58,8 @@ export interface TeamMember {
   id: string;
   email: string;
   name: string | null;
-  role: "admin" | "editor" | "viewer";
-  status: "active" | "pending";
+  role: 'admin' | 'editor' | 'viewer';
+  status: 'active' | 'pending';
   createdAt: string;
   expiresAt?: string | null;
 }
@@ -108,7 +108,7 @@ export interface AuditLogEntry {
 
 export interface VersionInfo {
   version: number;
-  versionState: "draft" | "published" | "historical";
+  versionState: 'draft' | 'published' | 'historical';
   publishedAt: string | null;
   publishedBy: string | null;
 }
@@ -143,7 +143,7 @@ export interface IterationScore {
 export interface Workspace {
   id: string;
   name: string;
-  role: "admin" | "editor" | "viewer";
+  role: 'admin' | 'editor' | 'viewer';
   isPersonal: boolean;
   memberCount: number;
   avatarUrl: string | null;
@@ -182,7 +182,7 @@ export interface DashboardStats {
 export interface RecentEntry {
   id: string;
   title: string;
-  versionState: "draft" | "published" | "historical";
+  versionState: 'draft' | 'published' | 'historical';
   updatedAt: string;
 }
 

@@ -1,14 +1,13 @@
-import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
-import { Loader2, Check, Users } from "lucide-react";
-import { AnvilIcon } from "@/components/icons/AnvilIcon";
-import { useAuthStore } from "@/store/authStore";
-import { useQueryClient } from "@tanstack/react-query";
-import { handleApiError } from "@/lib/handleApiError";
-import { getActiveWorkspaceId } from "@/services/api/apiClient";
+import { useQueryClient } from '@tanstack/react-query';
+import { Loader2, Check, Users } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 
-import { Button } from "@/components/ui/button";
-import type { Workspace } from "@/types";
+import { AnvilIcon } from '@/components/icons/AnvilIcon';
+import { handleApiError } from '@/lib/handleApiError';
+import { getActiveWorkspaceId } from '@/services/api/apiClient';
+import { useAuthStore } from '@/store/authStore';
+import type { Workspace } from '@/types';
 
 const WorkspaceSelectorPage = () => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const WorkspaceSelectorPage = () => {
 
   const [switching, setSwitching] = useState<string | null>(null);
   const [rememberWorkspace, setRememberWorkspace] = useState(
-    () => localStorage.getItem("cl_remember_workspace") === "true",
+    () => localStorage.getItem('cl_remember_workspace') === 'true'
   );
 
   if (!isAuthenticated) {
@@ -36,13 +35,13 @@ const WorkspaceSelectorPage = () => {
       await switchWorkspace(ws.id);
       queryClient.clear();
       if (rememberWorkspace) {
-        localStorage.setItem("cl_remember_workspace", "true");
+        localStorage.setItem('cl_remember_workspace', 'true');
       } else {
-        localStorage.removeItem("cl_remember_workspace");
+        localStorage.removeItem('cl_remember_workspace');
       }
-      navigate("/", { replace: true });
+      navigate('/', { replace: true });
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Failed to switch workspace" });
+      handleApiError(err, { fallback: 'Failed to switch workspace' });
       setSwitching(null);
     }
   };
@@ -55,7 +54,9 @@ const WorkspaceSelectorPage = () => {
         <div className="bg-surface/80 backdrop-blur-xl border border-white/[0.08] rounded-2xl elevation-3 p-8">
           <div className="text-center space-y-2 mb-6">
             <AnvilIcon className="mx-auto mb-3 size-16" />
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Choose a workspace</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Choose a workspace
+            </h1>
             <p className="text-foreground-muted text-sm">
               Select which workspace you'd like to open
             </p>
@@ -74,9 +75,7 @@ const WorkspaceSelectorPage = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground truncate">
-                      {ws.name}
-                    </span>
+                    <span className="font-medium text-foreground truncate">{ws.name}</span>
                     {ws.isPersonal && (
                       <span className="text-[10px] text-foreground-muted bg-surface px-1.5 py-0.5 rounded shrink-0">
                         Personal

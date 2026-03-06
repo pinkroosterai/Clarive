@@ -1,5 +1,6 @@
-import type { AuthResponse, PendingWorkspaceInvitation, InvitationRespondResult } from "@/types";
-import { api, setToken, setRefreshToken } from "./apiClient";
+import { api, setToken, setRefreshToken } from './apiClient';
+
+import type { AuthResponse, PendingWorkspaceInvitation, InvitationRespondResult } from '@/types';
 
 export interface InvitationInfo {
   email: string;
@@ -16,35 +17,28 @@ export interface PendingInvitation {
 }
 
 export async function validateToken(token: string): Promise<InvitationInfo> {
-  return api.get<InvitationInfo>(
-    `/api/invitations/${encodeURIComponent(token)}/validate`,
-  );
+  return api.get<InvitationInfo>(`/api/invitations/${encodeURIComponent(token)}/validate`);
 }
 
 export async function acceptInvitation(
   token: string,
   name: string,
-  password: string,
+  password: string
 ): Promise<AuthResponse> {
-  const res = await api.post<AuthResponse>(
-    `/api/invitations/${encodeURIComponent(token)}/accept`,
-    { name, password },
-  );
+  const res = await api.post<AuthResponse>(`/api/invitations/${encodeURIComponent(token)}/accept`, {
+    name,
+    password,
+  });
   setToken(res.token);
   setRefreshToken(res.refreshToken);
   return res;
 }
 
-export async function createInvitation(
-  email: string,
-  role: string,
-): Promise<PendingInvitation> {
-  return api.post<PendingInvitation>("/api/invitations", { email, role });
+export async function createInvitation(email: string, role: string): Promise<PendingInvitation> {
+  return api.post<PendingInvitation>('/api/invitations', { email, role });
 }
 
-export async function resendInvitation(
-  id: string,
-): Promise<PendingInvitation> {
+export async function resendInvitation(id: string): Promise<PendingInvitation> {
   return api.post<PendingInvitation>(`/api/invitations/${id}/resend`);
 }
 
@@ -54,22 +48,19 @@ export async function revokeInvitation(id: string): Promise<void> {
 
 export async function getPendingInvitations(): Promise<PendingWorkspaceInvitation[]> {
   const res = await api.get<{ invitations: PendingWorkspaceInvitation[] }>(
-    "/api/invitations/pending",
+    '/api/invitations/pending'
   );
   return res.invitations;
 }
 
 export async function getPendingCount(): Promise<number> {
-  const res = await api.get<{ count: number }>("/api/invitations/pending/count");
+  const res = await api.get<{ count: number }>('/api/invitations/pending/count');
   return res.count;
 }
 
 export async function respondToInvitation(
   id: string,
-  accept: boolean,
+  accept: boolean
 ): Promise<InvitationRespondResult> {
-  return api.post<InvitationRespondResult>(
-    `/api/invitations/${id}/respond`,
-    { accept },
-  );
+  return api.post<InvitationRespondResult>(`/api/invitations/${id}/respond`, { accept });
 }

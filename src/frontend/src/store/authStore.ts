@@ -1,16 +1,17 @@
-import { create } from "zustand";
-import type { User, Workspace } from "@/types";
+import { create } from 'zustand';
+
+import { queryClient } from '@/lib/queryClient';
 import {
   setToken,
   getToken,
   setRefreshToken,
   getActiveWorkspaceId,
   setActiveWorkspaceId,
-} from "@/services/api/apiClient";
-import { getMe } from "@/services/api/authService";
-import { switchWorkspace as apiSwitchWorkspace } from "@/services/api/workspaceService";
-import { getSystemStatus } from "@/services/api/superService";
-import { queryClient } from "@/lib/queryClient";
+} from '@/services/api/apiClient';
+import { getMe } from '@/services/api/authService';
+import { getSystemStatus } from '@/services/api/superService';
+import { switchWorkspace as apiSwitchWorkspace } from '@/services/api/workspaceService';
+import type { User, Workspace } from '@/types';
 
 interface AuthState {
   currentUser: User | null;
@@ -40,17 +41,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   setWorkspaces: (workspaces: Workspace[]) => {
     const activeId = getActiveWorkspaceId();
-    const active =
-      workspaces.find((w) => w.id === activeId) ?? workspaces[0] ?? null;
+    const active = workspaces.find((w) => w.id === activeId) ?? workspaces[0] ?? null;
     if (active) setActiveWorkspaceId(active.id);
     set({ workspaces, activeWorkspace: active });
   },
   switchWorkspace: async (workspaceId: string) => {
     const { user } = await apiSwitchWorkspace(workspaceId);
     const workspaces = get().workspaces.map((w) =>
-      w.id === workspaceId
-        ? { ...w, role: user.role as Workspace["role"] }
-        : w,
+      w.id === workspaceId ? { ...w, role: user.role } : w
     );
     const active = workspaces.find((w) => w.id === workspaceId) ?? null;
     set({

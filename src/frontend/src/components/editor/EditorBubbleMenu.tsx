@@ -1,5 +1,5 @@
-import type { Editor } from "@tiptap/react";
-import { BubbleMenu } from "@tiptap/react/menus";
+import type { Editor } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import {
   Bold,
   Italic,
@@ -10,13 +10,13 @@ import {
   ListOrdered,
   Code,
   Code2,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface ToolbarButtonProps {
   active: boolean;
@@ -27,14 +27,21 @@ interface ToolbarButtonProps {
   shortcut?: string;
 }
 
-function ToolbarButton({ active, onClick, disabled, icon: Icon, label, shortcut }: ToolbarButtonProps) {
+function ToolbarButton({
+  active,
+  onClick,
+  disabled,
+  icon: Icon,
+  label,
+  shortcut,
+}: ToolbarButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className={cn("size-7 rounded-md", active && "bg-primary/20 text-primary")}
+          className={cn('size-7 rounded-md', active && 'bg-primary/20 text-primary')}
           onClick={onClick}
           disabled={disabled}
         >
@@ -57,11 +64,11 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
   return (
     <BubbleMenu
       editor={editor}
-      tippyOptions={{ duration: 150, placement: "top" }}
+      options={{ placement: 'top' }}
       className="flex items-center gap-0.5 rounded-lg bg-surface border border-border-subtle elevation-2 p-1"
     >
       <ToolbarButton
-        active={editor.isActive("bold")}
+        active={editor.isActive('bold')}
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
         icon={Bold}
@@ -69,7 +76,7 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
         shortcut="Ctrl+B"
       />
       <ToolbarButton
-        active={editor.isActive("italic")}
+        active={editor.isActive('italic')}
         onClick={() => editor.chain().focus().toggleItalic().run()}
         disabled={!editor.can().chain().focus().toggleItalic().run()}
         icon={Italic}
@@ -80,21 +87,21 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
       <Separator orientation="vertical" className="mx-0.5 h-5" />
 
       <ToolbarButton
-        active={editor.isActive("heading", { level: 1 })}
+        active={editor.isActive('heading', { level: 1 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         disabled={!editor.can().chain().focus().toggleHeading({ level: 1 }).run()}
         icon={Heading1}
         label="Heading 1"
       />
       <ToolbarButton
-        active={editor.isActive("heading", { level: 2 })}
+        active={editor.isActive('heading', { level: 2 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         disabled={!editor.can().chain().focus().toggleHeading({ level: 2 }).run()}
         icon={Heading2}
         label="Heading 2"
       />
       <ToolbarButton
-        active={editor.isActive("heading", { level: 3 })}
+        active={editor.isActive('heading', { level: 3 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         disabled={!editor.can().chain().focus().toggleHeading({ level: 3 }).run()}
         icon={Heading3}
@@ -104,21 +111,21 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
       <Separator orientation="vertical" className="mx-0.5 h-5" />
 
       <ToolbarButton
-        active={editor.isActive("bulletList")}
+        active={editor.isActive('bulletList')}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         disabled={!editor.can().chain().focus().toggleBulletList().run()}
         icon={List}
         label="Bullet list"
       />
       <ToolbarButton
-        active={editor.isActive("orderedList")}
+        active={editor.isActive('orderedList')}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         disabled={!editor.can().chain().focus().toggleOrderedList().run()}
         icon={ListOrdered}
         label="Numbered list"
       />
       <ToolbarButton
-        active={editor.isActive("code")}
+        active={editor.isActive('code')}
         onClick={() => editor.chain().focus().toggleCode().run()}
         disabled={!editor.can().chain().focus().toggleCode().run()}
         icon={Code}
@@ -126,7 +133,7 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
         shortcut="Ctrl+E"
       />
       <ToolbarButton
-        active={editor.isActive("codeBlock")}
+        active={editor.isActive('codeBlock')}
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         disabled={!editor.can().chain().focus().toggleCodeBlock().run()}
         icon={Code2}

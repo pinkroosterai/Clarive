@@ -1,7 +1,8 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle } from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: React.ReactNode;
@@ -27,7 +28,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info.componentStack);
+    console.error('ErrorBoundary caught:', error, info.componentStack);
   }
 
   resetError = () => {
@@ -38,12 +39,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) {
         const FallbackComponent = this.props.fallback;
-        return (
-          <FallbackComponent
-            error={this.state.error!}
-            resetError={this.resetError}
-          />
-        );
+        return <FallbackComponent error={this.state.error!} resetError={this.resetError} />;
       }
 
       return (
@@ -56,11 +52,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
               Something went wrong
             </h1>
             <p className="text-sm text-foreground-muted">
-              {this.state.error?.message || "An unexpected error occurred."}
+              {this.state.error?.message || 'An unexpected error occurred.'}
             </p>
-            <Button onClick={() => window.location.reload()}>
-              Reload Page
-            </Button>
+            <Button onClick={() => window.location.reload()}>Reload Page</Button>
           </div>
         </div>
       );
@@ -70,19 +64,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-export function PageErrorFallback({
-  error,
-  resetError,
-}: {
-  error: Error;
-  resetError: () => void;
-}) {
+export function PageErrorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
       <AlertTriangle className="size-10 text-destructive" />
-      <h2 className="text-lg font-semibold text-foreground">
-        This page encountered an error
-      </h2>
+      <h2 className="text-lg font-semibold text-foreground">This page encountered an error</h2>
       <p className="text-sm text-foreground-muted max-w-sm">{error.message}</p>
       <div className="flex gap-3">
         <Button variant="outline" onClick={resetError}>

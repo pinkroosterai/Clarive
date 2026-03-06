@@ -1,30 +1,10 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { Copy, Key, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Copy, Key, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
-import { useAuthStore } from "@/store/authStore";
-import { apiKeyService } from "@/services";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { EmptyState } from '@/components/common/EmptyState';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,23 +14,43 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/common/EmptyState";
-import { copyToClipboard } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { handleApiError } from '@/lib/handleApiError';
+import { copyToClipboard } from '@/lib/utils';
+import { apiKeyService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 export default function ApiKeyPanel() {
   const currentUser = useAuthStore((s) => s.currentUser);
   const queryClient = useQueryClient();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [keyName, setKeyName] = useState("");
+  const [keyName, setKeyName] = useState('');
   const [createdKey, setCreatedKey] = useState<{ fullKey: string; name: string } | null>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: keys, isLoading } = useQuery({
-    queryKey: ["apiKeys"],
+    queryKey: ['apiKeys'],
     queryFn: apiKeyService.getApiKeysList,
   });
 
@@ -60,23 +60,23 @@ export default function ApiKeyPanel() {
       if (result.fullKey) {
         setCreatedKey({ fullKey: result.fullKey, name: result.name });
       }
-      setKeyName("");
-      queryClient.invalidateQueries({ queryKey: ["apiKeys"] });
+      setKeyName('');
+      queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
     },
-    onError: (err: unknown) => handleApiError(err, { title: "Failed to create API key" }),
+    onError: (err: unknown) => handleApiError(err, { title: 'Failed to create API key' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiKeyService.deleteApiKey(id),
     onSuccess: () => {
-      toast.success("API key revoked");
-      queryClient.invalidateQueries({ queryKey: ["apiKeys"] });
+      toast.success('API key revoked');
+      queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
       setDeleteTarget(null);
     },
-    onError: (err: unknown) => handleApiError(err, { title: "Failed to revoke API key" }),
+    onError: (err: unknown) => handleApiError(err, { title: 'Failed to revoke API key' }),
   });
 
-  if (currentUser?.role !== "admin") {
+  if (currentUser?.role !== 'admin') {
     return (
       <div className="py-12 text-center text-foreground-muted text-sm">
         Only the account admin can manage API keys.
@@ -87,25 +87,23 @@ export default function ApiKeyPanel() {
   const handleCreateClose = () => {
     setCreateOpen(false);
     setCreatedKey(null);
-    setKeyName("");
+    setKeyName('');
   };
 
   const handleCopy = async () => {
     if (!createdKey) return;
     try {
       await copyToClipboard(createdKey.fullKey);
-      toast.success("Key copied to clipboard");
+      toast.success('Key copied to clipboard');
     } catch {
-      toast.error("Failed to copy");
+      toast.error('Failed to copy');
     }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-foreground-muted">
-          Manage API keys for external integrations.
-        </p>
+        <p className="text-sm text-foreground-muted">Manage API keys for external integrations.</p>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="size-4" />
           Create API Key
@@ -126,41 +124,43 @@ export default function ApiKeyPanel() {
         />
       ) : (
         <div className="bg-surface rounded-xl elevation-1 border border-border-subtle overflow-clip">
-        <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Key</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[60px]" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {keys.map((k) => (
-              <TableRow key={k.id}>
-                <TableCell className="font-medium">{k.name}</TableCell>
-                <TableCell>
-                  <span className="font-mono text-sm text-foreground-muted bg-elevated rounded px-2 py-1">{k.keyPrefix}</span>
-                </TableCell>
-                <TableCell className="text-foreground-muted text-sm">
-                  {format(new Date(k.createdAt), "MMM d, yyyy")}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => setDeleteTarget({ id: k.id, name: k.name })}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Key</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="w-[60px]" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {keys.map((k) => (
+                  <TableRow key={k.id}>
+                    <TableCell className="font-medium">{k.name}</TableCell>
+                    <TableCell>
+                      <span className="font-mono text-sm text-foreground-muted bg-elevated rounded px-2 py-1">
+                        {k.keyPrefix}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-foreground-muted text-sm">
+                      {format(new Date(k.createdAt), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTarget({ id: k.id, name: k.name })}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 
@@ -168,11 +168,11 @@ export default function ApiKeyPanel() {
       <Dialog open={createOpen} onOpenChange={(open) => !open && handleCreateClose()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{createdKey ? "API Key Created" : "Create API Key"}</DialogTitle>
+            <DialogTitle>{createdKey ? 'API Key Created' : 'Create API Key'}</DialogTitle>
             <DialogDescription>
               {createdKey
-                ? "Your new API key is shown below."
-                : "Give your key a descriptive name to identify its usage."}
+                ? 'Your new API key is shown below.'
+                : 'Give your key a descriptive name to identify its usage.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -212,7 +212,7 @@ export default function ApiKeyPanel() {
                 disabled={!keyName.trim() || createMutation.isPending}
                 onClick={() => createMutation.mutate(keyName.trim())}
               >
-                {createMutation.isPending ? "Creating…" : "Create"}
+                {createMutation.isPending ? 'Creating…' : 'Create'}
               </Button>
             )}
           </DialogFooter>
@@ -225,7 +225,8 @@ export default function ApiKeyPanel() {
           <AlertDialogHeader>
             <AlertDialogTitle>Revoke {deleteTarget?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Revoking this key will immediately break any integrations using it. This action cannot be undone.
+              Revoking this key will immediately break any integrations using it. This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,18 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
-import type { ClarificationQuestion } from "@/types";
+import type { ClarificationQuestion } from '@/types';
 
-export function useQuestionAnswers(
-  questions: ClarificationQuestion[],
-  enhancements: string[],
-) {
+export function useQuestionAnswers(questions: ClarificationQuestion[], enhancements: string[]) {
   const [answers, setAnswers] = useState<string[]>([]);
-  const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>(
-    [],
-  );
+  const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
 
   useEffect(() => {
-    setAnswers(questions.map(() => ""));
+    setAnswers(questions.map(() => ''));
     setSelectedEnhancements([]);
   }, [questions, enhancements]);
 
@@ -26,7 +21,7 @@ export function useQuestionAnswers(
 
   const toggleEnhancement = (name: string) => {
     setSelectedEnhancements((prev) =>
-      prev.includes(name) ? prev.filter((e) => e !== name) : [...prev, name],
+      prev.includes(name) ? prev.filter((e) => e !== name) : [...prev, name]
     );
   };
 

@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react";
-import type { PromptEntry } from "@/types";
+import { useCallback, useRef, useState } from 'react';
+
+import type { PromptEntry } from '@/types';
 
 const MAX_DEPTH = 50;
 const COALESCE_MS = 1000;
@@ -30,10 +31,7 @@ export function useEntryHistory(): UseEntryHistoryReturn {
   const tick = () => setTick((t) => t + 1);
 
   const commitSnapshot = useCallback((entry: PromptEntry) => {
-    pastRef.current = [
-      ...pastRef.current.slice(-(MAX_DEPTH - 1)),
-      structuredClone(entry),
-    ];
+    pastRef.current = [...pastRef.current.slice(-(MAX_DEPTH - 1)), structuredClone(entry)];
     futureRef.current = [];
     lastSnapshotTimeRef.current = Date.now();
     tick();
@@ -55,10 +53,7 @@ export function useEntryHistory(): UseEntryHistoryReturn {
         // Within coalesce window — defer snapshot
         const snapshot = structuredClone(entry);
         pendingRef.current = setTimeout(() => {
-          pastRef.current = [
-            ...pastRef.current.slice(-(MAX_DEPTH - 1)),
-            snapshot,
-          ];
+          pastRef.current = [...pastRef.current.slice(-(MAX_DEPTH - 1)), snapshot];
           futureRef.current = [];
           lastSnapshotTimeRef.current = Date.now();
           pendingRef.current = null;
@@ -66,7 +61,7 @@ export function useEntryHistory(): UseEntryHistoryReturn {
         }, COALESCE_MS);
       }
     },
-    [commitSnapshot],
+    [commitSnapshot]
   );
 
   const undo = useCallback((current: PromptEntry): PromptEntry | null => {

@@ -1,30 +1,31 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { userService, invitationService } from "@/services";
-import { useAuthStore } from "@/store/authStore";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { User } from "@/types";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
-import { InviteUserDialog } from "./InviteUserDialog";
-import { TransferOwnershipDialog } from "./TransferOwnershipDialog";
-import { MembersTable } from "./MembersTable";
+import { InviteUserDialog } from './InviteUserDialog';
+import { MembersTable } from './MembersTable';
+import { TransferOwnershipDialog } from './TransferOwnershipDialog';
+
+import { Skeleton } from '@/components/ui/skeleton';
+import { handleApiError } from '@/lib/handleApiError';
+import { userService, invitationService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
+import type { User } from '@/types';
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
   const { currentUser } = useAuthStore();
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin = currentUser?.role === 'admin';
 
   const { data: members, isLoading } = useQuery({
-    queryKey: ["users"],
+    queryKey: ['users'],
     queryFn: userService.getUsersList,
   });
 
   const resendMutation = useMutation({
     mutationFn: (id: string) => invitationService.resendInvitation(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Invitation resent");
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Invitation resent');
     },
     onError: (err: unknown) => handleApiError(err),
   });
@@ -32,18 +33,18 @@ export default function UserManagement() {
   const revokeMutation = useMutation({
     mutationFn: (id: string) => invitationService.revokeInvitation(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Invitation revoked");
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Invitation revoked');
     },
     onError: (err: unknown) => handleApiError(err),
   });
 
   const roleChangeMutation = useMutation({
-    mutationFn: ({ id, role }: { id: string; role: User["role"] }) =>
+    mutationFn: ({ id, role }: { id: string; role: User['role'] }) =>
       userService.updateUserRole(id, role),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Role updated");
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Role updated');
     },
     onError: (err: unknown) => handleApiError(err),
   });
@@ -51,14 +52,14 @@ export default function UserManagement() {
   const removeMutation = useMutation({
     mutationFn: (id: string) => userService.removeUser(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("User removed");
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User removed');
     },
     onError: (err: unknown) => handleApiError(err),
   });
 
-  const activeMembers = members?.filter((m) => m.status === "active") ?? [];
-  const pendingMembers = members?.filter((m) => m.status === "pending") ?? [];
+  const activeMembers = members?.filter((m) => m.status === 'active') ?? [];
+  const pendingMembers = members?.filter((m) => m.status === 'pending') ?? [];
 
   if (isLoading) {
     return (
@@ -75,11 +76,9 @@ export default function UserManagement() {
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-foreground-muted">
-          {activeMembers.length} member{activeMembers.length !== 1 ? "s" : ""}
+          {activeMembers.length} member{activeMembers.length !== 1 ? 's' : ''}
           {pendingMembers.length > 0 && (
-            <span className="ml-1 text-warning-text">
-              ({pendingMembers.length} pending)
-            </span>
+            <span className="ml-1 text-warning-text">({pendingMembers.length} pending)</span>
           )}
         </p>
 

@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { debounce } from "./debounce";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-describe("debounce", () => {
+import { debounce } from './debounce';
+
+describe('debounce', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -10,14 +11,14 @@ describe("debounce", () => {
     vi.useRealTimers();
   });
 
-  it("does not call immediately", () => {
+  it('does not call immediately', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
     debounced();
     expect(fn).not.toHaveBeenCalled();
   });
 
-  it("calls after delay", () => {
+  it('calls after delay', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
     debounced();
@@ -25,7 +26,7 @@ describe("debounce", () => {
     expect(fn).toHaveBeenCalledOnce();
   });
 
-  it("resets timer on subsequent calls", () => {
+  it('resets timer on subsequent calls', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
     debounced();
@@ -37,26 +38,26 @@ describe("debounce", () => {
     expect(fn).toHaveBeenCalledOnce();
   });
 
-  it("passes arguments to the original function", () => {
+  it('passes arguments to the original function', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
-    debounced("a", "b");
+    debounced('a', 'b');
     vi.advanceTimersByTime(100);
-    expect(fn).toHaveBeenCalledWith("a", "b");
+    expect(fn).toHaveBeenCalledWith('a', 'b');
   });
 
-  it("uses last call arguments when called multiple times", () => {
+  it('uses last call arguments when called multiple times', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
-    debounced("first");
-    debounced("second");
-    debounced("third");
+    debounced('first');
+    debounced('second');
+    debounced('third');
     vi.advanceTimersByTime(100);
     expect(fn).toHaveBeenCalledOnce();
-    expect(fn).toHaveBeenCalledWith("third");
+    expect(fn).toHaveBeenCalledWith('third');
   });
 
-  it("can be cancelled", () => {
+  it('can be cancelled', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
     debounced();
@@ -65,7 +66,7 @@ describe("debounce", () => {
     expect(fn).not.toHaveBeenCalled();
   });
 
-  it("can be called again after cancel", () => {
+  it('can be called again after cancel', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
     debounced();
@@ -75,7 +76,7 @@ describe("debounce", () => {
     expect(fn).toHaveBeenCalledOnce();
   });
 
-  it("fires independently across multiple debounce windows", () => {
+  it('fires independently across multiple debounce windows', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
     debounced();

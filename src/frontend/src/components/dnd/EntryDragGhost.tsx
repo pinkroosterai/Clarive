@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { FileText } from 'lucide-react';
 
 interface EntryDragGhostProps {
   title: string;

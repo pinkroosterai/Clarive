@@ -1,6 +1,6 @@
-import { api } from "./apiClient";
+import { api } from './apiClient';
 
-export type ConfigInputType = "text" | "number" | "email" | "password" | "select" | "url";
+export type ConfigInputType = 'text' | 'number' | 'email' | 'password' | 'select' | 'url';
 
 export interface ConfigVisibleWhen {
   key: string;
@@ -18,7 +18,7 @@ export interface ConfigSetting {
   value: string | null;
   isOverridden: boolean;
   isConfigured: boolean;
-  source: "none" | "environment" | "dashboard";
+  source: 'none' | 'environment' | 'dashboard';
   inputType: ConfigInputType;
   selectOptions: string[] | null;
   subGroup: string | null;
@@ -37,7 +37,7 @@ export interface ResetConfigResult {
 }
 
 export async function getAllConfig(): Promise<ConfigSetting[]> {
-  return api.get<ConfigSetting[]>("/api/super/config");
+  return api.get<ConfigSetting[]>('/api/super/config');
 }
 
 export async function setConfigValue(key: string, value: string): Promise<SetConfigResult> {
@@ -65,9 +65,11 @@ export interface AiModelsResponse {
 }
 
 export async function validateAiConfig(req: ValidateAiRequest): Promise<ValidateAiResponse> {
-  return api.post<ValidateAiResponse>("/api/super/config/validate-ai", req);
+  return api.post<ValidateAiResponse>('/api/super/config/validate-ai', req);
 }
 
-export async function getAiModels(req: { apiKey?: string; endpointUrl?: string } = {}): Promise<AiModelsResponse> {
-  return api.post<AiModelsResponse>("/api/super/config/ai-models", req);
+export async function getAiModels(
+  req: { apiKey?: string; endpointUrl?: string } = {}
+): Promise<AiModelsResponse> {
+  return api.post<AiModelsResponse>('/api/super/config/ai-models', req);
 }

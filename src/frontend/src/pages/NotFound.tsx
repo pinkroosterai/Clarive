@@ -1,10 +1,11 @@
-import { useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+
+import { Button } from '@/components/ui/button';
 
 const NotFound = () => {
   useEffect(() => {
-    document.title = "Clarive — Page Not Found";
+    document.title = 'Clarive — Page Not Found';
   }, []);
 
   return (

@@ -1,23 +1,30 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Loader2, ArrowLeft, Mail } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AnvilIcon } from "@/components/icons/AnvilIcon";
-import { handleApiError } from "@/lib/handleApiError";
-import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validationSchemas";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, ArrowLeft, Mail } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { authService } from "@/services";
+import { AnvilIcon } from '@/components/icons/AnvilIcon';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { handleApiError } from '@/lib/handleApiError';
+import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validationSchemas';
+import { authService } from '@/services';
 
 const ForgotPasswordPage = () => {
   const [sent, setSent] = useState(false);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: "" },
+    defaultValues: { email: '' },
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
@@ -25,11 +32,11 @@ const ForgotPasswordPage = () => {
       await authService.forgotPassword(data.email);
       setSent(true);
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Failed to send reset email" });
+      handleApiError(err, { fallback: 'Failed to send reset email' });
     }
   };
 
-  const emailValue = form.getValues("email");
+  const emailValue = form.getValues('email');
 
   return (
     <div className="flex min-h-screen items-center justify-center auth-bg bg-background px-4">
@@ -40,7 +47,7 @@ const ForgotPasswordPage = () => {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Reset password</h1>
             <p className="text-foreground-muted text-sm">
               {sent
-                ? "Check your inbox for a reset link"
+                ? 'Check your inbox for a reset link'
                 : "Enter your email and we'll send you a reset link"}
             </p>
           </div>
@@ -51,8 +58,9 @@ const ForgotPasswordPage = () => {
                 <Mail className="size-6" />
               </div>
               <p className="text-center text-sm text-foreground-secondary">
-                If an account exists for <span className="font-medium text-foreground">{emailValue}</span>,
-                you'll receive an email with instructions to reset your password.
+                If an account exists for{' '}
+                <span className="font-medium text-foreground">{emailValue}</span>, you'll receive an
+                email with instructions to reset your password.
               </p>
             </div>
           ) : (

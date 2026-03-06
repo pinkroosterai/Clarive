@@ -1,5 +1,6 @@
-import type { Folder } from "@/types";
-import type { DragData } from "./types";
+import type { DragData } from './types';
+
+import type { Folder } from '@/types';
 
 /** Collect a folder and all its descendant IDs (for circular-move prevention). */
 export function collectDescendantIds(folder: Folder): Set<string> {
@@ -29,9 +30,9 @@ export function findFolder(tree: Folder[], id: string): Folder | null {
 export function isValidDrop(
   dragData: DragData,
   targetFolderId: string | null,
-  folderTree: Folder[],
+  _folderTree: Folder[]
 ): boolean {
-  if (dragData.type === "entry") {
+  if (dragData.type === 'entry') {
     // Same folder → no-op
     return dragData.entry.folderId !== targetFolderId;
   }

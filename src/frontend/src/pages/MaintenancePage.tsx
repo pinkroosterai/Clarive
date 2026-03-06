@@ -1,8 +1,9 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Wrench } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
-import { getSystemStatus } from "@/services/api/superService";
+import { Wrench } from 'lucide-react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { getSystemStatus } from '@/services/api/superService';
+import { useAuthStore } from '@/store/authStore';
 
 const POLL_INTERVAL = 30_000;
 
@@ -16,7 +17,7 @@ const MaintenancePage = () => {
         const status = await getSystemStatus();
         if (!status.maintenance) {
           setMaintenanceMode(false);
-          navigate("/", { replace: true });
+          navigate('/', { replace: true });
         }
       } catch {
         // Ignore errors — keep showing maintenance page
@@ -38,8 +39,8 @@ const MaintenancePage = () => {
           Clarive is undergoing maintenance
         </h1>
         <p className="text-foreground-muted">
-          We're performing scheduled maintenance to improve your experience.
-          Please try again in a few minutes.
+          We're performing scheduled maintenance to improve your experience. Please try again in a
+          few minutes.
         </p>
         <p className="text-xs text-foreground-muted/60">
           This page will automatically refresh when maintenance is complete.

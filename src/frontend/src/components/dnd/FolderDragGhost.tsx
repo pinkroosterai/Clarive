@@ -1,4 +1,4 @@
-import { Folder } from "lucide-react";
+import { Folder } from 'lucide-react';
 
 interface FolderDragGhostProps {
   name: string;

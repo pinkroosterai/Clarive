@@ -1,13 +1,9 @@
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { userService } from "@/services";
-import { useAuthStore } from "@/store/authStore";
-import { handleApiError } from "@/lib/handleApiError";
-import { toast } from "sonner";
-import { ArrowRightLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useQueryClient } from '@tanstack/react-query';
+import { ArrowRightLeft } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -16,15 +12,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { TeamMember } from "@/types";
+} from '@/components/ui/select';
+import { handleApiError } from '@/lib/handleApiError';
+import { userService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
+import type { TeamMember } from '@/types';
 
 interface TransferOwnershipDialogProps {
   activeMembers: TeamMember[];
@@ -34,8 +35,8 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
   const queryClient = useQueryClient();
   const { currentUser, setUser } = useAuthStore();
   const [transferOpen, setTransferOpen] = useState(false);
-  const [transferTargetId, setTransferTargetId] = useState("");
-  const [transferConfirm, setTransferConfirm] = useState("");
+  const [transferTargetId, setTransferTargetId] = useState('');
+  const [transferConfirm, setTransferConfirm] = useState('');
   const [transferring, setTransferring] = useState(false);
 
   const handleTransfer = async () => {
@@ -43,14 +44,14 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
     setTransferring(true);
     try {
       await userService.transferOwnership(transferTargetId, transferConfirm);
-      setUser({ ...currentUser, role: "editor" });
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Ownership transferred");
+      setUser({ ...currentUser, role: 'editor' });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Ownership transferred');
       setTransferOpen(false);
-      setTransferTargetId("");
-      setTransferConfirm("");
+      setTransferTargetId('');
+      setTransferConfirm('');
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Transfer failed" });
+      handleApiError(err, { fallback: 'Transfer failed' });
     } finally {
       setTransferring(false);
     }
@@ -62,8 +63,8 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
       onOpenChange={(o) => {
         setTransferOpen(o);
         if (!o) {
-          setTransferTargetId("");
-          setTransferConfirm("");
+          setTransferTargetId('');
+          setTransferConfirm('');
         }
       }}
     >
@@ -77,17 +78,13 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
         <DialogHeader>
           <DialogTitle>Transfer Ownership</DialogTitle>
           <DialogDescription>
-            This will make the selected user the new admin. Your role
-            will be changed to editor.
+            This will make the selected user the new admin. Your role will be changed to editor.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div className="space-y-2">
             <Label>New owner</Label>
-            <Select
-              value={transferTargetId}
-              onValueChange={setTransferTargetId}
-            >
+            <Select value={transferTargetId} onValueChange={setTransferTargetId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a user" />
               </SelectTrigger>
@@ -104,8 +101,7 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
           </div>
           <div className="space-y-2">
             <Label>
-              Type <span className="font-mono font-bold">TRANSFER</span> to
-              confirm
+              Type <span className="font-mono font-bold">TRANSFER</span> to confirm
             </Label>
             <Input
               value={transferConfirm}
@@ -117,14 +113,10 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
         <DialogFooter>
           <Button
             variant="destructive"
-            disabled={
-              transferConfirm !== "TRANSFER" ||
-              !transferTargetId ||
-              transferring
-            }
+            disabled={transferConfirm !== 'TRANSFER' || !transferTargetId || transferring}
             onClick={handleTransfer}
           >
-            {transferring ? "Transferring\u2026" : "Confirm Transfer"}
+            {transferring ? 'Transferring\u2026' : 'Confirm Transfer'}
           </Button>
         </DialogFooter>
       </DialogContent>

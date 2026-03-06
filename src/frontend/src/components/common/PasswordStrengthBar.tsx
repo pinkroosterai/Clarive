@@ -1,12 +1,13 @@
-import { useMemo } from 'react'
-import { cn } from '@/lib/utils'
-import { evaluatePassword, type StrengthScore } from '@/lib/passwordStrength'
-import { useDebounce } from '@/hooks/useDebounce'
+import { useMemo } from 'react';
+
+import { useDebounce } from '@/hooks/useDebounce';
+import { evaluatePassword, type StrengthScore } from '@/lib/passwordStrength';
+import { cn } from '@/lib/utils';
 
 interface PasswordStrengthBarProps {
-  password: string
-  minLength?: number
-  className?: string
+  password: string;
+  minLength?: number;
+  className?: string;
 }
 
 const SEGMENT_COLORS: Record<StrengthScore, string> = {
@@ -15,7 +16,7 @@ const SEGMENT_COLORS: Record<StrengthScore, string> = {
   2: 'bg-warning-text',
   3: 'bg-primary',
   4: 'bg-success-text',
-}
+};
 
 const LABEL_COLORS: Record<StrengthScore, string> = {
   0: 'text-destructive',
@@ -23,7 +24,7 @@ const LABEL_COLORS: Record<StrengthScore, string> = {
   2: 'text-warning-text',
   3: 'text-primary',
   4: 'text-success-text',
-}
+};
 
 // Number of segments to fill for each score
 const FILLED_SEGMENTS: Record<StrengthScore, number> = {
@@ -32,25 +33,22 @@ const FILLED_SEGMENTS: Record<StrengthScore, number> = {
   2: 3,
   3: 4,
   4: 4,
-}
+};
 
 export function PasswordStrengthBar({
   password,
   minLength = 12,
   className,
 }: PasswordStrengthBarProps) {
-  const debouncedPassword = useDebounce(password, 150)
+  const debouncedPassword = useDebounce(password, 150);
 
-  const strength = useMemo(
-    () => evaluatePassword(debouncedPassword),
-    [debouncedPassword],
-  )
+  const strength = useMemo(() => evaluatePassword(debouncedPassword), [debouncedPassword]);
 
-  if (!password) return null
+  if (!password) return null;
 
-  const tooShort = password.length < minLength
-  const filled = FILLED_SEGMENTS[strength.score]
-  const color = SEGMENT_COLORS[strength.score]
+  const tooShort = password.length < minLength;
+  const filled = FILLED_SEGMENTS[strength.score];
+  const color = SEGMENT_COLORS[strength.score];
 
   return (
     <div
@@ -68,7 +66,7 @@ export function PasswordStrengthBar({
             key={i}
             className={cn(
               'h-1 flex-1 rounded-full transition-colors duration-300',
-              i < filled ? color : 'bg-border',
+              i < filled ? color : 'bg-border'
             )}
           />
         ))}
@@ -78,25 +76,19 @@ export function PasswordStrengthBar({
       <div className="flex items-center justify-between text-xs">
         <span className={LABEL_COLORS[strength.score]}>{strength.label}</span>
         {strength.crackTime && (
-          <span className="text-foreground-muted">
-            Cracked in {strength.crackTime}
-          </span>
+          <span className="text-foreground-muted">Cracked in {strength.crackTime}</span>
         )}
       </div>
 
       {/* Min-length warning */}
       {tooShort && (
-        <p className="text-xs text-foreground-muted">
-          Must be at least {minLength} characters
-        </p>
+        <p className="text-xs text-foreground-muted">Must be at least {minLength} characters</p>
       )}
 
       {/* Feedback suggestions */}
       {!tooShort && strength.feedback.length > 0 && (
-        <p className="text-xs text-foreground-muted">
-          {strength.feedback.join(' · ')}
-        </p>
+        <p className="text-xs text-foreground-muted">{strength.feedback.join(' · ')}</p>
       )}
     </div>
-  )
+  );
 }

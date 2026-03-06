@@ -1,23 +1,9 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { FolderOpen, Undo2, Trash2 } from "lucide-react";
-import { entryService, folderService } from "@/services";
-import { buildFolderMap } from "@/lib/folderUtils";
-import { parseTemplateTags } from "@/lib/templateParser";
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { FolderOpen, Undo2, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { MarkdownEditor } from "@/components/editor/MarkdownEditor";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,12 +14,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
+import { buildFolderMap } from '@/lib/folderUtils';
+import { parseTemplateTags } from '@/lib/templateParser';
+import { entryService, folderService } from '@/services';
 
-const versionBadgeVariant: Record<string, "draft" | "published" | "historical"> = {
-  draft: "draft",
-  published: "published",
-  historical: "historical",
+const versionBadgeVariant: Record<string, 'draft' | 'published' | 'historical'> = {
+  draft: 'draft',
+  published: 'published',
+  historical: 'historical',
 };
 
 interface TrashPreviewSheetProps {
@@ -54,13 +54,13 @@ export function TrashPreviewSheet({
   isBusy,
 }: TrashPreviewSheetProps) {
   const { data: entry, isLoading } = useQuery({
-    queryKey: ["entry", entryId],
+    queryKey: ['entry', entryId],
     queryFn: () => entryService.getEntry(entryId!),
     enabled: !!entryId,
   });
 
   const { data: folders } = useQuery({
-    queryKey: ["folders"],
+    queryKey: ['folders'],
     queryFn: folderService.getFoldersTree,
   });
 
@@ -68,10 +68,9 @@ export function TrashPreviewSheet({
 
   const templateFields = useMemo(() => {
     if (!entry) return [];
-    const allContent = [
-      entry.systemMessage ?? "",
-      ...entry.prompts.map((p) => p.content),
-    ].join("\n");
+    const allContent = [entry.systemMessage ?? '', ...entry.prompts.map((p) => p.content)].join(
+      '\n'
+    );
     return parseTemplateTags(allContent);
   }, [entry]);
 
@@ -91,9 +90,7 @@ export function TrashPreviewSheet({
     }
   };
 
-  const folderName = entry?.folderId
-    ? (folderMap[entry.folderId] ?? "Unknown")
-    : "Root";
+  const folderName = entry?.folderId ? (folderMap[entry.folderId] ?? 'Unknown') : 'Root';
 
   return (
     <Sheet open={!!entryId} onOpenChange={onOpenChange}>
@@ -113,10 +110,11 @@ export function TrashPreviewSheet({
               <SheetTitle className="pr-8">{entry.title}</SheetTitle>
               <SheetDescription asChild>
                 <div className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
-                  <Badge variant={versionBadgeVariant[entry.versionState] ?? "historical"}>
-                    {entry.versionState.charAt(0).toUpperCase() + entry.versionState.slice(1)} v{entry.version}
+                  <Badge variant={versionBadgeVariant[entry.versionState] ?? 'historical'}>
+                    {entry.versionState.charAt(0).toUpperCase() + entry.versionState.slice(1)} v
+                    {entry.version}
                   </Badge>
-                  <span>Deleted {format(new Date(entry.updatedAt), "MMM d, yyyy")}</span>
+                  <span>Deleted {format(new Date(entry.updatedAt), 'MMM d, yyyy')}</span>
                   <span className="inline-flex items-center gap-1">
                     <FolderOpen className="size-3.5" />
                     {folderName}
@@ -128,7 +126,9 @@ export function TrashPreviewSheet({
             <div className="flex-1 overflow-y-auto space-y-4 py-4">
               {entry.systemMessage && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground-muted">System Message</label>
+                  <label className="text-sm font-medium text-foreground-muted">
+                    System Message
+                  </label>
                   <MarkdownEditor
                     content={entry.systemMessage}
                     onContentChange={() => {}}
@@ -142,7 +142,7 @@ export function TrashPreviewSheet({
               {entry.prompts.map((prompt, i) => (
                 <div key={prompt.id} className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground-muted">
-                    Prompt {entry.prompts.length > 1 ? i + 1 : ""}
+                    Prompt {entry.prompts.length > 1 ? i + 1 : ''}
                   </label>
                   <MarkdownEditor
                     content={prompt.content}
@@ -156,12 +156,14 @@ export function TrashPreviewSheet({
 
               {isTemplate && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground-muted">Template Variables</label>
+                  <label className="text-sm font-medium text-foreground-muted">
+                    Template Variables
+                  </label>
                   <div className="flex flex-wrap gap-1.5">
                     {templateFields.map((field) => (
                       <Badge key={field.name} variant="secondary">
                         {`{{${field.name}}}`}
-                        {field.type !== "string" && (
+                        {field.type !== 'string' && (
                           <span className="ml-1 opacity-60">({field.type})</span>
                         )}
                       </Badge>

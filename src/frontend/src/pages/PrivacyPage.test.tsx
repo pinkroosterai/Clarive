@@ -1,44 +1,43 @@
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import PrivacyPage from "./PrivacyPage";
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+
+import PrivacyPage from './PrivacyPage';
 
 beforeAll(() => {
-  vi.stubGlobal("scrollTo", vi.fn());
+  vi.stubGlobal('scrollTo', vi.fn());
 });
 
 afterAll(() => {
   vi.unstubAllGlobals();
 });
 
-describe("PrivacyPage", () => {
+describe('PrivacyPage', () => {
   it("renders the heading 'Privacy Policy'", () => {
     render(
       <MemoryRouter>
         <PrivacyPage />
       </MemoryRouter>
     );
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Privacy Policy" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeInTheDocument();
   });
 
-  it("sets document title", () => {
+  it('sets document title', () => {
     render(
       <MemoryRouter>
         <PrivacyPage />
       </MemoryRouter>
     );
-    expect(document.title).toBe("Clarive — Privacy Policy");
+    expect(document.title).toBe('Clarive — Privacy Policy');
   });
 
-  it("contains a link to /terms", () => {
+  it('contains a link to /terms', () => {
     render(
       <MemoryRouter>
         <PrivacyPage />
       </MemoryRouter>
     );
-    const termsLink = screen.getByRole("link", { name: /terms of service/i });
+    const termsLink = screen.getByRole('link', { name: /terms of service/i });
     expect(termsLink).toBeInTheDocument();
-    expect(termsLink).toHaveAttribute("href", "/terms");
+    expect(termsLink).toHaveAttribute('href', '/terms');
   });
 });

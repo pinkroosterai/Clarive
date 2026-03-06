@@ -1,9 +1,10 @@
-import type { AuditLogEntry } from "@/types";
-import { api } from "./apiClient";
+import { api } from './apiClient';
+
+import type { AuditLogEntry } from '@/types';
 
 export async function getAuditLogPage(
   page: number,
-  pageSize: number,
+  pageSize: number
 ): Promise<{ entries: AuditLogEntry[]; total: number }> {
   const res = await api.get<{
     entries: AuditLogEntry[];

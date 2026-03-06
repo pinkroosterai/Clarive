@@ -1,9 +1,8 @@
-import { useState } from "react";
-import { ChevronsUpDown, Check, Settings, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/store/authStore";
-import { handleApiError } from "@/lib/handleApiError";
+import { useQueryClient } from '@tanstack/react-query';
+import { ChevronsUpDown, Check, Settings, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,12 +10,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/dropdown-menu';
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { handleApiError } from '@/lib/handleApiError';
+import { useAuthStore } from '@/store/authStore';
 
 export function WorkspaceSwitcher() {
   const navigate = useNavigate();
@@ -33,15 +30,15 @@ export function WorkspaceSwitcher() {
     try {
       await switchWorkspace(workspaceId);
       queryClient.clear();
-      navigate("/", { replace: true });
+      navigate('/', { replace: true });
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Failed to switch workspace" });
+      handleApiError(err, { fallback: 'Failed to switch workspace' });
     } finally {
       setSwitching(null);
     }
   };
 
-  const initial = activeWorkspace?.name?.charAt(0).toUpperCase() ?? "W";
+  const initial = activeWorkspace?.name?.charAt(0).toUpperCase() ?? 'W';
 
   return (
     <SidebarMenu>
@@ -50,7 +47,7 @@ export function WorkspaceSwitcher() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              tooltip={activeWorkspace?.name ?? "Workspace"}
+              tooltip={activeWorkspace?.name ?? 'Workspace'}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               {activeWorkspace?.avatarUrl ? (
@@ -66,10 +63,10 @@ export function WorkspaceSwitcher() {
               )}
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {activeWorkspace?.name ?? "Workspace"}
+                  {activeWorkspace?.name ?? 'Workspace'}
                 </span>
                 <span className="truncate text-xs text-foreground-muted capitalize">
-                  {activeWorkspace?.role ?? "member"}
+                  {activeWorkspace?.role ?? 'member'}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -92,11 +89,7 @@ export function WorkspaceSwitcher() {
                 disabled={switching !== null}
               >
                 {ws.avatarUrl ? (
-                  <img
-                    src={ws.avatarUrl}
-                    alt=""
-                    className="size-6 rounded-sm object-cover"
-                  />
+                  <img src={ws.avatarUrl} alt="" className="size-6 rounded-sm object-cover" />
                 ) : (
                   <div className="flex size-6 items-center justify-center rounded-sm border bg-elevated text-xs font-medium">
                     {ws.name.charAt(0).toUpperCase()}
@@ -116,7 +109,7 @@ export function WorkspaceSwitcher() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/settings?tab=users")} className="gap-2 p-2">
+            <DropdownMenuItem onClick={() => navigate('/settings?tab=users')} className="gap-2 p-2">
               <Settings className="size-4" />
               <span>Manage workspace</span>
             </DropdownMenuItem>

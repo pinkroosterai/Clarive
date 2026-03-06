@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useRef, useEffect } from 'react';
+
+import { Input } from '@/components/ui/input';
 
 interface InlineInputProps {
   defaultValue?: string;
@@ -7,11 +8,7 @@ interface InlineInputProps {
   onCancel: () => void;
 }
 
-export function InlineInput({
-  defaultValue = "",
-  onSubmit,
-  onCancel,
-}: InlineInputProps) {
+export function InlineInput({ defaultValue = '', onSubmit, onCancel }: InlineInputProps) {
   const [value, setValue] = useState(defaultValue);
   const ref = useRef<HTMLInputElement>(null);
   const cancelledRef = useRef(false);
@@ -33,8 +30,8 @@ export function InlineInput({
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={(e) => {
-        if (e.key === "Enter") handleSubmit();
-        if (e.key === "Escape") {
+        if (e.key === 'Enter') handleSubmit();
+        if (e.key === 'Escape') {
           cancelledRef.current = true;
           onCancel();
         }

@@ -6,14 +6,26 @@
 }
 
 /* Headings */
-.ProseMirror h1 { @apply text-2xl font-bold mt-4 mb-2 first:mt-0; }
-.ProseMirror h2 { @apply text-xl font-bold mt-3 mb-2 first:mt-0; }
-.ProseMirror h3 { @apply text-lg font-semibold mt-2 mb-1 first:mt-0; }
+.ProseMirror h1 {
+  @apply text-2xl font-bold mt-4 mb-2 first:mt-0;
+}
+.ProseMirror h2 {
+  @apply text-xl font-bold mt-3 mb-2 first:mt-0;
+}
+.ProseMirror h3 {
+  @apply text-lg font-semibold mt-2 mb-1 first:mt-0;
+}
 
 /* Lists */
-.ProseMirror ul { @apply list-disc pl-5 my-1; }
-.ProseMirror ol { @apply list-decimal pl-5 my-1; }
-.ProseMirror li  { @apply my-0.5; }
+.ProseMirror ul {
+  @apply list-disc pl-5 my-1;
+}
+.ProseMirror ol {
+  @apply list-decimal pl-5 my-1;
+}
+.ProseMirror li {
+  @apply my-0.5;
+}
 
 /* Inline code */
 .ProseMirror code {
@@ -29,11 +41,17 @@
 }
 
 /* Bold & italic */
-.ProseMirror strong { @apply font-bold; }
-.ProseMirror em     { @apply italic; }
+.ProseMirror strong {
+  @apply font-bold;
+}
+.ProseMirror em {
+  @apply italic;
+}
 
 /* Paragraphs */
-.ProseMirror p { @apply my-1 first:mt-0 last:mb-0; }
+.ProseMirror p {
+  @apply my-1 first:mt-0 last:mb-0;
+}
 
 /* Placeholder */
 .ProseMirror p.is-editor-empty:first-child::before {

@@ -1,5 +1,5 @@
-import { memo } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
+import { memo } from 'react';
 
 interface StatCardProps {
   icon: LucideIcon;

@@ -1,21 +1,17 @@
-import { useState, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Library, Plus } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Library, Plus } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { folderService, entryService } from "@/services";
-import type { PromptEntry } from "@/types";
-import { DroppableFolderWrapper } from "@/components/dnd/DroppableFolderWrapper";
-import {
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar";
+import { FolderTreeNode, EntryTreeItem } from './FolderTreeNode';
+import type { FolderActions } from './FolderTreeNode';
+import { InlineInput } from './InlineInput';
 
-import { InlineInput } from "./InlineInput";
-import { FolderTreeNode, EntryTreeItem } from "./FolderTreeNode";
-import type { FolderActions } from "./FolderTreeNode";
+import { DroppableFolderWrapper } from '@/components/dnd/DroppableFolderWrapper';
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { folderService, entryService } from '@/services';
+import type { PromptEntry } from '@/types';
 
 /** Build a map of folderId -> number of entries directly inside it. */
 function buildEntryCountMap(entries: PromptEntry[]): Map<string | null, number> {
@@ -33,12 +29,12 @@ export function FolderTree() {
   const [isCreatingRoot, setIsCreatingRoot] = useState(false);
 
   const { data: folders = [] } = useQuery({
-    queryKey: ["folders"],
+    queryKey: ['folders'],
     queryFn: folderService.getFoldersTree,
   });
 
   const { data: entriesData } = useQuery({
-    queryKey: ["entries", null, 1],
+    queryKey: ['entries', null, 1],
     queryFn: () => entryService.getEntriesList(null, 1, 1000),
   });
   const entries = entriesData?.items ?? [];
@@ -46,33 +42,46 @@ export function FolderTree() {
   const rootEntries = useMemo(() => entries.filter((e) => e.folderId === null), [entries]);
   const entryCountMap = useMemo(() => buildEntryCountMap(entries), [entries]);
 
-  const invalidateFolders = () => queryClient.invalidateQueries({ queryKey: ["folders"] });
+  const invalidateFolders = () => queryClient.invalidateQueries({ queryKey: ['folders'] });
 
   const createMutation = useMutation({
     mutationFn: ({ name, parentId }: { name: string; parentId?: string | null }) =>
       folderService.createFolder(name, parentId),
-    onSuccess: () => { invalidateFolders(); toast.success("Folder created"); },
+    onSuccess: () => {
+      invalidateFolders();
+      toast.success('Folder created');
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
   const renameMutation = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) =>
       folderService.renameFolder(id, name),
-    onSuccess: () => { invalidateFolders(); toast.success("Folder renamed"); },
+    onSuccess: () => {
+      invalidateFolders();
+      toast.success('Folder renamed');
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => folderService.deleteFolder(id),
-    onSuccess: () => { invalidateFolders(); toast.success("Folder deleted"); },
+    onSuccess: () => {
+      invalidateFolders();
+      toast.success('Folder deleted');
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const folderActions: FolderActions = useMemo(() => ({
-    onCreate: (name: string, parentId: string | null) => createMutation.mutate({ name, parentId }),
-    onRename: (id: string, name: string) => renameMutation.mutate({ id, name }),
-    onDelete: (id: string) => deleteMutation.mutate(id),
-  }), [createMutation, renameMutation, deleteMutation]);
+  const folderActions: FolderActions = useMemo(
+    () => ({
+      onCreate: (name: string, parentId: string | null) =>
+        createMutation.mutate({ name, parentId }),
+      onRename: (id: string, name: string) => renameMutation.mutate({ id, name }),
+      onDelete: (id: string) => deleteMutation.mutate(id),
+    }),
+    [createMutation, renameMutation, deleteMutation]
+  );
 
   return (
     <SidebarMenu className="group-data-[collapsible=icon]:hidden">
@@ -80,7 +89,7 @@ export function FolderTree() {
       <DroppableFolderWrapper folderId={null}>
         <SidebarMenuItem>
           <SidebarMenuButton
-            onClick={() => navigate("/library")}
+            onClick={() => navigate('/library')}
             isActive={!folderId && !entryId}
             tooltip="All Prompts"
           >
@@ -92,12 +101,7 @@ export function FolderTree() {
 
       {/* Root-level entries */}
       {rootEntries.map((entry) => (
-        <EntryTreeItem
-          key={entry.id}
-          entry={entry}
-          depth={0}
-          activeEntryId={entryId}
-        />
+        <EntryTreeItem key={entry.id} entry={entry} depth={0} activeEntryId={entryId} />
       ))}
 
       {/* Folder tree */}

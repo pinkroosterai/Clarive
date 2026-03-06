@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Sparkles, Mail } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { Loader2, Sparkles, Mail } from 'lucide-react';
+import { useState } from 'react';
 
-import { useAuthStore } from "@/store/authStore";
-import { toolService } from "@/services";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { toolService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 export interface GenerateOptions {
   generateSystemMessage: boolean;
@@ -25,14 +25,14 @@ interface DescribeStepProps {
 export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
   const currentUser = useAuthStore((s) => s.currentUser);
   const isVerified = currentUser?.emailVerified ?? false;
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [generateSystemMessage, setGenerateSystemMessage] = useState(false);
   const [generateAsTemplate, setGenerateAsTemplate] = useState(false);
   const [generateAsChain, setGenerateAsChain] = useState(false);
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
 
   const { data: tools = [] } = useQuery({
-    queryKey: ["tools"],
+    queryKey: ['tools'],
     queryFn: toolService.getToolsList,
   });
 
@@ -70,15 +70,30 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
         <h3 className="text-sm font-semibold text-foreground">Configuration</h3>
         <div className="bg-elevated rounded-lg px-4 py-3 flex justify-between items-center hover:bg-overlay/50 transition-colors">
           <Label htmlFor="sw-sys">Generate system message</Label>
-          <Switch id="sw-sys" checked={generateSystemMessage} onCheckedChange={setGenerateSystemMessage} disabled={isGenerating} />
+          <Switch
+            id="sw-sys"
+            checked={generateSystemMessage}
+            onCheckedChange={setGenerateSystemMessage}
+            disabled={isGenerating}
+          />
         </div>
         <div className="bg-elevated rounded-lg px-4 py-3 flex justify-between items-center hover:bg-overlay/50 transition-colors">
           <Label htmlFor="sw-tpl">Generate as prompt template</Label>
-          <Switch id="sw-tpl" checked={generateAsTemplate} onCheckedChange={setGenerateAsTemplate} disabled={isGenerating} />
+          <Switch
+            id="sw-tpl"
+            checked={generateAsTemplate}
+            onCheckedChange={setGenerateAsTemplate}
+            disabled={isGenerating}
+          />
         </div>
         <div className="bg-elevated rounded-lg px-4 py-3 flex justify-between items-center hover:bg-overlay/50 transition-colors">
           <Label htmlFor="sw-chain">Generate as prompt chain</Label>
-          <Switch id="sw-chain" checked={generateAsChain} onCheckedChange={setGenerateAsChain} disabled={isGenerating} />
+          <Switch
+            id="sw-chain"
+            checked={generateAsChain}
+            onCheckedChange={setGenerateAsChain}
+            disabled={isGenerating}
+          />
         </div>
       </div>
 
@@ -91,8 +106,8 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
                 key={tool.id}
                 className={`flex items-center gap-3 cursor-pointer bg-surface border rounded-lg px-3 py-2 transition-colors ${
                   selectedToolIds.includes(tool.id)
-                    ? "border-primary/50 bg-primary/8"
-                    : "border-border-subtle hover:border-primary/30"
+                    ? 'border-primary/50 bg-primary/8'
+                    : 'border-border-subtle hover:border-primary/30'
                 }`}
               >
                 <Checkbox
@@ -113,7 +128,9 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
       )}
 
       {tools.length === 0 && (
-        <p className="text-sm text-foreground-muted">No tools configured. You can add tools from the Tools page.</p>
+        <p className="text-sm text-foreground-muted">
+          No tools configured. You can add tools from the Tools page.
+        </p>
       )}
 
       <div className="space-y-2">

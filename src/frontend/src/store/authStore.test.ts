@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createUser } from "@/test/factories";
-import type { User } from "@/types";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { createUser } from '@/test/factories';
 
 // Mock apiClient — must be before authStore import
-vi.mock("@/services/api/apiClient", () => {
+vi.mock('@/services/api/apiClient', () => {
   let token: string | null = null;
   let refreshToken: string | null = null;
   let workspaceId: string | null = null;
@@ -28,41 +28,42 @@ vi.mock("@/services/api/apiClient", () => {
       constructor(
         public status: number,
         public code: string,
-        message: string,
+        message: string
       ) {
         super(message);
-        this.name = "ApiError";
+        this.name = 'ApiError';
       }
     },
   };
 });
 
 // Mock authService
-vi.mock("@/services/api/authService", () => ({
+vi.mock('@/services/api/authService', () => ({
   getMe: vi.fn(),
 }));
 
 // Mock workspaceService
-vi.mock("@/services/api/workspaceService", () => ({
+vi.mock('@/services/api/workspaceService', () => ({
   switchWorkspace: vi.fn(),
 }));
 
 // Mock queryClient
-vi.mock("@/lib/queryClient", () => ({
+vi.mock('@/lib/queryClient', () => ({
   queryClient: { clear: vi.fn() },
 }));
 
 // Now import the modules
-import { useAuthStore } from "./authStore";
-import { getToken, setToken, setRefreshToken } from "@/services/api/apiClient";
-import { getMe } from "@/services/api/authService";
+import { useAuthStore } from './authStore';
+
+import { getToken, setToken, setRefreshToken } from '@/services/api/apiClient';
+import { getMe } from '@/services/api/authService';
 
 const mockedGetToken = vi.mocked(getToken);
 const mockedSetToken = vi.mocked(setToken);
 const mockedSetRefreshToken = vi.mocked(setRefreshToken);
 const mockedGetMe = vi.mocked(getMe);
 
-describe("authStore", () => {
+describe('authStore', () => {
   beforeEach(() => {
     // Reset store state
     useAuthStore.setState({
@@ -77,8 +78,8 @@ describe("authStore", () => {
     vi.clearAllMocks(); // Clear again after resetting tokens
   });
 
-  describe("initial state", () => {
-    it("is unauthenticated when no token", () => {
+  describe('initial state', () => {
+    it('is unauthenticated when no token', () => {
       mockedGetToken.mockReturnValue(null);
       // Re-read state after mock change
       const state = useAuthStore.getState();
@@ -86,7 +87,7 @@ describe("authStore", () => {
       expect(state.isInitialized).toBe(false);
     });
 
-    it("has isAuthenticated based on token presence", () => {
+    it('has isAuthenticated based on token presence', () => {
       // The store reads getToken() at creation time.
       // Since we control the mock, we can test the state we set.
       useAuthStore.setState({ isAuthenticated: true });
@@ -94,9 +95,9 @@ describe("authStore", () => {
     });
   });
 
-  describe("setUser", () => {
-    it("updates state correctly", () => {
-      const user = createUser({ name: "Alice" });
+  describe('setUser', () => {
+    it('updates state correctly', () => {
+      const user = createUser({ name: 'Alice' });
 
       useAuthStore.getState().setUser(user);
 
@@ -107,8 +108,8 @@ describe("authStore", () => {
     });
   });
 
-  describe("logout", () => {
-    it("clears everything and removes tokens", () => {
+  describe('logout', () => {
+    it('clears everything and removes tokens', () => {
       // Set up an authenticated state
       const user = createUser();
       useAuthStore.setState({
@@ -128,10 +129,10 @@ describe("authStore", () => {
     });
   });
 
-  describe("initializeAuth", () => {
-    it("fetches user with valid token", async () => {
-      const user = createUser({ name: "Bob" });
-      mockedGetToken.mockReturnValue("valid-jwt");
+  describe('initializeAuth', () => {
+    it('fetches user with valid token', async () => {
+      const user = createUser({ name: 'Bob' });
+      mockedGetToken.mockReturnValue('valid-jwt');
       mockedGetMe.mockResolvedValue(user);
 
       await useAuthStore.getState().initializeAuth();
@@ -143,9 +144,9 @@ describe("authStore", () => {
       expect(mockedGetMe).toHaveBeenCalledOnce();
     });
 
-    it("clears state when token is expired/invalid", async () => {
-      mockedGetToken.mockReturnValue("expired-jwt");
-      mockedGetMe.mockRejectedValue(new Error("Unauthorized"));
+    it('clears state when token is expired/invalid', async () => {
+      mockedGetToken.mockReturnValue('expired-jwt');
+      mockedGetMe.mockRejectedValue(new Error('Unauthorized'));
 
       await useAuthStore.getState().initializeAuth();
 
@@ -157,14 +158,14 @@ describe("authStore", () => {
       expect(mockedSetRefreshToken).toHaveBeenCalledWith(null);
     });
 
-    it("skips fetch if user already loaded", async () => {
-      const user = createUser({ name: "Existing" });
+    it('skips fetch if user already loaded', async () => {
+      const user = createUser({ name: 'Existing' });
       useAuthStore.setState({
         currentUser: user,
         isAuthenticated: true,
         isInitialized: false,
       });
-      mockedGetToken.mockReturnValue("some-token");
+      mockedGetToken.mockReturnValue('some-token');
 
       await useAuthStore.getState().initializeAuth();
 
@@ -172,7 +173,7 @@ describe("authStore", () => {
       expect(useAuthStore.getState().isInitialized).toBe(true);
     });
 
-    it("skips fetch if no token", async () => {
+    it('skips fetch if no token', async () => {
       mockedGetToken.mockReturnValue(null);
 
       await useAuthStore.getState().initializeAuth();
@@ -183,9 +184,9 @@ describe("authStore", () => {
       expect(state.currentUser).toBeNull();
     });
 
-    it("does not overwrite user if concurrent calls happen", async () => {
-      const user = createUser({ name: "First" });
-      mockedGetToken.mockReturnValue("jwt");
+    it('does not overwrite user if concurrent calls happen', async () => {
+      const user = createUser({ name: 'First' });
+      mockedGetToken.mockReturnValue('jwt');
       mockedGetMe.mockResolvedValue(user);
 
       // Call twice concurrently

@@ -1,19 +1,26 @@
-import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import { Loader2, Eye, EyeOff, ShieldAlert, Info } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AnvilIcon } from "@/components/icons/AnvilIcon";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
-import { registerSchema, type RegisterFormData } from "@/lib/validationSchemas";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Eye, EyeOff, ShieldAlert, Info } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { useAuthStore } from "@/store/authStore";
-import { authService } from "@/services";
-import { PasswordStrengthBar } from "@/components/common/PasswordStrengthBar";
+import { PasswordStrengthBar } from '@/components/common/PasswordStrengthBar';
+import { AnvilIcon } from '@/components/icons/AnvilIcon';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { handleApiError } from '@/lib/handleApiError';
+import { registerSchema, type RegisterFormData } from '@/lib/validationSchemas';
+import { authService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 const SetupPage = () => {
   const navigate = useNavigate();
@@ -24,7 +31,7 @@ const SetupPage = () => {
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
   });
 
   if (isAuthenticated) {
@@ -36,14 +43,14 @@ const SetupPage = () => {
       const res = await authService.register(data.email, data.password, data.name);
       setUser(res.user);
       if (res.workspaces) setWorkspaces(res.workspaces);
-      toast.success("Admin account created! Your instance is ready.");
-      setTimeout(() => navigate("/"), 150);
+      toast.success('Admin account created! Your instance is ready.');
+      setTimeout(() => navigate('/'), 150);
     } catch (err: unknown) {
-      handleApiError(err, { fallback: "Setup failed" });
+      handleApiError(err, { fallback: 'Setup failed' });
     }
   };
 
-  const passwordValue = form.watch("password");
+  const passwordValue = form.watch('password');
 
   return (
     <div className="flex min-h-screen items-center justify-center auth-bg bg-background px-4">
@@ -51,14 +58,19 @@ const SetupPage = () => {
         <div className="bg-surface/80 backdrop-blur-xl border border-white/[0.08] rounded-2xl elevation-3 p-8">
           <div className="text-center space-y-2 mb-6">
             <AnvilIcon className="mx-auto mb-3 size-16" />
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Set Up Your Instance</h1>
-            <p className="text-foreground-muted text-sm">Create the super administrator account for your Clarive instance</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Set Up Your Instance
+            </h1>
+            <p className="text-foreground-muted text-sm">
+              Create the super administrator account for your Clarive instance
+            </p>
           </div>
 
           <div className="flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-3 mb-5">
             <ShieldAlert className="size-4 text-primary mt-0.5 shrink-0" />
             <p className="text-xs text-foreground-secondary leading-relaxed">
-              This account will have full administrative access including system configuration, maintenance controls, and user management.
+              This account will have full administrative access including system configuration,
+              maintenance controls, and user management.
             </p>
           </div>
 
@@ -110,7 +122,7 @@ const SetupPage = () => {
                     <FormControl>
                       <div className="relative">
                         <Input
-                          type={showPassword ? "text" : "password"}
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="new-password"
                           className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
@@ -123,9 +135,13 @@ const SetupPage = () => {
                           className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                           onClick={() => setShowPassword(!showPassword)}
                           tabIndex={-1}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
-                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                          {showPassword ? (
+                            <EyeOff className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
                         </Button>
                       </div>
                     </FormControl>
@@ -143,7 +159,7 @@ const SetupPage = () => {
                     <FormControl>
                       <div className="relative">
                         <Input
-                          type={showConfirm ? "text" : "password"}
+                          type={showConfirm ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="new-password"
                           className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
@@ -156,7 +172,9 @@ const SetupPage = () => {
                           className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                           onClick={() => setShowConfirm(!showConfirm)}
                           tabIndex={-1}
-                          aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                          aria-label={
+                            showConfirm ? 'Hide confirm password' : 'Show confirm password'
+                          }
                         >
                           {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                         </Button>

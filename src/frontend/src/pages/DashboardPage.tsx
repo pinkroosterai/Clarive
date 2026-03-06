@@ -1,32 +1,32 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { FileText, Globe, PenLine, FolderOpen, LayoutDashboard } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { FileText, Globe, PenLine, FolderOpen, LayoutDashboard } from 'lucide-react';
+import { useEffect } from 'react';
 
-import { useAuthStore } from "@/store/authStore";
-import { dashboardService } from "@/services";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/common/EmptyState";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { RecentEntriesList } from "@/components/dashboard/RecentEntriesList";
-import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { EmptyState } from '@/components/common/EmptyState';
+import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
+import { RecentEntriesList } from '@/components/dashboard/RecentEntriesList';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { dashboardService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 function getGreeting(name: string): string {
   const hour = new Date().getHours();
   const timeOfDay =
-    hour >= 5 && hour < 12 ? "morning" : hour >= 12 && hour < 17 ? "afternoon" : "evening";
-  const firstName = name.split(" ")[0];
+    hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 17 ? 'afternoon' : 'evening';
+  const firstName = name.split(' ')[0];
   return `Good ${timeOfDay}, ${firstName}`;
 }
 
 export default function DashboardPage() {
   useEffect(() => {
-    document.title = "Clarive — Dashboard";
+    document.title = 'Clarive — Dashboard';
   }, []);
 
   const currentUser = useAuthStore((s) => s.currentUser);
 
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["dashboard", "stats"],
+    queryKey: ['dashboard', 'stats'],
     queryFn: dashboardService.getStats,
     staleTime: 30_000,
   });
@@ -62,7 +62,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {currentUser ? getGreeting(currentUser.name) : "Dashboard"}
+          {currentUser ? getGreeting(currentUser.name) : 'Dashboard'}
         </h1>
         <div data-tour="dashboard-stats" data-tour-empty="true">
           <EmptyState
@@ -78,7 +78,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        {currentUser ? getGreeting(currentUser.name) : "Dashboard"}
+        {currentUser ? getGreeting(currentUser.name) : 'Dashboard'}
       </h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="dashboard-stats">

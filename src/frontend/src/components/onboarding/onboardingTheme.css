@@ -55,7 +55,7 @@
 
 /* ─── Buttons ─── */
 .driver-popover.tour-popover .driver-popover-next-btn,
-.driver-popover.tour-popover .driver-popover-close-btn[data-done="true"] {
+.driver-popover.tour-popover .driver-popover-close-btn[data-done='true'] {
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   border: none;
@@ -79,7 +79,9 @@
   padding: 6px 16px;
   font-size: 13px;
   text-shadow: none;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .driver-popover.tour-popover .driver-popover-prev-btn:hover {

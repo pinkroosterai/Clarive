@@ -1,17 +1,6 @@
-import { toast } from "sonner";
-import { ApiError } from "@/services/api/apiClient";
+import { toast } from 'sonner';
 
-const EXPECTED_CODES = new Set([
-  "VALIDATION_ERROR",
-  "NOT_FOUND",
-  "ALREADY_EXISTS",
-  "FORBIDDEN",
-"EMAIL_NOT_VERIFIED",
-  "INVALID_CREDENTIALS",
-  "SESSION_EXPIRED",
-  "CONCURRENCY_CONFLICT",
-  "RATE_LIMITED",
-]);
+import { ApiError } from '@/services/api/apiClient';
 
 export interface HandleApiErrorOptions {
   /** Override the toast title */
@@ -29,35 +18,28 @@ export interface HandleApiErrorOptions {
  * - 5xx server errors: shows "Server error" with the error message
  * - Unknown errors: shows generic fallback toast
  */
-export function handleApiError(
-  err: unknown,
-  options: HandleApiErrorOptions = {},
-): void {
-  const {
-    title,
-    fallback = "An unexpected error occurred.",
-    silent = false,
-  } = options;
+export function handleApiError(err: unknown, options: HandleApiErrorOptions = {}): void {
+  const { title, fallback = 'An unexpected error occurred.', silent = false } = options;
 
   if (err instanceof ApiError) {
     if (!silent) {
       if (err.status >= 500) {
-        toast.error(title ?? "Server error", {
+        toast.error(title ?? 'Server error', {
           description: err.message,
           duration: 8000,
         });
       } else if (err.status === 429) {
-        toast.error("Too many requests", {
-          description: "Please wait a moment and try again.",
+        toast.error('Too many requests', {
+          description: 'Please wait a moment and try again.',
         });
       } else {
         toast.error(title ?? err.message);
       }
     }
-  } else if (err instanceof TypeError && err.message === "Failed to fetch") {
+  } else if (err instanceof TypeError && err.message === 'Failed to fetch') {
     if (!silent) {
-      toast.error("Network error", {
-        description: "Check your connection and try again.",
+      toast.error('Network error', {
+        description: 'Check your connection and try again.',
       });
     }
   } else if (err instanceof Error) {

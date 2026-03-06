@@ -1,6 +1,8 @@
-import { BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import type { Evaluation, IterationScore } from "@/types";
-import { ScoreHistoryChart } from "./ScoreHistoryChart";
+import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+
+import { ScoreHistoryChart } from './ScoreHistoryChart';
+
+import type { Evaluation, IterationScore } from '@/types';
 
 interface QualityScoreCardProps {
   evaluation?: Evaluation;
@@ -8,19 +10,19 @@ interface QualityScoreCardProps {
 }
 
 const DIMENSIONS = [
-  "Clarity",
-  "Specificity",
-  "Structure",
-  "Completeness",
-  "Autonomy",
-  "Faithfulness",
-  "Efficiency",
+  'Clarity',
+  'Specificity',
+  'Structure',
+  'Completeness',
+  'Autonomy',
+  'Faithfulness',
+  'Efficiency',
 ] as const;
 
 function scoreColor(score: number) {
-  if (score >= 8) return { bar: "bg-success-text", text: "text-success-text", label: "Good" };
-  if (score >= 5) return { bar: "bg-warning-text", text: "text-warning-text", label: "Fair" };
-  return { bar: "bg-error-text", text: "text-error-text", label: "Poor" };
+  if (score >= 8) return { bar: 'bg-success-text', text: 'text-success-text', label: 'Good' };
+  if (score >= 5) return { bar: 'bg-warning-text', text: 'text-warning-text', label: 'Fair' };
+  return { bar: 'bg-error-text', text: 'text-error-text', label: 'Poor' };
 }
 
 function DeltaIndicator({ current, previous }: { current: number; previous: number }) {
@@ -35,7 +37,8 @@ function DeltaIndicator({ current, previous }: { current: number; previous: numb
   if (delta < 0) {
     return (
       <span className="flex items-center gap-0.5 text-error-text text-xs">
-        <TrendingDown className="size-3" />{delta}
+        <TrendingDown className="size-3" />
+        {delta}
       </span>
     );
   }
@@ -49,12 +52,12 @@ function DeltaIndicator({ current, previous }: { current: number; previous: numb
 export function QualityScoreCard({ evaluation, scoreHistory }: QualityScoreCardProps) {
   if (!evaluation || Object.keys(evaluation.dimensions).length === 0) return null;
 
-  const previousScores = scoreHistory && scoreHistory.length >= 2
-    ? scoreHistory[scoreHistory.length - 2].scores
-    : null;
+  const previousScores =
+    scoreHistory && scoreHistory.length >= 2 ? scoreHistory[scoreHistory.length - 2].scores : null;
 
-  const averageScore = Object.values(evaluation.dimensions)
-    .reduce((sum, e) => sum + e.score, 0) / Object.keys(evaluation.dimensions).length;
+  const averageScore =
+    Object.values(evaluation.dimensions).reduce((sum, e) => sum + e.score, 0) /
+    Object.keys(evaluation.dimensions).length;
 
   return (
     <div className="space-y-3">
@@ -78,21 +81,15 @@ export function QualityScoreCard({ evaluation, scoreHistory }: QualityScoreCardP
           return (
             <div key={dim} className="space-y-0.5">
               <div className="flex items-center gap-3">
-                <span className="text-xs text-foreground-secondary w-24 shrink-0">
-                  {dim}
-                </span>
+                <span className="text-xs text-foreground-secondary w-24 shrink-0">{dim}</span>
                 <div className="flex-1 h-2 rounded-full bg-elevated">
                   <div
                     className={`h-2 rounded-full transition-all duration-300 ${bar}`}
                     style={{ width: `${(entry.score / 10) * 100}%` }}
                   />
                 </div>
-                <span className={`text-xs font-medium w-5 text-right ${text}`}>
-                  {entry.score}
-                </span>
-                {prevEntry && (
-                  <DeltaIndicator current={entry.score} previous={prevEntry.score} />
-                )}
+                <span className={`text-xs font-medium w-5 text-right ${text}`}>{entry.score}</span>
+                {prevEntry && <DeltaIndicator current={entry.score} previous={prevEntry.score} />}
               </div>
               {entry.feedback && (
                 <p className="text-xs text-foreground-secondary pl-[calc(6rem+0.75rem)] leading-snug">
@@ -104,9 +101,7 @@ export function QualityScoreCard({ evaluation, scoreHistory }: QualityScoreCardP
         })}
       </div>
 
-      {scoreHistory && scoreHistory.length > 1 && (
-        <ScoreHistoryChart history={scoreHistory} />
-      )}
+      {scoreHistory && scoreHistory.length > 1 && <ScoreHistoryChart history={scoreHistory} />}
     </div>
   );
 }

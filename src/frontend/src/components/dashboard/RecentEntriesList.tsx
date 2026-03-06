@@ -1,21 +1,23 @@
-import { memo } from "react";
-import { Link } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
-import { Clock } from "lucide-react";
+import { formatDistanceToNow } from 'date-fns';
+import { Clock } from 'lucide-react';
+import { memo } from 'react';
+import { Link } from 'react-router-dom';
 
-import type { RecentEntry } from "@/types";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
+import type { RecentEntry } from '@/types';
 
 interface RecentEntriesListProps {
   entries: RecentEntry[];
 }
 
-const badgeVariant: Record<string, { variant: "draft" | "published"; label: string }> = {
-  draft: { variant: "draft", label: "Draft" },
-  published: { variant: "published", label: "Published" },
+const badgeVariant: Record<string, { variant: 'draft' | 'published'; label: string }> = {
+  draft: { variant: 'draft', label: 'Draft' },
+  published: { variant: 'published', label: 'Published' },
 };
 
-export const RecentEntriesList = memo(function RecentEntriesList({ entries }: RecentEntriesListProps) {
+export const RecentEntriesList = memo(function RecentEntriesList({
+  entries,
+}: RecentEntriesListProps) {
   return (
     <div className="rounded-xl border border-border-subtle bg-surface elevation-1">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border-subtle">
@@ -28,7 +30,10 @@ export const RecentEntriesList = memo(function RecentEntriesList({ entries }: Re
       ) : (
         <div className="divide-y divide-border-subtle">
           {entries.map((entry) => {
-            const badge = badgeVariant[entry.versionState] ?? { variant: "draft" as const, label: entry.versionState };
+            const badge = badgeVariant[entry.versionState] ?? {
+              variant: 'draft' as const,
+              label: entry.versionState,
+            };
             return (
               <Link
                 key={entry.id}

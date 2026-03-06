@@ -1,10 +1,11 @@
-import { Plus, Trash2, Settings, ShieldAlert, LayoutDashboard, CircleHelp } from "lucide-react";
-import { FolderTree } from "@/components/library/FolderTree";
-import { useNavigate } from "react-router-dom";
-import { NavLink } from "@/components/NavLink";
-import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
-import { InvitationNotificationBell } from "./InvitationNotificationBell";
-import { useAuthStore } from "@/store/authStore";
+import { Plus, Trash2, Settings, ShieldAlert, LayoutDashboard, CircleHelp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+import { InvitationNotificationBell } from './InvitationNotificationBell';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+
+import { FolderTree } from '@/components/library/FolderTree';
+import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
   SidebarContent,
@@ -17,16 +18,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
+import { useAuthStore } from '@/store/authStore';
 
 const navLinks = [
-  { title: "Dashboard", icon: LayoutDashboard, url: "/" },
-  { title: "Trash", icon: Trash2, url: "/trash" },
+  { title: 'Dashboard', icon: LayoutDashboard, url: '/' },
+  { title: 'Trash', icon: Trash2, url: '/trash' },
 ];
 
 const utilLinks = [
-  { title: "Settings", icon: Settings, url: "/settings" },
-  { title: "Help", icon: CircleHelp, url: "/help" },
+  { title: 'Settings', icon: Settings, url: '/settings' },
+  { title: 'Help', icon: CircleHelp, url: '/help' },
 ];
 
 export function AppSidebar() {
@@ -47,7 +49,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="New Entry"
-              onClick={() => navigate("/entry/new")}
+              onClick={() => navigate('/entry/new')}
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground transition-lift hover:glow-brand-sm"
               data-tour="new-entry-btn"
             >

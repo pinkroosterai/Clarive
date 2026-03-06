@@ -1,13 +1,14 @@
-import { Loader2, RefreshCw, Check } from "lucide-react";
+import { Loader2, RefreshCw, Check } from 'lucide-react';
 
-import type { PromptEntry, ClarificationQuestion, Evaluation, IterationScore } from "@/types";
-import { useQuestionAnswers } from "@/hooks/useQuestionAnswers";
-import { PromptEditor } from "@/components/editor/PromptEditor";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { QualityScoreCard } from "./QualityScoreCard";
+import { QualityScoreCard } from './QualityScoreCard';
+
+import { PromptEditor } from '@/components/editor/PromptEditor';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useQuestionAnswers } from '@/hooks/useQuestionAnswers';
+import type { PromptEntry, ClarificationQuestion, Evaluation, IterationScore } from '@/types';
 
 interface ReviewStepProps {
   draft: PromptEntry;
@@ -30,13 +31,8 @@ export function ReviewStep({
   onAccept,
   isRefining,
 }: ReviewStepProps) {
-  const {
-    answers,
-    selectedEnhancements,
-    updateAnswer,
-    selectSuggestion,
-    toggleEnhancement,
-  } = useQuestionAnswers(questions, enhancements);
+  const { answers, selectedEnhancements, updateAnswer, selectSuggestion, toggleEnhancement } =
+    useQuestionAnswers(questions, enhancements);
 
   const noop = () => {};
 
@@ -68,8 +64,8 @@ export function ReviewStep({
                         disabled={isRefining}
                         className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
                           answers[i] === suggestion
-                            ? "bg-primary/15 border-primary/50 text-primary font-medium"
-                            : "bg-elevated border-border hover:border-primary/30 text-foreground-secondary"
+                            ? 'bg-primary/15 border-primary/50 text-primary font-medium'
+                            : 'bg-elevated border-border hover:border-primary/30 text-foreground-secondary'
                         }`}
                       >
                         {suggestion}
@@ -79,7 +75,7 @@ export function ReviewStep({
                 )}
 
                 <Input
-                  value={answers[i] ?? ""}
+                  value={answers[i] ?? ''}
                   onChange={(e) => updateAnswer(i, e.target.value)}
                   placeholder="Optional"
                   disabled={isRefining}

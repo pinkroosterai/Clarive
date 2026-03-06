@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
   ChevronsUpDown,
@@ -12,32 +11,41 @@ import {
   ShieldCheck,
   ShieldX,
   AlertTriangle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { handleApiError } from '@/lib/handleApiError';
+import { cn } from '@/lib/utils';
 import {
   setConfigValue,
   resetConfigValue,
   validateAiConfig,
   getAiModels,
   type ConfigSetting,
-} from "@/services/api/configService";
-import { handleApiError } from "@/lib/handleApiError";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+} from '@/services/api/configService';
 
 interface AiConfigSectionProps {
   settings: ConfigSetting[];
   onSaved: () => void;
 }
 
-type ValidationState = "idle" | "validating" | "valid" | "invalid";
+type ValidationState = 'idle' | 'validating' | 'valid' | 'invalid';
 
 function findSetting(settings: ConfigSetting[], key: string): ConfigSetting | undefined {
   return settings.find((s) => s.key === key);
@@ -47,18 +55,18 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   const queryClient = useQueryClient();
   const [dirtyValues, setDirtyValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [validationState, setValidationState] = useState<ValidationState>("idle");
+  const [validationState, setValidationState] = useState<ValidationState>('idle');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const endpointSetting = findSetting(settings, "Ai:EndpointUrl");
-  const apiKeySetting = findSetting(settings, "Ai:OpenAiApiKey");
-  const defaultModelSetting = findSetting(settings, "Ai:DefaultModel");
-  const premiumModelSetting = findSetting(settings, "Ai:PremiumModel");
+  const endpointSetting = findSetting(settings, 'Ai:EndpointUrl');
+  const apiKeySetting = findSetting(settings, 'Ai:OpenAiApiKey');
+  const defaultModelSetting = findSetting(settings, 'Ai:DefaultModel');
+  const premiumModelSetting = findSetting(settings, 'Ai:PremiumModel');
 
-  const currentEndpoint = dirtyValues["Ai:EndpointUrl"] ?? endpointSetting?.value ?? "";
-  const currentApiKeyDirty = dirtyValues["Ai:OpenAiApiKey"];
-  const currentDefaultModel = dirtyValues["Ai:DefaultModel"] ?? defaultModelSetting?.value ?? "";
-  const currentPremiumModel = dirtyValues["Ai:PremiumModel"] ?? premiumModelSetting?.value ?? "";
+  const currentEndpoint = dirtyValues['Ai:EndpointUrl'] ?? endpointSetting?.value ?? '';
+  const currentApiKeyDirty = dirtyValues['Ai:OpenAiApiKey'];
+  const currentDefaultModel = dirtyValues['Ai:DefaultModel'] ?? defaultModelSetting?.value ?? '';
+  const currentPremiumModel = dirtyValues['Ai:PremiumModel'] ?? premiumModelSetting?.value ?? '';
 
   const apiKeyIsConfigured = apiKeySetting?.isConfigured ?? false;
 
@@ -68,47 +76,45 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
     isLoading: modelsLoading,
     isError: modelsFetchFailed,
   } = useQuery({
-    queryKey: ["super", "ai-models"],
+    queryKey: ['super', 'ai-models'],
     queryFn: () => getAiModels({}),
-    enabled: apiKeyIsConfigured && validationState !== "valid",
+    enabled: apiKeyIsConfigured && validationState !== 'valid',
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   // Re-fetch models after successful validation with the new key/endpoint
-  const {
-    data: validatedModelsData,
-    isLoading: validatedModelsLoading,
-  } = useQuery({
-    queryKey: ["super", "ai-models", "validated", currentApiKeyDirty, currentEndpoint],
+  const { data: validatedModelsData, isLoading: validatedModelsLoading } = useQuery({
+    queryKey: ['super', 'ai-models', 'validated', currentApiKeyDirty, currentEndpoint],
     queryFn: () =>
       getAiModels({
         apiKey: currentApiKeyDirty || undefined,
         endpointUrl: currentEndpoint || undefined,
       }),
-    enabled: validationState === "valid",
+    enabled: validationState === 'valid',
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
-  const models = (validationState === "valid" ? validatedModelsData?.models : modelsData?.models) ?? [];
+  const models =
+    (validationState === 'valid' ? validatedModelsData?.models : modelsData?.models) ?? [];
   const isLoadingModels = modelsLoading || validatedModelsLoading;
   const hasModels = models.length > 0;
   const useCombobox = hasModels && !modelsFetchFailed;
 
   // Reset validation when key or endpoint changes
   useEffect(() => {
-    if (currentApiKeyDirty !== undefined || dirtyValues["Ai:EndpointUrl"] !== undefined) {
-      setValidationState("idle");
+    if (currentApiKeyDirty !== undefined || dirtyValues['Ai:EndpointUrl'] !== undefined) {
+      setValidationState('idle');
       setValidationError(null);
     }
   }, [currentApiKeyDirty, dirtyValues]);
 
   const validateMutation = useMutation({
     mutationFn: () => {
-      const apiKey = currentApiKeyDirty || "";
+      const apiKey = currentApiKeyDirty || '';
       if (!apiKey && !apiKeyIsConfigured) {
-        return Promise.resolve({ valid: false, error: "Enter an API key first" } as const);
+        return Promise.resolve({ valid: false, error: 'Enter an API key first' } as const);
       }
       return validateAiConfig({
         apiKey,
@@ -116,23 +122,23 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
       });
     },
     onMutate: () => {
-      setValidationState("validating");
+      setValidationState('validating');
       setValidationError(null);
     },
     onSuccess: (result) => {
       if (result.valid) {
-        setValidationState("valid");
-        toast.success("API key is valid");
+        setValidationState('valid');
+        toast.success('API key is valid');
       } else {
-        setValidationState("invalid");
-        setValidationError(result.error ?? "Validation failed");
-        toast.error(result.error ?? "Validation failed");
+        setValidationState('invalid');
+        setValidationError(result.error ?? 'Validation failed');
+        toast.error(result.error ?? 'Validation failed');
       }
     },
     onError: (err) => {
-      setValidationState("invalid");
-      setValidationError("Validation request failed");
-      handleApiError(err, { fallback: "Failed to validate API key" });
+      setValidationState('invalid');
+      setValidationError('Validation request failed');
+      handleApiError(err, { fallback: 'Failed to validate API key' });
     },
   });
 
@@ -145,23 +151,23 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
         delete next[key];
         return next;
       });
-      queryClient.invalidateQueries({ queryKey: ["super", "config"] });
-      queryClient.invalidateQueries({ queryKey: ["super", "ai-models"] });
+      queryClient.invalidateQueries({ queryKey: ['super', 'config'] });
+      queryClient.invalidateQueries({ queryKey: ['super', 'ai-models'] });
     },
-    onError: (err) => handleApiError(err, { fallback: "Failed to reset setting" }),
+    onError: (err) => handleApiError(err, { fallback: 'Failed to reset setting' }),
   });
 
   const handleChange = (key: string, newValue: string) => {
     const setting = findSetting(settings, key);
     if (!setting) return;
 
-    if (setting.isSecret && newValue === "") {
+    if (setting.isSecret && newValue === '') {
       setDirtyValues((prev) => {
         const next = { ...prev };
         delete next[key];
         return next;
       });
-    } else if (!setting.isSecret && newValue === (setting.value ?? "")) {
+    } else if (!setting.isSecret && newValue === (setting.value ?? '')) {
       setDirtyValues((prev) => {
         const next = { ...prev };
         delete next[key];
@@ -174,12 +180,12 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
 
   const hasDirty = Object.keys(dirtyValues).length > 0;
   const apiKeyIsDirty = currentApiKeyDirty !== undefined;
-  const needsValidation = apiKeyIsDirty && validationState !== "valid";
+  const needsValidation = apiKeyIsDirty && validationState !== 'valid';
 
   const handleSave = async () => {
     if (!hasDirty) return;
     if (needsValidation) {
-      toast.error("Please validate the API key before saving");
+      toast.error('Please validate the API key before saving');
       return;
     }
 
@@ -192,13 +198,13 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
       }
 
       setDirtyValues({});
-      setValidationState("idle");
-      queryClient.invalidateQueries({ queryKey: ["super", "config"] });
-      queryClient.invalidateQueries({ queryKey: ["super", "ai-models"] });
-      toast.success(`${savedCount} setting${savedCount > 1 ? "s" : ""} saved`);
+      setValidationState('idle');
+      queryClient.invalidateQueries({ queryKey: ['super', 'config'] });
+      queryClient.invalidateQueries({ queryKey: ['super', 'ai-models'] });
+      toast.success(`${savedCount} setting${savedCount > 1 ? 's' : ''} saved`);
       onSaved();
     } catch (err) {
-      handleApiError(err, { fallback: "Failed to save settings" });
+      handleApiError(err, { fallback: 'Failed to save settings' });
     } finally {
       setSaving(false);
     }
@@ -216,8 +222,8 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
           <Input
             type="text"
             value={currentEndpoint}
-            onChange={(e) => handleChange("Ai:EndpointUrl", e.target.value)}
-            placeholder={endpointSetting.validationHint ?? ""}
+            onChange={(e) => handleChange('Ai:EndpointUrl', e.target.value)}
+            placeholder={endpointSetting.validationHint ?? ''}
             className="max-w-md"
           />
         </SettingField>
@@ -235,22 +241,22 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
           <div className="flex items-center gap-2 max-w-md w-full">
             <Input
               type="password"
-              value={currentApiKeyDirty ?? ""}
-              onChange={(e) => handleChange("Ai:OpenAiApiKey", e.target.value)}
-              placeholder={apiKeySetting.validationHint ?? "Enter API key..."}
+              value={currentApiKeyDirty ?? ''}
+              onChange={(e) => handleChange('Ai:OpenAiApiKey', e.target.value)}
+              placeholder={apiKeySetting.validationHint ?? 'Enter API key...'}
               className="flex-1"
             />
             <Button
               variant="outline"
               size="sm"
               onClick={() => validateMutation.mutate()}
-              disabled={validationState === "validating" || (!apiKeyIsDirty && !apiKeyIsConfigured)}
+              disabled={validationState === 'validating' || (!apiKeyIsDirty && !apiKeyIsConfigured)}
             >
-              {validationState === "validating" ? (
+              {validationState === 'validating' ? (
                 <Loader2 className="size-4 animate-spin" />
-              ) : validationState === "valid" ? (
+              ) : validationState === 'valid' ? (
                 <ShieldCheck className="size-4 text-success-text" />
-              ) : validationState === "invalid" ? (
+              ) : validationState === 'invalid' ? (
                 <ShieldX className="size-4 text-destructive" />
               ) : (
                 <ShieldCheck className="size-4" />
@@ -258,7 +264,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
               <span className="ml-1">Validate</span>
             </Button>
           </div>
-          {validationState === "invalid" && validationError && (
+          {validationState === 'invalid' && validationError && (
             <p className="text-xs text-destructive mt-1">{validationError}</p>
           )}
         </SettingField>
@@ -271,13 +277,15 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
         <SettingField
           setting={defaultModelSetting}
           onReset={() => resetMutation.mutate(defaultModelSetting.key)}
-          isResetting={resetMutation.isPending && resetMutation.variables === defaultModelSetting.key}
+          isResetting={
+            resetMutation.isPending && resetMutation.variables === defaultModelSetting.key
+          }
         >
           {useCombobox ? (
             <ModelCombobox
               models={models}
               value={currentDefaultModel}
-              onChange={(value) => handleChange("Ai:DefaultModel", value)}
+              onChange={(value) => handleChange('Ai:DefaultModel', value)}
               loading={isLoadingModels}
               placeholder="Select default model..."
             />
@@ -286,8 +294,8 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
               <Input
                 type="text"
                 value={currentDefaultModel}
-                onChange={(e) => handleChange("Ai:DefaultModel", e.target.value)}
-                placeholder={defaultModelSetting.validationHint ?? ""}
+                onChange={(e) => handleChange('Ai:DefaultModel', e.target.value)}
+                placeholder={defaultModelSetting.validationHint ?? ''}
                 className="max-w-md"
               />
               {modelsFetchFailed && apiKeyIsConfigured && (
@@ -308,13 +316,15 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
         <SettingField
           setting={premiumModelSetting}
           onReset={() => resetMutation.mutate(premiumModelSetting.key)}
-          isResetting={resetMutation.isPending && resetMutation.variables === premiumModelSetting.key}
+          isResetting={
+            resetMutation.isPending && resetMutation.variables === premiumModelSetting.key
+          }
         >
           {useCombobox ? (
             <ModelCombobox
               models={models}
               value={currentPremiumModel}
-              onChange={(value) => handleChange("Ai:PremiumModel", value)}
+              onChange={(value) => handleChange('Ai:PremiumModel', value)}
               loading={isLoadingModels}
               placeholder="Select premium model..."
             />
@@ -323,8 +333,8 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
               <Input
                 type="text"
                 value={currentPremiumModel}
-                onChange={(e) => handleChange("Ai:PremiumModel", e.target.value)}
-                placeholder={premiumModelSetting.validationHint ?? ""}
+                onChange={(e) => handleChange('Ai:PremiumModel', e.target.value)}
+                placeholder={premiumModelSetting.validationHint ?? ''}
                 className="max-w-md"
               />
               {modelsFetchFailed && apiKeyIsConfigured && (
@@ -342,7 +352,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
       <div className="pt-4">
         <Button onClick={handleSave} disabled={!hasDirty || saving || needsValidation} size="sm">
           <Save className="size-4 mr-1.5" />
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
         {needsValidation && hasDirty && (
           <p className="text-xs text-foreground-muted mt-2">Validate the API key before saving</p>
@@ -371,12 +381,18 @@ function SettingField({ setting, onReset, isResetting, children }: SettingFieldP
       <p className="text-xs text-foreground-muted">{setting.description}</p>
       <div className="flex items-center gap-2">
         {children}
-        {setting.source === "dashboard" && (
+        {setting.source === 'dashboard' && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={onReset} disabled={isResetting} className="shrink-0">
-                  <RotateCcw className={`size-4 ${isResetting ? "animate-spin" : ""}`} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onReset}
+                  disabled={isResetting}
+                  className="shrink-0"
+                >
+                  <RotateCcw className={`size-4 ${isResetting ? 'animate-spin' : ''}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -406,7 +422,12 @@ function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelC
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className="max-w-md w-full justify-between">
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="max-w-md w-full justify-between"
+        >
           {loading ? (
             <span className="flex items-center gap-2 text-foreground-muted">
               <Loader2 className="size-4 animate-spin" />
@@ -435,7 +456,9 @@ function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelC
                     setOpen(false);
                   }}
                 >
-                  <Check className={cn("mr-2 size-4", value === model ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn('mr-2 size-4', value === model ? 'opacity-100' : 'opacity-0')}
+                  />
                   {model}
                 </CommandItem>
               ))}
@@ -449,9 +472,9 @@ function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelC
 
 // ── Source badge ──
 
-function SourceBadge({ source }: { source: ConfigSetting["source"] }) {
+function SourceBadge({ source }: { source: ConfigSetting['source'] }) {
   switch (source) {
-    case "dashboard":
+    case 'dashboard':
       return (
         <TooltipProvider>
           <Tooltip>
@@ -467,12 +490,15 @@ function SourceBadge({ source }: { source: ConfigSetting["source"] }) {
           </Tooltip>
         </TooltipProvider>
       );
-    case "environment":
+    case 'environment':
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-success-text border-success-border gap-1 text-xs">
+              <Badge
+                variant="outline"
+                className="text-success-text border-success-border gap-1 text-xs"
+              >
                 <Server className="size-3" />
                 Environment
               </Badge>
@@ -483,10 +509,13 @@ function SourceBadge({ source }: { source: ConfigSetting["source"] }) {
           </Tooltip>
         </TooltipProvider>
       );
-    case "none":
+    case 'none':
     default:
       return (
-        <Badge variant="outline" className="text-foreground-muted border-foreground-muted/30 gap-1 text-xs">
+        <Badge
+          variant="outline"
+          className="text-foreground-muted border-foreground-muted/30 gap-1 text-xs"
+        >
           <Minus className="size-3" />
           Not configured
         </Badge>

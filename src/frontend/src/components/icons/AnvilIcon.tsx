@@ -3,11 +3,5 @@ interface AnvilIconProps {
 }
 
 export function AnvilIcon({ className }: AnvilIconProps) {
-  return (
-    <img
-      src="/clarive-icon.svg"
-      alt="Clarive"
-      className={className}
-    />
-  );
+  return <img src="/clarive-icon.svg" alt="Clarive" className={className} />;
 }

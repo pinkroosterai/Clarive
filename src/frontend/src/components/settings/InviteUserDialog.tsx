@@ -1,12 +1,9 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { invitationService } from "@/services";
-import { handleApiError } from "@/lib/handleApiError";
-import { toast } from "sonner";
-import { UserPlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { UserPlus } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -15,29 +12,33 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
+import { handleApiError } from '@/lib/handleApiError';
+import { invitationService } from '@/services';
 
 export function InviteUserDialog() {
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"editor" | "viewer">("editor");
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
 
   const inviteMutation = useMutation({
     mutationFn: () => invitationService.createInvitation(inviteEmail, inviteRole),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Invitation sent");
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Invitation sent');
       setInviteOpen(false);
-      setInviteEmail("");
-      setInviteRole("editor");
+      setInviteEmail('');
+      setInviteRole('editor');
     },
     onError: (err: unknown) => handleApiError(err),
   });
@@ -48,8 +49,8 @@ export function InviteUserDialog() {
       onOpenChange={(o) => {
         setInviteOpen(o);
         if (!o) {
-          setInviteEmail("");
-          setInviteRole("editor");
+          setInviteEmail('');
+          setInviteRole('editor');
         }
       }}
     >
@@ -62,9 +63,7 @@ export function InviteUserDialog() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Invite User</DialogTitle>
-          <DialogDescription>
-            Send an email invitation to join your workspace.
-          </DialogDescription>
+          <DialogDescription>Send an email invitation to join your workspace.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div className="space-y-2">
@@ -81,9 +80,7 @@ export function InviteUserDialog() {
             <Label>Role</Label>
             <Select
               value={inviteRole}
-              onValueChange={(v) =>
-                setInviteRole(v as "editor" | "viewer")
-              }
+              onValueChange={(v) => setInviteRole(v as 'editor' | 'viewer')}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -100,7 +97,7 @@ export function InviteUserDialog() {
             disabled={!inviteEmail || inviteMutation.isPending}
             onClick={() => inviteMutation.mutate()}
           >
-            {inviteMutation.isPending ? "Sending\u2026" : "Send Invitation"}
+            {inviteMutation.isPending ? 'Sending\u2026' : 'Send Invitation'}
           </Button>
         </DialogFooter>
       </DialogContent>

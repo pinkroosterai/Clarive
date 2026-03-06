@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { toast } from "sonner";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 
-import type { PromptEntry } from "@/types";
-import { useEntryHistory } from "@/hooks/useEntryHistory";
-import { deepEqual } from "@/lib/deepEqual";
+import { useEntryHistory } from '@/hooks/useEntryHistory';
+import { deepEqual } from '@/lib/deepEqual';
+import type { PromptEntry } from '@/types';
 
 export function useEditorState(entryData: PromptEntry | undefined) {
   const [localEntry, setLocalEntry] = useState<PromptEntry | null>(null);
@@ -30,9 +30,7 @@ export function useEditorState(entryData: PromptEntry | undefined) {
   // Document title
   const localTitle = localEntry?.title;
   useEffect(() => {
-    document.title = localTitle
-      ? `Clarive — ${localTitle}`
-      : "Clarive — Editor";
+    document.title = localTitle ? `Clarive — ${localTitle}` : 'Clarive — Editor';
   }, [localTitle]);
 
   // First-edit notice (published entries)
@@ -47,7 +45,7 @@ export function useEditorState(entryData: PromptEntry | undefined) {
     (updated: Partial<PromptEntry>, options?: { force?: boolean }) => {
       if (
         !hasShownEditNotice.current &&
-        entryData?.versionState === "published" &&
+        entryData?.versionState === 'published' &&
         !isDirtyRef.current
       ) {
         hasShownEditNotice.current = true;
@@ -65,7 +63,7 @@ export function useEditorState(entryData: PromptEntry | undefined) {
       }
       setIsDirty(true);
     },
-    [history, entryData?.versionState],
+    [history, entryData?.versionState]
   );
 
   const handleUndo = useCallback(() => {
@@ -93,7 +91,7 @@ export function useEditorState(entryData: PromptEntry | undefined) {
     setLocalEntry(structuredClone(entryData));
     setIsDirty(false);
     history.clear();
-    toast.success("Changes discarded");
+    toast.success('Changes discarded');
   }, [entryData, history]);
 
   // Warn before navigating away with unsaved changes
@@ -103,8 +101,8 @@ export function useEditorState(entryData: PromptEntry | undefined) {
         e.preventDefault();
       }
     };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   return {

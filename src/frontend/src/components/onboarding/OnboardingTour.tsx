@@ -1,9 +1,11 @@
-import { useEffect, useRef, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "@/store/authStore";
-import { completeOnboarding } from "@/services/api/authService";
-import { ONBOARDING_STEPS, EDITOR_STEPS_START, EDITOR_STEPS_END } from "./tourSteps";
-import type { Driver, PopoverDOM, State } from "driver.js";
+import type { Driver, PopoverDOM, State } from 'driver.js';
+import { useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+import { ONBOARDING_STEPS, EDITOR_STEPS_END } from './tourSteps';
+
+import { completeOnboarding } from '@/services/api/authService';
+import { useAuthStore } from '@/store/authStore';
 
 const LOGO_HTML = `<img src="/clarive-icon.svg" alt="Clarive" />`;
 
@@ -37,18 +39,18 @@ function renderProgressDots(popover: PopoverDOM, state: State) {
   const total = ONBOARDING_STEPS.length;
 
   // Remove previous dots if re-rendering
-  popover.footer.querySelector(".tour-progress")?.remove();
+  popover.footer.querySelector('.tour-progress')?.remove();
 
-  const container = document.createElement("div");
-  container.className = "tour-progress";
-  container.setAttribute("role", "progressbar");
-  container.setAttribute("aria-label", `Step ${current + 1} of ${total}`);
-  container.setAttribute("aria-valuenow", String(current + 1));
-  container.setAttribute("aria-valuemax", String(total));
+  const container = document.createElement('div');
+  container.className = 'tour-progress';
+  container.setAttribute('role', 'progressbar');
+  container.setAttribute('aria-label', `Step ${current + 1} of ${total}`);
+  container.setAttribute('aria-valuenow', String(current + 1));
+  container.setAttribute('aria-valuemax', String(total));
 
   for (let i = 0; i < total; i++) {
-    const dot = document.createElement("span");
-    dot.className = `tour-progress-dot${i < current ? " completed" : ""}${i === current ? " active" : ""}`;
+    const dot = document.createElement('span');
+    dot.className = `tour-progress-dot${i < current ? ' completed' : ''}${i === current ? ' active' : ''}`;
     container.appendChild(dot);
   }
 
@@ -56,10 +58,10 @@ function renderProgressDots(popover: PopoverDOM, state: State) {
 
   // Inject logo for welcome/closing steps
   const step = ONBOARDING_STEPS[current];
-  if (step.popover?.popoverClass?.includes("tour-welcome-modal")) {
-    if (!popover.wrapper.querySelector(".tour-welcome-logo")) {
-      const logo = document.createElement("div");
-      logo.className = "tour-welcome-logo";
+  if (step.popover?.popoverClass?.includes('tour-welcome-modal')) {
+    if (!popover.wrapper.querySelector('.tour-welcome-logo')) {
+      const logo = document.createElement('div');
+      logo.className = 'tour-welcome-logo';
       logo.innerHTML = LOGO_HTML;
       popover.wrapper.insertBefore(logo, popover.title);
     }
@@ -67,11 +69,11 @@ function renderProgressDots(popover: PopoverDOM, state: State) {
 }
 
 /** Lazy-load driver.js and its styles (only for new users) */
-async function loadDriver(): Promise<typeof import("driver.js")["driver"]> {
+async function loadDriver(): Promise<(typeof import('driver.js'))['driver']> {
   const [driverModule] = await Promise.all([
-    import("driver.js"),
-    import("driver.js/dist/driver.css"),
-    import("./onboardingTheme.css"),
+    import('driver.js'),
+    import('driver.js/dist/driver.css'),
+    import('./onboardingTheme.css'),
   ]);
   return driverModule.driver;
 }
@@ -102,7 +104,7 @@ export function OnboardingTour() {
   useEffect(() => {
     if (!currentUser || currentUser.onboardingCompleted) return;
     if (isInitialized.current) return;
-    if (location.pathname !== "/") return; // Only start from Dashboard
+    if (location.pathname !== '/') return; // Only start from Dashboard
     isInitialized.current = true;
 
     let destroyed = false;
@@ -114,10 +116,10 @@ export function OnboardingTour() {
 
       const driverObj = createDriver({
         animate: true,
-        overlayColor: "rgba(0, 0, 0, 0.75)",
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
         stagePadding: 8,
         stageRadius: 12,
-        popoverClass: "tour-popover",
+        popoverClass: 'tour-popover',
         showProgress: false,
         allowClose: true,
         smoothScroll: true,
@@ -176,7 +178,7 @@ export function OnboardingTour() {
           // Navigate if the previous step's target isn't in the DOM
           if (prevStep.element && !document.querySelector(prevStep.element as string)) {
             // For steps with resolveRoute, re-resolve (e.g., editor entry)
-            const targetRoute = prevStep.resolveRoute?.() ?? prevStep.route ?? "/";
+            const targetRoute = prevStep.resolveRoute?.() ?? prevStep.route ?? '/';
             if (targetRoute) {
               navigateRef.current(targetRoute);
               await waitForElement(prevStep.element as string);

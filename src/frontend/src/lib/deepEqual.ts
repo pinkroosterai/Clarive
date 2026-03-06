@@ -4,8 +4,7 @@
  */
 export function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
-  if (a === null || b === null || typeof a !== "object" || typeof b !== "object")
-    return false;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
@@ -17,9 +16,6 @@ export function deepEqual(a: unknown, b: unknown): boolean {
   return keysA.every(
     (k) =>
       Object.prototype.hasOwnProperty.call(b, k) &&
-      deepEqual(
-        (a as Record<string, unknown>)[k],
-        (b as Record<string, unknown>)[k],
-      ),
+      deepEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])
   );
 }

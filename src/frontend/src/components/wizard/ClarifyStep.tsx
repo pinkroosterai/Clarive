@@ -1,18 +1,18 @@
-import { ArrowRight, SkipForward } from "lucide-react";
+import { ArrowRight, SkipForward } from 'lucide-react';
 
-import type { ClarificationQuestion } from "@/types";
-import { useQuestionAnswers } from "@/hooks/useQuestionAnswers";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useQuestionAnswers } from '@/hooks/useQuestionAnswers';
+import type { ClarificationQuestion } from '@/types';
 
 interface ClarifyStepProps {
   questions: ClarificationQuestion[];
   enhancements: string[];
   onContinue: (
     answers: Array<{ questionIndex: number; answer: string }>,
-    selectedEnhancements: string[],
+    selectedEnhancements: string[]
   ) => void;
   onSkip: () => void;
   isLoading: boolean;
@@ -25,13 +25,8 @@ export function ClarifyStep({
   onSkip,
   isLoading,
 }: ClarifyStepProps) {
-  const {
-    answers,
-    selectedEnhancements,
-    updateAnswer,
-    selectSuggestion,
-    toggleEnhancement,
-  } = useQuestionAnswers(questions, enhancements);
+  const { answers, selectedEnhancements, updateAnswer, selectSuggestion, toggleEnhancement } =
+    useQuestionAnswers(questions, enhancements);
 
   const handleContinue = () => {
     const structuredAnswers = answers
@@ -43,9 +38,7 @@ export function ClarifyStep({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-1">
-          Help us refine your prompt
-        </h2>
+        <h2 className="text-lg font-semibold text-foreground mb-1">Help us refine your prompt</h2>
         <p className="text-sm text-foreground-muted">
           Answer these questions to get a better result, or skip to generate immediately.
         </p>
@@ -70,8 +63,8 @@ export function ClarifyStep({
                       disabled={isLoading}
                       className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
                         answers[i] === suggestion
-                          ? "bg-primary/15 border-primary/50 text-primary font-medium"
-                          : "bg-elevated border-border hover:border-primary/30 text-foreground-muted"
+                          ? 'bg-primary/15 border-primary/50 text-primary font-medium'
+                          : 'bg-elevated border-border hover:border-primary/30 text-foreground-muted'
                       }`}
                     >
                       {suggestion}
@@ -81,7 +74,7 @@ export function ClarifyStep({
               )}
 
               <Input
-                value={answers[i] ?? ""}
+                value={answers[i] ?? ''}
                 onChange={(e) => updateAnswer(i, e.target.value)}
                 placeholder="Type your own answer..."
                 disabled={isLoading}
@@ -94,9 +87,7 @@ export function ClarifyStep({
 
       {enhancements.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground">
-            Suggested Enhancements
-          </h3>
+          <h3 className="text-sm font-semibold text-foreground">Suggested Enhancements</h3>
           {enhancements.map((enh) => (
             <label key={enh} className="flex items-start gap-3 cursor-pointer">
               <Checkbox

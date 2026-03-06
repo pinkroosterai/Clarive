@@ -1,20 +1,21 @@
-import type { ToolDescription, McpImportResponse } from "@/types";
-import { api } from "./apiClient";
+import { api } from './apiClient';
+
+import type { ToolDescription, McpImportResponse } from '@/types';
 
 export async function getToolsList(): Promise<ToolDescription[]> {
-  const res = await api.get<{ items: ToolDescription[] }>("/api/tools");
+  const res = await api.get<{ items: ToolDescription[] }>('/api/tools');
   return res.items;
 }
 
 export async function createTool(
-  data: Omit<ToolDescription, "id" | "inputSchema">,
+  data: Omit<ToolDescription, 'id' | 'inputSchema'>
 ): Promise<ToolDescription> {
-  return api.post<ToolDescription>("/api/tools", data);
+  return api.post<ToolDescription>('/api/tools', data);
 }
 
 export async function updateTool(
   id: string,
-  data: Partial<Omit<ToolDescription, "id" | "inputSchema">>,
+  data: Partial<Omit<ToolDescription, 'id' | 'inputSchema'>>
 ): Promise<ToolDescription> {
   return api.patch<ToolDescription>(`/api/tools/${id}`, data);
 }
@@ -25,9 +26,9 @@ export async function deleteTool(id: string): Promise<void> {
 
 export async function importFromMcp(
   serverUrl: string,
-  bearerToken?: string,
+  bearerToken?: string
 ): Promise<McpImportResponse> {
-  return api.post<McpImportResponse>("/api/tools/import-mcp", {
+  return api.post<McpImportResponse>('/api/tools/import-mcp', {
     serverUrl,
     bearerToken: bearerToken || undefined,
   });

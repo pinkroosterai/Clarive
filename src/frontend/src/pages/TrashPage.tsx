@@ -1,18 +1,11 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { Trash2, Undo2, FolderOpen, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/handleApiError";
-import { entryService, folderService } from "@/services";
-import { useAuthStore } from "@/store/authStore";
-import { buildFolderMap } from "@/lib/folderUtils";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Trash2, Undo2, FolderOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/common/EmptyState";
-import { TrashPreviewSheet } from "@/components/library/TrashPreviewSheet";
+import { EmptyState } from '@/components/common/EmptyState';
+import { TrashPreviewSheet } from '@/components/library/TrashPreviewSheet';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,22 +16,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+import { buildFolderMap } from '@/lib/folderUtils';
+import { handleApiError } from '@/lib/handleApiError';
+import { entryService, folderService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
 
 const PAGE_SIZE = 50;
 
 const TrashPage = () => {
-  useEffect(() => { document.title = "Clarive — Trash"; }, []);
+  useEffect(() => {
+    document.title = 'Clarive — Trash';
+  }, []);
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.currentUser);
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin = currentUser?.role === 'admin';
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["trashedEntries", page],
+    queryKey: ['trashedEntries', page],
     queryFn: () => entryService.getTrashedEntries(page, PAGE_SIZE),
   });
 
@@ -47,27 +49,27 @@ const TrashPage = () => {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const { data: folders } = useQuery({
-    queryKey: ["folders"],
+    queryKey: ['folders'],
     queryFn: folderService.getFoldersTree,
   });
 
   const folderMap = useMemo(() => (folders ? buildFolderMap(folders) : {}), [folders]);
 
   const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["trashedEntries"] });
-    queryClient.invalidateQueries({ queryKey: ["entries"] });
+    queryClient.invalidateQueries({ queryKey: ['trashedEntries'] });
+    queryClient.invalidateQueries({ queryKey: ['entries'] });
   }, [queryClient]);
 
   const restoreMutation = useMutation({
     mutationFn: entryService.restoreEntry,
     onSuccess: () => invalidate(),
-    onError: (err: unknown) => handleApiError(err, { fallback: "Failed to restore entry" }),
+    onError: (err: unknown) => handleApiError(err, { fallback: 'Failed to restore entry' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: entryService.permanentlyDeleteEntry,
     onSuccess: () => invalidate(),
-    onError: (err: unknown) => handleApiError(err, { fallback: "Failed to delete entry" }),
+    onError: (err: unknown) => handleApiError(err, { fallback: 'Failed to delete entry' }),
   });
 
   const toggleSelect = (id: string) => {
@@ -91,9 +93,13 @@ const TrashPage = () => {
   const handleRestore = async (id: string, title: string) => {
     try {
       await restoreMutation.mutateAsync(id);
-      setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      setSelectedIds((prev) => {
+        const n = new Set(prev);
+        n.delete(id);
+        return n;
+      });
       setPreviewId((prev) => (prev === id ? null : prev));
-      toast.success("Entry restored", { description: `"${title}" has been restored.` });
+      toast.success('Entry restored', { description: `"${title}" has been restored.` });
     } catch {
       // onError handler on the mutation displays the toast
     }
@@ -102,9 +108,15 @@ const TrashPage = () => {
   const handleDelete = async (id: string, title: string) => {
     try {
       await deleteMutation.mutateAsync(id);
-      setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      setSelectedIds((prev) => {
+        const n = new Set(prev);
+        n.delete(id);
+        return n;
+      });
       setPreviewId((prev) => (prev === id ? null : prev));
-      toast.success("Entry permanently deleted", { description: `"${title}" has been permanently deleted.` });
+      toast.success('Entry permanently deleted', {
+        description: `"${title}" has been permanently deleted.`,
+      });
     } catch {
       // onError handler on the mutation displays the toast
     }
@@ -114,11 +126,15 @@ const TrashPage = () => {
     const ids = Array.from(selectedIds);
     const results = await Promise.allSettled(ids.map((id) => restoreMutation.mutateAsync(id)));
     setSelectedIds(new Set());
-    const failed = results.filter((r) => r.status === "rejected").length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
     if (failed > 0) {
-      toast.warning(`Restored ${ids.length - failed} of ${ids.length} entries`, { description: `${failed} failed to restore.` });
+      toast.warning(`Restored ${ids.length - failed} of ${ids.length} entries`, {
+        description: `${failed} failed to restore.`,
+      });
     } else {
-      toast.success("Entries restored", { description: `${ids.length} entries have been restored.` });
+      toast.success('Entries restored', {
+        description: `${ids.length} entries have been restored.`,
+      });
     }
   };
 
@@ -126,11 +142,15 @@ const TrashPage = () => {
     const ids = Array.from(selectedIds);
     const results = await Promise.allSettled(ids.map((id) => deleteMutation.mutateAsync(id)));
     setSelectedIds(new Set());
-    const failed = results.filter((r) => r.status === "rejected").length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
     if (failed > 0) {
-      toast.warning(`Deleted ${ids.length - failed} of ${ids.length} entries`, { description: `${failed} failed to delete.` });
+      toast.warning(`Deleted ${ids.length - failed} of ${ids.length} entries`, {
+        description: `${failed} failed to delete.`,
+      });
     } else {
-      toast.success("Entries permanently deleted", { description: `${ids.length} entries have been permanently deleted.` });
+      toast.success('Entries permanently deleted', {
+        description: `${ids.length} entries have been permanently deleted.`,
+      });
     }
   };
 
@@ -143,7 +163,9 @@ const TrashPage = () => {
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl bg-elevated border border-border-subtle elevation-2 px-4 py-2">
-          <span className="bg-primary/12 text-primary rounded-full px-3 py-1 text-sm font-medium">{selectedIds.size} selected</span>
+          <span className="bg-primary/12 text-primary rounded-full px-3 py-1 text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
           <Button size="sm" variant="outline" disabled={isBusy} onClick={handleBulkRestore}>
             <Undo2 className="mr-1 size-3.5" /> Restore
           </Button>
@@ -156,7 +178,9 @@ const TrashPage = () => {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Permanently delete {selectedIds.size} entries?</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    Permanently delete {selectedIds.size} entries?
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. All selected entries will be permanently removed.
                   </AlertDialogDescription>
@@ -175,7 +199,10 @@ const TrashPage = () => {
       {isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 rounded-lg border border-border-subtle bg-surface skeleton-shimmer p-4">
+            <div
+              key={i}
+              className="flex items-center gap-4 rounded-lg border border-border-subtle bg-surface skeleton-shimmer p-4"
+            >
               <Skeleton className="size-4" />
               <Skeleton className="h-4 w-48" />
               <Skeleton className="h-4 w-24 ml-auto" />
@@ -227,11 +254,11 @@ const TrashPage = () => {
                 {entry.title}
               </button>
               <span className="w-28 text-right text-sm text-foreground-muted hidden sm:block">
-                {format(new Date(entry.updatedAt), "MMM d, yyyy")}
+                {format(new Date(entry.updatedAt), 'MMM d, yyyy')}
               </span>
               <span className="w-32 text-right text-sm text-foreground-muted items-center justify-end gap-1 hidden md:flex">
                 <FolderOpen className="size-3.5" />
-                {entry.folderId ? (folderMap[entry.folderId] ?? "Unknown") : "Root"}
+                {entry.folderId ? (folderMap[entry.folderId] ?? 'Unknown') : 'Root'}
               </span>
               <div className="flex items-center justify-end gap-1 shrink-0">
                 <Button
@@ -248,7 +275,13 @@ const TrashPage = () => {
                 {isAdmin && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="icon" variant="ghost" disabled={isBusy} title="Permanently delete" className="text-destructive hover:text-destructive min-h-[44px] min-w-[44px]">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        disabled={isBusy}
+                        title="Permanently delete"
+                        className="text-destructive hover:text-destructive min-h-[44px] min-w-[44px]"
+                      >
                         <Trash2 className="size-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -261,7 +294,9 @@ const TrashPage = () => {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(entry.id, entry.title)}>Delete</AlertDialogAction>
+                        <AlertDialogAction onClick={() => handleDelete(entry.id, entry.title)}>
+                          Delete
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -301,7 +336,9 @@ const TrashPage = () => {
 
       <TrashPreviewSheet
         entryId={previewId}
-        onOpenChange={(open) => { if (!open) setPreviewId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setPreviewId(null);
+        }}
         onRestore={handleRestore}
         onDelete={handleDelete}
         isAdmin={isAdmin}

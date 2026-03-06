@@ -15,7 +15,7 @@ import type {
   AuditLogEntry,
   VersionInfo,
   PaginatedResponse,
-} from "@/types";
+} from '@/types';
 
 let counter = 0;
 function uid(): string {
@@ -31,20 +31,22 @@ export function resetFactoryCounter(): void {
 export function createUser(overrides?: Partial<User>): User {
   return {
     id: uid(),
-    email: "user@test.com",
-    name: "Test User",
-    role: "editor",
+    email: 'user@test.com',
+    name: 'Test User',
+    role: 'editor',
     emailVerified: true,
     onboardingCompleted: true,
+    avatarUrl: null,
+    hasPassword: true,
     isSuperUser: false,
     themePreference: null,
-    createdAt: "2026-01-01T00:00:00Z",
+    createdAt: '2026-01-01T00:00:00Z',
     ...overrides,
   };
 }
 
 export function createAdmin(overrides?: Partial<User>): User {
-  return createUser({ name: "Admin User", role: "admin", ...overrides });
+  return createUser({ name: 'Admin User', role: 'admin', ...overrides });
 }
 
 // ── Folders ──
@@ -52,7 +54,7 @@ export function createAdmin(overrides?: Partial<User>): User {
 export function createFolder(overrides?: Partial<Folder>): Folder {
   return {
     id: uid(),
-    name: "Test Folder",
+    name: 'Test Folder',
     parentId: null,
     children: [],
     ...overrides,
@@ -60,10 +62,10 @@ export function createFolder(overrides?: Partial<Folder>): Folder {
 }
 
 export function createFolderTree(): Folder[] {
-  const grandchild = createFolder({ name: "Grandchild" });
-  const child1 = createFolder({ name: "Child 1", children: [grandchild] });
-  const child2 = createFolder({ name: "Child 2" });
-  const root = createFolder({ name: "Root Folder", children: [child1, child2] });
+  const grandchild = createFolder({ name: 'Grandchild' });
+  const child1 = createFolder({ name: 'Child 1', children: [grandchild] });
+  const child2 = createFolder({ name: 'Child 2' });
+  const root = createFolder({ name: 'Root Folder', children: [child1, child2] });
   // Fix parent IDs
   child1.parentId = root.id;
   child2.parentId = root.id;
@@ -76,7 +78,7 @@ export function createFolderTree(): Folder[] {
 export function createPrompt(overrides?: Partial<Prompt>): Prompt {
   return {
     id: uid(),
-    content: "You are a helpful assistant. Please {{task|string}}.",
+    content: 'You are a helpful assistant. Please {{task|string}}.',
     order: 0,
     ...overrides,
   };
@@ -85,34 +87,34 @@ export function createPrompt(overrides?: Partial<Prompt>): Prompt {
 export function createEntry(overrides?: Partial<PromptEntry>): PromptEntry {
   return {
     id: uid(),
-    title: "Test Entry",
+    title: 'Test Entry',
     systemMessage: null,
     prompts: [createPrompt()],
     folderId: null,
     version: 1,
-    versionState: "draft",
+    versionState: 'draft',
     isTrashed: false,
-    createdAt: "2026-01-01T00:00:00Z",
-    updatedAt: "2026-01-01T00:00:00Z",
-    createdBy: "user@test.com",
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    createdBy: 'user@test.com',
     ...overrides,
   };
 }
 
 export function createDraftEntry(overrides?: Partial<PromptEntry>): PromptEntry {
-  return createEntry({ versionState: "draft", version: 1, ...overrides });
+  return createEntry({ versionState: 'draft', version: 1, ...overrides });
 }
 
 export function createPublishedEntry(overrides?: Partial<PromptEntry>): PromptEntry {
-  return createEntry({ versionState: "published", version: 2, ...overrides });
+  return createEntry({ versionState: 'published', version: 2, ...overrides });
 }
 
 // ── Template Fields ──
 
 export function createTemplateField(overrides?: Partial<TemplateField>): TemplateField {
   return {
-    name: "fieldName",
-    type: "string",
+    name: 'fieldName',
+    type: 'string',
     enumValues: [],
     defaultValue: null,
     min: null,
@@ -126,8 +128,8 @@ export function createTemplateField(overrides?: Partial<TemplateField>): Templat
 export function createWorkspace(overrides?: Partial<Workspace>): Workspace {
   return {
     id: uid(),
-    name: "Test Workspace",
-    role: "admin",
+    name: 'Test Workspace',
+    role: 'admin',
     isPersonal: true,
     memberCount: 1,
     avatarUrl: null,
@@ -138,25 +140,25 @@ export function createWorkspace(overrides?: Partial<Workspace>): Workspace {
 // ── Pending Invitations ──
 
 export function createPendingWorkspaceInvitation(
-  overrides?: Partial<PendingWorkspaceInvitation>,
+  overrides?: Partial<PendingWorkspaceInvitation>
 ): PendingWorkspaceInvitation {
   return {
     id: uid(),
-    workspaceName: "Acme Corp",
-    role: "editor",
-    invitedBy: "Admin User",
-    createdAt: "2026-03-04T00:00:00Z",
-    expiresAt: "2026-03-11T00:00:00Z",
+    workspaceName: 'Acme Corp',
+    role: 'editor',
+    invitedBy: 'Admin User',
+    createdAt: '2026-03-04T00:00:00Z',
+    expiresAt: '2026-03-11T00:00:00Z',
     ...overrides,
   };
 }
 
 export function createInvitationRespondResult(
-  overrides?: Partial<InvitationRespondResult>,
+  overrides?: Partial<InvitationRespondResult>
 ): InvitationRespondResult {
   return {
-    message: "You have joined Acme Corp",
-    workspace: createWorkspace({ name: "Acme Corp", isPersonal: false, role: "editor" }),
+    message: 'You have joined Acme Corp',
+    workspace: createWorkspace({ name: 'Acme Corp', isPersonal: false, role: 'editor' }),
     ...overrides,
   };
 }
@@ -165,8 +167,8 @@ export function createInvitationRespondResult(
 
 export function createAuthResponse(overrides?: Partial<AuthResponse>): AuthResponse {
   return {
-    token: "test-jwt-token",
-    refreshToken: "test-refresh-token",
+    token: 'test-jwt-token',
+    refreshToken: 'test-refresh-token',
     user: createUser(),
     ...overrides,
   };
@@ -177,9 +179,9 @@ export function createAuthResponse(overrides?: Partial<AuthResponse>): AuthRespo
 export function createApiKey(overrides?: Partial<ApiKey>): ApiKey {
   return {
     id: uid(),
-    name: "Test Key",
-    keyPrefix: "cl_abc1",
-    createdAt: "2026-01-01T00:00:00Z",
+    name: 'Test Key',
+    keyPrefix: 'cl_abc1',
+    createdAt: '2026-01-01T00:00:00Z',
     ...overrides,
   };
 }
@@ -189,12 +191,12 @@ export function createApiKey(overrides?: Partial<ApiKey>): ApiKey {
 export function createAuditLogEntry(overrides?: Partial<AuditLogEntry>): AuditLogEntry {
   return {
     id: uid(),
-    action: "entry_create",
-    entityType: "PromptEntry",
+    action: 'entry_create',
+    entityType: 'PromptEntry',
     entityId: uid(),
     userId: uid(),
-    userName: "Test User",
-    timestamp: "2026-01-01T00:00:00Z",
+    userName: 'Test User',
+    timestamp: '2026-01-01T00:00:00Z',
     details: null,
     ...overrides,
   };
@@ -205,7 +207,7 @@ export function createAuditLogEntry(overrides?: Partial<AuditLogEntry>): AuditLo
 export function createVersionInfo(overrides?: Partial<VersionInfo>): VersionInfo {
   return {
     version: 1,
-    versionState: "draft",
+    versionState: 'draft',
     publishedAt: null,
     publishedBy: null,
     ...overrides,
@@ -214,10 +216,12 @@ export function createVersionInfo(overrides?: Partial<VersionInfo>): VersionInfo
 
 // ── AI / Wizard ──
 
-export function createClarificationQuestion(overrides?: Partial<ClarificationQuestion>): ClarificationQuestion {
+export function createClarificationQuestion(
+  overrides?: Partial<ClarificationQuestion>
+): ClarificationQuestion {
   return {
-    text: "What tone should the prompt use?",
-    suggestions: ["Professional", "Casual", "Technical"],
+    text: 'What tone should the prompt use?',
+    suggestions: ['Professional', 'Casual', 'Technical'],
     ...overrides,
   };
 }
@@ -225,7 +229,7 @@ export function createClarificationQuestion(overrides?: Partial<ClarificationQue
 export function createEvaluationEntry(overrides?: Partial<EvaluationEntry>): EvaluationEntry {
   return {
     score: 8,
-    feedback: "Well structured prompt.",
+    feedback: 'Well structured prompt.',
     ...overrides,
   };
 }
@@ -233,12 +237,12 @@ export function createEvaluationEntry(overrides?: Partial<EvaluationEntry>): Eva
 export function createEvaluation(overrides?: Partial<Evaluation>): Evaluation {
   return {
     dimensions: {
-      clarity: createEvaluationEntry({ score: 8, feedback: "Clear and concise." }),
-      specificity: createEvaluationEntry({ score: 7, feedback: "Could be more specific." }),
-      structure: createEvaluationEntry({ score: 9, feedback: "Well organized." }),
-      completeness: createEvaluationEntry({ score: 6, feedback: "Missing edge cases." }),
-      autonomy: createEvaluationEntry({ score: 8, feedback: "Good self-direction." }),
-      faithfulness: createEvaluationEntry({ score: 9, feedback: "Stays on topic." }),
+      clarity: createEvaluationEntry({ score: 8, feedback: 'Clear and concise.' }),
+      specificity: createEvaluationEntry({ score: 7, feedback: 'Could be more specific.' }),
+      structure: createEvaluationEntry({ score: 9, feedback: 'Well organized.' }),
+      completeness: createEvaluationEntry({ score: 6, feedback: 'Missing edge cases.' }),
+      autonomy: createEvaluationEntry({ score: 8, feedback: 'Good self-direction.' }),
+      faithfulness: createEvaluationEntry({ score: 9, feedback: 'Stays on topic.' }),
     },
     ...overrides,
   };
@@ -248,7 +252,7 @@ export function createEvaluation(overrides?: Partial<Evaluation>): Evaluation {
 
 export function createPaginatedResponse<T>(
   items: T[],
-  overrides?: Partial<PaginatedResponse<T>>,
+  overrides?: Partial<PaginatedResponse<T>>
 ): PaginatedResponse<T> {
   return {
     items,
