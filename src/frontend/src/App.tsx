@@ -10,17 +10,16 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryClient } from '@/lib/queryClient';
-import DashboardPage from '@/pages/DashboardPage';
-import EntryEditorPage from '@/pages/EntryEditorPage';
-import LibraryPage from '@/pages/LibraryPage';
 import LoginPage from '@/pages/LoginPage';
+import MaintenancePage from '@/pages/MaintenancePage';
 import RegisterPage from '@/pages/RegisterPage';
 import { getSetupStatus } from '@/services/api/authService';
 import { getSystemStatus } from '@/services/api/superService';
 
-// Eagerly loaded (always needed)
-
-// Lazy loaded (less frequently visited)
+// Lazy loaded pages
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const EntryEditorPage = lazy(() => import('@/pages/EntryEditorPage'));
+const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
 const NewEntryPage = lazy(() => import('@/pages/NewEntryPage'));
 const WizardPage = lazy(() => import('@/pages/WizardPage'));
 const EnhanceWizardPage = lazy(() => import('@/pages/EnhanceWizardPage'));
@@ -36,7 +35,6 @@ const TermsPage = lazy(() => import('@/pages/TermsPage'));
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
 const WorkspaceSelectorPage = lazy(() => import('@/pages/WorkspaceSelectorPage'));
 const SuperDashboardPage = lazy(() => import('@/pages/SuperDashboardPage'));
-import MaintenancePage from '@/pages/MaintenancePage';
 const HelpPage = lazy(() => import('@/pages/HelpPage'));
 const SetupPage = lazy(() => import('@/pages/SetupPage'));
 import { useAuthStore } from '@/store/authStore';

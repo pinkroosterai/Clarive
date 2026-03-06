@@ -11,8 +11,8 @@ import ProfileSection from '@/components/settings/ProfileSection';
 import SessionManager from '@/components/settings/SessionManager';
 import UserManagement from '@/components/settings/UserManagement';
 import WorkspaceSection from '@/components/settings/WorkspaceSection';
+import ToolsPanel from '@/components/tools/ToolsPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ToolsPanel from '@/pages/ToolsPage';
 import { userService, apiKeyService, auditService } from '@/services';
 
 function TabCount({ count }: { count: number | undefined }) {

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   type ColumnDef,
   type SortingState,
@@ -17,17 +17,9 @@ import {
   X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
 
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { DeleteUserDialog } from '@/components/super/DeleteUserDialog';
+import { ResetPasswordDialog } from '@/components/super/ResetPasswordDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,13 +47,8 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDebounce } from '@/hooks/useDebounce';
-import { handleApiError } from '@/lib/handleApiError';
-import {
-  deleteSuperUser,
-  getSuperUsers,
-  resetUserPassword,
-  type SuperUser,
-} from '@/services/api/superService';
+import { formatDate } from '@/lib/formatters';
+import { getSuperUsers, type SuperUser } from '@/services/api/superService';
 import { useAuthStore } from '@/store/authStore';
 
 function getInitials(name: string): string {
@@ -73,16 +60,7 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
 export default function UsersTable() {
-  const queryClient = useQueryClient();
   const currentUserId = useAuthStore((s) => s.currentUser?.id);
 
   // ── Table state ──
@@ -92,10 +70,8 @@ export default function UsersTable() {
   const [pageSize, setPageSize] = useState(20);
   const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
 
-  // ── Delete dialog state ──
+  // ── Dialog state ──
   const [deleteTarget, setDeleteTarget] = useState<SuperUser | null>(null);
-
-  // ── Reset password dialog state ──
   const [resetTarget, setResetTarget] = useState<SuperUser | null>(null);
 
   const sortBy = sorting[0]?.id;
@@ -111,36 +87,6 @@ export default function UsersTable() {
   const users = data?.users ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / pageSize);
-
-  // ── Mutations ──
-  const deleteMutation = useMutation({
-    mutationFn: ({ userId, hard }: { userId: string; hard: boolean }) =>
-      deleteSuperUser(userId, hard),
-    onSuccess: (_data, { hard }) => {
-      queryClient.invalidateQueries({ queryKey: ['super', 'users'] });
-      toast.success(hard ? 'User permanently deleted' : 'User scheduled for deletion');
-      setDeleteTarget(null);
-    },
-    onError: (err) => {
-      handleApiError(err, { fallback: 'Failed to delete user' });
-    },
-  });
-
-  const resetMutation = useMutation({
-    mutationFn: (userId: string) => resetUserPassword(userId),
-    onSuccess: async (res) => {
-      try {
-        await navigator.clipboard.writeText(res.newPassword);
-        toast.success('New password copied to clipboard');
-      } catch {
-        toast.success(`New password: ${res.newPassword}`, { duration: 15000 });
-      }
-      setResetTarget(null);
-    },
-    onError: (err) => {
-      handleApiError(err, { fallback: 'Failed to reset password' });
-    },
-  });
 
   // ── Columns ──
   const columns = useMemo<ColumnDef<SuperUser>[]>(
@@ -432,63 +378,8 @@ export default function UsersTable() {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="font-medium">{deleteTarget?.email}</span> — choose how to handle this
-              account:
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <Button
-              variant="outline"
-              disabled={deleteMutation.isPending}
-              onClick={() =>
-                deleteTarget && deleteMutation.mutate({ userId: deleteTarget.id, hard: false })
-              }
-            >
-              {deleteMutation.isPending ? 'Deleting...' : 'Soft Delete (Schedule)'}
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteMutation.isPending}
-              onClick={() =>
-                deleteTarget && deleteMutation.mutate({ userId: deleteTarget.id, hard: true })
-              }
-            >
-              {deleteMutation.isPending ? 'Deleting...' : 'Hard Delete (Permanent)'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reset Password Confirmation Dialog */}
-      <AlertDialog open={!!resetTarget} onOpenChange={(open) => !open && setResetTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reset password for {resetTarget?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will generate a new random password for{' '}
-              <span className="font-medium">{resetTarget?.email}</span>. The new password will be
-              copied to your clipboard.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <Button
-              disabled={resetMutation.isPending}
-              onClick={() => resetTarget && resetMutation.mutate(resetTarget.id)}
-            >
-              <KeyRound className="size-4 mr-1.5" />
-              {resetMutation.isPending ? 'Resetting...' : 'Reset Password'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteUserDialog user={deleteTarget} onClose={() => setDeleteTarget(null)} />
+      <ResetPasswordDialog user={resetTarget} onClose={() => setResetTarget(null)} />
     </div>
   );
 }
