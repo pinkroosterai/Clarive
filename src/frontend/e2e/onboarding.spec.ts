@@ -62,8 +62,8 @@ test.describe("Onboarding — Tour Flow", () => {
     await expect(tourDialog.getByText("3 of 4")).toBeVisible();
     await tourDialog.getByRole("button", { name: "Next" }).click();
 
-    // Step 4: Your Credits
-    await expect(tourDialog.getByText("Your Credits")).toBeVisible();
+    // Step 4: You're All Set!
+    await expect(tourDialog.getByText("You're All Set!")).toBeVisible();
     await expect(tourDialog.getByText("4 of 4")).toBeVisible();
 
     // Last step shows "Finish" instead of "Next"

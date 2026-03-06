@@ -39,9 +39,6 @@ public static class TestData
     public static readonly Guid EntryDeprecatedSummarizer = DeterministicGuid("entry-e-009"); // trashed
     public static readonly Guid EntrySeoMetaGenerator = DeterministicGuid("entry-e-010");
 
-    // ── Credit Balance ──
-    public static readonly Guid CreditBalanceId = DeterministicGuid("credit-balance-default-tenant");
-
     // ── API Keys ──
     public const string ApiKey1 = "cl_seed_test_key_for_seed_a3f8";
     public const string ApiKey2 = "cl_dev_test_key_for_seed_7b21";

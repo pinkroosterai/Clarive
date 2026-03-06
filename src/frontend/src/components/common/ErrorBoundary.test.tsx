@@ -1,10 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import * as Sentry from "@sentry/react";
 import { ErrorBoundary } from "./ErrorBoundary";
-
-vi.mock("@sentry/react", () => ({
-  captureException: vi.fn(() => "mock-event-id"),
-}));
 
 const ThrowError = () => {
   throw new Error("test explosion");
@@ -48,21 +43,5 @@ describe("ErrorBoundary", () => {
     expect(
       screen.getByRole("button", { name: /reload page/i })
     ).toBeInTheDocument();
-  });
-
-  it("captures the error to Sentry", () => {
-    render(
-      <ErrorBoundary>
-        <ThrowError />
-      </ErrorBoundary>
-    );
-    expect(Sentry.captureException).toHaveBeenCalledWith(
-      expect.any(Error),
-      expect.objectContaining({
-        extra: expect.objectContaining({
-          componentStack: expect.any(String),
-        }),
-      })
-    );
   });
 });

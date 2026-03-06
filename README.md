@@ -8,7 +8,7 @@
   <a href="https://github.com/pinkroosterai/Clarive/actions/workflows/ci.yml"><img src="https://github.com/pinkroosterai/Clarive/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/pinkroosterai/Clarive/releases"><img src="https://img.shields.io/github/v/release/pinkroosterai/Clarive?style=flat-square" alt="Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License" /></a>
-  <img src="https://img.shields.io/badge/.NET_9-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 9" />
+  <img src="https://img.shields.io/badge/.NET_10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 9" />
   <img src="https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18" />
   <img src="https://img.shields.io/badge/PostgreSQL_16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
@@ -78,8 +78,8 @@ Open **http://localhost:8080** and create your first account.
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │   Frontend   │────▶│   Backend    │────▶│  PostgreSQL   │
-│  React / TS  │     │  .NET 9 API  │     │     16        │
-│  Vite / nginx│     │  EF Core 9   │     │               │
+│  React / TS  │     │  .NET 10 API  │     │     16        │
+│  Vite / nginx│     │  EF Core 10   │     │               │
 └──────────────┘     └──────────────┘     └──────────────┘
      :8080                :5000                :5432
 ```
@@ -88,8 +88,8 @@ Open **http://localhost:8080** and create your first account.
 |---|---|
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Tiptap v3 |
 | State | Zustand (auth), TanStack React Query (server state) |
-| Backend | C# ASP.NET Core 9 Minimal APIs |
-| Database | PostgreSQL 16 via EF Core 9 (Npgsql) |
+| Backend | C# ASP.NET Core 10 Minimal APIs |
+| Database | PostgreSQL 16 via EF Core 10 (Npgsql) |
 | Auth | JWT (15-min) + rotating refresh tokens (7-day), Google OIDC, API keys |
 | AI | OpenAI via Microsoft.Extensions.AI |
 | Testing | xUnit + Testcontainers, Vitest, Playwright |
@@ -99,7 +99,7 @@ Open **http://localhost:8080** and create your first account.
 Clarive/
 ├── src/
 │   ├── frontend/          # React 18 + TypeScript + Vite
-│   └── backend/           # ASP.NET Core 9 Minimal APIs
+│   └── backend/           # ASP.NET Core 10 Minimal APIs
 ├── tests/
 │   └── backend/           # xUnit integration + unit tests
 ├── docs/                  # Architecture, API spec, guides
@@ -141,7 +141,7 @@ CLARIVE_VERSION=1.2.0
 
 ### Local Development
 
-**Prerequisites:** [Node.js](https://nodejs.org/) 20+, [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0), [Docker](https://docs.docker.com/get-docker/).
+**Prerequisites:** [Node.js](https://nodejs.org/) 20+, [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/9.0), [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 make install    # install frontend + backend dependencies

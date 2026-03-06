@@ -124,20 +124,6 @@ export const MOCK_CREATED_ENTRY = {
  * Call this before navigating to /entry/new/wizard.
  */
 export async function mockWizardNewRoutes(page: Page): Promise<void> {
-  // Billing balance — needed by DescribeStep credit check
-  await page.route("**/api/billing/balance", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        freeCredits: 100,
-        purchasedCredits: 0,
-        totalCredits: 100,
-        nextReplenishAt: null,
-      }),
-    })
-  );
-
   // Tools — DescribeStep queries this
   await page.route("**/api/tools", (route) =>
     route.fulfill({
@@ -200,20 +186,6 @@ export async function mockWizardEnhanceRoutes(
     prompts: { id: string; content: string; order: number }[];
   }
 ): Promise<void> {
-  // Billing balance
-  await page.route("**/api/billing/balance", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        freeCredits: 100,
-        purchasedCredits: 0,
-        totalCredits: 100,
-        nextReplenishAt: null,
-      }),
-    })
-  );
-
   // Fetch existing entry
   await page.route(`**/api/entries/${existingEntry.id}`, (route) => {
     if (route.request().method() === "GET") {

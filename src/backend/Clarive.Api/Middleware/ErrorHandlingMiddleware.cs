@@ -1,11 +1,10 @@
 using System.Text.Json;
 using Clarive.Api.Models.Responses;
 using Microsoft.EntityFrameworkCore;
-using Sentry;
 
 namespace Clarive.Api.Middleware;
 
-public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger, IHub sentryHub)
+public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -43,17 +42,8 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
         await context.Response.WriteAsJsonAsync(response, options);
     }
 
-    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        // Capture to Sentry and get the event ID for the client
-        string? sentryId = null;
-        if (sentryHub.IsEnabled)
-        {
-            var id = sentryHub.CaptureException(exception);
-            if (id != SentryId.Empty)
-                sentryId = id.ToString();
-        }
-
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
 
@@ -66,8 +56,7 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
         var response = new ErrorResponse(new ErrorDetail(
             "INTERNAL_ERROR",
             isDev ? exception.Message : "An unexpected error occurred.",
-            details,
-            SentryId: sentryId));
+            details));
 
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         await context.Response.WriteAsJsonAsync(response, options);

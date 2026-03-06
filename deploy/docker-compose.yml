@@ -1,10 +1,7 @@
-# Clarive — Internal deployment compose file.
+# Clarive — Base compose file (production defaults).
 #
-# Used by `make deploy` to build and run from local images.
-# For self-hosting with pre-built images, use the root docker-compose.yml.
-#
-# Also used for local dev database via:
-#   docker compose -p clarive-local -f deploy/docker-compose.yml up -d postgres
+# Production:  make deploy          (builds images, uses deploy/.env)
+# Development: make dev             (uses docker-compose.dev.yml override)
 
 services:
   postgres:
@@ -33,8 +30,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:5000
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD}"
-      Jwt__Secret: ${JWT_SECRET}
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD:-clarive}"
+      Jwt__Secret: ${JWT_SECRET:-}
       Jwt__Issuer: ${JWT_ISSUER:-Clarive}
       Jwt__Audience: ${JWT_AUDIENCE:-Clarive}
       Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
@@ -44,9 +41,6 @@ services:
       Ai__PremiumModel: ${AI_PREMIUM_MODEL:-gpt-4o}
       Google__ClientId: ${GOOGLE_CLIENT_ID:-}
       Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
-      Sentry__Dsn: ${SENTRY_BACKEND_DSN:-${SENTRY_DSN:-}}
-      Sentry__TracesSampleRate: ${SENTRY_TRACES_SAMPLE_RATE:-0.0}
-      Sentry__Release: ${SENTRY_RELEASE:-}
       Email__Provider: ${EMAIL_PROVIDER:-console}
       Email__ApiKey: ${EMAIL_API_KEY:-}
       Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@clarive.app}
@@ -67,9 +61,6 @@ services:
     environment:
       VITE_API_URL: ${VITE_API_URL:-/api}
       VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
-      VITE_SENTRY_DSN: ${SENTRY_DSN:-}
-      VITE_SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.0}
-      VITE_SENTRY_RELEASE: ${SENTRY_RELEASE:-}
     depends_on:
       backend:
         condition: service_healthy

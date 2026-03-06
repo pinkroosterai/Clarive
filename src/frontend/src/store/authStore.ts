@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CreditBalance, User, Workspace } from "@/types";
+import type { User, Workspace } from "@/types";
 import {
   setToken,
   getToken,
@@ -10,12 +10,10 @@ import {
 import { getMe } from "@/services/api/authService";
 import { switchWorkspace as apiSwitchWorkspace } from "@/services/api/workspaceService";
 import { getSystemStatus } from "@/services/api/superService";
-import { setSentryUser, clearSentryUser } from "@/lib/sentry";
 import { queryClient } from "@/lib/queryClient";
 
 interface AuthState {
   currentUser: User | null;
-  creditBalance: CreditBalance | null;
   workspaces: Workspace[];
   activeWorkspace: Workspace | null;
   isAuthenticated: boolean;
@@ -23,7 +21,6 @@ interface AuthState {
   maintenanceMode: boolean;
   setUser: (user: User) => void;
   setMaintenanceMode: (enabled: boolean) => void;
-  setCreditBalance: (balance: CreditBalance | null) => void;
   setWorkspaces: (workspaces: Workspace[]) => void;
   switchWorkspace: (workspaceId: string) => Promise<void>;
   logout: () => void;
@@ -32,7 +29,6 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   currentUser: null,
-  creditBalance: null,
   workspaces: [],
   activeWorkspace: null,
   isAuthenticated: !!getToken(),
@@ -41,10 +37,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setMaintenanceMode: (enabled: boolean) => set({ maintenanceMode: enabled }),
   setUser: (user: User) => {
     set({ currentUser: user, isAuthenticated: true, isInitialized: true });
-    setSentryUser({ id: user.id, email: user.email, role: user.role });
-  },
-  setCreditBalance: (balance: CreditBalance | null) => {
-    set({ creditBalance: balance });
   },
   setWorkspaces: (workspaces: Workspace[]) => {
     const activeId = getActiveWorkspaceId();
@@ -67,17 +59,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       activeWorkspace: active,
       isAuthenticated: true,
     });
-    setSentryUser({ id: user.id, email: user.email, role: user.role });
   },
   logout: () => {
     setToken(null);
     setRefreshToken(null);
     setActiveWorkspaceId(null);
-    clearSentryUser();
     queryClient.clear();
     set({
       currentUser: null,
-      creditBalance: null,
       workspaces: [],
       activeWorkspace: null,
       isAuthenticated: false,
@@ -94,7 +83,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const data = await getMe();
       const { workspaces: ws, ...user } = data;
       set({ currentUser: user, isAuthenticated: true, isInitialized: true });
-      setSentryUser({ id: user.id, email: user.email, role: user.role });
       if (ws) {
         const activeId = getActiveWorkspaceId();
         const active = ws.find((w) => w.id === activeId) ?? ws[0] ?? null;

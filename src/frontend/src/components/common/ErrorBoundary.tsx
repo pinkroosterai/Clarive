@@ -2,27 +2,24 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import * as Sentry from "@sentry/react";
 
 interface Props {
   children: React.ReactNode;
   fallback?: React.ComponentType<{
     error: Error;
     resetError: () => void;
-    eventId: string;
   }>;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
-  eventId: string | null;
 }
 
 export class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, eventId: null };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -30,14 +27,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    const eventId = Sentry.captureException(error, {
-      extra: { componentStack: info.componentStack },
-    });
-    this.setState({ eventId: eventId ?? null });
+    console.error("ErrorBoundary caught:", error, info.componentStack);
   }
 
   resetError = () => {
-    this.setState({ hasError: false, error: null, eventId: null });
+    this.setState({ hasError: false, error: null });
   };
 
   render() {
@@ -48,7 +42,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <FallbackComponent
             error={this.state.error!}
             resetError={this.resetError}
-            eventId={this.state.eventId ?? ""}
           />
         );
       }
@@ -65,11 +58,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <p className="text-sm text-foreground-muted">
               {this.state.error?.message || "An unexpected error occurred."}
             </p>
-            {this.state.eventId && (
-              <p className="text-xs text-foreground-muted font-mono">
-                Reference: {this.state.eventId.slice(0, 8)}
-              </p>
-            )}
             <Button onClick={() => window.location.reload()}>
               Reload Page
             </Button>
@@ -85,11 +73,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
 export function PageErrorFallback({
   error,
   resetError,
-  eventId,
 }: {
   error: Error;
   resetError: () => void;
-  eventId: string;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
@@ -98,11 +84,6 @@ export function PageErrorFallback({
         This page encountered an error
       </h2>
       <p className="text-sm text-foreground-muted max-w-sm">{error.message}</p>
-      {eventId && (
-        <p className="text-xs text-foreground-muted font-mono">
-          Reference: {eventId.slice(0, 8)}
-        </p>
-      )}
       <div className="flex gap-3">
         <Button variant="outline" onClick={resetError}>
           Try Again

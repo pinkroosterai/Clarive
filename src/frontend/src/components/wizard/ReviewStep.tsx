@@ -1,4 +1,4 @@
-import { Loader2, RefreshCw, Check, Coins } from "lucide-react";
+import { Loader2, RefreshCw, Check } from "lucide-react";
 
 import type { PromptEntry, ClarificationQuestion, Evaluation, IterationScore } from "@/types";
 import { useQuestionAnswers } from "@/hooks/useQuestionAnswers";
@@ -132,10 +132,6 @@ export function ReviewStep({
               Accept
             </Button>
           </div>
-          <p className="text-xs text-right text-foreground-secondary flex items-center justify-end gap-1">
-            <Coins className="size-3 text-warning-text" />
-            Refine uses 1 credit
-          </p>
         </div>
       </div>
     </div>

@@ -1,0 +1,56 @@
+# Clarive — Development overrides.
+#
+# Runs Vite dev server (frontend) and dotnet watch (backend) with
+# volume-mounted source code for hot reload. No image builds needed
+# for code changes.
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  postgres:
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: clarive
+      POSTGRES_USER: clarive
+      POSTGRES_PASSWORD: clarive
+
+  backend:
+    image: clarive-backend-dev
+    build:
+      context: ../src/backend
+      target: dev
+    restart: no
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=clarive;Username=clarive;Password=clarive"
+      Jwt__Secret: "dev-secret-minimum-32-characters-long!"
+      Jwt__Issuer: Clarive
+      Jwt__Audience: Clarive
+      Cors__AllowedOrigins__0: http://localhost:8080
+      App__FrontendUrl: http://localhost:8080
+      RateLimiting__StrictPermitLimit: "100"
+    volumes:
+      - ../src/backend:/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:5000/healthz/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    image: clarive-frontend-dev
+    build:
+      context: ../src/frontend
+      target: dev
+    restart: no
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:5000
+    volumes:
+      - ../src/frontend:/app
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_started

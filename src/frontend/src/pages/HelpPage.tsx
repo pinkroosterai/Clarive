@@ -11,7 +11,6 @@ import {
   Key,
   Keyboard,
   Settings,
-  Coins,
   Globe,
 } from "lucide-react";
 import {
@@ -166,7 +165,7 @@ const sections = [
       <div className="space-y-3">
         <p>
           The AI Wizard helps you generate high-quality prompts from a simple
-          description. Each generation or refinement costs one credit. It follows
+          description. It follows
           a guided flow:
         </p>
         <ol className="list-decimal list-inside space-y-2">
@@ -363,11 +362,11 @@ const sections = [
         <ul className="list-disc list-inside space-y-1">
           <li>
             <strong>Admin</strong> — full control over the workspace: manage
-            members, settings, billing, and all entries.
+            members, settings, and all entries.
           </li>
           <li>
             <strong>Editor</strong> — create, edit, and publish entries. Cannot
-            manage members or billing.
+            manage members.
           </li>
           <li>
             <strong>Viewer</strong> — read-only access to entries. Cannot create
@@ -468,44 +467,6 @@ const sections = [
           Revoked keys stop working immediately. Keys cannot be regenerated —
           create a new key if needed.
         </p>
-      </div>
-    ),
-  },
-  {
-    id: "credits",
-    icon: Coins,
-    title: "Credits",
-    content: (
-      <div className="space-y-3">
-        <p>
-          AI features in Clarive — such as the AI Wizard, prompt
-          enhancement, system message generation, and chain decomposition — consume
-          credits. Your current credit balance is always visible in the sidebar.
-        </p>
-        <h4 className="text-sm font-semibold text-foreground">
-          Free Credits
-        </h4>
-        <p>
-          Every workspace receives free credits that replenish on a regular
-          schedule. The next replenishment date is shown in the{" "}
-          <strong>Settings &gt; Billing</strong> tab.
-        </p>
-        <h4 className="text-sm font-semibold text-foreground">
-          Purchasing Credits
-        </h4>
-        <p>
-          Workspace admins can purchase additional credit packs from the{" "}
-          <strong>Billing</strong> tab. Payments are processed securely via
-          Stripe. Your transaction history is available in the same tab.
-        </p>
-        <h4 className="text-sm font-semibold text-foreground">
-          Credit Usage
-        </h4>
-        <ul className="list-disc list-inside space-y-1">
-          <li>Generating a new prompt with the AI Wizard costs 1 credit.</li>
-          <li>Each refinement iteration in the Review step costs 1 credit.</li>
-          <li>Enhancing an existing entry costs 1 credit per operation.</li>
-        </ul>
       </div>
     ),
   },
@@ -817,14 +778,6 @@ const sections = [
         <p>
           View and manage your active login sessions. If you spot an unfamiliar
           session, you can revoke it to sign out that device immediately.
-        </p>
-        <h4 className="text-sm font-semibold text-foreground">
-          Billing
-        </h4>
-        <p>
-          Manage your subscription plan and view your credit balance from the{" "}
-          <strong>Billing</strong> tab. See the <strong>Credits</strong> section
-          above for details on credit usage and purchasing.
         </p>
         <h4 className="text-sm font-semibold text-foreground">
           Import & Export

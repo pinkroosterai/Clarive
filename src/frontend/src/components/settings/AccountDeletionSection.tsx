@@ -81,7 +81,7 @@ export default function AccountDeletionSection() {
               <div className="space-y-3">
                 <p>
                   This will schedule your account for permanent deletion. All your data — entries,
-                  folders, tools, API keys, and billing history — will be permanently removed after
+                  folders, tools, and API keys — will be permanently removed after
                   30 days.
                 </p>
                 <p>

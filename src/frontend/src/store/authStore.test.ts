@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createUser, createCreditBalance } from "@/test/factories";
+import { createUser } from "@/test/factories";
 import type { User } from "@/types";
 
 // Mock apiClient — must be before authStore import
@@ -67,7 +67,6 @@ describe("authStore", () => {
     // Reset store state
     useAuthStore.setState({
       currentUser: null,
-      creditBalance: null,
       isAuthenticated: false,
       isInitialized: false,
     });
@@ -84,7 +83,6 @@ describe("authStore", () => {
       // Re-read state after mock change
       const state = useAuthStore.getState();
       expect(state.currentUser).toBeNull();
-      expect(state.creditBalance).toBeNull();
       expect(state.isInitialized).toBe(false);
     });
 
@@ -109,32 +107,12 @@ describe("authStore", () => {
     });
   });
 
-  describe("setCreditBalance", () => {
-    it("updates credit balance", () => {
-      const balance = createCreditBalance({ totalCredits: 100 });
-
-      useAuthStore.getState().setCreditBalance(balance);
-
-      expect(useAuthStore.getState().creditBalance).toEqual(balance);
-    });
-
-    it("can set credit balance to null", () => {
-      const balance = createCreditBalance();
-      useAuthStore.getState().setCreditBalance(balance);
-      useAuthStore.getState().setCreditBalance(null);
-
-      expect(useAuthStore.getState().creditBalance).toBeNull();
-    });
-  });
-
   describe("logout", () => {
     it("clears everything and removes tokens", () => {
       // Set up an authenticated state
       const user = createUser();
-      const balance = createCreditBalance();
       useAuthStore.setState({
         currentUser: user,
-        creditBalance: balance,
         isAuthenticated: true,
         isInitialized: true,
       });
@@ -143,7 +121,6 @@ describe("authStore", () => {
 
       const state = useAuthStore.getState();
       expect(state.currentUser).toBeNull();
-      expect(state.creditBalance).toBeNull();
       expect(state.isAuthenticated).toBe(false);
       expect(state.isInitialized).toBe(true);
       expect(mockedSetToken).toHaveBeenCalledWith(null);

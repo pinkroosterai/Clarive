@@ -19,10 +19,6 @@ export interface SuperStats {
   trashedEntries: number;
   totalAiSessions: number;
   aiSessions7d: number;
-  totalFreeCredits: number;
-  totalPurchasedCredits: number;
-  creditsUsed30d: number;
-  totalTransactions: number;
   totalApiKeys: number;
 }
 

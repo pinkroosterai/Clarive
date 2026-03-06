@@ -51,6 +51,9 @@ public static class AuthEndpoints
             .AllowAnonymous()
             .RequireRateLimiting("auth");
 
+        group.MapGet("/setup-status", HandleSetupStatus)
+            .AllowAnonymous();
+
         group.MapGet("/me", HandleGetMe)
             .RequireAuthorization();
 
@@ -162,13 +165,16 @@ public static class AuthEndpoints
 
         await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, refreshTokenId, ct);
 
-        // Send verification email (fire-and-forget)
-        var verifyUrl = $"{appSettings.Value.FrontendUrl}/verify-email?token={result.RawVerificationToken}";
-        _ = emailService.SendVerificationEmailAsync(result.User.Email, result.User.Name, verifyUrl, CancellationToken.None)
-            .ContinueWith(t => ctx.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("AuthEndpoints")
-                .LogWarning(t.Exception, "Failed to send verification email to {Email}", result.User.Email),
-                TaskContinuationOptions.OnlyOnFaulted);
+        // Send verification email (fire-and-forget) — skip for first user (auto-verified super admin)
+        if (result.RawVerificationToken is not null)
+        {
+            var verifyUrl = $"{appSettings.Value.FrontendUrl}/verify-email?token={result.RawVerificationToken}";
+            _ = emailService.SendVerificationEmailAsync(result.User.Email, result.User.Name, verifyUrl, CancellationToken.None)
+                .ContinueWith(t => ctx.RequestServices.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("AuthEndpoints")
+                    .LogWarning(t.Exception, "Failed to send verification email to {Email}", result.User.Email),
+                    TaskContinuationOptions.OnlyOnFaulted);
+        }
 
         var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
         return Results.Created("/api/auth/me", new AuthResponse(accessToken, rawRefresh, ToDto(result.User), workspaces));
@@ -388,6 +394,14 @@ public static class AuthEndpoints
 
         var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
         return Results.Ok(new { token = accessToken, refreshToken = rawRefresh, user = ToDto(result.User), isNewUser = result.IsNewUser, workspaces });
+    }
+
+    private static async Task<IResult> HandleSetupStatus(
+        IUserRepository userRepo,
+        CancellationToken ct)
+    {
+        var isSetupComplete = await userRepo.AnyUsersExistAsync(ct);
+        return Results.Ok(new { isSetupComplete });
     }
 
     private static async Task<IResult> HandleGetMe(

@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import * as Sentry from "@sentry/react";
 import { ApiError } from "@/services/api/apiClient";
 
 const EXPECTED_CODES = new Set([
@@ -19,16 +18,16 @@ export interface HandleApiErrorOptions {
   title?: string;
   /** Fallback message when error is not an ApiError */
   fallback?: string;
-  /** Do not show a toast (just capture to Sentry) */
+  /** Do not show a toast */
   silent?: boolean;
 }
 
 /**
  * Centralized API error handler.
  *
- * - 4xx expected errors: shows the backend message as a toast, no Sentry capture
- * - 5xx server errors: captures to Sentry, shows "Server error (Ref: ...)" if sentryId available
- * - Unknown errors: captures to Sentry, shows generic fallback toast
+ * - 4xx expected errors: shows the backend message as a toast
+ * - 5xx server errors: shows "Server error" with the error message
+ * - Unknown errors: shows generic fallback toast
  */
 export function handleApiError(
   err: unknown,
@@ -41,20 +40,10 @@ export function handleApiError(
   } = options;
 
   if (err instanceof ApiError) {
-    const isExpected =
-      EXPECTED_CODES.has(err.code) ||
-      (err.status >= 400 && err.status < 500);
-
-    if (!isExpected) {
-      Sentry.captureException(err, {
-        extra: { statusCode: err.status, errorCode: err.code },
-      });
-    }
-
     if (!silent) {
-      if (err.status >= 500 && err.sentryId) {
+      if (err.status >= 500) {
         toast.error(title ?? "Server error", {
-          description: `${err.message} (Ref: ${err.sentryId.slice(0, 8)})`,
+          description: err.message,
           duration: 8000,
         });
       } else if (err.status === 429) {
@@ -66,17 +55,14 @@ export function handleApiError(
       }
     }
   } else if (err instanceof TypeError && err.message === "Failed to fetch") {
-    Sentry.captureException(err);
     if (!silent) {
       toast.error("Network error", {
         description: "Check your connection and try again.",
       });
     }
   } else if (err instanceof Error) {
-    Sentry.captureException(err);
     if (!silent) toast.error(title ?? (err.message || fallback));
   } else {
-    Sentry.captureMessage(`Unknown error: ${String(err)}`, "error");
     if (!silent) toast.error(title ?? fallback);
   }
 }

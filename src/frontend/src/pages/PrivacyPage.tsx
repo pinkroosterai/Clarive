@@ -46,9 +46,9 @@ const PrivacyPage = () => {
                 security purposes.
               </li>
               <li>
-                <strong className="text-foreground">Billing data:</strong> payment processing is
-                handled by Stripe. We store your Stripe customer ID but do not store credit card
-                numbers or payment details directly.
+                <strong className="text-foreground">Payment data:</strong> if payment processing is
+                enabled, it is handled by Stripe. We do not store credit card numbers or payment
+                details directly.
               </li>
               <li>
                 <strong className="text-foreground">Technical data:</strong> IP address, browser type,
@@ -62,7 +62,7 @@ const PrivacyPage = () => {
             <ul className="list-disc pl-6 space-y-1">
               <li>To provide, maintain, and improve the Service</li>
               <li>To authenticate your identity and secure your account</li>
-              <li>To process credit purchases and manage billing</li>
+              <li>To process payments if applicable</li>
               <li>To send transactional emails (verification, password reset, account deletion notices)</li>
               <li>To enforce our Terms of Service and detect abuse</li>
               <li>To generate anonymized, aggregated analytics about Service usage</li>
@@ -79,8 +79,8 @@ const PrivacyPage = () => {
                 features. OpenAI's data usage policies apply to this data.
               </li>
               <li>
-                <strong className="text-foreground">Stripe:</strong> billing and payment data is
-                processed by Stripe. See{" "}
+                <strong className="text-foreground">Stripe:</strong> payment data may be processed
+                by Stripe if payment features are enabled. See{" "}
                 <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
                   Stripe's Privacy Policy
                 </a>.

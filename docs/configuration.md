@@ -47,15 +47,6 @@ All configuration is done via environment variables, loaded from `deploy/envs/<e
 | `EMAIL_FROM_ADDRESS` | Sender email address | `noreply@clarive.app` |
 | `EMAIL_FROM_NAME` | Sender display name | `Clarive` |
 
-## Monitoring
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SENTRY_DSN` | Frontend Sentry/Bugsink DSN | (optional) |
-| `SENTRY_BACKEND_DSN` | Backend Sentry/Bugsink DSN | (optional) |
-| `SENTRY_TRACES_SAMPLE_RATE` | Trace sampling rate | `0.0` |
-| `SENTRY_RELEASE` | Release tag for Sentry | (optional) |
-
 ## Rate Limiting
 
 | Variable | Description | Default |

@@ -11,7 +11,7 @@ test.describe("Settings Page", () => {
   test("settings page loads and shows all tabs @smoke", async ({ page }) => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Settings");
 
-    for (const tab of ["Users", "API Keys", "Billing", "Audit Log", "Import/Export", "Account"]) {
+    for (const tab of ["Users", "API Keys", "Audit Log", "Import/Export", "Account"]) {
       await expect(page.getByRole("tab", { name: new RegExp(tab) })).toBeVisible();
     }
   });
@@ -27,14 +27,6 @@ test.describe("Settings Page", () => {
 
     // Current user (admin) should have "(you)" marker
     await expect(table.getByText("(you)")).toBeVisible();
-  });
-
-  test("Billing tab shows credit balance", async ({ page }) => {
-    await page.getByRole("tab", { name: /Billing/ }).click();
-
-    await expect(page.getByText("Credit Balance")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("credits").first()).toBeVisible();
-    await expect(page.getByText(/\d+ free \+ \d+ purchased/)).toBeVisible();
   });
 
   test("Account tab shows delete account with confirmation dialog", async ({ page }) => {

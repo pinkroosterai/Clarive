@@ -2,7 +2,7 @@ using Clarive.Api.Models.Entities;
 
 namespace Clarive.Api.Models.Results;
 
-public record RegisterResult(User User, Tenant PersonalWorkspace, string RawVerificationToken);
+public record RegisterResult(User User, Tenant PersonalWorkspace, string? RawVerificationToken);
 
 public record GoogleAuthResult(User User, bool IsNewUser);
 

@@ -1,9 +1,8 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import * as Sentry from "@sentry/react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
@@ -11,6 +10,7 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { queryClient } from "@/lib/queryClient";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { getSystemStatus } from "@/services/api/superService";
+import { getSetupStatus } from "@/services/api/authService";
 
 // Eagerly loaded (always needed)
 import LoginPage from "@/pages/LoginPage";
@@ -35,13 +35,36 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const WorkspaceSelectorPage = lazy(() => import("@/pages/WorkspaceSelectorPage"));
 const SuperDashboardPage = lazy(() => import("@/pages/SuperDashboardPage"));
-const ServiceConfigPage = lazy(() => import("@/pages/ServiceConfigPage"));
 import MaintenancePage from "@/pages/MaintenancePage";
 const HelpPage = lazy(() => import("@/pages/HelpPage"));
+const SetupPage = lazy(() => import("@/pages/SetupPage"));
 import SuperRoute from "@/components/common/SuperRoute";
 import { useAuthStore } from "@/store/authStore";
 
-const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
+function SetupGuard({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    getSetupStatus()
+      .then((s) => setSetupComplete(s.isSetupComplete))
+      .catch(() => setSetupComplete(true)); // assume setup done on error
+  }, [location.pathname]);
+
+  if (setupComplete === null) {
+    return <LoadingSpinner />;
+  }
+
+  if (!setupComplete && location.pathname !== "/setup") {
+    return <Navigate to="/setup" replace />;
+  }
+
+  if (setupComplete && location.pathname === "/setup") {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 function MaintenanceGuard({ children }: { children: React.ReactNode }) {
   const maintenanceMode = useAuthStore((s) => s.maintenanceMode);
@@ -72,7 +95,11 @@ const App = () => (
         <ErrorBoundary>
           <Suspense fallback={<LoadingSpinner />}>
             <MaintenanceGuard>
-            <SentryRoutes>
+            <SetupGuard>
+            <Routes>
+              {/* Setup route */}
+              <Route path="/setup" element={<SetupPage />} />
+
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -87,7 +114,6 @@ const App = () => (
               {/* Super admin routes */}
               <Route element={<SuperRoute />}>
                 <Route path="/super" element={<SuperDashboardPage />} />
-                <Route path="/super/config" element={<ServiceConfigPage />} />
               </Route>
 
               {/* Protected routes */}
@@ -108,7 +134,8 @@ const App = () => (
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
-            </SentryRoutes>
+            </Routes>
+            </SetupGuard>
             </MaintenanceGuard>
           </Suspense>
         </ErrorBoundary>

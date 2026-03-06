@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { InvitationNotificationBell } from "./InvitationNotificationBell";
-import { FeedbackButton } from "./FeedbackButton";
 import { useAuthStore } from "@/store/authStore";
 import {
   Sidebar,
@@ -70,7 +69,6 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <InvitationNotificationBell />
-        <FeedbackButton />
         <SidebarMenu>
           {navLinks.map((item) => (
             <SidebarMenuItem key={item.title}>

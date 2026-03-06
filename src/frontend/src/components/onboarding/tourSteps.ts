@@ -129,19 +129,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
       align: "start",
     },
   },
-  // Step 10: Credits display (navigate back to dashboard)
-  {
-    route: "/",
-    element: "[data-tour='credit-display']",
-    popover: {
-      title: "Your Credits",
-      description:
-        "AI features use credits. You start with free credits that replenish monthly.",
-      side: "bottom",
-      align: "end",
-    },
-  },
-  // Step 11: Closing modal (centered, no element)
+  // Step 10: Closing modal (centered, no element)
   {
     popover: {
       title: "You're All Set!",

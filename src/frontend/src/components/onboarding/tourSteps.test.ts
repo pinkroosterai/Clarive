@@ -5,8 +5,8 @@ import {
 } from "./tourSteps";
 
 describe("tourSteps", () => {
-  it("has exactly 12 steps", () => {
-    expect(ONBOARDING_STEPS).toHaveLength(12);
+  it("has exactly 11 steps", () => {
+    expect(ONBOARDING_STEPS).toHaveLength(11);
   });
 
   it("each step has a popover with title and description", () => {
@@ -60,12 +60,6 @@ describe("tourSteps", () => {
     });
   });
 
-  it("step 10 (credits) navigates back to dashboard", () => {
-    const creditsStep = ONBOARDING_STEPS[10];
-    expect(creditsStep.route).toBe("/");
-    expect(creditsStep.element).toBe("[data-tour='credit-display']");
-  });
-
   it("element-targeting steps have valid CSS selectors", () => {
     const elementSteps = ONBOARDING_STEPS.filter((s) => s.element);
     expect(elementSteps.length).toBeGreaterThan(0);
@@ -75,10 +69,9 @@ describe("tourSteps", () => {
     }
   });
 
-  it("static routes are used for library and credits steps", () => {
+  it("static routes are used for library step", () => {
     const stepsWithRoutes = ONBOARDING_STEPS.filter((s) => s.route);
-    expect(stepsWithRoutes).toHaveLength(2);
+    expect(stepsWithRoutes).toHaveLength(1);
     expect(stepsWithRoutes[0].route).toBe("/library");
-    expect(stepsWithRoutes[1].route).toBe("/");
   });
 });

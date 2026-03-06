@@ -27,7 +27,6 @@ export class ApiError extends Error {
     public status: number,
     public code: string,
     message: string,
-    public sentryId?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -151,7 +150,6 @@ async function request<T>(
       res.status,
       err?.code ?? "UNKNOWN",
       err?.message ?? res.statusText,
-      err?.sentryId ?? undefined,
     );
   }
 
@@ -232,7 +230,6 @@ export const api = {
           res.status,
           err?.code ?? "UNKNOWN",
           err?.message ?? res.statusText,
-          err?.sentryId ?? undefined,
         );
       }
 
@@ -314,7 +311,6 @@ export const api = {
         res.status,
         err?.code ?? "UNKNOWN",
         err?.message ?? res.statusText,
-        err?.sentryId ?? undefined,
       );
     }
 

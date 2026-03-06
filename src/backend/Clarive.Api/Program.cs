@@ -22,9 +22,8 @@ using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Clarive.Api.HealthChecks;
+using Microsoft.Extensions.Options;
 using Resend;
-using Sentry;
-
 // ── Serilog Bootstrap (catches startup errors) ──
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -35,30 +34,6 @@ try
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Sentry (fail-open: no-op if Dsn is blank) ──
-var sentryDsn = builder.Configuration["Sentry:Dsn"];
-if (!string.IsNullOrWhiteSpace(sentryDsn))
-{
-    builder.WebHost.UseSentry(options =>
-    {
-        options.Dsn = sentryDsn;
-        options.TracesSampleRate = builder.Configuration.GetValue<double>("Sentry:TracesSampleRate", 0.2);
-        options.Release = builder.Configuration["Sentry:Release"];
-        options.SendDefaultPii = false;
-        options.Environment = builder.Environment.EnvironmentName;
-        options.MaxBreadcrumbs = builder.Configuration.GetValue("Sentry:MaxBreadcrumbs", 100);
-        options.AttachStacktrace = true;
-        options.AddExceptionProcessor(new Clarive.Api.Middleware.SentryPiiFilter());
-    });
-    Log.Information("Sentry initialized (DSN configured)");
-}
-else
-{
-    // Register a disabled IHub so ErrorHandlingMiddleware can inject it unconditionally
-    builder.Services.AddSingleton<IHub>(Sentry.Extensibility.DisabledHub.Instance);
-    Log.Information("Sentry disabled: Sentry:Dsn not configured");
-}
-
 // ── Serilog ──
 builder.Services.AddSerilog((services, lc) =>
 {
@@ -68,16 +43,6 @@ builder.Services.AddSerilog((services, lc) =>
       .Enrich.WithMachineName()
       .Enrich.WithThreadId();
 
-    // Forward Error+ logs to Sentry when configured
-    if (!string.IsNullOrWhiteSpace(sentryDsn))
-    {
-        lc.WriteTo.Sentry(o =>
-        {
-            o.Dsn = sentryDsn;
-            o.MinimumEventLevel = Serilog.Events.LogEventLevel.Error;
-            o.MinimumBreadcrumbLevel = Serilog.Events.LogEventLevel.Information;
-        });
-    }
 });
 
 // ── Validate required configuration ──
@@ -242,15 +207,29 @@ var emailSettings = builder.Configuration.GetSection("Email").Get<EmailSettings>
 if (emailSettings.Provider.Equals("resend", StringComparison.OrdinalIgnoreCase))
 {
     builder.Services.AddHttpClient<ResendClient>();
-    builder.Services.Configure<ResendClientOptions>(o => o.ApiToken = emailSettings.ApiKey);
+    builder.Services.AddSingleton<IConfigureOptions<ResendClientOptions>>(sp =>
+    {
+        var config = sp.GetRequiredService<IConfiguration>();
+        return new ConfigureOptions<ResendClientOptions>(o => o.ApiToken = config["Email:ApiKey"] ?? "");
+    });
     builder.Services.AddTransient<IResend, ResendClient>();
     builder.Services.AddScoped<IEmailService, ResendEmailService>();
     Log.Information("Email provider: Resend");
 }
+else if (emailSettings.Provider.Equals("smtp", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+    Log.Information("Email provider: SMTP");
+}
+else if (emailSettings.Provider.Equals("console", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<IEmailService, ConsoleEmailService>();
+    Log.Information("Email provider: Console");
+}
 else
 {
     builder.Services.AddScoped<IEmailService, ConsoleEmailService>();
-    Log.Information("Email provider: Console (default)");
+    Log.Information("Email provider: None (emails disabled, new users auto-verified)");
 }
 builder.Services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();
 
@@ -400,8 +379,6 @@ app.UseSerilogRequestLogging(options =>
             diagnosticContext.Set("EntityId", entityId);
     };
 });
-if (!string.IsNullOrWhiteSpace(sentryDsn))
-    app.UseSentryTracing();
 app.UseCors("AppCors");
 
 if (app.Environment.IsDevelopment())
@@ -456,23 +433,33 @@ app.MapProfileEndpoints();
 app.MapDashboardEndpoints();
 app.MapSuperEndpoints();
 app.MapConfigEndpoints();
-app.MapFeedbackEndpoints();
 
 app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode) =>
     Results.Ok(new { maintenance = maintenanceMode.IsEnabled }))
     .WithTags("System")
     .AllowAnonymous();
 
-// ── Auto-Migrate Database (dev/test only — prod uses explicit migration via deploy pipeline) ──
-if (!app.Environment.IsProduction())
+// ── Auto-Migrate Database ──
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; attempt <= 10; attempt++)
+    {
+        try
+        {
+            await db.Database.MigrateAsync();
+            break;
+        }
+        catch (Exception ex) when (attempt < 10)
+        {
+            Log.Warning(ex, "Migration attempt {Attempt} failed, retrying in 3s...", attempt);
+            await Task.Delay(3000);
+        }
+    }
 }
 
-// ── Seed Data (Development + Testing) ──
-if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+// ── Seed Data (Testing only) ──
+if (app.Environment.IsEnvironment("Testing"))
     await SeedData.InitializeAsync(app.Services);
 
 app.Run();

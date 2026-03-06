@@ -60,7 +60,7 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
         if (ShouldThrowOnGenerate)
         {
             ShouldThrowOnGenerate = false;
-            throw new InvalidOperationException("Simulated AI failure for testing credit refund");
+            throw new InvalidOperationException("Simulated AI failure for testing error handling");
         }
 
         var prompts = new PromptSet

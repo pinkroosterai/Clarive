@@ -1,26 +1,20 @@
-.PHONY: help setup install dev dev-all dev-frontend dev-backend \
-       stop stop-all stop-frontend stop-backend restart restart-all \
-       build build-frontend build-backend deploy \
+.PHONY: help setup dev stop restart logs deploy undeploy \
+       build build-frontend build-backend \
        test test-frontend test-backend test-filter test-e2e test-e2e-ui lint clean \
-       db-start db-stop db-restart db-status db-logs db-shell db-migrate db-migration-add db-reset \
+       db-shell db-migrate db-migration-add db-reset \
        _health-check
 
 SHELL   := /bin/bash
 ROOT    := $(shell pwd)
 FE_DIR  := $(ROOT)/src/frontend
 BE_DIR  := $(ROOT)/src/backend/Clarive.Api
-FE_PID  := $(ROOT)/.frontend.pid
-BE_PID  := $(ROOT)/.backend.pid
-FE_LOG  := $(ROOT)/.frontend.log
-BE_LOG  := $(ROOT)/.backend.log
+DEPLOY  := $(ROOT)/deploy
 
-# Local dev compose (reuses deploy compose for the DB)
-COMPOSE := docker compose -p clarive-local -f $(ROOT)/deploy/docker-compose.yml
+# Dev compose (all Docker, hot reload via volume mounts)
+DEV_COMPOSE = docker compose -p clarive-dev -f $(DEPLOY)/docker-compose.yml -f $(DEPLOY)/docker-compose.dev.yml
 
-# Deploy compose (ENV=dev or ENV=prod)
-DEPLOY_DIR    := $(ROOT)/deploy
-ENV           ?= dev
-DEPLOY_COMPOSE = docker compose -p clarive-$(ENV) --env-file $(DEPLOY_DIR)/envs/$(ENV).env -f $(DEPLOY_DIR)/docker-compose.yml
+# Production compose
+PROD_COMPOSE = docker compose -p clarive --env-file $(DEPLOY)/.env -f $(DEPLOY)/docker-compose.yml
 
 # Colors
 C_RESET  := \033[0m
@@ -35,34 +29,55 @@ C_DIM    := \033[2m
 
 help: ## Show this help
 	@printf "$(C_BOLD)$(C_CYAN)Clarive$(C_RESET) — development & deployment commands\n\n"
-	@printf "$(C_BOLD)SELF-HOST$(C_RESET)\n"
-	@grep -E '^setup:.*?## .*$$' $(MAKEFILE_LIST) | \
+	@printf "$(C_BOLD)DEVELOPMENT$(C_RESET)\n"
+	@grep -E '^(dev|stop|restart|logs):.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@printf "$(C_BOLD)DEPLOYMENT$(C_RESET)\n"
-	@grep -E '^deploy:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
-	@echo ""
-	@printf "$(C_BOLD)LOCAL DEVELOPMENT$(C_RESET)\n"
-	@grep -E '^(install|dev|dev-all|dev-frontend|dev-backend|stop|stop-all|restart|restart-all|build|test|lint|clean):.*?## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^(setup|deploy|undeploy):.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@printf "$(C_BOLD)DATABASE$(C_RESET)\n"
 	@grep -E '^db-[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
 	@echo ""
+	@printf "$(C_BOLD)BUILD / TEST$(C_RESET)\n"
+	@grep -E '^(build|test|lint|clean):.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
+	@echo ""
 
-## —— Self-Host ————————————————————————————————————————————
+## —— Development (all Docker, hot reload) ————————————————
 
-setup: ## Generate .env with random secrets
+dev: ## Start all services with hot reload
+	@printf "$(C_CYAN)Starting development environment...$(C_RESET)\n"
+	@$(DEV_COMPOSE) up --build -d
+	@printf "\n$(C_BOLD)$(C_GREEN)Development environment started.$(C_RESET)\n"
+	@printf "  Frontend: $(C_CYAN)http://localhost:8080$(C_RESET)  (Vite HMR)\n"
+	@printf "  Backend:  $(C_CYAN)http://localhost:5000$(C_RESET)  (dotnet watch)\n"
+	@printf "  Logs:     $(C_YELLOW)make logs$(C_RESET)\n\n"
+
+stop: ## Stop all development services
+	@$(DEV_COMPOSE) down
+	@printf "$(C_GREEN)Development environment stopped.$(C_RESET)\n"
+
+restart: ## Restart all development services
+	@$(DEV_COMPOSE) down
+	@$(DEV_COMPOSE) up --build -d
+	@printf "$(C_GREEN)Development environment restarted.$(C_RESET)\n"
+
+logs: ## Tail development service logs
+	@$(DEV_COMPOSE) logs -f
+
+## —— Deployment (production) —————————————————————————————
+
+setup: ## Generate deploy/.env with random secrets
 	@scripts/setup.sh
 
-## —— Deployment ———————————————————————————————————————————
-
-deploy: ## Build images and deploy (ENV=dev|prod)
-	@if [ ! -f "$(DEPLOY_DIR)/envs/$(ENV).env" ]; then \
-		printf "$(C_RED)Missing: deploy/envs/$(ENV).env$(C_RESET)\n"; \
-		printf "$(C_YELLOW)  cp deploy/.env.example deploy/envs/$(ENV).env && edit it$(C_RESET)\n"; \
+deploy: ## Build images and deploy production stack
+	@if [ ! -f "$(DEPLOY)/.env" ]; then \
+		printf "$(C_RED)Missing: deploy/.env$(C_RESET)\n"; \
+		printf "$(C_YELLOW)  cp deploy/.env.example deploy/.env && edit it$(C_RESET)\n"; \
+		printf "$(C_YELLOW)  or run: make setup$(C_RESET)\n"; \
 		exit 1; \
 	fi
 	@TAG=$$(git rev-parse --short HEAD) && \
@@ -72,128 +87,23 @@ deploy: ## Build images and deploy (ENV=dev|prod)
 	printf "$(C_GREEN)Images built.$(C_RESET)\n" && \
 	\
 	printf "$(C_CYAN)Deploying...$(C_RESET)\n" && \
-	CLARIVE_TAG=$$TAG $(DEPLOY_COMPOSE) up -d && \
+	CLARIVE_TAG=$$TAG $(PROD_COMPOSE) up -d && \
 	\
 	$(MAKE) --no-print-directory _health-check && \
 	\
 	printf "\n$(C_BOLD)$(C_GREEN)Deployed$(C_RESET) (tag: $$TAG)\n\n"
 
-## —— Local Development ———————————————————————————————————
+undeploy: ## Stop and remove production stack
+	@$(PROD_COMPOSE) down
+	@printf "$(C_GREEN)Production stack stopped.$(C_RESET)\n"
 
-install: ## Install all dependencies
-	@printf "$(C_CYAN)Installing frontend dependencies...$(C_RESET)\n"
-	@cd $(FE_DIR) && npm install
-	@printf "$(C_CYAN)Restoring backend packages...$(C_RESET)\n"
-	@cd $(BE_DIR) && dotnet restore
-	@printf "$(C_GREEN)All dependencies installed.$(C_RESET)\n"
-
-dev: ## Start frontend + backend in background
-	@$(MAKE) --no-print-directory dev-backend
-	@$(MAKE) --no-print-directory dev-frontend
-	@printf "\n$(C_BOLD)$(C_GREEN)Both services started.$(C_RESET)\n"
-	@printf "  Frontend: $(C_CYAN)http://localhost:8080$(C_RESET)\n"
-	@printf "  Backend:  $(C_CYAN)http://localhost:5000$(C_RESET)\n"
-	@printf "  Logs:     $(C_YELLOW)tail -f .frontend.log .backend.log$(C_RESET)\n\n"
-
-dev-all: ## Start database + frontend + backend
-	@$(MAKE) --no-print-directory db-start
-	@$(MAKE) --no-print-directory dev
-
-dev-frontend: ## Start Vite dev server (port 8080)
-	@if [ -f $(FE_PID) ] && kill -0 $$(cat $(FE_PID)) 2>/dev/null; then \
-		printf "$(C_YELLOW)Frontend already running (PID %s)$(C_RESET)\n" "$$(cat $(FE_PID))"; \
-	else \
-		printf "$(C_CYAN)Starting frontend...$(C_RESET)\n"; \
-		cd $(FE_DIR) && nohup npm run dev > $(FE_LOG) 2>&1 & echo $$! > $(FE_PID); \
-		printf "$(C_GREEN)Frontend started$(C_RESET) (PID %s) → http://localhost:8080\n" "$$(cat $(FE_PID))"; \
-	fi
-
-dev-backend: ## Start .NET backend (port 5000)
-	@if [ -f $(BE_PID) ] && kill -0 $$(cat $(BE_PID)) 2>/dev/null; then \
-		printf "$(C_YELLOW)Backend already running (PID %s)$(C_RESET)\n" "$$(cat $(BE_PID))"; \
-	else \
-		printf "$(C_CYAN)Starting backend...$(C_RESET)\n"; \
-		cd $(BE_DIR) && nohup dotnet run > $(BE_LOG) 2>&1 & echo $$! > $(BE_PID); \
-		printf "$(C_GREEN)Backend started$(C_RESET) (PID %s) → http://localhost:5000\n" "$$(cat $(BE_PID))"; \
-	fi
-
-stop: ## Stop frontend + backend
-	@$(MAKE) --no-print-directory stop-frontend
-	@$(MAKE) --no-print-directory stop-backend
-
-stop-all: ## Stop frontend + backend + database
-	@$(MAKE) --no-print-directory stop
-	@$(MAKE) --no-print-directory db-stop
-
-stop-frontend: ## Stop frontend
-	@if fuser 8080/tcp > /dev/null 2>&1; then \
-		fuser -k 8080/tcp > /dev/null 2>&1; \
-		rm -f $(FE_PID); \
-		printf "$(C_GREEN)Frontend stopped.$(C_RESET)\n"; \
-	else \
-		rm -f $(FE_PID); \
-		printf "$(C_YELLOW)Frontend not running.$(C_RESET)\n"; \
-	fi
-
-stop-backend: ## Stop backend
-	@if fuser 5000/tcp > /dev/null 2>&1; then \
-		fuser -k 5000/tcp > /dev/null 2>&1; \
-		rm -f $(BE_PID); \
-		printf "$(C_GREEN)Backend stopped.$(C_RESET)\n"; \
-	else \
-		rm -f $(BE_PID); \
-		printf "$(C_YELLOW)Backend not running.$(C_RESET)\n"; \
-	fi
-
-restart: ## Restart frontend + backend
-	@$(MAKE) --no-print-directory stop
-	@sleep 1
-	@$(MAKE) --no-print-directory dev
-
-restart-all: ## Restart database + frontend + backend
-	@$(MAKE) --no-print-directory stop-all
-	@sleep 1
-	@$(MAKE) --no-print-directory dev-all
-
-## —— Database (Local Dev) ————————————————————————————————
-
-db-start: ## Start local PostgreSQL container
-	@if docker ps --format '{{.Names}}' | grep -q '^clarive-local-postgres'; then \
-		printf "$(C_YELLOW)PostgreSQL already running.$(C_RESET)\n"; \
-	else \
-		printf "$(C_CYAN)Starting PostgreSQL...$(C_RESET)\n"; \
-		$(COMPOSE) up -d postgres; \
-		printf "$(C_GREEN)PostgreSQL started$(C_RESET) → localhost:5432 (db: clarive)\n"; \
-	fi
-
-db-stop: ## Stop local PostgreSQL container
-	@if docker ps --format '{{.Names}}' | grep -q '^clarive-local-postgres'; then \
-		$(COMPOSE) stop postgres; \
-		printf "$(C_GREEN)PostgreSQL stopped.$(C_RESET)\n"; \
-	else \
-		printf "$(C_YELLOW)PostgreSQL not running.$(C_RESET)\n"; \
-	fi
-
-db-restart: ## Restart local PostgreSQL container
-	@$(MAKE) --no-print-directory db-stop
-	@$(MAKE) --no-print-directory db-start
-
-db-status: ## Show local PostgreSQL status
-	@if docker ps --format '{{.Names}}' | grep -q '^clarive-local-postgres'; then \
-		printf "  PostgreSQL: $(C_GREEN)running$(C_RESET) (port 5432)\n"; \
-		docker ps --format 'table {{.Status}}\t{{.Ports}}' --filter name=clarive-local-postgres; \
-	else \
-		printf "  PostgreSQL: $(C_RED)stopped$(C_RESET)\n"; \
-	fi
-
-db-logs: ## Tail local PostgreSQL logs
-	@$(COMPOSE) logs -f postgres
+## —— Database ———————————————————————————————————————————
 
 db-shell: ## Open psql shell
 	@docker exec -it $$(docker ps --format '{{.Names}}' --filter name=clarive.*postgres | head -1) \
 		psql -U clarive -d clarive
 
-db-migrate: ## Apply EF Core migrations (local dev)
+db-migrate: ## Apply EF Core migrations (requires dotnet SDK)
 	@printf "$(C_CYAN)Applying EF Core migrations...$(C_RESET)\n"
 	@cd $(BE_DIR) && dotnet ef database update
 	@printf "$(C_GREEN)Migrations applied.$(C_RESET)\n"
@@ -210,31 +120,30 @@ db-migration-add: ## Create a new migration. Usage: make db-migration-add NAME=M
 		dotnet ef migrations add $(NAME) --output-dir Data/Migrations
 	@printf "$(C_GREEN)Migration created.$(C_RESET)\n"
 
-db-reset: ## Destroy and recreate local PostgreSQL data
+db-reset: ## Destroy and recreate database volume
 	@printf "$(C_RED)This will destroy all database data. Continue? [y/N] $(C_RESET)"; \
 	read -r ans; \
 	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ]; then \
-		$(COMPOSE) down -v; \
-		printf "$(C_GREEN)Database volume removed. Run 'make db-start' to recreate.$(C_RESET)\n"; \
+		$(DEV_COMPOSE) down -v 2>/dev/null; \
+		$(PROD_COMPOSE) down -v 2>/dev/null; \
+		printf "$(C_GREEN)Database volume removed. Run 'make dev' or 'make deploy' to recreate.$(C_RESET)\n"; \
 	else \
 		printf "$(C_YELLOW)Cancelled.$(C_RESET)\n"; \
 	fi
 
-## —— Build ————————————————————————————————————————————————
+## —— Build / Test ————————————————————————————————————————
 
 build: build-frontend build-backend ## Build both projects
 
 build-frontend: ## Build frontend for production
 	@printf "$(C_CYAN)Building frontend...$(C_RESET)\n"
 	@cd $(FE_DIR) && npm run build
-	@printf "$(C_GREEN)Frontend built → src/frontend/dist/$(C_RESET)\n"
+	@printf "$(C_GREEN)Frontend built.$(C_RESET)\n"
 
 build-backend: ## Build backend
 	@printf "$(C_CYAN)Building backend...$(C_RESET)\n"
 	@cd $(BE_DIR) && dotnet build --configuration Release --nologo -v q
 	@printf "$(C_GREEN)Backend built.$(C_RESET)\n"
-
-## —— Test / Lint ——————————————————————————————————————————
 
 test: ## Run all tests
 	@$(MAKE) --no-print-directory test-frontend
@@ -263,7 +172,7 @@ lint: ## Run frontend linter
 	@printf "$(C_CYAN)Linting frontend...$(C_RESET)\n"
 	@cd $(FE_DIR) && npm run lint
 
-test-e2e: ## Run E2E tests (requires running backend + DB)
+test-e2e: ## Run E2E tests (requires running dev environment)
 	@printf "$(C_CYAN)Running E2E tests...$(C_RESET)\n"
 	@cd $(FE_DIR) && npx playwright test
 
@@ -277,7 +186,7 @@ clean: ## Remove build artifacts and logs
 	@printf "$(C_CYAN)Cleaning...$(C_RESET)\n"
 	@rm -rf $(FE_DIR)/dist $(FE_DIR)/node_modules/.vite
 	@cd $(BE_DIR) && dotnet clean --nologo -v q 2>/dev/null
-	@rm -f $(FE_LOG) $(BE_LOG) $(FE_PID) $(BE_PID)
+	@rm -f $(ROOT)/.frontend.log $(ROOT)/.backend.log $(ROOT)/.frontend.pid $(ROOT)/.backend.pid
 	@printf "$(C_GREEN)Clean.$(C_RESET)\n"
 
 ## —— Internal Helpers ————————————————————————————————————

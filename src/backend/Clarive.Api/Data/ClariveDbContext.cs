@@ -35,7 +35,6 @@ public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<SystemConfig> SystemConfigs => Set<SystemConfig>();
     public DbSet<ServiceConfig> ServiceConfigs => Set<ServiceConfig>();
-    public DbSet<FeedbackEntry> FeedbackEntries => Set<FeedbackEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

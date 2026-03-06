@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Clarive.Api.Data.Migrations
+namespace Clarive.Api.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -12,6 +13,36 @@ namespace Clarive.Api.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "service_config",
+                columns: table => new
+                {
+                    key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    encrypted_value = table.Column<string>(type: "text", nullable: true),
+                    is_encrypted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_service_config", x => x.key);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "system_config",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    maintenance_enabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    maintenance_since = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    maintenance_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_system_config", x => x.id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "ai_sessions",
                 columns: table => new
@@ -66,43 +97,6 @@ namespace Clarive.Api.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_audit_log_entries", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "credit_balances",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    free_credits = table.Column<int>(type: "integer", nullable: false),
-                    purchased_credits = table.Column<int>(type: "integer", nullable: false),
-                    last_free_replenish_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_credit_balances", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "credit_transactions",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    type = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
-                    amount = table.Column<int>(type: "integer", nullable: false),
-                    balance_after = table.Column<int>(type: "integer", nullable: false),
-                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    reference_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    user_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_credit_transactions", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -331,7 +325,6 @@ namespace Clarive.Api.Data.Migrations
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     owner_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    stripe_customer_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     delete_scheduled_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     avatar_path = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true)
@@ -380,7 +373,9 @@ namespace Clarive.Api.Data.Migrations
                     deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     delete_scheduled_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     onboarding_completed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    avatar_path = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
+                    avatar_path = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    is_super_user = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    theme_preference = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -392,6 +387,11 @@ namespace Clarive.Api.Data.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "system_config",
+                columns: new[] { "id", "maintenance_by", "maintenance_since" },
+                values: new object[] { 1, null, null });
 
             migrationBuilder.CreateIndex(
                 name: "ix_ai_sessions_tenant_id",
@@ -418,24 +418,6 @@ namespace Clarive.Api.Data.Migrations
                 name: "ix_audit_log_tenant_timestamp",
                 table: "audit_log_entries",
                 columns: new[] { "tenant_id", "timestamp" },
-                descending: new[] { false, true });
-
-            migrationBuilder.CreateIndex(
-                name: "uq_credit_balances_tenant_id",
-                table: "credit_balances",
-                column: "tenant_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_credit_transactions_reference",
-                table: "credit_transactions",
-                column: "reference_id",
-                filter: "reference_id IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_credit_transactions_tenant_created",
-                table: "credit_transactions",
-                columns: new[] { "tenant_id", "created_at" },
                 descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
@@ -526,13 +508,20 @@ namespace Clarive.Api.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_prompt_entries_tenant_folder",
                 table: "prompt_entries",
-                columns: new[] { "tenant_id", "folder_id" },
+                columns: new[] { "tenant_id", "folder_id", "updated_at" },
+                descending: new[] { false, false, true },
                 filter: "NOT is_trashed");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_prompt_entries_tenant_id",
+                table: "prompt_entries",
+                column: "tenant_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_prompt_entries_tenant_trash",
                 table: "prompt_entries",
-                column: "tenant_id",
+                columns: new[] { "tenant_id", "updated_at" },
+                descending: new[] { false, true },
                 filter: "is_trashed");
 
             migrationBuilder.CreateIndex(
@@ -551,6 +540,12 @@ namespace Clarive.Api.Data.Migrations
                 column: "published_by");
 
             migrationBuilder.CreateIndex(
+                name: "uq_prompt_entry_versions_entry_version",
+                table: "prompt_entry_versions",
+                columns: new[] { "entry_id", "version" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ix_prompts_version",
                 table: "prompts",
                 column: "version_id");
@@ -561,9 +556,10 @@ namespace Clarive.Api.Data.Migrations
                 column: "expires_at");
 
             migrationBuilder.CreateIndex(
-                name: "ix_refresh_tokens_user_id",
+                name: "ix_refresh_tokens_user_active",
                 table: "refresh_tokens",
-                column: "user_id");
+                column: "user_id",
+                filter: "revoked_at IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "uq_refresh_tokens_token_hash",
@@ -596,13 +592,6 @@ namespace Clarive.Api.Data.Migrations
                 name: "IX_tenants_owner_id",
                 table: "tenants",
                 column: "owner_id");
-
-            migrationBuilder.CreateIndex(
-                name: "uq_tenants_stripe_customer_id",
-                table: "tenants",
-                column: "stripe_customer_id",
-                unique: true,
-                filter: "stripe_customer_id IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "ix_tool_descriptions_tenant_id",
@@ -646,22 +635,6 @@ namespace Clarive.Api.Data.Migrations
             migrationBuilder.AddForeignKey(
                 name: "FK_audit_log_entries_tenants_tenant_id",
                 table: "audit_log_entries",
-                column: "tenant_id",
-                principalTable: "tenants",
-                principalColumn: "id",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_credit_balances_tenants_tenant_id",
-                table: "credit_balances",
-                column: "tenant_id",
-                principalTable: "tenants",
-                principalColumn: "id",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_credit_transactions_tenants_tenant_id",
-                table: "credit_transactions",
                 column: "tenant_id",
                 principalTable: "tenants",
                 principalColumn: "id",
@@ -805,12 +778,6 @@ namespace Clarive.Api.Data.Migrations
                 name: "audit_log_entries");
 
             migrationBuilder.DropTable(
-                name: "credit_balances");
-
-            migrationBuilder.DropTable(
-                name: "credit_transactions");
-
-            migrationBuilder.DropTable(
                 name: "email_verification_tokens");
 
             migrationBuilder.DropTable(
@@ -821,6 +788,12 @@ namespace Clarive.Api.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "password_reset_tokens");
+
+            migrationBuilder.DropTable(
+                name: "service_config");
+
+            migrationBuilder.DropTable(
+                name: "system_config");
 
             migrationBuilder.DropTable(
                 name: "template_fields");

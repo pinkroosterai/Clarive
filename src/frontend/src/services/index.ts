@@ -15,4 +15,3 @@ export * as invitationService from "./api/invitationService";
 export * as tenantService from "./api/tenantService";
 export * as workspaceService from "./api/workspaceService";
 export * as superService from "./api/superService";
-export * as feedbackService from "./api/feedbackService";

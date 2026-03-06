@@ -3,7 +3,6 @@ import type {
   Folder,
   Prompt,
   PromptEntry,
-  CreditBalance,
   AuthResponse,
   Workspace,
   PendingWorkspaceInvitation,
@@ -15,8 +14,6 @@ import type {
   ApiKey,
   AuditLogEntry,
   VersionInfo,
-  CreditTransaction,
-  CreditPack,
   PaginatedResponse,
 } from "@/types";
 
@@ -120,39 +117,6 @@ export function createTemplateField(overrides?: Partial<TemplateField>): Templat
     defaultValue: null,
     min: null,
     max: null,
-    ...overrides,
-  };
-}
-
-// ── Credits ──
-
-export function createCreditBalance(overrides?: Partial<CreditBalance>): CreditBalance {
-  return {
-    freeCredits: 20,
-    purchasedCredits: 0,
-    totalCredits: 20,
-    nextReplenishAt: "2026-02-01T00:00:00Z",
-    ...overrides,
-  };
-}
-
-export function createCreditTransaction(overrides?: Partial<CreditTransaction>): CreditTransaction {
-  return {
-    id: uid(),
-    type: "free_replenish",
-    amount: 20,
-    balanceAfter: 20,
-    description: "Free credit replenishment",
-    createdAt: "2026-01-01T00:00:00Z",
-    ...overrides,
-  };
-}
-
-export function createCreditPack(overrides?: Partial<CreditPack>): CreditPack {
-  return {
-    credits: 100,
-    priceInCents: 999,
-    priceFormatted: "$9.99",
     ...overrides,
   };
 }

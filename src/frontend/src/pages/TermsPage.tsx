@@ -64,7 +64,7 @@ const TermsPage = () => {
               <li>Interfere with or disrupt the integrity or performance of the Service</li>
               <li>Use the Service to generate content that is harmful, abusive, or violates third-party rights</li>
               <li>Reverse-engineer, decompile, or attempt to extract source code from the Service</li>
-              <li>Circumvent rate limits, credit systems, or other usage restrictions</li>
+              <li>Circumvent rate limits or other usage restrictions</li>
             </ul>
           </section>
 
@@ -79,18 +79,7 @@ const TermsPage = () => {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">6. Credits and Billing</h2>
-            <p>
-              Certain AI-powered features consume credits. Free credits are provided on a
-              recurring basis. Additional credits may be purchased through the Service. All
-              purchases are final and non-refundable except as required by applicable law.
-              We reserve the right to modify credit pricing and allocation at any time with
-              reasonable notice.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">7. Third-Party Services</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">6. Third-Party Services</h2>
             <p>
               The Service integrates with third-party AI providers for prompt generation and
               evaluation. Your use of these features is subject to the respective third-party
@@ -100,7 +89,7 @@ const TermsPage = () => {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">8. Limitation of Liability</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">7. Limitation of Liability</h2>
             <p>
               The Service is provided "as is" and "as available" without warranties of any kind.
               To the maximum extent permitted by law, Clarive shall not be liable for any
@@ -110,7 +99,7 @@ const TermsPage = () => {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">9. Account Termination</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">8. Account Termination</h2>
             <p>
               You may delete your account at any time through the Settings page. Account deletion
               is subject to a 30-day grace period during which you may cancel the deletion. After
@@ -120,7 +109,7 @@ const TermsPage = () => {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">10. Changes to Terms</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">9. Changes to Terms</h2>
             <p>
               We may update these terms from time to time. We will notify users of material changes
               via email or through the Service. Continued use of the Service after changes take
@@ -129,7 +118,7 @@ const TermsPage = () => {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-3">11. Contact</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">10. Contact</h2>
             <p>
               If you have questions about these Terms of Service, please contact us at{" "}
               <a href="mailto:legal@clarive.app" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">

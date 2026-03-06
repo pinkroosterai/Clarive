@@ -84,3 +84,7 @@ export async function deleteAccount(confirmation: string): Promise<void> {
 export async function cancelDeletion(): Promise<void> {
   await api.post<void>("/api/account/cancel-deletion");
 }
+
+export async function getSetupStatus(): Promise<{ isSetupComplete: boolean }> {
+  return api.get<{ isSetupComplete: boolean }>("/api/auth/setup-status");
+}

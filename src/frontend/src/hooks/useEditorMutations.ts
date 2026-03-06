@@ -78,13 +78,12 @@ export function useEditorMutations({
       const result = await wizardService.generateSystemMessage(entryId);
       handleChange({ systemMessage: result }, { force: true });
       toast.success("System message generated");
-      queryClient.invalidateQueries({ queryKey: ["billing", "balance"] });
     } catch (err) {
       handleApiError(err, { title: "Failed to generate system message" });
     } finally {
       setIsGeneratingSystemMessage(false);
     }
-  }, [entryId, handleChange, queryClient, localEntryRef]);
+  }, [entryId, handleChange, localEntryRef]);
 
   const handleDecomposeToChain = useCallback(async () => {
     if (!entryId || !localEntryRef.current?.prompts[0]) return;
@@ -93,13 +92,12 @@ export function useEditorMutations({
       const result = await wizardService.decomposeToChain(entryId);
       handleChange({ prompts: result }, { force: true });
       toast.success(`Prompt decomposed into ${result.length} steps`);
-      queryClient.invalidateQueries({ queryKey: ["billing", "balance"] });
     } catch (err) {
       handleApiError(err, { title: "Failed to decompose prompt" });
     } finally {
       setIsDecomposing(false);
     }
-  }, [entryId, handleChange, queryClient, localEntryRef]);
+  }, [entryId, handleChange, localEntryRef]);
 
   return {
     saveMutation,

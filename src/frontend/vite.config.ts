@@ -1,15 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isProd = mode === "production";
-  const hasSentryUpload =
-    isProd &&
-    !!process.env.VITE_SENTRY_DSN &&
-    !!process.env.SENTRY_AUTH_TOKEN;
 
   return {
     server: {
@@ -19,24 +14,17 @@ export default defineConfig(({ mode }) => {
       hmr: {
         overlay: false,
       },
+      proxy: {
+        "/api": {
+          target: process.env.VITE_API_PROXY_TARGET || "http://localhost:5000",
+          changeOrigin: true,
+        },
+      },
     },
     build: {
       sourcemap: isProd ? "hidden" : false,
     },
-    plugins: [
-      react(),
-      hasSentryUpload &&
-        sentryVitePlugin({
-          org: process.env.SENTRY_ORG,
-          project: process.env.SENTRY_PROJECT,
-          authToken: process.env.SENTRY_AUTH_TOKEN,
-          release: { name: process.env.VITE_SENTRY_RELEASE },
-          sourcemaps: {
-            filesToDeleteAfterUpload: "./dist/**/*.map",
-          },
-          telemetry: false,
-        }),
-    ].filter(Boolean),
+    plugins: [react()],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
