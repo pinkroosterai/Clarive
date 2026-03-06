@@ -2,19 +2,29 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
 import { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { WizardContent } from '@/components/wizard/WizardContent';
+import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { entryService } from '@/services';
 
 const EnhanceWizardPage = () => {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
+  const aiEnabled = useAiEnabled();
 
   useEffect(() => {
     document.title = 'Clarive — AI Enhance';
   }, []);
+
+  useEffect(() => {
+    if (!aiEnabled) {
+      toast.error('AI features are not configured.');
+      navigate(entryId ? `/entry/${entryId}` : '/library', { replace: true });
+    }
+  }, [aiEnabled, navigate, entryId]);
 
   const {
     data: entry,
@@ -23,8 +33,10 @@ const EnhanceWizardPage = () => {
   } = useQuery({
     queryKey: ['entry', entryId],
     queryFn: () => entryService.getEntry(entryId!),
-    enabled: !!entryId,
+    enabled: !!entryId && aiEnabled,
   });
+
+  if (!aiEnabled) return null;
 
   if (isError) {
     return (

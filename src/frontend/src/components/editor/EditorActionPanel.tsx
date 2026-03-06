@@ -30,6 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { copyToClipboard } from '@/lib/utils';
 import type { PromptEntry, VersionInfo } from '@/types';
 
@@ -84,6 +85,7 @@ export function EditorActionPanel({
   versions,
   versionPanel,
 }: EditorActionPanelProps) {
+  const aiEnabled = useAiEnabled();
   const hasDraft = versions.some((v) => v.versionState === 'draft');
   const publishedVersion = versions.find((v) => v.versionState === 'published')?.version;
   return (
@@ -202,21 +204,31 @@ export function EditorActionPanel({
             </AlertDialogContent>
           </AlertDialog>
 
-          <Button
-            variant="outline"
-            className="w-full gap-2 hover:border-primary/30 transition-all"
-            onClick={onEnhance}
-          >
-            <Sparkles className="size-4" />
-            AI Enhance
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 hover:border-primary/30 transition-all"
+                  onClick={onEnhance}
+                  disabled={!aiEnabled}
+                >
+                  <Sparkles className="size-4" />
+                  AI Enhance
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!aiEnabled && (
+              <TooltipContent side="left">AI features are not configured</TooltipContent>
+            )}
+          </Tooltip>
 
           {showGenerateSystemMessage && (
             <Button
               variant="outline"
               className="w-full gap-2 hover:border-primary/30 transition-all"
               onClick={onGenerateSystemMessage}
-              disabled={isGeneratingSystemMessage}
+              disabled={isGeneratingSystemMessage || !aiEnabled}
             >
               <Wand2 className="size-4" />
               {isGeneratingSystemMessage ? 'Generating…' : 'Generate System Message'}
@@ -229,7 +241,7 @@ export function EditorActionPanel({
                 <Button
                   variant="outline"
                   className="w-full gap-2 hover:border-primary/30 transition-all"
-                  disabled={isDecomposing}
+                  disabled={isDecomposing || !aiEnabled}
                 >
                   <Wand2 className="size-4" />
                   {isDecomposing ? 'Decomposing…' : 'Decompose to Chain'}

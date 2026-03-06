@@ -434,8 +434,8 @@ app.MapDashboardEndpoints();
 app.MapSuperEndpoints();
 app.MapConfigEndpoints();
 
-app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode) =>
-    Results.Ok(new { maintenance = maintenanceMode.IsEnabled }))
+app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode, IAgentFactory agentFactory) =>
+    Results.Ok(new { maintenance = maintenanceMode.IsEnabled, aiConfigured = agentFactory.IsConfigured }))
     .WithTags("System")
     .AllowAnonymous();
 

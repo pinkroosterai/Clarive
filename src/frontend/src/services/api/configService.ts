@@ -1,6 +1,13 @@
 import { api } from './apiClient';
 
-export type ConfigInputType = 'text' | 'number' | 'email' | 'password' | 'select' | 'url';
+export type ConfigInputType =
+  | 'text'
+  | 'number'
+  | 'email'
+  | 'password'
+  | 'select'
+  | 'url'
+  | 'toggle';
 
 export interface ConfigVisibleWhen {
   key: string;
@@ -51,7 +58,7 @@ export async function resetConfigValue(key: string): Promise<ResetConfigResult> 
 // ── AI Config ──
 
 export interface ValidateAiRequest {
-  apiKey: string;
+  apiKey?: string;
   endpointUrl?: string;
 }
 

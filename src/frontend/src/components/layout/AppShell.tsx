@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 
+import { AiNotConfiguredBanner } from '@/components/common/AiNotConfiguredBanner';
 import { EmailVerificationBanner } from '@/components/common/EmailVerificationBanner';
 import { ErrorBoundary, PageErrorFallback } from '@/components/common/ErrorBoundary';
 import { MaintenanceBanner } from '@/components/common/MaintenanceBanner';
@@ -18,6 +19,7 @@ export function AppShell() {
         <SidebarInset>
           <TopBar />
           <MaintenanceBanner />
+          <AiNotConfiguredBanner />
           <EmailVerificationBanner />
           <div className="flex-1 overflow-auto p-4 animate-page-enter">
             <ErrorBoundary fallback={PageErrorFallback}>

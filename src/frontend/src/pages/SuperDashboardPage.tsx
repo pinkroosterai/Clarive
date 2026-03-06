@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Users,
   UserPlus,
@@ -18,7 +18,6 @@ import {
   Bot,
   BotMessageSquare,
   Key,
-  Power,
   LayoutDashboard,
   AlertTriangle,
   X,
@@ -26,33 +25,16 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
 
 import { StatCard } from '@/components/dashboard/StatCard';
 import AiConfigSection from '@/components/super/AiConfigSection';
 import ConfigSectionForm from '@/components/super/ConfigSectionForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getAllConfig, type ConfigSetting } from '@/services/api/configService';
-import {
-  getSuperStats,
-  getMaintenanceStatus,
-  setMaintenanceMode,
-} from '@/services/api/superService';
-import { useAuthStore } from '@/store/authStore';
+import { getSuperStats } from '@/services/api/superService';
 
 // ── Config sections ──
 
@@ -105,14 +87,11 @@ function StatsSection({
 // ── Page ──
 
 const SuperDashboardPage = () => {
-  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
   const activeTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'dashboard';
 
-  const [showConfirm, setShowConfirm] = useState(false);
   const [restartKeys, setRestartKeys] = useState<string[]>([]);
-  const setStoreMaintenanceMode = useAuthStore((s) => s.setMaintenanceMode);
 
   useEffect(() => {
     document.title = 'Clarive — Super Admin';
@@ -148,43 +127,6 @@ const SuperDashboardPage = () => {
     queryKey: ['super', 'stats'],
     queryFn: getSuperStats,
   });
-
-  const { data: maintenance, isLoading: maintenanceLoading } = useQuery({
-    queryKey: ['super', 'maintenance'],
-    queryFn: getMaintenanceStatus,
-  });
-
-  const toggleMutation = useMutation({
-    mutationFn: (enabled: boolean) => setMaintenanceMode(enabled),
-    onSuccess: (data) => {
-      queryClient.setQueryData(['super', 'maintenance'], data);
-      setStoreMaintenanceMode(data.enabled);
-      toast.success(
-        data.enabled
-          ? 'Maintenance mode enabled — regular users are blocked'
-          : 'Maintenance mode disabled — all users can access the system'
-      );
-    },
-    onError: () => {
-      toast.error('Failed to toggle maintenance mode');
-    },
-  });
-
-  const handleToggle = () => {
-    const newState = !maintenance?.enabled;
-    if (newState) {
-      setShowConfirm(true);
-    } else {
-      toggleMutation.mutate(false);
-    }
-  };
-
-  const confirmEnable = () => {
-    setShowConfirm(false);
-    toggleMutation.mutate(true);
-  };
-
-  const isEnabled = maintenance?.enabled ?? false;
 
   // ── Config data ──
 
@@ -292,50 +234,6 @@ const SuperDashboardPage = () => {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="mt-6 space-y-6">
-          {/* Maintenance Card */}
-          <Card
-            className={`rounded-xl elevation-1 ${isEnabled ? 'border-warning-border bg-warning-bg' : ''}`}
-          >
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Maintenance Mode</CardTitle>
-              <Power
-                className={`size-4 ${isEnabled ? 'text-warning-text' : 'text-foreground-muted'}`}
-              />
-            </CardHeader>
-            <CardContent>
-              {maintenanceLoading ? (
-                <div className="h-8 w-24 animate-pulse rounded bg-muted" />
-              ) : (
-                <>
-                  <div
-                    className={`text-lg font-semibold ${isEnabled ? 'text-warning-text' : 'text-success-text'}`}
-                  >
-                    {isEnabled ? 'Active' : 'Inactive'}
-                  </div>
-                  <CardDescription className="mt-1">
-                    {isEnabled
-                      ? 'Regular users are blocked from accessing the system'
-                      : 'All users can access the system normally'}
-                  </CardDescription>
-                  <Button
-                    variant={isEnabled ? 'default' : 'destructive'}
-                    size="sm"
-                    className="mt-3"
-                    onClick={handleToggle}
-                    disabled={toggleMutation.isPending}
-                  >
-                    {toggleMutation.isPending
-                      ? 'Toggling...'
-                      : isEnabled
-                        ? 'Disable Maintenance'
-                        : 'Enable Maintenance'}
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Stats */}
           <StatsSection title="Users & Growth" items={userStats} loading={statsLoading} />
           <StatsSection title="Workspaces" items={workspaceStats} loading={statsLoading} />
           <StatsSection title="Content" items={contentStats} loading={statsLoading} />
@@ -372,29 +270,6 @@ const SuperDashboardPage = () => {
           );
         })}
       </Tabs>
-
-      {/* Maintenance Confirmation Dialog */}
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Enable Maintenance Mode?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will block all non-super-user access to Clarive. Regular users will see a
-              maintenance page and their API requests will return 503 errors. Health checks will
-              remain accessible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmEnable}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Enable Maintenance Mode
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

@@ -15,7 +15,8 @@ public enum ConfigInputType
     Email,
     Password,
     Select,
-    Url
+    Url,
+    Toggle
 }
 
 public record ConfigVisibleWhen(string Key, string[] Values);
@@ -89,7 +90,7 @@ public static class ConfigRegistry
             "Email delivery provider. 'none' disables emails and skips verification for new users. Requires restart to switch.",
             ConfigSection.Email, false, true,
             SubGroup: "Provider",
-            InputType: ConfigInputType.Select, SelectOptions: ["none", "console", "resend", "smtp"]),
+            InputType: ConfigInputType.Select, SelectOptions: ["none", "resend", "smtp"]),
 
         new ConfigDefinition("Email:ApiKey", "Email API Key (Resend)",
             "API key for the Resend email service. Only needed when provider is 'resend'.",
@@ -151,7 +152,7 @@ public static class ConfigRegistry
             "Allow new users to create accounts. When disabled, only invited users and existing accounts can log in. The first user can always register.",
             ConfigSection.Application, false, false,
             SubGroup: "General",
-            InputType: ConfigInputType.Select, SelectOptions: ["true", "false"]),
+            InputType: ConfigInputType.Toggle),
 
         new ConfigDefinition("App:FrontendUrl", "Frontend URL",
             "Public URL of the frontend application, used in email links and invitations",

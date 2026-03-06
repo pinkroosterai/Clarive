@@ -23,6 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { useDebounce } from '@/hooks/useDebounce';
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, folderService } from '@/services';
@@ -78,6 +80,7 @@ function SkeletonCards() {
 
 export default function LibraryPage() {
   const { folderId } = useParams<{ folderId: string }>();
+  const aiEnabled = useAiEnabled();
 
   useEffect(() => {
     document.title = 'Clarive — Library';
@@ -173,9 +176,20 @@ export default function LibraryPage() {
       <Button onClick={() => navigate('/entry/new')}>
         <Plus className="size-4 mr-1.5" /> New Entry
       </Button>
-      <Button variant="secondary" onClick={() => navigate('/entry/new/wizard')}>
-        <Sparkles className="size-4 mr-1.5" /> AI Wizard
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span>
+            <Button
+              variant="secondary"
+              onClick={() => navigate('/entry/new/wizard')}
+              disabled={!aiEnabled}
+            >
+              <Sparkles className="size-4 mr-1.5" /> AI Wizard
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {!aiEnabled && <TooltipContent>AI features are not configured</TooltipContent>}
+      </Tooltip>
     </>
   );
 
@@ -183,9 +197,20 @@ export default function LibraryPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
-        <Button variant="secondary" onClick={() => navigate('/entry/new/wizard')}>
-          <Sparkles className="size-4 mr-1.5" /> AI Wizard
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <Button
+                variant="secondary"
+                onClick={() => navigate('/entry/new/wizard')}
+                disabled={!aiEnabled}
+              >
+                <Sparkles className="size-4 mr-1.5" /> AI Wizard
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!aiEnabled && <TooltipContent>AI features are not configured</TooltipContent>}
+        </Tooltip>
       </div>
 
       {/* Search & Filter Bar */}

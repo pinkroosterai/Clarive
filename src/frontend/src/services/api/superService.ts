@@ -28,6 +28,7 @@ export interface MaintenanceStatus {
 
 export interface SystemStatus {
   maintenance: boolean;
+  aiConfigured: boolean;
 }
 
 export async function getSuperStats(): Promise<SuperStats> {

@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { handleApiError } from '@/lib/handleApiError';
 import { cn } from '@/lib/utils';
@@ -308,6 +309,11 @@ function ConfigInput({
         className="max-w-md"
       />
     );
+  }
+
+  if (setting.inputType === 'toggle') {
+    const checked = (dirtyValue ?? setting.value ?? 'true') === 'true';
+    return <Switch checked={checked} onCheckedChange={(val) => onChange(val ? 'true' : 'false')} />;
   }
 
   if (setting.inputType === 'select' && setting.selectOptions) {

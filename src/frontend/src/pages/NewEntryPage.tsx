@@ -16,11 +16,14 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { flattenFolders } from '@/lib/folderUtils';
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, folderService } from '@/services';
 
 const NewEntryPage = () => {
+  const aiEnabled = useAiEnabled();
   useEffect(() => {
     document.title = 'Clarive — New Entry';
   }, []);
@@ -103,12 +106,22 @@ const NewEntryPage = () => {
             </span>
           </div>
 
-          <Button variant="ghost" className="w-full gap-2" asChild>
-            <Link to="/entry/new/wizard">
-              <Sparkles className="h-4 w-4" />
-              Use the AI Wizard to generate a prompt
-            </Link>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="w-full">
+                <Button
+                  variant="ghost"
+                  className="w-full gap-2"
+                  disabled={!aiEnabled}
+                  onClick={() => navigate('/entry/new/wizard')}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Use the AI Wizard to generate a prompt
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!aiEnabled && <TooltipContent>AI features are not configured</TooltipContent>}
+          </Tooltip>
         </CardContent>
       </Card>
     </div>

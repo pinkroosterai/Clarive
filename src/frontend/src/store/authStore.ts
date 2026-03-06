@@ -20,6 +20,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isInitialized: boolean;
   maintenanceMode: boolean;
+  aiConfigured: boolean;
   setUser: (user: User) => void;
   setMaintenanceMode: (enabled: boolean) => void;
   setWorkspaces: (workspaces: Workspace[]) => void;
@@ -35,6 +36,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: !!getToken(),
   isInitialized: false,
   maintenanceMode: false,
+  aiConfigured: true,
   setMaintenanceMode: (enabled: boolean) => set({ maintenanceMode: enabled }),
   setUser: (user: User) => {
     set({ currentUser: user, isAuthenticated: true, isInitialized: true });
@@ -70,6 +72,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthenticated: false,
       isInitialized: true,
       maintenanceMode: false,
+      aiConfigured: true,
     });
   },
   initializeAuth: async () => {
@@ -92,6 +95,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         const status = await getSystemStatus();
         if (status.maintenance) set({ maintenanceMode: true });
+        if (status.aiConfigured === false) set({ aiConfigured: false });
       } catch {
         // Ignore — maintenance status is non-critical
       }

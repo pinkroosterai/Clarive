@@ -112,12 +112,13 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
 
   const validateMutation = useMutation({
     mutationFn: () => {
-      const apiKey = currentApiKeyDirty || '';
+      const apiKey = currentApiKeyDirty ?? '';
       if (!apiKey && !apiKeyIsConfigured) {
         return Promise.resolve({ valid: false, error: 'Enter an API key first' } as const);
       }
+      // When no new key is typed but one is already configured, validate using the server-side key
       return validateAiConfig({
-        apiKey,
+        apiKey: apiKey || undefined,
         endpointUrl: currentEndpoint || undefined,
       });
     },

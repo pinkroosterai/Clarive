@@ -199,17 +199,26 @@ public static class ConfigEndpoints
 
     private static async Task<IResult> HandleValidateAi(
         ValidateAiConfigRequest request,
+        IConfiguration configuration,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.ApiKey))
+        var apiKey = !string.IsNullOrWhiteSpace(request.ApiKey)
+            ? request.ApiKey
+            : configuration["Ai:OpenAiApiKey"];
+
+        if (string.IsNullOrWhiteSpace(apiKey))
             return Results.BadRequest(new ValidateAiConfigResponse(false, "API key is required"));
+
+        var endpointUrl = !string.IsNullOrWhiteSpace(request.EndpointUrl)
+            ? request.EndpointUrl
+            : configuration["Ai:EndpointUrl"];
 
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(TimeSpan.FromSeconds(10));
 
-            var client = OpenAIAgentFactory.CreateOpenAIClient(request.ApiKey, request.EndpointUrl);
+            var client = OpenAIAgentFactory.CreateOpenAIClient(apiKey, endpointUrl);
             var modelClient = client.GetOpenAIModelClient();
             await modelClient.GetModelsAsync(cts.Token);
 
