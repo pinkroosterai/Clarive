@@ -36,6 +36,9 @@ backups/
 # Serena
 .serena/
 
+# Claude Code
+.claude/
+
 # Root screenshots (Playwright artifacts)
 /*.png
 
