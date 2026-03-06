@@ -19,6 +19,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
+import { APP_VERSION } from '@/lib/config';
 import { useAuthStore } from '@/store/authStore';
 
 const navLinks = [
@@ -115,6 +116,9 @@ export function AppSidebar() {
             </SidebarMenuItem>
           )}
         </SidebarMenu>
+        <p className="px-2 py-1 text-[10px] text-muted-foreground/50 group-data-[collapsible=icon]:hidden">
+          v{APP_VERSION}
+        </p>
       </SidebarFooter>
     </Sidebar>
   );
