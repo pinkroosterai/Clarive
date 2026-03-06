@@ -96,7 +96,7 @@ public class AiGenerationService(
             agentSessionId = preGenResult.AgentSessionId;
         }
 
-        // This can throw — caller should refund credits
+        // This can throw — caller should handle failure
         var result = await orchestrator.GenerateAsync(agentSessionId, config, preGenAnswers, selectedEnhancements, ct, onProgress);
 
         // Build score history
@@ -162,7 +162,7 @@ public class AiGenerationService(
             .Select(s => s.AverageScore)
             .ToList();
 
-        // This can throw — caller should refund credits
+        // This can throw — caller should handle failure
         var result = await orchestrator.RefineAsync(
             session.AgentSessionId, session.Config,
             evalForRevision, answers, selectedEnhancements,
@@ -230,7 +230,7 @@ public class AiGenerationService(
             GenerateAsPromptChain = prompts.Count > 1,
         };
 
-        // This can throw — caller should refund credits
+        // This can throw — caller should handle failure
         var result = await orchestrator.EnhanceAsync(working.SystemMessage, prompts, config, ct, onProgress);
 
         var scoreHistory = BuildInitialScoreHistory(result.Evaluation);
@@ -290,7 +290,7 @@ public class AiGenerationService(
             .Select(p => new PromptInput(p.Content, p.IsTemplate))
             .ToList();
 
-        // This can throw — caller should refund credits
+        // This can throw — caller should handle failure
         var systemMessage = await orchestrator.GenerateSystemMessageAsync(promptInputs, ct);
         return (systemMessage, null, null);
     }
@@ -326,7 +326,7 @@ public class AiGenerationService(
         if (working.Prompts.Count != 1)
             return (null, "ALREADY_CHAIN", "Entry must have exactly one prompt to decompose.");
 
-        // This can throw — caller should refund credits
+        // This can throw — caller should handle failure
         var decomposed = await orchestrator.DecomposeAsync(
             working.Prompts[0].Content, working.Prompts[0].IsTemplate, working.SystemMessage, ct);
         return (decomposed, null, null);

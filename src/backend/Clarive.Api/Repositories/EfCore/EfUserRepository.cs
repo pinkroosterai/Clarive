@@ -79,4 +79,7 @@ public class EfUserRepository(ClariveDbContext db) : IUserRepository
         await db.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task<bool> AnyUsersExistAsync(CancellationToken ct = default)
+        => await db.Users.IgnoreQueryFilters().AnyAsync(ct);
 }

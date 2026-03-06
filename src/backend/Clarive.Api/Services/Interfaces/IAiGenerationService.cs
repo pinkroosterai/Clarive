@@ -18,7 +18,7 @@ public interface IAiGenerationService
 
     /// <summary>
     /// Generates a prompt set: resolves session, builds config, calls orchestrator, persists session.
-    /// Throws on orchestrator failure (caller should refund credits).
+    /// Throws on orchestrator failure.
     /// Returns null if the referenced session is not found.
     /// </summary>
     Task<AiGenerationResult?> GenerateAsync(
@@ -27,7 +27,7 @@ public interface IAiGenerationService
 
     /// <summary>
     /// Refines an existing generation: resolves answers/enhancements, calls orchestrator, updates session.
-    /// Throws on orchestrator failure (caller should refund credits).
+    /// Throws on orchestrator failure.
     /// Returns null if the session is not found.
     /// Returns an error string if the session is invalid.
     /// </summary>
@@ -37,14 +37,13 @@ public interface IAiGenerationService
 
     /// <summary>
     /// Validates that an entry exists and has a version suitable for enhancement.
-    /// Call before credit deduction. Returns (true, null, null) on success.
+    /// Returns (true, null, null) on success.
     /// </summary>
     Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForEnhanceAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default);
 
     /// <summary>
-    /// Enhances an existing entry's prompts. Call after credit deduction.
-    /// Throws on orchestrator failure (caller should refund credits).
+    /// Enhances an existing entry's prompts.    /// Throws on orchestrator failure.
     /// </summary>
     Task<AiGenerationResult?> EnhanceAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default,
@@ -52,28 +51,26 @@ public interface IAiGenerationService
 
     /// <summary>
     /// Validates that an entry exists, has a version, and no system message.
-    /// Call before credit deduction. Returns (true, null, null) on success.
+    /// Returns (true, null, null) on success.
     /// </summary>
     Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForSystemMessageAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default);
 
     /// <summary>
-    /// Generates a system message for an existing entry. Call after credit deduction.
-    /// Throws on orchestrator failure (caller should refund credits).
+    /// Generates a system message for an existing entry.    /// Throws on orchestrator failure.
     /// </summary>
     Task<(string? SystemMessage, string? ErrorCode, string? ErrorMessage)> GenerateSystemMessageAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default);
 
     /// <summary>
     /// Validates that an entry exists, has a version, and exactly one prompt.
-    /// Call before credit deduction. Returns (true, null, null) on success.
+    /// Returns (true, null, null) on success.
     /// </summary>
     Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForDecomposeAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default);
 
     /// <summary>
-    /// Decomposes a single-prompt entry into a chain. Call after credit deduction.
-    /// Throws on orchestrator failure (caller should refund credits).
+    /// Decomposes a single-prompt entry into a chain.    /// Throws on orchestrator failure.
     /// </summary>
     Task<(List<PromptInput>? Prompts, string? ErrorCode, string? ErrorMessage)> DecomposeAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default);

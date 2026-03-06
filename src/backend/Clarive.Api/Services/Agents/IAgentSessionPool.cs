@@ -24,6 +24,11 @@ public interface IAgentSessionPool
     /// Removes a session from the pool (e.g., after save).
     /// </summary>
     void Remove(string sessionId);
+
+    /// <summary>
+    /// Invalidates all active sessions (e.g., after AI config change).
+    /// </summary>
+    void InvalidateAll();
 }
 
 public record AgentSessionEntry(AIAgent Agent, AgentSession Session, DateTime CreatedAt)

@@ -1,10 +1,13 @@
+using System.ClientModel;
 using Clarive.Api.Data;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Services;
+using Clarive.Api.Services.Agents;
 using Microsoft.EntityFrameworkCore;
 using Clarive.Api.Auth;
+using OpenAI;
 
 namespace Clarive.Api.Endpoints;
 
@@ -19,6 +22,8 @@ public static class ConfigEndpoints
         group.MapGet("/", HandleGetAll);
         group.MapPut("/{key}", HandleSetValue);
         group.MapDelete("/{key}", HandleDeleteValue);
+        group.MapPost("/validate-ai", HandleValidateAi);
+        group.MapPost("/ai-models", HandleGetAiModels);
 
         return group;
     }
@@ -81,7 +86,13 @@ public static class ConfigEndpoints
                 Value: value,
                 IsOverridden: hasOverride,
                 IsConfigured: isConfigured,
-                Source: source);
+                Source: source,
+                InputType: def.InputType.ToString().ToLowerInvariant(),
+                SelectOptions: def.SelectOptions,
+                SubGroup: def.SubGroup,
+                VisibleWhen: def.VisibleWhen is not null
+                    ? new ConfigVisibleWhenResponse(def.VisibleWhen.Key, def.VisibleWhen.Values)
+                    : null);
         }).ToList();
 
         return Results.Ok(result);
@@ -182,5 +193,90 @@ public static class ConfigEndpoints
         await db.SaveChangesAsync(ct);
 
         return Results.Ok(new { key, reset = true });
+    }
+
+    private static readonly string[] OpenAiChatPrefixes = ["gpt-", "o1-", "o3-", "o4-", "chatgpt-"];
+
+    private static async Task<IResult> HandleValidateAi(
+        ValidateAiConfigRequest request,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.ApiKey))
+            return Results.BadRequest(new ValidateAiConfigResponse(false, "API key is required"));
+
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(TimeSpan.FromSeconds(10));
+
+            var client = OpenAIAgentFactory.CreateOpenAIClient(request.ApiKey, request.EndpointUrl);
+            var modelClient = client.GetOpenAIModelClient();
+            await modelClient.GetModelsAsync(cts.Token);
+
+            return Results.Ok(new ValidateAiConfigResponse(true));
+        }
+        catch (OperationCanceledException)
+        {
+            return Results.Ok(new ValidateAiConfigResponse(false, "Connection timed out — check the endpoint URL"));
+        }
+        catch (ClientResultException ex) when (ex.Status is 401 or 403)
+        {
+            return Results.Ok(new ValidateAiConfigResponse(false, "Invalid API key"));
+        }
+        catch (Exception ex)
+        {
+            return Results.Ok(new ValidateAiConfigResponse(false, $"Connection failed: {ex.Message}"));
+        }
+    }
+
+    private static async Task<IResult> HandleGetAiModels(
+        GetAiModelsRequest request,
+        IConfiguration configuration,
+        CancellationToken ct)
+    {
+        var apiKey = !string.IsNullOrWhiteSpace(request.ApiKey)
+            ? request.ApiKey
+            : configuration["Ai:OpenAiApiKey"];
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+            return Results.BadRequest(new { error = new { code = "NO_API_KEY", message = "No API key configured" } });
+
+        var endpointUrl = !string.IsNullOrWhiteSpace(request.EndpointUrl)
+            ? request.EndpointUrl
+            : configuration["Ai:EndpointUrl"];
+
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(TimeSpan.FromSeconds(10));
+
+            var client = OpenAIAgentFactory.CreateOpenAIClient(apiKey, endpointUrl);
+            var modelClient = client.GetOpenAIModelClient();
+            var response = await modelClient.GetModelsAsync(cts.Token);
+
+            var isOpenAi = string.IsNullOrWhiteSpace(endpointUrl)
+                || endpointUrl.Contains("api.openai.com", StringComparison.OrdinalIgnoreCase);
+
+            var models = response.Value
+                .Select(m => m.Id)
+                .Where(id =>
+                {
+                    if (!isOpenAi) return true;
+                    return OpenAiChatPrefixes.Any(prefix =>
+                        id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+                })
+                .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return Results.Ok(new GetAiModelsResponse(models));
+        }
+        catch (OperationCanceledException)
+        {
+            return Results.BadRequest(new { error = new { code = "TIMEOUT", message = "Connection timed out" } });
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { error = new { code = "MODEL_FETCH_FAILED", message = ex.Message } });
+        }
     }
 }

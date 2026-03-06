@@ -6,21 +6,23 @@ namespace Clarive.Api.Services;
 
 public class GoogleAuthService : IGoogleAuthService
 {
-    private readonly GoogleAuthSettings _settings;
+    private readonly IOptionsMonitor<GoogleAuthSettings> _optionsMonitor;
 
-    public GoogleAuthService(IOptions<GoogleAuthSettings> settings)
+    public GoogleAuthService(IOptionsMonitor<GoogleAuthSettings> optionsMonitor)
     {
-        _settings = settings.Value;
+        _optionsMonitor = optionsMonitor;
     }
 
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(_settings.ClientId);
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(_optionsMonitor.CurrentValue.ClientId);
 
     public async Task<GoogleUserInfo> ValidateIdTokenAsync(string idToken, CancellationToken ct = default)
     {
+        var settings = _optionsMonitor.CurrentValue;
+
         var payload = await GoogleJsonWebSignature.ValidateAsync(idToken,
             new GoogleJsonWebSignature.ValidationSettings
             {
-                Audience = [_settings.ClientId]
+                Audience = [settings.ClientId]
             });
 
         return new GoogleUserInfo(

@@ -17,4 +17,10 @@ public record ConfigSettingResponse(
     string? Value,
     bool IsOverridden,
     bool IsConfigured,
-    string Source);
+    string Source,
+    string InputType,
+    string[]? SelectOptions,
+    string? SubGroup,
+    ConfigVisibleWhenResponse? VisibleWhen);
+
+public record ConfigVisibleWhenResponse(string Key, string[] Values);

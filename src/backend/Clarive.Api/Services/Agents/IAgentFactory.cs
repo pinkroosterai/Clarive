@@ -15,4 +15,5 @@ public interface IAgentFactory
     AIAgent CreateSystemMessageAgent();
     AIAgent CreateDecomposeAgent();
     bool IsConfigured { get; }
+    event Action? OnReconfigured;
 }

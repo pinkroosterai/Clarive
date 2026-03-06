@@ -11,11 +11,11 @@ namespace Clarive.Api.Auth;
 
 public class JwtService
 {
-    private readonly JwtSettings _settings;
+    private readonly IOptionsMonitor<JwtSettings> _optionsMonitor;
 
-    public JwtService(IOptions<JwtSettings> settings)
+    public JwtService(IOptionsMonitor<JwtSettings> optionsMonitor)
     {
-        _settings = settings.Value;
+        _optionsMonitor = optionsMonitor;
     }
 
     public string GenerateToken(User user)
@@ -25,6 +25,8 @@ public class JwtService
 
     public string GenerateToken(User user, Guid tenantId, UserRole role)
     {
+        var settings = _optionsMonitor.CurrentValue;
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -37,14 +39,14 @@ public class JwtService
         if (user.IsSuperUser)
             claims.Add(new Claim("superUser", "true"));
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _settings.Issuer,
-            audience: _settings.Audience,
+            issuer: settings.Issuer,
+            audience: settings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_settings.ExpirationMinutes),
+            expires: DateTime.UtcNow.AddMinutes(settings.ExpirationMinutes),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
@@ -87,5 +89,5 @@ public class JwtService
         return Convert.ToHexStringLower(hash);
     }
 
-    public int RefreshTokenExpirationDays => _settings.RefreshTokenExpirationDays;
+    public int RefreshTokenExpirationDays => _optionsMonitor.CurrentValue.RefreshTokenExpirationDays;
 }

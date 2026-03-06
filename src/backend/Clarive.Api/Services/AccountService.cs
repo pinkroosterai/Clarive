@@ -19,6 +19,7 @@ public class AccountService(
     IGoogleAuthService googleAuthService,
     JwtService jwtService,
     PasswordHasher passwordHasher,
+    IConfiguration configuration,
     ClariveDbContext db) : IAccountService
 {
     public async Task<RegisterResult?> RegisterAsync(string email, string name, string password, CancellationToken ct)
@@ -28,21 +29,31 @@ public class AccountService(
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
+        var isFirstUser = !await userRepo.AnyUsersExistAsync(ct);
+        var emailProvider = configuration["Email:Provider"] ?? "none";
+        var skipVerification = isFirstUser
+            || emailProvider.Equals("none", StringComparison.OrdinalIgnoreCase);
+
         var (user, tenant) = await CreateUserWithPersonalWorkspaceAsync(
             email.Trim().ToLowerInvariant(), name.Trim(),
             passwordHash: passwordHasher.Hash(password),
-            googleId: null, emailVerified: false, ct);
+            googleId: null, emailVerified: skipVerification,
+            isSuperUser: isFirstUser, ct);
 
-        // Generate email verification token
-        var (rawVerify, _) = jwtService.GenerateRefreshToken();
-        await tokenRepo.CreateVerificationTokenAsync(new EmailVerificationToken
+        // Skip verification token when auto-verified (first user or no email provider)
+        string? rawVerify = null;
+        if (!skipVerification)
         {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TokenHash = JwtService.HashRefreshToken(rawVerify),
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
-            CreatedAt = DateTime.UtcNow
-        }, ct);
+            (rawVerify, _) = jwtService.GenerateRefreshToken();
+            await tokenRepo.CreateVerificationTokenAsync(new EmailVerificationToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = JwtService.HashRefreshToken(rawVerify),
+                ExpiresAt = DateTime.UtcNow.AddHours(24),
+                CreatedAt = DateTime.UtcNow
+            }, ct);
+        }
 
         await tx.CommitAsync(ct);
 
@@ -73,7 +84,7 @@ public class AccountService(
         (user, _) = await CreateUserWithPersonalWorkspaceAsync(
             googleUser.Email.Trim().ToLowerInvariant(), googleUser.Name,
             passwordHash: null, googleId: googleUser.GoogleId,
-            emailVerified: true, ct);
+            emailVerified: true, ct: ct);
 
         await tx.CommitAsync(ct);
 
@@ -219,7 +230,7 @@ public class AccountService(
     /// </summary>
     private async Task<(User User, Tenant Tenant)> CreateUserWithPersonalWorkspaceAsync(
         string email, string name, string? passwordHash, string? googleId,
-        bool emailVerified, CancellationToken ct)
+        bool emailVerified, bool isSuperUser = false, CancellationToken ct = default)
     {
         var tenant = await tenantRepo.CreateAsync(new Tenant
         {
@@ -237,6 +248,7 @@ public class AccountService(
             PasswordHash = passwordHash,
             GoogleId = googleId,
             EmailVerified = emailVerified,
+            IsSuperUser = isSuperUser,
             Role = UserRole.Admin,
             CreatedAt = DateTime.UtcNow
         }, ct);

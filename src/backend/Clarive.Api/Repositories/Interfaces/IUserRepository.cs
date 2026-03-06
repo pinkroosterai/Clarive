@@ -14,4 +14,5 @@ public interface IUserRepository
     Task<User> CreateAsync(User user, CancellationToken ct = default);
     Task<User> UpdateAsync(User user, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid tenantId, Guid userId, CancellationToken ct = default);
+    Task<bool> AnyUsersExistAsync(CancellationToken ct = default);
 }

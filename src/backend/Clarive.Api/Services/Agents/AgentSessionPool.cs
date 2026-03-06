@@ -25,6 +25,8 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
         _logger = logger;
         _maxPoolSize = configuration.GetValue("Ai:MaxAgentSessions", 100);
         _cleanupTimer = new Timer(CleanupExpired, null, CleanupInterval, CleanupInterval);
+
+        _factory.OnReconfigured += InvalidateAll;
     }
 
     public async Task<string> CreateSessionAsync(GenerationConfig config, CancellationToken ct = default)
@@ -72,6 +74,22 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
             DisposeEntry(entry);
     }
 
+    public void InvalidateAll()
+    {
+        var count = 0;
+        foreach (var kvp in _sessions)
+        {
+            if (_sessions.TryRemove(kvp.Key, out var entry))
+            {
+                DisposeEntry(entry);
+                count++;
+            }
+        }
+
+        if (count > 0)
+            _logger.LogInformation("Invalidated {Count} agent sessions due to AI config change", count);
+    }
+
     private void CleanupExpired(object? state)
     {
         var cutoff = DateTime.UtcNow - SessionTtl;
@@ -100,6 +118,7 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
 
     public void Dispose()
     {
+        _factory.OnReconfigured -= InvalidateAll;
         _cleanupTimer.Dispose();
         foreach (var kvp in _sessions)
         {
