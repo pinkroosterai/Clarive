@@ -4,7 +4,7 @@ WORKDIR /app
 EXPOSE 5000
 
 # ── Stage: dev (hot-reload) ─────────────────────────────────
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS dev
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dev
 WORKDIR /app
 COPY Clarive.Api/Clarive.Api.csproj Clarive.Api/
 RUN dotnet restore Clarive.Api/Clarive.Api.csproj
@@ -15,7 +15,7 @@ ENV DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
 CMD ["dotnet", "watch", "run", "--no-launch-profile"]
 
 # ── Stage: build ─────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY Clarive.Api/Clarive.Api.csproj Clarive.Api/
 RUN dotnet restore Clarive.Api/Clarive.Api.csproj
