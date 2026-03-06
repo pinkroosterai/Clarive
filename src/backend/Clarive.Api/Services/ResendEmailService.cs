@@ -6,7 +6,7 @@ namespace Clarive.Api.Services;
 
 public class ResendEmailService(
     IResend resend,
-    IOptions<EmailSettings> settings,
+    IOptionsSnapshot<EmailSettings> settings,
     ILogger<ResendEmailService> logger) : IEmailService
 {
     public async Task SendVerificationEmailAsync(string toEmail, string userName, string verifyUrl, CancellationToken ct = default)

@@ -87,8 +87,8 @@ public static class ConfigRegistry
 
         // ── Email › Provider ──
         new ConfigDefinition("Email:Provider", "Email Provider",
-            "Email delivery provider. 'none' disables emails and skips verification for new users. Requires restart to switch.",
-            ConfigSection.Email, false, true,
+            "Email delivery provider. 'none' disables emails and skips verification for new users.",
+            ConfigSection.Email, false, false,
             SubGroup: "Provider",
             InputType: ConfigInputType.Select, SelectOptions: ["none", "resend", "smtp"]),
 

@@ -202,35 +202,28 @@ builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IImportExportService, ImportExportService>();
 builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));
 builder.Services.AddScoped<IAvatarService, AvatarService>();
-// ── Email ──
-var emailSettings = builder.Configuration.GetSection("Email").Get<EmailSettings>() ?? new EmailSettings();
-if (emailSettings.Provider.Equals("resend", StringComparison.OrdinalIgnoreCase))
+// ── Email (all providers registered, resolved dynamically per-request) ──
+builder.Services.AddHttpClient<ResendClient>();
+builder.Services.AddSingleton<IConfigureOptions<ResendClientOptions>>(sp =>
 {
-    builder.Services.AddHttpClient<ResendClient>();
-    builder.Services.AddSingleton<IConfigureOptions<ResendClientOptions>>(sp =>
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new ConfigureOptions<ResendClientOptions>(o => o.ApiToken = config["Email:ApiKey"] ?? "");
+});
+builder.Services.AddTransient<IResend, ResendClient>();
+builder.Services.AddScoped<ResendEmailService>();
+builder.Services.AddScoped<SmtpEmailService>();
+builder.Services.AddScoped<ConsoleEmailService>();
+builder.Services.AddScoped<IEmailService>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var provider = config["Email:Provider"] ?? "none";
+    return provider.ToLowerInvariant() switch
     {
-        var config = sp.GetRequiredService<IConfiguration>();
-        return new ConfigureOptions<ResendClientOptions>(o => o.ApiToken = config["Email:ApiKey"] ?? "");
-    });
-    builder.Services.AddTransient<IResend, ResendClient>();
-    builder.Services.AddScoped<IEmailService, ResendEmailService>();
-    Log.Information("Email provider: Resend");
-}
-else if (emailSettings.Provider.Equals("smtp", StringComparison.OrdinalIgnoreCase))
-{
-    builder.Services.AddScoped<IEmailService, SmtpEmailService>();
-    Log.Information("Email provider: SMTP");
-}
-else if (emailSettings.Provider.Equals("console", StringComparison.OrdinalIgnoreCase))
-{
-    builder.Services.AddScoped<IEmailService, ConsoleEmailService>();
-    Log.Information("Email provider: Console");
-}
-else
-{
-    builder.Services.AddScoped<IEmailService, ConsoleEmailService>();
-    Log.Information("Email provider: None (emails disabled, new users auto-verified)");
-}
+        "resend" => sp.GetRequiredService<ResendEmailService>(),
+        "smtp" => sp.GetRequiredService<SmtpEmailService>(),
+        _ => sp.GetRequiredService<ConsoleEmailService>()
+    };
+});
 builder.Services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();
 
 // ── Settings ──

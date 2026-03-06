@@ -55,7 +55,11 @@ public static class ConfigEndpoints
 
             if (!def.IsSecret)
             {
-                value = effectiveValue ?? "";
+                // Use DB value directly when override exists (IConfiguration may not have reloaded yet)
+                if (hasOverride && !overrides[def.Key].IsEncrypted)
+                    value = overrides[def.Key].EncryptedValue;
+                else
+                    value = effectiveValue ?? "";
             }
 
             // Determine if the setting has any value from any source

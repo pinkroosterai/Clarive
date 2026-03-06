@@ -8,7 +8,7 @@ namespace Clarive.Api.Services;
 
 public class SmtpEmailService(
     IConfiguration configuration,
-    IOptions<EmailSettings> settings,
+    IOptionsSnapshot<EmailSettings> settings,
     ILogger<SmtpEmailService> logger) : IEmailService
 {
     public async Task SendVerificationEmailAsync(string toEmail, string userName, string verifyUrl, CancellationToken ct = default)
