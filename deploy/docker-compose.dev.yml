@@ -30,9 +30,12 @@ services:
       Jwt__Audience: Clarive
       Cors__AllowedOrigins__0: http://localhost:8080
       App__FrontendUrl: http://localhost:8080
+      CONFIG_ENCRYPTION_KEY: "j71XleMO3XGcPGXmqdcucaLMVbrKP+LXUR0aGBGfjOo="
       RateLimiting__StrictPermitLimit: "100"
     volumes:
       - ../src/backend:/app
+      - /app/Clarive.Api/obj
+      - /app/Clarive.Api/bin
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:5000/healthz/live || exit 1"]
       interval: 10s

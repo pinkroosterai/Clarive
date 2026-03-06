@@ -1,0 +1,22 @@
+<Project>
+
+  <!-- Import the repo-root Directory.Build.props (analyzers, ImplicitUsings, etc.) -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"
+          Condition="Exists('$([MSBuild]::GetPathOfFileAbove(`Directory.Build.props`, `$(MSBuildThisFileDirectory)../`))')" />
+
+  <!-- Fallback: ensure core properties are set when root props file is unreachable (e.g. Docker volume mount) -->
+  <PropertyGroup Condition="'$(ImplicitUsings)' == ''">
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- Avoid obj/bin conflicts when volume-mounting source into Docker containers -->
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)/obj/**;$(MSBuildProjectDirectory)/bin/**</DefaultItemExcludes>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' == 'true'">
+    <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/container/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildProjectDirectory)/bin/container/</BaseOutputPath>
+  </PropertyGroup>
+
+</Project>
