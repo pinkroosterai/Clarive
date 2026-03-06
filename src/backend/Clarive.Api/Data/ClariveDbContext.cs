@@ -1,0 +1,69 @@
+using System.Linq.Expressions;
+using Clarive.Api.Auth;
+using Clarive.Api.Models.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace Clarive.Api.Data;
+
+public class ClariveDbContext : DbContext
+{
+    private readonly Guid? _tenantId;
+
+    public ClariveDbContext(
+        DbContextOptions<ClariveDbContext> options,
+        ITenantProvider? tenantProvider = null) : base(options)
+    {
+        _tenantId = tenantProvider?.TenantId;
+    }
+
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Folder> Folders => Set<Folder>();
+    public DbSet<PromptEntry> PromptEntries => Set<PromptEntry>();
+    public DbSet<PromptEntryVersion> PromptEntryVersions => Set<PromptEntryVersion>();
+    public DbSet<Prompt> Prompts => Set<Prompt>();
+    public DbSet<TemplateField> TemplateFields => Set<TemplateField>();
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
+    public DbSet<AiSession> AiSessions => Set<AiSession>();
+    public DbSet<ToolDescription> ToolDescriptions => Set<ToolDescription>();
+public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<LoginSession> LoginSessions => Set<LoginSession>();
+    public DbSet<Invitation> Invitations => Set<Invitation>();
+    public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
+    public DbSet<SystemConfig> SystemConfigs => Set<SystemConfig>();
+    public DbSet<ServiceConfig> ServiceConfigs => Set<ServiceConfig>();
+    public DbSet<FeedbackEntry> FeedbackEntries => Set<FeedbackEntry>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ClariveDbContext).Assembly);
+
+        // Global tenant isolation filters
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(ITenantScoped).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var tenantIdProp = Expression.Property(parameter, nameof(ITenantScoped.TenantId));
+            var contextTenantId = Expression.Field(
+                Expression.Constant(this), "_tenantId");
+
+            // _tenantId == null || (Guid?)e.TenantId == _tenantId
+            var filter = Expression.Lambda(
+                Expression.OrElse(
+                    Expression.Equal(
+                        contextTenantId,
+                        Expression.Constant(null, typeof(Guid?))),
+                    Expression.Equal(
+                        Expression.Convert(tenantIdProp, typeof(Guid?)),
+                        contextTenantId)),
+                parameter);
+
+            entityType.SetQueryFilter(filter);
+        }
+    }
+}

@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Clarive.Api.IntegrationTests\Clarive.Api.IntegrationTests.csproj" />
+  <Project Path="Clarive.Api.UnitTests\Clarive.Api.UnitTests.csproj" />
+  <Project Path="Clarive.Api\Clarive.Api.csproj" />
+</Solution>

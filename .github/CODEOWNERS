@@ -1,0 +1,15 @@
+# Default owners for the entire repo
+* @pinkroosterai/core
+
+# Frontend
+/src/frontend/ @pinkroosterai/core
+/tests/frontend/ @pinkroosterai/core
+
+# Backend
+/src/backend/ @pinkroosterai/core
+/tests/backend/ @pinkroosterai/core
+
+# Infrastructure
+/deploy/ @pinkroosterai/core
+/.github/ @pinkroosterai/core
+Makefile @pinkroosterai/core

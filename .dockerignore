@@ -1,0 +1,17 @@
+.git
+.github
+.deploy-state
+.serena
+.playwright-mcp
+.editorconfig
+.frontend.pid
+.backend.pid
+.frontend.log
+.backend.log
+backups
+claudedocs
+docs
+scripts
+*.md
+LICENSE
+Makefile

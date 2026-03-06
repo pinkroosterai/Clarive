@@ -1,0 +1,152 @@
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+
+const TermsPage = () => {
+  useEffect(() => {
+    document.title = "Clarive — Terms of Service";
+    window.scrollTo(0, 0);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-3xl px-6 py-16">
+        <Button variant="ghost" size="sm" asChild className="mb-8">
+          <Link to="/login">
+            <ArrowLeft className="size-4 mr-1" />
+            Back
+          </Link>
+        </Button>
+
+        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">
+          Terms of Service
+        </h1>
+        <p className="text-sm text-foreground-muted mb-10">
+          Last updated: March 2, 2026
+        </p>
+
+        <div className="space-y-8 text-foreground-secondary text-[15px] leading-relaxed">
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">1. Acceptance of Terms</h2>
+            <p>
+              By accessing or using Clarive ("the Service"), you agree to be bound by these
+              Terms of Service. If you do not agree to these terms, you may not use the Service.
+              These terms apply to all users, including visitors, registered users, and API consumers.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">2. Description of Service</h2>
+            <p>
+              Clarive is a prompt management platform that allows users to create, organize,
+              version, and share prompts for large language models. The Service includes AI-assisted
+              prompt generation, evaluation, and enhancement features powered by third-party AI providers.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">3. User Accounts</h2>
+            <p>
+              You must provide accurate and complete information when creating an account. You are
+              responsible for maintaining the confidentiality of your credentials and for all
+              activities that occur under your account. You must notify us immediately of any
+              unauthorized use of your account.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">4. Acceptable Use</h2>
+            <p>You agree not to:</p>
+            <ul className="list-disc pl-6 mt-2 space-y-1">
+              <li>Use the Service for any unlawful purpose or in violation of any applicable laws</li>
+              <li>Attempt to gain unauthorized access to any part of the Service</li>
+              <li>Interfere with or disrupt the integrity or performance of the Service</li>
+              <li>Use the Service to generate content that is harmful, abusive, or violates third-party rights</li>
+              <li>Reverse-engineer, decompile, or attempt to extract source code from the Service</li>
+              <li>Circumvent rate limits, credit systems, or other usage restrictions</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">5. Intellectual Property</h2>
+            <p>
+              You retain ownership of all prompts and content you create using the Service.
+              Clarive does not claim any ownership rights over your content. By using the
+              Service, you grant us a limited license to store, process, and display your content
+              solely for the purpose of providing the Service to you.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">6. Credits and Billing</h2>
+            <p>
+              Certain AI-powered features consume credits. Free credits are provided on a
+              recurring basis. Additional credits may be purchased through the Service. All
+              purchases are final and non-refundable except as required by applicable law.
+              We reserve the right to modify credit pricing and allocation at any time with
+              reasonable notice.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">7. Third-Party Services</h2>
+            <p>
+              The Service integrates with third-party AI providers for prompt generation and
+              evaluation. Your use of these features is subject to the respective third-party
+              terms. We are not responsible for the availability, accuracy, or content generated
+              by third-party AI models.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">8. Limitation of Liability</h2>
+            <p>
+              The Service is provided "as is" and "as available" without warranties of any kind.
+              To the maximum extent permitted by law, Clarive shall not be liable for any
+              indirect, incidental, special, consequential, or punitive damages, or any loss of
+              data, profits, or goodwill arising from your use of the Service.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">9. Account Termination</h2>
+            <p>
+              You may delete your account at any time through the Settings page. Account deletion
+              is subject to a 30-day grace period during which you may cancel the deletion. After
+              the grace period, all data associated with your account will be permanently removed.
+              We reserve the right to suspend or terminate accounts that violate these terms.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">10. Changes to Terms</h2>
+            <p>
+              We may update these terms from time to time. We will notify users of material changes
+              via email or through the Service. Continued use of the Service after changes take
+              effect constitutes acceptance of the updated terms.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">11. Contact</h2>
+            <p>
+              If you have questions about these Terms of Service, please contact us at{" "}
+              <a href="mailto:legal@clarive.app" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+                legal@clarive.app
+              </a>.
+            </p>
+          </section>
+        </div>
+
+        <div className="mt-12 pt-8 border-t border-border text-sm text-foreground-muted">
+          <Link to="/privacy" className="text-primary hover:text-primary/80 underline-offset-4 hover:underline">
+            Privacy Policy
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TermsPage;

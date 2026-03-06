@@ -1,0 +1,79 @@
+# Clarive — Internal deployment compose file.
+#
+# Used by `make deploy` to build and run from local images.
+# For self-hosting with pre-built images, use the root docker-compose.yml.
+#
+# Also used for local dev database via:
+#   docker compose -p clarive-local -f deploy/docker-compose.yml up -d postgres
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-clarive}
+      POSTGRES_USER: ${POSTGRES_USER:-clarive}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clarive}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-clarive} -d ${POSTGRES_DB:-clarive}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  backend:
+    image: clarive-backend:${CLARIVE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD}"
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER:-Clarive}
+      Jwt__Audience: ${JWT_AUDIENCE:-Clarive}
+      Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
+      App__FrontendUrl: ${CORS_ORIGINS:-http://localhost:8080}
+      Ai__OpenAiApiKey: ${OPENAI_API_KEY:-}
+      Ai__DefaultModel: ${AI_DEFAULT_MODEL:-gpt-4o-mini}
+      Ai__PremiumModel: ${AI_PREMIUM_MODEL:-gpt-4o}
+      Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      Sentry__Dsn: ${SENTRY_BACKEND_DSN:-${SENTRY_DSN:-}}
+      Sentry__TracesSampleRate: ${SENTRY_TRACES_SAMPLE_RATE:-0.0}
+      Sentry__Release: ${SENTRY_RELEASE:-}
+      Email__Provider: ${EMAIL_PROVIDER:-console}
+      Email__ApiKey: ${EMAIL_API_KEY:-}
+      Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@clarive.app}
+      Email__FromName: ${EMAIL_FROM_NAME:-Clarive}
+      RateLimiting__StrictPermitLimit: ${RATE_LIMIT_STRICT:-5}
+      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:-}
+    volumes:
+      - avatars:/app/data/avatars
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: clarive-frontend:${CLARIVE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:8080"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-/api}
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+      VITE_SENTRY_DSN: ${SENTRY_DSN:-}
+      VITE_SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.0}
+      VITE_SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  avatars:

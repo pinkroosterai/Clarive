@@ -1,0 +1,3 @@
+namespace Clarive.Api.Models.Responses;
+
+public record WorkspaceDto(Guid Id, string Name, string Role, bool IsPersonal, int MemberCount, string? AvatarUrl);

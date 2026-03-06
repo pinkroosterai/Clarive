@@ -1,0 +1,170 @@
+/* ─── Glass Morphism Popover ─── */
+.driver-popover.tour-popover {
+  background: hsl(var(--popover));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid hsl(var(--primary) / 0.2);
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.05),
+    0 8px 32px hsl(var(--background) / 0.4),
+    0 0 48px hsl(var(--primary) / 0.06);
+  padding: 20px 24px;
+  max-width: 360px;
+  color: hsl(var(--foreground));
+  animation: tour-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tour-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ─── Welcome / Closing Modal (centered, larger) ─── */
+.driver-popover.tour-welcome-modal {
+  max-width: 420px;
+  text-align: center;
+  padding: 32px;
+}
+
+.driver-popover.tour-welcome-modal .driver-popover-title {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+/* ─── Title ─── */
+.driver-popover.tour-popover .driver-popover-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 4px;
+}
+
+/* ─── Description ─── */
+.driver-popover.tour-popover .driver-popover-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: hsl(var(--foreground-secondary));
+}
+
+/* ─── Buttons ─── */
+.driver-popover.tour-popover .driver-popover-next-btn,
+.driver-popover.tour-popover .driver-popover-close-btn[data-done="true"] {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  text-shadow: none;
+  transition: background 0.15s;
+}
+
+.driver-popover.tour-popover .driver-popover-next-btn:hover {
+  background: hsl(var(--primary-hover));
+}
+
+.driver-popover.tour-popover .driver-popover-prev-btn {
+  color: hsl(var(--foreground-muted));
+  background: transparent;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  text-shadow: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.driver-popover.tour-popover .driver-popover-prev-btn:hover {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--foreground-muted));
+}
+
+.driver-popover.tour-popover .driver-popover-close-btn {
+  color: hsl(var(--foreground-muted));
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  text-shadow: none;
+  transition: color 0.15s;
+}
+
+.driver-popover.tour-popover .driver-popover-close-btn:hover {
+  color: hsl(var(--foreground));
+}
+
+/* ─── Arrow ─── */
+.driver-popover.tour-popover .driver-popover-arrow {
+  border: 0;
+}
+
+.driver-popover.tour-popover .driver-popover-arrow-side-left {
+  border-left-color: hsl(var(--popover));
+}
+
+.driver-popover.tour-popover .driver-popover-arrow-side-right {
+  border-right-color: hsl(var(--popover));
+}
+
+.driver-popover.tour-popover .driver-popover-arrow-side-top {
+  border-top-color: hsl(var(--popover));
+}
+
+.driver-popover.tour-popover .driver-popover-arrow-side-bottom {
+  border-bottom-color: hsl(var(--popover));
+}
+
+/* ─── Footer Layout ─── */
+.driver-popover.tour-popover .driver-popover-footer {
+  flex-wrap: wrap !important;
+}
+
+/* ─── Progress Dots ─── */
+.tour-progress {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.tour-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(var(--background-overlay));
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tour-progress-dot.active {
+  background: hsl(var(--primary));
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.4);
+  transform: scale(1.25);
+}
+
+.tour-progress-dot.completed {
+  background: hsl(var(--primary));
+  opacity: 0.6;
+}
+
+/* ─── Welcome Logo ─── */
+.tour-welcome-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.tour-welcome-logo img,
+.tour-welcome-logo svg {
+  width: 64px;
+  height: 64px;
+  color: hsl(var(--primary));
+  filter: drop-shadow(0 0 12px hsl(var(--primary) / 0.3));
+}

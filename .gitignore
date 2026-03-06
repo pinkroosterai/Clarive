@@ -1,0 +1,48 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Makefile runtime files
+.frontend.pid
+.backend.pid
+.frontend.log
+.backend.log
+
+# Playwright MCP cache
+.playwright-mcp/
+
+# .NET build artifacts
+**/bin/
+**/obj/
+
+# Serilog log files
+**/logs/
+
+# Environment-specific settings (contain secrets)
+**/appsettings.Development.json
+
+# Deployment state (contain secrets)
+.deploy-state/
+
+# Database backups
+backups/
+
+# Serena
+.serena/
+
+# Root screenshots (Playwright artifacts)
+/*.png
+
+# Test coverage
+coverage/
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.local.*

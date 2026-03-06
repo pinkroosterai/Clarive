@@ -1,0 +1,71 @@
+# Clarive — Self-hosted deployment
+#
+# Quick start:
+#   1. cp .env.example .env
+#   2. Edit .env (set passwords and secrets)
+#   3. docker compose up -d
+#
+# Or run: ./scripts/setup.sh
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-clarive}
+      POSTGRES_USER: ${POSTGRES_USER:-clarive}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-clarive} -d ${POSTGRES_DB:-clarive}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  backend:
+    image: ghcr.io/pinkroosterai/clarive-backend:${CLARIVE_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD}"
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      Jwt__Issuer: ${JWT_ISSUER:-Clarive}
+      Jwt__Audience: ${JWT_AUDIENCE:-Clarive}
+      Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
+      App__FrontendUrl: ${CORS_ORIGINS:-http://localhost:8080}
+      Ai__OpenAiApiKey: ${OPENAI_API_KEY:-}
+      Ai__DefaultModel: ${AI_DEFAULT_MODEL:-gpt-4o-mini}
+      Ai__PremiumModel: ${AI_PREMIUM_MODEL:-gpt-4o}
+      Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      Email__Provider: ${EMAIL_PROVIDER:-console}
+      Email__ApiKey: ${EMAIL_API_KEY:-}
+      Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@localhost}
+      Email__FromName: ${EMAIL_FROM_NAME:-Clarive}
+      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?Set CONFIG_ENCRYPTION_KEY in .env}
+    volumes:
+      - avatars:/app/data/avatars
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: ghcr.io/pinkroosterai/clarive-frontend:${CLARIVE_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:8080"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  avatars:

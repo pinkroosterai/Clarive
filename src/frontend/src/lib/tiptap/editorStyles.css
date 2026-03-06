@@ -1,0 +1,47 @@
+/* Tiptap / ProseMirror content typography — Obsidian Forge */
+
+.ProseMirror {
+  @apply text-foreground text-sm leading-normal outline-none;
+  min-height: inherit;
+}
+
+/* Headings */
+.ProseMirror h1 { @apply text-2xl font-bold mt-4 mb-2 first:mt-0; }
+.ProseMirror h2 { @apply text-xl font-bold mt-3 mb-2 first:mt-0; }
+.ProseMirror h3 { @apply text-lg font-semibold mt-2 mb-1 first:mt-0; }
+
+/* Lists */
+.ProseMirror ul { @apply list-disc pl-5 my-1; }
+.ProseMirror ol { @apply list-decimal pl-5 my-1; }
+.ProseMirror li  { @apply my-0.5; }
+
+/* Inline code */
+.ProseMirror code {
+  @apply rounded bg-elevated px-1.5 py-0.5 font-mono text-xs text-primary;
+}
+
+/* Fenced code block */
+.ProseMirror pre {
+  @apply rounded-lg bg-elevated p-3 my-2;
+}
+.ProseMirror pre code {
+  @apply bg-transparent p-0 text-foreground;
+}
+
+/* Bold & italic */
+.ProseMirror strong { @apply font-bold; }
+.ProseMirror em     { @apply italic; }
+
+/* Paragraphs */
+.ProseMirror p { @apply my-1 first:mt-0 last:mb-0; }
+
+/* Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  @apply pointer-events-none float-left h-0 text-foreground-muted;
+  content: attr(data-placeholder);
+}
+
+/* Template tag decoration */
+.template-tag {
+  @apply rounded bg-primary/20 px-1 py-0.5 text-primary font-mono text-xs;
+}

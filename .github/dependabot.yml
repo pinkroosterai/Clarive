@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/src/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "frontend"]
+
+  - package-ecosystem: "nuget"
+    directory: "/src/backend/Clarive.Api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "backend"]
+
+  - package-ecosystem: "docker"
+    directory: "/src/backend"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies", "docker"]
+
+  - package-ecosystem: "docker"
+    directory: "/src/frontend"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies", "docker"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "ci"]

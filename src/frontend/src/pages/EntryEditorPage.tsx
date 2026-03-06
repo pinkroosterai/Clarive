@@ -1,0 +1,246 @@
+import { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle } from "lucide-react";
+
+import type { PromptEntry } from "@/types";
+import { entryService, folderService } from "@/services";
+import { useAuthStore } from "@/store/authStore";
+import { findFolderName } from "@/lib/folderUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useEditorState } from "@/hooks/useEditorState";
+import { useEditorMutations } from "@/hooks/useEditorMutations";
+import { useEditorKeyboardShortcuts } from "@/hooks/useEditorKeyboardShortcuts";
+
+import { PromptEditor } from "@/components/editor/PromptEditor";
+import { EditorActionPanel } from "@/components/editor/EditorActionPanel";
+import { VersionPanel } from "@/components/editor/VersionPanel";
+import { VersionDiffDialog } from "@/components/editor/VersionDiffDialog";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { FolderPickerDialog } from "@/components/library/FolderPickerDialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const EntryEditorPage = () => {
+  const { entryId, version } = useParams<{ entryId: string; version?: string }>();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const currentUser = useAuthStore((s) => s.currentUser);
+
+  const isReadOnly = !!version || currentUser?.role === "viewer";
+  const versionNum = version ? parseInt(version, 10) : undefined;
+
+  // ── Data fetching ──
+  const { data: entryData, isLoading, isError } = useQuery({
+    queryKey: ["entry", entryId],
+    queryFn: () => entryService.getEntry(entryId!),
+    enabled: !!entryId,
+  });
+
+  const { data: versions = [], isLoading: versionsLoading } = useQuery({
+    queryKey: ["versions", entryId],
+    queryFn: () => entryService.getVersionHistory(entryId!),
+    enabled: !!entryId,
+  });
+
+  const { data: folders = [] } = useQuery({
+    queryKey: ["folders"],
+    queryFn: folderService.getFoldersTree,
+  });
+
+  // ── Hooks ──
+  const editor = useEditorState(entryData);
+
+  const mutations = useEditorMutations({
+    entryId,
+    localEntryRef: editor.localEntryRef,
+    onSaveSuccess: () => {
+      editor.setIsDirty(false);
+      editor.clearHistory();
+    },
+    onPublishSuccess: () => {
+      editor.setIsDirty(false);
+      editor.clearHistory();
+    },
+    handleChange: editor.handleChange,
+  });
+
+  const hasDraft = versions.some((v) => v.versionState === "draft");
+
+  useEditorKeyboardShortcuts({
+    isReadOnly,
+    onSave: mutations.handleSave,
+    onPublish: () => { if (hasDraft) mutations.handlePublish(); },
+    onUndo: editor.handleUndo,
+    onRedo: editor.handleRedo,
+  });
+
+  // ── Dialog states ──
+  const [diffOpen, setDiffOpen] = useState(false);
+  const [folderPickerOpen, setFolderPickerOpen] = useState(false);
+
+  const folderName = editor.localEntry ? findFolderName(folders, editor.localEntry.folderId) : "Root";
+
+  // ── Loading / error ──
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+        <AlertTriangle className="size-10 text-destructive" />
+        <h2 className="text-lg font-semibold">Failed to load entry</h2>
+        <p className="text-sm text-foreground-muted">The entry may have been deleted or you may not have access.</p>
+        <Button asChild variant="outline">
+          <Link to="/library">Back to Library</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoading || !editor.localEntry) {
+    return <LoadingSpinner />;
+  }
+
+  const localEntry = editor.localEntry as PromptEntry;
+
+  // ── Shared elements ──
+  const readOnlyBanner = isReadOnly && version && (
+    <div className="flex items-center gap-3 rounded-md border border-warning-border bg-warning-bg px-4 py-2.5 text-sm">
+      <AlertTriangle className="size-4 text-warning-text shrink-0" />
+      <span className="text-warning-text">
+        Viewing v{version} (historical, read-only)
+      </span>
+    </div>
+  );
+
+  const unsavedIndicator = editor.isDirty && !isReadOnly && (
+    <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+      <span className="size-2 rounded-full bg-warning-text" />
+      Unsaved changes
+    </div>
+  );
+
+  const versionBadge = (
+    <Badge
+      variant={localEntry.versionState === "draft" ? "draft" : localEntry.versionState === "published" ? "published" : "historical"}
+      className="text-xs"
+    >
+      {localEntry.versionState === "draft" ? "Draft" : localEntry.versionState === "published" ? "Published" : "Historical"} v{localEntry.version}
+    </Badge>
+  );
+
+  const versionPanel = (
+    <VersionPanel
+      entryId={entryId!}
+      versions={versions}
+      currentVersion={versionNum}
+      isLoading={versionsLoading}
+      onCompare={() => setDiffOpen(true)}
+    />
+  );
+
+  const editorContent = (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        {versionBadge}
+        {unsavedIndicator}
+      </div>
+      {readOnlyBanner}
+      {editor.showEditNotice && (
+        <div className="rounded-md bg-primary/10 px-3 py-2 text-xs text-primary">
+          Editing will create a new draft (v{(entryData?.version ?? 0) + 1}).
+          Your published version remains active until you publish the draft.
+        </div>
+      )}
+      <PromptEditor
+        entry={localEntry}
+        onChange={editor.handleChange}
+        isReadOnly={isReadOnly}
+      />
+    </div>
+  );
+
+  const sharedActionProps = {
+    entry: localEntry,
+    isDirty: editor.isDirty,
+    isReadOnly,
+    onSave: mutations.handleSave,
+    onDiscard: editor.handleDiscard,
+    onUndo: editor.handleUndo,
+    onRedo: editor.handleRedo,
+    canUndo: editor.canUndo,
+    canRedo: editor.canRedo,
+    onPublish: mutations.handlePublish,
+    onEnhance: () => navigate(`/entry/${entryId}/enhance`),
+    isSaving: mutations.saveMutation.isPending,
+    isPublishing: mutations.publishMutation.isPending,
+    folderName,
+    onMoveFolder: () => setFolderPickerOpen(true),
+    onGenerateSystemMessage: mutations.handleGenerateSystemMessage,
+    onDecomposeToChain: mutations.handleDecomposeToChain,
+    isGeneratingSystemMessage: mutations.isGeneratingSystemMessage,
+    isDecomposing: mutations.isDecomposing,
+    showGenerateSystemMessage: !localEntry.systemMessage,
+    showDecomposeToChain: localEntry.prompts.length === 1,
+    versions,
+  } as const;
+
+  const dialogs = (
+    <>
+      <FolderPickerDialog
+        open={folderPickerOpen}
+        onOpenChange={setFolderPickerOpen}
+        onSelect={(folderId) => {
+          mutations.moveMutation.mutate({ folderId });
+          setFolderPickerOpen(false);
+        }}
+      />
+      <VersionDiffDialog
+        entryId={entryId!}
+        versions={versions}
+        currentVersion={versionNum}
+        open={diffOpen}
+        onOpenChange={setDiffOpen}
+      />
+    </>
+  );
+
+  // ── Mobile layout ──
+  if (isMobile) {
+    return (
+      <div className="p-4">
+        {readOnlyBanner && <div className="mb-4">{readOnlyBanner}</div>}
+        <Tabs defaultValue="editor">
+          <TabsList className="w-full">
+            <TabsTrigger value="editor" className="flex-1">Editor</TabsTrigger>
+            <TabsTrigger value="versions" className="flex-1">Versions</TabsTrigger>
+            <TabsTrigger value="actions" className="flex-1">Actions</TabsTrigger>
+          </TabsList>
+          <TabsContent value="editor">{editorContent}</TabsContent>
+          <TabsContent value="versions">{versionPanel}</TabsContent>
+          <TabsContent value="actions">
+            <EditorActionPanel {...sharedActionProps} />
+          </TabsContent>
+        </Tabs>
+        {dialogs}
+      </div>
+    );
+  }
+
+  // ── Desktop layout ──
+  return (
+    <div className="grid h-full grid-cols-[minmax(0,1fr)_300px] gap-0">
+      <ScrollArea className="p-6">
+        {editorContent}
+      </ScrollArea>
+
+      <ScrollArea className="bg-surface border-l border-border-subtle p-4" data-tour="editor-actions">
+        <EditorActionPanel {...sharedActionProps} versionPanel={versionPanel} />
+      </ScrollArea>
+
+      {dialogs}
+    </div>
+  );
+};
+
+export default EntryEditorPage;

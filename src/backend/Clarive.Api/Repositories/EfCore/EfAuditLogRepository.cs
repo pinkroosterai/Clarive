@@ -1,0 +1,32 @@
+using Clarive.Api.Data;
+using Clarive.Api.Models.Entities;
+using Clarive.Api.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace Clarive.Api.Repositories.EfCore;
+
+public class EfAuditLogRepository(ClariveDbContext db) : IAuditLogRepository
+{
+    public async Task AddAsync(AuditLogEntry entry, CancellationToken ct = default)
+    {
+        db.AuditLogEntries.Add(entry);
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<(List<AuditLogEntry> Entries, int Total)> GetPageAsync(Guid tenantId, int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = db.AuditLogEntries
+            .AsNoTracking()
+            .Where(a => a.TenantId == tenantId)
+            .OrderByDescending(a => a.Timestamp);
+
+        var total = await query.CountAsync(ct);
+        var entries = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (entries, total);
+    }
+
+}

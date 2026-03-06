@@ -1,0 +1,8 @@
+**/bin
+**/obj
+**/logs
+**/.git
+**/node_modules
+PromptForge.Api.IntegrationTests
+**/appsettings.Development.json
+*.md

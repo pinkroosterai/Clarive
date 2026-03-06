@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.*" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.3.*" />
+    <PackageReference Include="FluentAssertions" Version="7.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\backend\Clarive.Api\Clarive.Api.csproj" />
+  </ItemGroup>
+
+</Project>

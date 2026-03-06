@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clarive</title>
+    <meta name="description" content="Manage prompts, templates, and chains with AI assistance." />
+    <meta name="author" content="Clarive" />
+    <meta name="theme-color" content="#F7F6F2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0E0E1A" media="(prefers-color-scheme: dark)" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <meta property="og:title" content="Clarive" />
+    <meta property="og:description" content="Manage prompts, templates, and chains with AI assistance." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icon-512.png" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content="/icon-512.png" />
+  </head>
+
+  <body>
+    <script>
+      (function() {
+        var p = localStorage.getItem('cl_theme');
+        var d = 'dark';
+        if (p === 'light') d = 'light';
+        else if (p === 'dark') d = 'dark';
+        else if (p === 'system' || !p) {
+          d = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        if (d === 'dark') document.documentElement.classList.add('dark');
+      })();
+    </script>
+    <div id="root"></div>
+    <script src="/config.js"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

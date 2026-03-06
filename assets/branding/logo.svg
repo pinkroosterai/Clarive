@@ -1,0 +1,64 @@
+<svg width="512" height="512" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Clarive logomark">
+  <defs>
+
+    <!-- Stroke gradient -->
+    <linearGradient id="strokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5C6AC4"/>
+      <stop offset="100%" stop-color="#8FA4F3"/>
+    </linearGradient>
+
+    <!-- Focal glow -->
+    <filter id="focalGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Gradient stroke via paint-order trick using a rect mask -->
+    <linearGradient id="strokeGradH" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5C6AC4"/>
+      <stop offset="100%" stop-color="#8FA4F3"/>
+    </linearGradient>
+
+  </defs>
+
+  <!-- Diamond outline (subtle, matching accent) -->
+  <polygon
+    points="50,30.63 73,50 50,69.37 27,50"
+    fill="rgba(92,106,196,0.08)"
+    stroke="rgba(92,106,196,0.2)"
+    stroke-width="0.5"
+  />
+
+  <!-- LEFT CHEVRON -->
+  <polyline
+    points="65,18 27,50 65,82"
+    fill="none"
+    stroke="url(#strokeGrad)"
+    stroke-width="5.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- RIGHT CHEVRON -->
+  <polyline
+    points="35,18 73,50 35,82"
+    fill="none"
+    stroke="url(#strokeGrad)"
+    stroke-width="5.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Focal point glow halo -->
+  <circle cx="50" cy="50" r="6" fill="#7B8FE8" opacity="0.35" filter="url(#focalGlow)"/>
+
+  <!-- Focal point core -->
+  <circle cx="50" cy="50" r="4" fill="#5C6AC4"/>
+
+  <!-- Focal point inner highlight -->
+  <circle cx="48.5" cy="48.5" r="1.2" fill="rgba(255,255,255,0.5)"/>
+
+</svg>
