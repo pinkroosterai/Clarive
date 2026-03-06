@@ -25,9 +25,10 @@ All configuration is done via environment variables, loaded from `deploy/envs/<e
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key | (optional, disables AI if blank) |
-| `AI_DEFAULT_MODEL` | Default model for AI features | `gpt-5-mini` |
-| `AI_PREMIUM_MODEL` | Premium model | `gpt-5.2` |
+| `OPENAI_API_KEY` | API key for OpenAI-compatible provider | (optional, disables AI if blank) |
+| `AI_ENDPOINT_URL` | Custom endpoint URL for OpenAI-compatible providers (Ollama, LiteLLM, vLLM, etc.) | (optional, uses OpenAI default) |
+| `AI_DEFAULT_MODEL` | Default model for AI features | `gpt-4o-mini` |
+| `AI_PREMIUM_MODEL` | Premium model | `gpt-4o` |
 
 ## Application
 
@@ -42,10 +43,21 @@ All configuration is done via environment variables, loaded from `deploy/envs/<e
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `EMAIL_PROVIDER` | `resend` or `console` | `console` |
-| `EMAIL_API_KEY` | Resend API key | (optional) |
-| `EMAIL_FROM_ADDRESS` | Sender email address | `noreply@clarive.app` |
-| `EMAIL_FROM_NAME` | Sender display name | `Clarive` |
+| `EMAIL_PROVIDER` | Email delivery provider: `none`, `console`, `resend`, or `smtp` | `none` |
+| `EMAIL_API_KEY` | Resend API key (only when provider is `resend`) | (optional) |
+| `EMAIL_SMTP_HOST` | SMTP server hostname (only when provider is `smtp`) | (optional) |
+| `EMAIL_SMTP_PORT` | SMTP server port | `587` |
+| `EMAIL_SMTP_USERNAME` | SMTP authentication username | (optional) |
+| `EMAIL_SMTP_PASSWORD` | SMTP authentication password | (optional) |
+| `EMAIL_SMTP_USE_TLS` | Enable STARTTLS for SMTP connection | `true` |
+| `EMAIL_FROM_ADDRESS` | Sender email address (for `resend` and `smtp`) | `noreply@clarive.app` |
+| `EMAIL_FROM_NAME` | Sender display name (for `resend` and `smtp`) | `Clarive` |
+
+**Provider details:**
+- **`none`** (default) — No emails are sent. New users are automatically verified and can use all features immediately. Ideal for self-hosted setups that don't need email.
+- **`console`** — Logs email content to stdout instead of sending. Users still need to verify their email (useful for development/debugging the verification flow).
+- **`resend`** — Sends emails via the [Resend](https://resend.com) API. Requires `EMAIL_API_KEY`.
+- **`smtp`** — Sends emails via an SMTP server. Requires `EMAIL_SMTP_HOST` at minimum.
 
 ## Rate Limiting
 

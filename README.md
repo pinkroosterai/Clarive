@@ -181,13 +181,14 @@ All configuration is done via environment variables. Copy `.env.example` to `.en
 | `POSTGRES_PASSWORD` | Database password | Yes | — |
 | `JWT_SECRET` | JWT signing key (min 32 chars) | Yes | — |
 | `CONFIG_ENCRYPTION_KEY` | Encryption key for stored secrets | Yes | — |
-| `OPENAI_API_KEY` | OpenAI key (AI features disabled if blank) | No | — |
+| `OPENAI_API_KEY` | OpenAI-compatible API key (AI features disabled if blank) | No | — |
+| `AI_ENDPOINT_URL` | Custom endpoint for OpenAI-compatible providers | No | — |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | No | — |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | No | — |
 | `CORS_ORIGINS` | Allowed CORS origins | No | `http://localhost:8080` |
 | `FRONTEND_PORT` | Frontend port | No | `8080` |
 | `BACKEND_PORT` | Backend port | No | `5000` |
-| `EMAIL_PROVIDER` | `console` or `resend` | No | `console` |
+| `EMAIL_PROVIDER` | `none`, `console`, `resend`, or `smtp` | No | `none` |
 | `CLARIVE_VERSION` | Docker image tag | No | `latest` |
 
 See [docs/configuration.md](docs/configuration.md) for the full reference.

@@ -80,7 +80,7 @@ make db-reset       # Destroy and recreate data
 
 The backend reads configuration from `appsettings.json` and environment variables. For local development, the defaults work out of the box with the local PostgreSQL container.
 
-For AI features, set `OPENAI_API_KEY` in your environment or `appsettings.Development.json`.
+For AI features, set `OPENAI_API_KEY` in your environment or `appsettings.Development.json`. For OpenAI-compatible providers (Ollama, LiteLLM, etc.), also set `AI_ENDPOINT_URL`.
 
 ## Testing
 
