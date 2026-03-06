@@ -17,7 +17,7 @@ COPY Clarive.Api/Clarive.Api.csproj Clarive.Api/
 RUN dotnet restore Clarive.Api/Clarive.Api.csproj
 COPY . .
 RUN dotnet publish Clarive.Api/Clarive.Api.csproj \
-    -c Release -o /app/publish --no-restore
+    -c Release -o /app/publish
 
 # ── Stage: production ────────────────────────────────────────
 FROM base AS production

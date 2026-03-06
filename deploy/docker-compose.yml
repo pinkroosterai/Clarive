@@ -11,8 +11,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-clarive}
       POSTGRES_USER: ${POSTGRES_USER:-clarive}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clarive}
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,10 +23,14 @@ services:
       start_period: 15s
 
   backend:
+    container_name: clarive-backend
     image: clarive-backend:${CLARIVE_TAG:-latest}
     restart: unless-stopped
-    ports:
-      - "${BACKEND_PORT:-5000}:5000"
+    expose:
+      - "5000"
+    networks:
+      - default
+      - proxy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:5000
@@ -61,10 +65,14 @@ services:
         condition: service_healthy
 
   frontend:
+    container_name: clarive-frontend
     image: clarive-frontend:${CLARIVE_TAG:-latest}
     restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-8080}:8080"
+    expose:
+      - "8080"
+    networks:
+      - default
+      - proxy
     environment:
       VITE_API_URL: ${VITE_API_URL:-/api}
       VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
@@ -75,3 +83,7 @@ services:
 volumes:
   pgdata:
   avatars:
+
+networks:
+  proxy:
+    external: true
