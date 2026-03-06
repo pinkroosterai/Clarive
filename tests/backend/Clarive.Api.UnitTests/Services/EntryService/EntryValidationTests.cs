@@ -59,6 +59,14 @@ public class EntryValidationTests : EntryServiceTestBase
     }
 
     [Fact]
+    public void ValidateCreate_TitleExactly500Chars_ReturnsNull()
+    {
+        var request = new CreateEntryRequest(new string('a', 500), null, [new PromptInput("hi")], null);
+
+        Sut.ValidateCreateRequest(request).Should().BeNull();
+    }
+
+    [Fact]
     public void ValidateCreate_ValidRequest_ReturnsNull()
     {
         var request = ValidCreateRequest();

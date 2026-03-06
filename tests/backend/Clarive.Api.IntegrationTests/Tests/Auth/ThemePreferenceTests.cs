@@ -124,6 +124,8 @@ public class ThemePreferenceTests : IntegrationTestBase
 
         var meResponse = await Client.GetAsync("/api/auth/me");
         var meJson = await meResponse.ReadJsonAsync();
-        meJson.GetProperty("themePreference").ValueKind.Should().Be(JsonValueKind.Null);
+        // WhenWritingNull is configured, so null themePreference is omitted from JSON
+        meJson.TryGetProperty("themePreference", out _).Should().BeFalse(
+            "new user should have no themePreference (omitted when null)");
     }
 }

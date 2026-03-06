@@ -67,7 +67,9 @@ public class PromoteVersionTests : EntryServiceTestBase
         newDraft.Version.Should().Be(3); // maxVersion(2) + 1
         newDraft.VersionState.Should().Be(VersionState.Draft);
         newDraft.SystemMessage.Should().Be("Old system");
+        newDraft.Prompts.Should().BeEquivalentTo(historical.Prompts);
 
+        await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
         await EntryRepo.Received(1).CreateVersionAsync(
             Arg.Is<PromptEntryVersion>(v => v.Version == 3), Arg.Any<CancellationToken>());
     }

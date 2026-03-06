@@ -54,6 +54,7 @@ public class UpdateEntryTests : EntryServiceTestBase
         resultVersion.SystemMessage.Should().Be("New system msg");
         resultVersion.Version.Should().Be(1); // same version
 
+        await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
         await EntryRepo.Received(1).UpdateVersionAsync(draft, Arg.Any<CancellationToken>());
         await EntryRepo.DidNotReceive().CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>());
     }
@@ -78,6 +79,7 @@ public class UpdateEntryTests : EntryServiceTestBase
         resultVersion.VersionState.Should().Be(VersionState.Draft);
         resultVersion.SystemMessage.Should().Be("New system");
 
+        await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
         await EntryRepo.Received(1).CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>());
     }
 

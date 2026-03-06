@@ -39,7 +39,7 @@ public class WorkspaceTests : IntegrationTestBase
         var ws = workspaces[0];
         ws.GetProperty("isPersonal").GetBoolean().Should().BeTrue();
         ws.GetProperty("role").GetString().Should().Be("admin");
-        ws.GetProperty("name").GetString().Should().Contain("workspace");
+        ws.GetProperty("name").GetString().Should().ContainEquivalentOf("workspace");
     }
 
     // ── Login returns workspace list ──

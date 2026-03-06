@@ -87,6 +87,10 @@ public class AccountDeletionTests : IntegrationTestBase
         // Cancel deletion
         var cancelResponse = await Client.PostAsJsonAsync("/api/account/cancel-deletion", new { });
         cancelResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Verify account is still accessible after cancellation
+        var profileResponse = await Client.GetAsync("/api/auth/me");
+        profileResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]

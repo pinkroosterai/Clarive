@@ -35,15 +35,28 @@ public class MoveEntryTests : EntryServiceTestBase
     }
 
     [Fact]
-    public async Task Move_ToFolderOrRoot_UpdatesFolderId()
+    public async Task Move_ToRoot_ClearsFolderIdAndCallsUpdate()
     {
         var entry = MakeEntry(folderId: Guid.NewGuid());
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        // Move to root (null)
         var result = await Sut.MoveEntryAsync(TenantId, entry.Id, null, CancellationToken.None);
 
         result.FolderId.Should().BeNull();
+        await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Move_ToFolder_SetsFolderIdAndCallsUpdate()
+    {
+        var entry = MakeEntry();
+        var folder = MakeFolder();
+        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
+        FolderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
+
+        var result = await Sut.MoveEntryAsync(TenantId, entry.Id, folder.Id, CancellationToken.None);
+
+        result.FolderId.Should().Be(folder.Id);
         await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
     }
 }

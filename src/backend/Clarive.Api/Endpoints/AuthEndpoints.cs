@@ -457,7 +457,7 @@ public static class AuthEndpoints
         return Results.Ok(new
         {
             dto.Id, dto.Email, dto.Name, dto.Role, dto.EmailVerified, dto.OnboardingCompleted, dto.AvatarUrl,
-            dto.HasPassword, dto.IsSuperUser, Workspaces = workspaces
+            dto.HasPassword, dto.IsSuperUser, dto.ThemePreference, Workspaces = workspaces
         });
     }
 

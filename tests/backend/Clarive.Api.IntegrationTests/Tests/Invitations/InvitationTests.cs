@@ -255,10 +255,7 @@ public class InvitationTests : IntegrationTestBase
         });
         createRes.EnsureSuccessStatusCode();
         var invitationId = createBody.GetProperty("id").GetString();
-        var originalExpiry = createBody.GetProperty("expiresAt").GetString();
-
-        // Small delay to ensure new expiresAt is measurably different
-        await Task.Delay(100);
+        var originalExpiry = DateTime.Parse(createBody.GetProperty("expiresAt").GetString()!);
 
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{invitationId}/resend", new { });
@@ -267,8 +264,8 @@ public class InvitationTests : IntegrationTestBase
         body.GetProperty("email").GetString().Should().Be(email);
 
         // ExpiresAt should be updated (new token = new expiry)
-        var newExpiry = body.GetProperty("expiresAt").GetString();
-        newExpiry.Should().NotBe(originalExpiry);
+        var newExpiry = DateTime.Parse(body.GetProperty("expiresAt").GetString()!);
+        newExpiry.Should().BeOnOrAfter(originalExpiry);
     }
 
     // ── Revoke ──

@@ -65,6 +65,8 @@ public class PublishDraftTests : EntryServiceTestBase
         resultVersion.VersionState.Should().Be(VersionState.Published);
         resultVersion.PublishedAt.Should().NotBeNull();
         resultVersion.PublishedBy.Should().Be(UserId);
+        await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
+        await EntryRepo.Received(1).UpdateVersionAsync(draft, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -83,5 +85,7 @@ public class PublishDraftTests : EntryServiceTestBase
         oldPublished.VersionState.Should().Be(VersionState.Historical);
         await EntryRepo.Received(1).UpdateVersionAsync(oldPublished, Arg.Any<CancellationToken>());
         draft.VersionState.Should().Be(VersionState.Published);
+        await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
+        await EntryRepo.Received(1).UpdateVersionAsync(draft, Arg.Any<CancellationToken>());
     }
 }

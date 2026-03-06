@@ -25,7 +25,7 @@ public class FolderTests : IntegrationTestBase
 
         var json = await response.ReadJsonAsync();
         json.ValueKind.Should().Be(JsonValueKind.Array);
-        json.GetArrayLength().Should().BeGreaterOrEqualTo(4); // seed has 4 root-level folders
+        json.GetArrayLength().Should().BeGreaterOrEqualTo(3); // seed has 3 root-level folders
     }
 
     [Fact]

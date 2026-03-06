@@ -67,6 +67,7 @@ public class EntryLifecycleTests : EntryServiceTestBase
         var result = await Sut.RestoreEntryAsync(TenantId, entry.Id, CancellationToken.None);
 
         result.IsTrashed.Should().BeFalse();
+        await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
     }
 
     // ── DeleteEntryPermanentlyAsync ──────────────────────────────

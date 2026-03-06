@@ -27,12 +27,11 @@ public class UserManagementTests : IntegrationTestBase
         json.GetProperty("items").GetArrayLength().Should().BeGreaterOrEqualTo(3);
         json.GetProperty("total").GetInt32().Should().BeGreaterOrEqualTo(3);
 
-        // All seed users should have status "active"
+        // All seed users should have a status field
         var items = json.GetProperty("items");
         foreach (var item in items.EnumerateArray())
         {
-            if (item.TryGetProperty("status", out var status))
-                status.GetString().Should().BeOneOf("active", "pending");
+            item.GetProperty("status").GetString().Should().BeOneOf("active", "pending");
         }
     }
 

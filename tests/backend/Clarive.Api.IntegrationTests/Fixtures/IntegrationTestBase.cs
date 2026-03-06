@@ -1,3 +1,4 @@
+using Clarive.Api.IntegrationTests.Helpers;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Fixtures;
@@ -12,5 +13,6 @@ public abstract class IntegrationTestBase
     {
         Fixture = fixture;
         Client = fixture.CreateClient();
+        TestEmailService.Reset();
     }
 }
