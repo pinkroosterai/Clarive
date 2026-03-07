@@ -1,29 +1,19 @@
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Results;
 using Clarive.Api.Models.Agents;
+using Clarive.Api.Services.Agents.AiExtensions;
 
 namespace Clarive.Api.Services.Interfaces;
 
 public interface IAiGenerationService
 {
     /// <summary>
-    /// Runs the pre-generation clarification step: builds config, calls orchestrator, persists session.
-    /// Returns a result with session ID, questions, and enhancements.
+    /// Generates a prompt set: builds config, calls orchestrator (which creates the agent session),
+    /// persists session. Throws on orchestrator failure.
     /// </summary>
-    Task<AiGenerationResult> PreGenClarifyAsync(
-        Guid tenantId, string description,
-        bool generateSystemMessage, bool generateTemplate, bool generateChain,
-        List<Guid>? toolIds, bool enableWebSearch = false, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null);
-
-    /// <summary>
-    /// Generates a prompt set: resolves session, builds config, calls orchestrator, persists session.
-    /// Throws on orchestrator failure.
-    /// Returns null if the referenced session is not found.
-    /// </summary>
-    Task<AiGenerationResult?> GenerateAsync(
+    Task<AiGenerationResult> GenerateAsync(
         Guid tenantId, GeneratePromptRequest request, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null);
+        Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
     /// Refines an existing generation: resolves answers/enhancements, calls orchestrator, updates session.
@@ -33,7 +23,7 @@ public interface IAiGenerationService
     /// </summary>
     Task<(AiGenerationResult? Result, string? ErrorCode, string? ErrorMessage)> RefineAsync(
         Guid tenantId, RefinePromptRequest request, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null);
+        Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
     /// Validates that an entry exists and has a version suitable for enhancement.
@@ -47,7 +37,7 @@ public interface IAiGenerationService
     /// </summary>
     Task<AiGenerationResult?> EnhanceAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null);
+        Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
     /// Validates that an entry exists, has a version, and no system message.

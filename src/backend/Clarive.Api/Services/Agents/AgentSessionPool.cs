@@ -42,11 +42,11 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
                     $"Agent session pool is at capacity ({_maxPoolSize}). Please try again later.");
         }
 
-        var agent = _factory.CreateGenerationAgent(config, tools);
+        var (agent, toolProgress) = _factory.CreateGenerationAgent(config, tools);
         var session = await agent.CreateSessionAsync(ct);
         var id = Guid.NewGuid().ToString("N");
 
-        var entry = new AgentSessionEntry(agent, session, DateTime.UtcNow);
+        var entry = new AgentSessionEntry(agent, session, DateTime.UtcNow, toolProgress);
         _sessions[id] = entry;
 
         _logger.LogDebug("Created agent session {SessionId}, pool size: {Count}", id, _sessions.Count);

@@ -1,5 +1,6 @@
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Requests;
+using Clarive.Api.Services.Agents.AiExtensions;
 
 namespace Clarive.Api.Services.Agents;
 
@@ -9,22 +10,13 @@ namespace Clarive.Api.Services.Agents;
 public interface IPromptOrchestrator
 {
     /// <summary>
-    /// Pre-generation clarification: creates an agent session and runs the pre-gen agent.
-    /// Returns questions and enhancements to help the user refine their request.
-    /// </summary>
-    Task<PreGenClarifyResult> PreGenClarifyAsync(
-        GenerationConfig config, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null);
-
-    /// <summary>
-    /// Generation: runs the generation agent (multi-turn), then evaluates + clarifies in parallel.
+    /// Generation: creates an agent session, runs the generation agent (multi-turn),
+    /// then evaluates + clarifies in parallel.
     /// </summary>
     Task<GenerateOrchestratorResult> GenerateAsync(
-        string agentSessionId, GenerationConfig config,
-        List<AnsweredQuestion>? preGenAnswers,
-        List<string>? selectedEnhancements = null,
+        GenerationConfig config,
         CancellationToken ct = default,
-        Func<string, Task>? onProgress = null);
+        Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
     /// Revision: runs revision on the SAME agent session (multi-turn), then evaluates + clarifies in parallel.
@@ -35,7 +27,7 @@ public interface IPromptOrchestrator
         List<AnsweredQuestion> answers, List<string> selectedEnhancements,
         List<double>? scoreHistory,
         CancellationToken ct = default,
-        Func<string, Task>? onProgress = null);
+        Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
     /// Enhance: bootstraps an existing entry into the agent workflow with evaluation + clarification.
@@ -43,7 +35,7 @@ public interface IPromptOrchestrator
     Task<EnhanceOrchestratorResult> EnhanceAsync(
         string? systemMessage, List<PromptInput> prompts,
         GenerationConfig config, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null);
+        Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
     /// Single-turn: generates a system message for existing prompts.
@@ -61,12 +53,8 @@ public interface IPromptOrchestrator
     bool IsConfigured { get; }
 }
 
-public record PreGenClarifyResult(
-    string AgentSessionId,
-    List<ClarificationQuestion> Questions,
-    List<string> Enhancements);
-
 public record GenerateOrchestratorResult(
+    string AgentSessionId,
     PromptSet Prompts,
     PromptEvaluation? Evaluation,
     ClarificationResult? Clarification);

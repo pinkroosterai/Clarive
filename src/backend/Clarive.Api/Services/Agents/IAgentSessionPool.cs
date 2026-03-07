@@ -1,4 +1,5 @@
 using Clarive.Api.Models.Agents;
+using Clarive.Api.Services.Agents.AiExtensions;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
@@ -32,7 +33,7 @@ public interface IAgentSessionPool
     void InvalidateAll();
 }
 
-public record AgentSessionEntry(AIAgent Agent, AgentSession Session, DateTime CreatedAt)
+public record AgentSessionEntry(AIAgent Agent, AgentSession Session, DateTime CreatedAt, ToolProgressReporter? ToolProgress = null)
 {
     /// <summary>
     /// Serializes concurrent access to the agent session (e.g., two /refine requests).

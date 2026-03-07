@@ -132,70 +132,6 @@ public class AiGenerationTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
 
-    // ── Pre-Gen Clarify ──
-
-    [Fact]
-    public async Task PreGenClarify_ReturnsQuestionsAndEnhancements()
-    {
-        var token = await AuthHelper.GetEditorTokenAsync(Client);
-        Client.WithBearerToken(token);
-
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/ai/pre-gen-clarify", new
-        {
-            description = "Build a chatbot for customer support"
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body.GetProperty("sessionId").GetString().Should().NotBeNullOrEmpty();
-        body.GetProperty("questions").GetArrayLength().Should().BeGreaterThan(0);
-        body.GetProperty("questions")[0].GetProperty("text").GetString()
-            .Should().NotBeNullOrEmpty();
-        body.GetProperty("questions")[0].GetProperty("suggestions").GetArrayLength()
-            .Should().BeGreaterThan(0);
-        body.GetProperty("enhancements").GetArrayLength().Should().BeGreaterThan(0);
-    }
-
-    [Fact]
-    public async Task PreGenClarify_EmptyDescription_Returns422()
-    {
-        var token = await AuthHelper.GetEditorTokenAsync(Client);
-        Client.WithBearerToken(token);
-
-        var response = await Client.PostAsJsonAsync("/api/ai/pre-gen-clarify", new
-        {
-            description = ""
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
-    }
-
-    [Fact]
-    public async Task PreGenClarify_ThenGenerate_WithSession()
-    {
-        var token = await AuthHelper.GetEditorTokenAsync(Client);
-        Client.WithBearerToken(token);
-
-        // Step 1: Pre-gen clarify
-        var (_, clarifyBody) = await Client.PostJsonAsync<JsonElement>("/api/ai/pre-gen-clarify", new
-        {
-            description = "Create an email template"
-        });
-        var sessionId = clarifyBody.GetProperty("sessionId").GetString();
-
-        // Step 2: Generate with session + answers
-        var (genResponse, genBody) = await Client.PostJsonAsync<JsonElement>("/api/ai/generate", new
-        {
-            description = "Create an email template",
-            sessionId,
-            preGenAnswers = new[] { new { questionIndex = 0, answer = "Technical users" } }
-        });
-
-        genResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        genBody.GetProperty("sessionId").GetString().Should().Be(sessionId);
-        genBody.GetProperty("draft").GetProperty("title").GetString()
-            .Should().NotBeNullOrEmpty();
-    }
-
     // ── Web Search ──
 
     [Fact]
@@ -213,23 +149,6 @@ public class AiGenerationTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.GetProperty("sessionId").GetString().Should().NotBeNullOrEmpty();
         body.GetProperty("draft").GetProperty("title").GetString().Should().NotBeNullOrEmpty();
-    }
-
-    [Fact]
-    public async Task PreGenClarify_WithWebSearchEnabled_ReturnsOk()
-    {
-        var token = await AuthHelper.GetEditorTokenAsync(Client);
-        Client.WithBearerToken(token);
-
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/ai/pre-gen-clarify", new
-        {
-            description = "Research novel AI safety techniques",
-            enableWebSearch = true
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body.GetProperty("sessionId").GetString().Should().NotBeNullOrEmpty();
-        body.GetProperty("questions").GetArrayLength().Should().BeGreaterThan(0);
     }
 
     [Fact]

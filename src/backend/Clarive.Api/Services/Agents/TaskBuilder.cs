@@ -9,42 +9,7 @@ namespace Clarive.Api.Services.Agents;
 /// </summary>
 public static class TaskBuilder
 {
-    public static string BuildPreGenerationClarificationTask(GenerationConfig config)
-    {
-        var configContext = new List<string>();
-        if (config.GenerateSystemMessage)
-            configContext.Add("System message generation is enabled.");
-        if (config.GenerateAsPromptTemplate)
-            configContext.Add("Template mode is enabled (placeholders will be used).");
-        if (config.GenerateAsPromptChain)
-            configContext.Add("Chain mode is enabled (multi-step prompt sequence).");
-        if (config.SelectedTools.Count > 0)
-        {
-            var toolNames = string.Join(", ", config.SelectedTools.Select(t => t.Name));
-            configContext.Add($"Tools available: {toolNames}.");
-        }
-
-        var configSection = configContext.Count > 0
-            ? string.Join("\n", configContext.Select(c => $"- {c}"))
-            : "- No special configuration.";
-
-        return $"""
-            Analyze the following prompt generation request and identify ambiguities
-            that should be resolved before generating the prompt.
-
-            User's request: {config.Description}
-
-            Configuration already decided by the user:
-            {configSection}
-
-            Identify ambiguities in the user's intent and propose enhancements.
-            """;
-    }
-
-    public static string BuildGenerationTask(
-        GenerationConfig config,
-        List<AnsweredQuestion>? preGenAnswers = null,
-        List<string>? selectedEnhancements = null)
+    public static string BuildGenerationTask(GenerationConfig config)
     {
         var requirements = new List<string>();
 
@@ -79,38 +44,11 @@ public static class TaskBuilder
             ? string.Join("\n", requirements.Select(r => $"- {r}"))
             : "- No special requirements";
 
-        var clarificationSection = "";
-        if (preGenAnswers is { Count: > 0 })
-        {
-            var answerLines = string.Join("\n",
-                preGenAnswers.Select(a => $"- Q: {a.Question}\n  A: {a.Answer}"));
-            clarificationSection = $"""
-
-                The user provided the following clarifications about their intent:
-                {answerLines}
-                Incorporate these decisions into the generated prompt.
-
-                """;
-        }
-
-        var enhancementSection = "";
-        if (selectedEnhancements is { Count: > 0 })
-        {
-            var enhancementLines = string.Join("\n",
-                selectedEnhancements.Select(e => $"- {e}"));
-            enhancementSection = $"""
-
-                The user selected the following enhancements to incorporate:
-                {enhancementLines}
-
-                """;
-        }
-
         return $"""
             Generate a high-quality prompt for the following use case.
 
             Purpose: {config.Description}
-            {clarificationSection}{enhancementSection}
+
             Requirements:
             {requirementsList}
 

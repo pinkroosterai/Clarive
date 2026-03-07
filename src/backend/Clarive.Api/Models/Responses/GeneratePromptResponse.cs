@@ -10,3 +10,8 @@ public record GeneratePromptResponse(
     EvaluationDto? Evaluation = null,
     List<IterationScoreDto>? ScoreHistory = null
 );
+
+public record ClarificationQuestionDto(
+    string Text,
+    List<string> Suggestions
+);

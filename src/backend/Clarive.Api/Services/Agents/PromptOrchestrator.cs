@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Requests;
+using Clarive.Api.Services.Agents.AiExtensions;
 using Clarive.Api.Services.Interfaces;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.OpenAI;
@@ -33,42 +34,55 @@ public class PromptOrchestrator : IPromptOrchestrator
         _logger = logger;
     }
 
-    public async Task<PreGenClarifyResult> PreGenClarifyAsync(
-        GenerationConfig config, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null)
+    public async Task<GenerateOrchestratorResult> GenerateAsync(
+        GenerationConfig config,
+        CancellationToken ct = default,
+        Func<ProgressEvent, Task>? onProgress = null)
     {
-        if (onProgress is not null) await onProgress("preparing");
+        if (onProgress is not null) await onProgress(ProgressEvent.Generating());
 
         // Fetch web search tools if enabled
         IList<AITool>? webSearchTools = config.EnableWebSearch
             ? await _tavilyClient.GetToolsAsync(ct)
             : null;
 
-        // Create the agent session upfront (for later use in GenerateAsync)
+        // Create the agent session
         var agentSessionId = await _pool.CreateSessionAsync(config, ct, webSearchTools);
 
         try
         {
-            if (onProgress is not null) await onProgress("clarifying");
+            var entry = _pool.Get(agentSessionId)!;
 
-            // Run pre-gen clarification (stateless agent, single-turn)
-            ClarificationResult? clarification = null;
+            PromptSet prompts;
+            await entry.Lock.WaitAsync(ct);
             try
             {
-                var agent = _factory.CreatePreGenClarificationAgent();
-                var task = TaskBuilder.BuildPreGenerationClarificationTask(config);
-                var response = await agent.RunAsync<ClarificationResult>(task, cancellationToken: ct);
-                clarification = response.Result;
+                // Wire tool progress to SSE callback for the duration of this call
+                if (entry.ToolProgress is not null)
+                    entry.ToolProgress.OnProgress = onProgress;
+
+                // Run generation (multi-turn session)
+                var genTask = TaskBuilder.BuildGenerationTask(config);
+                var genResponse = await entry.Agent.RunAsync<PromptSet>(genTask, session: entry.Session, cancellationToken: ct);
+                prompts = genResponse.Result;
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            finally
             {
-                _logger.LogWarning(ex, "Pre-gen clarification failed, returning empty questions");
+                // Clear callback to prevent stale references
+                if (entry.ToolProgress is not null)
+                    entry.ToolProgress.OnProgress = null;
+
+                entry.Lock.Release();
             }
 
-            return new PreGenClarifyResult(
-                agentSessionId,
-                clarification?.Questions ?? [],
-                clarification?.Enhancements ?? []);
+            ValidatePromptSet(prompts);
+
+            if (onProgress is not null) await onProgress(ProgressEvent.Evaluating());
+
+            // Run evaluation + clarification in parallel
+            (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, prompts, ct, onProgress);
+
+            return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification);
         }
         catch
         {
@@ -77,51 +91,15 @@ public class PromptOrchestrator : IPromptOrchestrator
         }
     }
 
-    public async Task<GenerateOrchestratorResult> GenerateAsync(
-        string agentSessionId, GenerationConfig config,
-        List<AnsweredQuestion>? preGenAnswers,
-        List<string>? selectedEnhancements = null,
-        CancellationToken ct = default,
-        Func<string, Task>? onProgress = null)
-    {
-        if (onProgress is not null) await onProgress("generating");
-
-        var entry = _pool.Get(agentSessionId)
-            ?? throw new InvalidOperationException("Agent session expired or not found.");
-
-        PromptSet prompts;
-        await entry.Lock.WaitAsync(ct);
-        try
-        {
-            // Run generation (multi-turn session)
-            var genTask = TaskBuilder.BuildGenerationTask(config, preGenAnswers, selectedEnhancements);
-            var genResponse = await entry.Agent.RunAsync<PromptSet>(genTask, session: entry.Session, cancellationToken: ct);
-            prompts = genResponse.Result;
-        }
-        finally
-        {
-            entry.Lock.Release();
-        }
-
-        ValidatePromptSet(prompts);
-
-        if (onProgress is not null) await onProgress("evaluating");
-
-        // Run evaluation + clarification in parallel
-        (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, prompts, ct);
-
-        return new GenerateOrchestratorResult(prompts, evaluation, clarification);
-    }
-
     public async Task<GenerateOrchestratorResult> RefineAsync(
         string agentSessionId, GenerationConfig config,
         PromptEvaluation currentEvaluation,
         List<AnsweredQuestion> answers, List<string> selectedEnhancements,
         List<double>? scoreHistory,
         CancellationToken ct = default,
-        Func<string, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null)
     {
-        if (onProgress is not null) await onProgress("refining");
+        if (onProgress is not null) await onProgress(ProgressEvent.Refining());
 
         var entry = _pool.Get(agentSessionId)
             ?? throw new InvalidOperationException("Agent session expired or not found.");
@@ -130,6 +108,10 @@ public class PromptOrchestrator : IPromptOrchestrator
         await entry.Lock.WaitAsync(ct);
         try
         {
+            // Wire tool progress to SSE callback for the duration of this call
+            if (entry.ToolProgress is not null)
+                entry.ToolProgress.OnProgress = onProgress;
+
             // Run revision (multi-turn session — preserves context from previous turns)
             var revisionTask = TaskBuilder.BuildRevisionTask(
                 config, currentEvaluation, answers, selectedEnhancements, scoreHistory);
@@ -138,25 +120,29 @@ public class PromptOrchestrator : IPromptOrchestrator
         }
         finally
         {
+            // Clear callback to prevent stale references
+            if (entry.ToolProgress is not null)
+                entry.ToolProgress.OnProgress = null;
+
             entry.Lock.Release();
         }
 
         ValidatePromptSet(prompts);
 
-        if (onProgress is not null) await onProgress("evaluating");
+        if (onProgress is not null) await onProgress(ProgressEvent.Evaluating());
 
         // Run evaluation + clarification in parallel
-        (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, prompts, ct);
+        (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, prompts, ct, onProgress);
 
-        return new GenerateOrchestratorResult(prompts, evaluation, clarification);
+        return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification);
     }
 
     public async Task<EnhanceOrchestratorResult> EnhanceAsync(
         string? systemMessage, List<PromptInput> prompts,
         GenerationConfig config, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null)
     {
-        if (onProgress is not null) await onProgress("bootstrapping");
+        if (onProgress is not null) await onProgress(ProgressEvent.Bootstrapping());
 
         // Create a dedicated agent session for the enhance workflow
         var agentSessionId = await _pool.CreateSessionAsync(config, ct);
@@ -193,10 +179,10 @@ public class PromptOrchestrator : IPromptOrchestrator
                 entry.Lock.Release();
             }
 
-            if (onProgress is not null) await onProgress("evaluating");
+            if (onProgress is not null) await onProgress(ProgressEvent.Evaluating());
 
             // Run evaluation + clarification in parallel on existing prompts
-            (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, bootstrapPromptSet, ct);
+            (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, bootstrapPromptSet, ct, onProgress);
 
             return new EnhanceOrchestratorResult(agentSessionId, bootstrapPromptSet, evaluation, clarification);
         }
@@ -239,10 +225,11 @@ public class PromptOrchestrator : IPromptOrchestrator
     // ── Private helpers ──
 
     private async Task<(PromptEvaluation?, ClarificationResult?)> RunParallelFeedback(
-        GenerationConfig config, PromptSet prompts, CancellationToken ct)
+        GenerationConfig config, PromptSet prompts, CancellationToken ct,
+        Func<ProgressEvent, Task>? onProgress = null)
     {
         var evalTask = RunEvaluation(config, prompts, ct);
-        var clarifyTask = RunClarification(config, prompts, ct);
+        var clarifyTask = RunClarification(config, prompts, ct, onProgress);
 
         await Task.WhenAll(evalTask, clarifyTask);
 
@@ -267,10 +254,13 @@ public class PromptOrchestrator : IPromptOrchestrator
     }
 
     private async Task<ClarificationResult?> RunClarification(
-        GenerationConfig config, PromptSet prompts, CancellationToken ct)
+        GenerationConfig config, PromptSet prompts, CancellationToken ct,
+        Func<ProgressEvent, Task>? onProgress = null)
     {
         try
         {
+            if (onProgress is not null) await onProgress(ProgressEvent.Clarifying());
+
             var agent = _factory.CreateClarificationAgent();
             var task = TaskBuilder.BuildClarificationTask(config, prompts);
             var response = await agent.RunAsync<ClarificationResult>(task, cancellationToken: ct);

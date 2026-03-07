@@ -15,6 +15,7 @@ public sealed class TavilyClientService : ITavilyClientService
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
     private volatile string _currentApiKey;
+    private HttpClient? _httpClient;
     private McpClient? _client;
     private List<AITool>? _cachedTools;
 
@@ -47,8 +48,8 @@ public sealed class TavilyClientService : ITavilyClientService
             {
                 Endpoint = new Uri(endpoint),
             };
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(TimeoutSeconds) };
-            var transport = new HttpClientTransport(transportOptions, httpClient);
+            _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(TimeoutSeconds) };
+            var transport = new HttpClientTransport(transportOptions, _httpClient);
             _client = await McpClient.CreateAsync(transport, cancellationToken: ct);
 
             var allTools = await _client.ListToolsAsync(cancellationToken: ct);
@@ -68,6 +69,8 @@ public sealed class TavilyClientService : ITavilyClientService
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(ex, "Failed to connect to Tavily MCP server");
+            _httpClient?.Dispose();
+            _httpClient = null;
             return null;
         }
         finally
@@ -87,6 +90,8 @@ public sealed class TavilyClientService : ITavilyClientService
                 await _client.DisposeAsync();
                 _client = null;
             }
+            _httpClient?.Dispose();
+            _httpClient = null;
 
             _logger.LogInformation("Tavily MCP client reset due to configuration change");
         }
@@ -101,6 +106,7 @@ public sealed class TavilyClientService : ITavilyClientService
         _changeSubscription?.Dispose();
         if (_client is not null)
             await _client.DisposeAsync();
+        _httpClient?.Dispose();
         _initLock.Dispose();
     }
 }

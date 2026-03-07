@@ -6,9 +6,6 @@ public record GeneratePromptRequest(
     bool GenerateTemplate = false,
     bool GenerateChain = false,
     List<Guid>? ToolIds = null,
-    Guid? SessionId = null,
-    List<AnsweredQuestionInput>? PreGenAnswers = null,
-    List<int>? SelectedEnhancements = null,
     bool EnableWebSearch = false
 );
 

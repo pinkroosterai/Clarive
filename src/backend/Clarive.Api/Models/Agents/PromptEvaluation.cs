@@ -4,7 +4,7 @@ namespace Clarive.Api.Models.Agents;
 
 /// <summary>
 /// Evaluation result from the evaluation agent.
-/// Contains scores for 6 dimensions: Clarity, Specificity, Structure, Completeness, Autonomy, Faithfulness.
+/// Contains scores for 4 dimensions: Clarity, Effectiveness, Completeness, Faithfulness.
 /// </summary>
 public class PromptEvaluation
 {

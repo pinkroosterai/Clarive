@@ -5,6 +5,7 @@ using Clarive.Api.Models.Responses;
 using Clarive.Api.Models.Results;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Agents;
+using Clarive.Api.Services.Agents.AiExtensions;
 using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Services;
@@ -15,89 +16,17 @@ public class AiGenerationService(
     IEntryRepository entryRepo,
     IToolRepository toolRepo) : IAiGenerationService
 {
-    public async Task<AiGenerationResult> PreGenClarifyAsync(
-        Guid tenantId, string description,
-        bool generateSystemMessage, bool generateTemplate, bool generateChain,
-        List<Guid>? toolIds, bool enableWebSearch, CancellationToken ct,
-        Func<string, Task>? onProgress = null)
+    public async Task<AiGenerationResult> GenerateAsync(
+        Guid tenantId, GeneratePromptRequest request, CancellationToken ct,
+        Func<ProgressEvent, Task>? onProgress = null)
     {
         var config = await BuildGenerationConfig(
-            description, generateSystemMessage, generateTemplate, generateChain,
-            toolIds, enableWebSearch, tenantId, ct);
-
-        var result = await orchestrator.PreGenClarifyAsync(config, ct, onProgress);
-
-        var sessionId = Guid.NewGuid();
-        await sessionRepo.CreateAsync(new AiSession
-        {
-            Id = sessionId,
-            TenantId = tenantId,
-            Draft = new CreateEntryRequest("", null, [], null),
-            Questions = result.Questions,
-            Enhancements = result.Enhancements,
-            Config = config,
-            AgentSessionId = result.AgentSessionId,
-            CreatedAt = DateTime.UtcNow
-        }, ct);
-
-        return ToResult(sessionId, new CreateEntryRequest("", null, [], null),
-            result.Questions, result.Enhancements, null, []);
-    }
-
-    public async Task<AiGenerationResult?> GenerateAsync(
-        Guid tenantId, GeneratePromptRequest request, CancellationToken ct,
-        Func<string, Task>? onProgress = null)
-    {
-        // Check for existing session from pre-gen-clarify
-        AiSession? existingSession = null;
-        if (request.SessionId.HasValue)
-        {
-            existingSession = await sessionRepo.GetByIdAsync(tenantId, request.SessionId.Value, ct);
-            if (existingSession is null)
-                return null;
-        }
-
-        // Build config (reuse from session if available)
-        var config = existingSession?.Config ?? await BuildGenerationConfig(
             request.Description, request.GenerateSystemMessage,
             request.GenerateTemplate, request.GenerateChain,
             request.ToolIds, request.EnableWebSearch, tenantId, ct);
 
-        // Resolve pre-gen answers
-        List<AnsweredQuestion>? preGenAnswers = null;
-        if (request.PreGenAnswers is { Count: > 0 } && existingSession is not null)
-        {
-            preGenAnswers = request.PreGenAnswers
-                .Where(a => a.QuestionIndex >= 0 && a.QuestionIndex < existingSession.Questions.Count)
-                .Select(a => new AnsweredQuestion(
-                    existingSession.Questions[a.QuestionIndex].Text, a.Answer))
-                .ToList();
-        }
-
-        // Resolve selected enhancements
-        List<string>? selectedEnhancements = null;
-        if (request.SelectedEnhancements is { Count: > 0 } && existingSession is not null)
-        {
-            selectedEnhancements = request.SelectedEnhancements
-                .Where(i => i >= 0 && i < existingSession.Enhancements.Count)
-                .Select(i => existingSession.Enhancements[i])
-                .ToList();
-        }
-
-        // Get or create agent session
-        string agentSessionId;
-        if (existingSession?.AgentSessionId is not null)
-        {
-            agentSessionId = existingSession.AgentSessionId;
-        }
-        else
-        {
-            var preGenResult = await orchestrator.PreGenClarifyAsync(config, ct);
-            agentSessionId = preGenResult.AgentSessionId;
-        }
-
-        // This can throw — caller should handle failure
-        var result = await orchestrator.GenerateAsync(agentSessionId, config, preGenAnswers, selectedEnhancements, ct, onProgress);
+        // Orchestrator creates the agent session and generates the draft
+        var result = await orchestrator.GenerateAsync(config, ct, onProgress);
 
         // Build score history
         var scoreHistory = BuildInitialScoreHistory(result.Evaluation);
@@ -106,31 +35,26 @@ public class AiGenerationService(
         var enhancements = result.Clarification?.Enhancements ?? [];
 
         // Persist session
-        var sessionId = existingSession?.Id ?? Guid.NewGuid();
-        var session = existingSession ?? new AiSession
+        var sessionId = Guid.NewGuid();
+        await sessionRepo.CreateAsync(new AiSession
         {
             Id = sessionId,
             TenantId = tenantId,
+            Draft = draft,
+            Questions = questions,
+            Enhancements = enhancements,
+            ScoreHistory = scoreHistory,
+            Config = config,
+            AgentSessionId = result.AgentSessionId,
             CreatedAt = DateTime.UtcNow
-        };
-        session.Draft = draft;
-        session.Questions = questions;
-        session.Enhancements = enhancements;
-        session.ScoreHistory = scoreHistory;
-        session.Config = config;
-        session.AgentSessionId = agentSessionId;
-
-        if (existingSession is not null)
-            await sessionRepo.UpdateAsync(session, ct);
-        else
-            await sessionRepo.CreateAsync(session, ct);
+        }, ct);
 
         return ToResult(sessionId, draft, questions, enhancements, result.Evaluation, scoreHistory);
     }
 
     public async Task<(AiGenerationResult? Result, string? ErrorCode, string? ErrorMessage)> RefineAsync(
         Guid tenantId, RefinePromptRequest request, CancellationToken ct,
-        Func<string, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null)
     {
         var session = await sessionRepo.GetByIdAsync(tenantId, request.SessionId, ct);
         if (session is null)
@@ -210,7 +134,7 @@ public class AiGenerationService(
 
     public async Task<AiGenerationResult?> EnhanceAsync(
         Guid tenantId, Guid entryId, CancellationToken ct,
-        Func<string, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null) return null;

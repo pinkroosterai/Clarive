@@ -9,7 +9,7 @@ namespace Clarive.Api.Services.Agents;
 public static class EvaluationNormalizer
 {
     public static readonly string[] ExpectedDimensions =
-        ["Clarity", "Specificity", "Structure", "Completeness", "Autonomy", "Faithfulness", "Efficiency"];
+        ["Clarity", "Effectiveness", "Completeness", "Faithfulness"];
 
     public static double ComputeAverageScore(PromptEvaluation evaluation)
     {

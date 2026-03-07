@@ -1,5 +1,6 @@
 using System.ClientModel;
 using Clarive.Api.Models.Agents;
+using Clarive.Api.Services.Agents.AiExtensions;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.OpenAI;
 using Microsoft.Extensions.AI;
@@ -49,17 +50,44 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         });
     }
 
-    public AIAgent CreateGenerationAgent(GenerationConfig config, IList<AITool>? tools = null)
+    public (AIAgent Agent, ToolProgressReporter? ToolProgress) CreateGenerationAgent(GenerationConfig config, IList<AITool>? tools = null)
     {
         _lock.EnterReadLock();
         try
         {
             EnsureConfigured();
-            return _premiumClient!.AsAIAgent(
+
+            if (tools is { Count: > 0 })
+            {
+                var reporter = new ToolProgressReporter();
+                var handler = new TavilyToolProgressHandler(reporter);
+
+                var pipeline = new ChatClientBuilder(_premiumClient!)
+                    .Use(innerClient =>
+                    {
+                        var eefic = new EventEmittingFunctionInvokingChatClient(
+                            innerClient, _loggerFactory);
+                        eefic.ToolCallStarting += handler.OnToolCallStartingAsync;
+                        eefic.ToolCallCompleted += handler.OnToolCallCompletedAsync;
+                        return eefic;
+                    })
+                    .Build();
+
+                var agent = pipeline.AsAIAgent(
+                    instructions: AgentInstructions.BuildGeneration(config),
+                    name: "PromptGenerator",
+                    tools: tools,
+                    loggerFactory: _loggerFactory);
+
+                return (agent, reporter);
+            }
+
+            var standardAgent = _premiumClient!.AsAIAgent(
                 instructions: AgentInstructions.BuildGeneration(config),
                 name: "PromptGenerator",
-                tools: tools,
                 loggerFactory: _loggerFactory);
+
+            return (standardAgent, null);
         }
         finally { _lock.ExitReadLock(); }
     }
@@ -87,20 +115,6 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             return _defaultClient!.AsAIAgent(
                 instructions: AgentInstructions.Clarification,
                 name: "PromptClarifier",
-                loggerFactory: _loggerFactory);
-        }
-        finally { _lock.ExitReadLock(); }
-    }
-
-    public AIAgent CreatePreGenClarificationAgent()
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            EnsureConfigured();
-            return _defaultClient!.AsAIAgent(
-                instructions: AgentInstructions.PreGenerationClarification,
-                name: "PreGenClarifier",
                 loggerFactory: _loggerFactory);
         }
         finally { _lock.ExitReadLock(); }

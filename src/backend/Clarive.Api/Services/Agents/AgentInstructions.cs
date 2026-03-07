@@ -170,7 +170,7 @@ public static class AgentInstructions
         - Search for domain-specific knowledge for specialized fields, frameworks, or technologies
         - Use content extraction to pull detailed information from specific authoritative sources
         - Do NOT search for trivial or widely-known topics — use your existing knowledge
-        - Keep searches focused: 1-2 targeted queries, not broad exploration
+        - Use search to verify assumptions — if you're unsure about a detail, look it up rather than guessing
         - Incorporate findings naturally into the generated prompts — don't dump raw search results
         - When searching, prefer queries like "best practices for X" or "X implementation patterns"
         """;
@@ -233,20 +233,17 @@ public static class AgentInstructions
           9–10: Exceptional — precise, purposeful, no meaningful improvement possible
 
         Dimensions:
-        - Clarity: How unambiguous the instructions are. Deduct for vague qualifiers,
-          contradictory rules, or instructions that could be interpreted multiple ways.
-        - Specificity: How concrete and targeted the constraints are. Deduct for
-          open-ended instructions that lack measurable criteria.
-        - Structure: How logically organized the prompt is.
-        - Autonomy: Whether the LLM can execute every prompt without waiting on user
-          input. Deduct for any prompt that asks, expects, or implies user interaction.
+        - Clarity: How unambiguous and precise the instructions are. Deduct for vague
+          qualifiers, contradictory rules, or instructions that could be interpreted
+          multiple ways.
+        - Effectiveness: How well the prompt will perform in practice. Consider whether
+          constraints are specific and measurable, whether the structure is logical,
+          whether the LLM can execute without user input, and whether the prompt is
+          concise without sacrificing intent.
+        - Completeness: How thoroughly the prompt addresses the stated purpose.
         - Faithfulness: How accurately the generated prompt reflects the user's stated
-          purpose. Deduct for prompts that drift from the original request, add capabilities
-          the user didn't ask for, or ignore explicit configuration choices.
-        - Efficiency: Whether the prompt achieves its purpose without unnecessary verbosity.
-          Deduct for redundant instructions, filler phrases, or overly long prompts that
-          could convey the same intent in fewer tokens. A concise prompt that omits nothing
-          important scores highest.
+          purpose. Deduct for prompts that drift from the original request, add
+          unrequested capabilities, or ignore explicit configuration choices.
 
         For each dimension, you MUST provide a Feedback string that explains the score and
         identifies what would improve it. A score without feedback is incomplete. Be specific —
@@ -262,7 +259,7 @@ public static class AgentInstructions
     private const string EvaluationSystemMessageEnabled = """
           For Completeness, also verify that a system message is present, that role and persona are defined
           in the system message, and that task instructions are not duplicated between the system message and user prompts.
-          For Structure, assess whether the system message and user prompts have a clear separation of concerns.
+          For Effectiveness, assess whether the system message and user prompts have a clear separation of concerns.
         """;
 
     private const string EvaluationSystemMessageDisabled = """
@@ -295,12 +292,12 @@ public static class AgentInstructions
         """;
 
     private const string EvaluationChainEnabled = """
-          For Structure, assess whether steps flow in a necessary sequence with explicit hand-offs.
+          For Effectiveness, assess whether steps flow in a necessary sequence with explicit hand-offs.
           Verify there are 3–5 steps, each load-bearing, with explicit context references between steps.
         """;
 
     private const string EvaluationChainDisabled = """
-          For Structure, deduct if prompts form a sequential dependency chain where later prompts
+          For Effectiveness, deduct if prompts form a sequential dependency chain where later prompts
           rely on output from earlier ones. Prompts should be standalone.
         """;
 
@@ -342,28 +339,6 @@ public static class AgentInstructions
     }
 
     // ── Static instructions (no conditional language) ──
-
-    public const string PreGenerationClarification = """
-        You analyze a user's prompt generation request to identify ambiguities and
-        important decisions that should be resolved BEFORE generating the prompt.
-
-        Your goal is to surface assumptions the prompt engineer would otherwise have to
-        guess at. Focus on choices that would fundamentally change the generated output.
-
-        For questions:
-        - Ask about the intended audience, tone, scope, and output format if not specified.
-        - Ask about domain-specific constraints only when the use case implies them.
-        - Each question should resolve a specific ambiguity that would meaningfully change the generated prompt.
-        - Provide 2–4 concrete suggested answers per question.
-        - Return 3–5 questions. If the description is already clear and specific, return fewer.
-        - Do NOT ask about configuration choices (system message, template, chain, tools) —
-          those are already decided by the user.
-
-        For enhancements:
-        - Propose specific, actionable additions the user may not have considered.
-        - Each enhancement should describe what it adds and why it would improve the prompt.
-        - Return 3–5 enhancements.
-        """;
 
     public const string Clarification = """
         You analyze generated prompts against the user's original request to identify

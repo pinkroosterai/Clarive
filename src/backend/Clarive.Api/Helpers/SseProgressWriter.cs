@@ -28,9 +28,9 @@ public sealed class SseProgressWriter
         await _response.Body.FlushAsync(ct);
     }
 
-    public async Task WriteProgressAsync(string stage, CancellationToken ct = default)
+    public async Task WriteProgressAsync(Clarive.Api.Services.Agents.AiExtensions.ProgressEvent progress, CancellationToken ct = default)
     {
-        var json = JsonSerializer.Serialize(new { stage }, JsonOptions);
+        var json = JsonSerializer.Serialize(progress, JsonOptions);
         await WriteEventAsync("progress", json, ct);
     }
 

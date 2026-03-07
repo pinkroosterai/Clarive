@@ -1,6 +1,7 @@
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Services.Agents;
+using Clarive.Api.Services.Agents.AiExtensions;
 
 namespace Clarive.Api.IntegrationTests.Helpers;
 
@@ -18,44 +19,10 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
 
     public bool IsConfigured => true;
 
-    public Task<PreGenClarifyResult> PreGenClarifyAsync(
-        GenerationConfig config, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null)
-    {
-        return Task.FromResult(new PreGenClarifyResult(
-            AgentSessionId: "mock-session-" + Guid.NewGuid().ToString("N")[..8],
-            Questions:
-            [
-                new ClarificationQuestion
-                {
-                    Text = "What is the intended audience?",
-                    Suggestions = ["Technical users", "Non-technical users", "Mixed audience"]
-                },
-                new ClarificationQuestion
-                {
-                    Text = "What output format do you prefer?",
-                    Suggestions = ["Markdown", "Plain text", "JSON"]
-                },
-                new ClarificationQuestion
-                {
-                    Text = "What level of detail is needed?",
-                    Suggestions = ["High-level overview", "Detailed step-by-step", "Balanced"]
-                }
-            ],
-            Enhancements:
-            [
-                "Add structured formatting with headers and bullet points",
-                "Include concrete examples for key concepts",
-                "Add error handling instructions"
-            ]));
-    }
-
     public Task<GenerateOrchestratorResult> GenerateAsync(
-        string agentSessionId, GenerationConfig config,
-        List<AnsweredQuestion>? preGenAnswers,
-        List<string>? selectedEnhancements = null,
+        GenerationConfig config,
         CancellationToken ct = default,
-        Func<string, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null)
     {
         if (ShouldThrowOnGenerate)
         {
@@ -89,10 +56,8 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
                 ["Clarity"] = new() { Score = 7, Feedback = "Clear instructions with minor ambiguities." },
-                ["Specificity"] = new() { Score = 6, Feedback = "Could benefit from more concrete constraints." },
-                ["Structure"] = new() { Score = 8, Feedback = "Well-organized with logical flow." },
+                ["Effectiveness"] = new() { Score = 7, Feedback = "Well-structured and practical with minor gaps." },
                 ["Completeness"] = new() { Score = 7, Feedback = "Covers main requirements." },
-                ["Autonomy"] = new() { Score = 9, Feedback = "LLM can execute without user input." },
                 ["Faithfulness"] = new() { Score = 8, Feedback = "Closely matches the stated purpose." }
             }
         };
@@ -125,7 +90,9 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             ]
         };
 
-        return Task.FromResult(new GenerateOrchestratorResult(prompts, evaluation, clarification));
+        return Task.FromResult(new GenerateOrchestratorResult(
+            "mock-session-" + Guid.NewGuid().ToString("N")[..8],
+            prompts, evaluation, clarification));
     }
 
     public Task<GenerateOrchestratorResult> RefineAsync(
@@ -134,7 +101,7 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
         List<AnsweredQuestion> answers, List<string> selectedEnhancements,
         List<double>? scoreHistory,
         CancellationToken ct = default,
-        Func<string, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null)
     {
         var prompts = new PromptSet
         {
@@ -150,10 +117,8 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
                 ["Clarity"] = new() { Score = 8, Feedback = "Improved clarity after refinement." },
-                ["Specificity"] = new() { Score = 7, Feedback = "Better constraints added." },
-                ["Structure"] = new() { Score = 8, Feedback = "Well-organized." },
+                ["Effectiveness"] = new() { Score = 8, Feedback = "Well-structured and concise." },
                 ["Completeness"] = new() { Score = 8, Feedback = "Addresses feedback." },
-                ["Autonomy"] = new() { Score = 9, Feedback = "Fully autonomous." },
                 ["Faithfulness"] = new() { Score = 9, Feedback = "Closely matches intent." }
             }
         };
@@ -181,13 +146,14 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             ]
         };
 
-        return Task.FromResult(new GenerateOrchestratorResult(prompts, evaluation, clarification));
+        return Task.FromResult(new GenerateOrchestratorResult(
+            agentSessionId, prompts, evaluation, clarification));
     }
 
     public Task<EnhanceOrchestratorResult> EnhanceAsync(
         string? systemMessage, List<PromptInput> prompts,
         GenerationConfig config, CancellationToken ct = default,
-        Func<string, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null)
     {
         var enhancedPrompts = new PromptSet
         {
@@ -205,10 +171,8 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
                 ["Clarity"] = new() { Score = 6, Feedback = "Moderate clarity." },
-                ["Specificity"] = new() { Score = 5, Feedback = "Needs more constraints." },
-                ["Structure"] = new() { Score = 7, Feedback = "Reasonable structure." },
+                ["Effectiveness"] = new() { Score = 6, Feedback = "Reasonable but needs tighter constraints." },
                 ["Completeness"] = new() { Score = 4, Feedback = "Missing edge cases." },
-                ["Autonomy"] = new() { Score = 8, Feedback = "Mostly autonomous." },
                 ["Faithfulness"] = new() { Score = 7, Feedback = "Aligns with original intent." }
             }
         };
