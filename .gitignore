@@ -50,3 +50,4 @@ coverage/
 .env
 .env.local
 .env.local.*
+docs/PROJECT_INDEX.md
