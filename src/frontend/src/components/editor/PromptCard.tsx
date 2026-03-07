@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { ArrowUp, ArrowDown, Copy, HelpCircle, Trash2 } from 'lucide-react';
 import { memo, useState } from 'react';
 import { toast } from 'sonner';
@@ -91,86 +92,102 @@ export const PromptCard = memo(function PromptCard({
     index === 1 ? 'border-l-blue-500' : index === 2 ? 'border-l-cyan-500' : 'border-l-emerald-500';
 
   return (
-    <Card className={`border-l-2 ${borderColor}`}>
-      <Collapsible open={helpOpen} onOpenChange={setHelpOpen}>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-          <span className="text-sm font-medium text-foreground">Prompt #{index}</span>
-          <div className="flex items-center gap-2">
-            {!isReadOnly && (
-              <CollapsibleTrigger asChild>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12, scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+      whileHover={{ boxShadow: '0 4px 20px -4px hsl(var(--primary) / 0.10)' }}
+      className="rounded-xl"
+    >
+      <Card className={`border-l-2 ${borderColor} transition-shadow`}>
+        <Collapsible open={helpOpen} onOpenChange={setHelpOpen}>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+            <span className="text-sm font-medium text-foreground">Prompt #{index}</span>
+            <div className="flex items-center gap-2">
+              {!isReadOnly && (
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs text-foreground-muted"
+                    aria-label="Toggle template syntax help"
+                  >
+                    <HelpCircle className="size-3.5" />
+                    Syntax help
+                  </Button>
+                </CollapsibleTrigger>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-7" onClick={handleCopy}>
+                    <Copy className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Copy to clipboard</TooltipContent>
+              </Tooltip>
+            </div>
+          </CardHeader>
+
+          <CollapsibleContent>
+            <CardContent className="pt-0 pb-3">
+              <TemplateSyntaxHelp />
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <CardContent className="space-y-2">
+          <MarkdownEditor
+            key={prompt.id}
+            content={prompt.content}
+            onContentChange={(md) => onUpdate({ ...prompt, content: md })}
+            editable={!isReadOnly}
+            placeholder="Enter your prompt…"
+            templateHighlight={true}
+            minHeightClass="min-h-[120px]"
+          />
+        </CardContent>
+
+        {!isOnly && !isReadOnly && (
+          <CardFooter className="justify-between pt-0">
+            <div className="flex gap-1">
+              <motion.div whileTap={{ scale: 0.92 }}>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs text-foreground-muted"
-                  aria-label="Toggle template syntax help"
+                  size="icon"
+                  className="size-7"
+                  disabled={index === 1}
+                  onClick={onMoveUp}
                 >
-                  <HelpCircle className="size-3.5" />
-                  Syntax help
+                  <ArrowUp className="size-3.5" />
                 </Button>
-              </CollapsibleTrigger>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-7" onClick={handleCopy}>
-                  <Copy className="size-3.5" />
+              </motion.div>
+              <motion.div whileTap={{ scale: 0.92 }}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  disabled={isLast}
+                  onClick={onMoveDown}
+                >
+                  <ArrowDown className="size-3.5" />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>Copy to clipboard</TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-
-        <CollapsibleContent>
-          <CardContent className="pt-0 pb-3">
-            <TemplateSyntaxHelp />
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-
-      <CardContent className="space-y-2">
-        <MarkdownEditor
-          key={prompt.id}
-          content={prompt.content}
-          onContentChange={(md) => onUpdate({ ...prompt, content: md })}
-          editable={!isReadOnly}
-          placeholder="Enter your prompt…"
-          templateHighlight={true}
-          minHeightClass="min-h-[120px]"
-        />
-      </CardContent>
-
-      {!isOnly && !isReadOnly && (
-        <CardFooter className="justify-between pt-0">
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              disabled={index === 1}
-              onClick={onMoveUp}
-            >
-              <ArrowUp className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              disabled={isLast}
-              onClick={onMoveDown}
-            >
-              <ArrowDown className="size-3.5" />
-            </Button>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive gap-1.5"
-            onClick={onDelete}
-          >
-            <Trash2 className="size-3.5" /> Remove
-          </Button>
-        </CardFooter>
-      )}
-    </Card>
+              </motion.div>
+            </div>
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive gap-1.5"
+                onClick={onDelete}
+              >
+                <Trash2 className="size-3.5" /> Remove
+              </Button>
+            </motion.div>
+          </CardFooter>
+        )}
+      </Card>
+    </motion.div>
   );
 });

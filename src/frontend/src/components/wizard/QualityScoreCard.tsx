@@ -1,6 +1,9 @@
+import { motion } from 'framer-motion';
 import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 import { ScoreHistoryChart } from './ScoreHistoryChart';
+import { ScoreRing } from './ScoreRing';
+import { scoreColor } from './scoreUtils';
 
 import type { Evaluation, IterationScore } from '@/types';
 
@@ -9,21 +12,7 @@ interface QualityScoreCardProps {
   scoreHistory?: IterationScore[];
 }
 
-const DIMENSIONS = [
-  'Clarity',
-  'Specificity',
-  'Structure',
-  'Completeness',
-  'Autonomy',
-  'Faithfulness',
-  'Efficiency',
-] as const;
-
-function scoreColor(score: number) {
-  if (score >= 8) return { bar: 'bg-success-text', text: 'text-success-text', label: 'Good' };
-  if (score >= 5) return { bar: 'bg-warning-text', text: 'text-warning-text', label: 'Fair' };
-  return { bar: 'bg-error-text', text: 'text-error-text', label: 'Poor' };
-}
+const DIMENSIONS = ['Clarity', 'Effectiveness', 'Completeness', 'Faithfulness'] as const;
 
 function DeltaIndicator({ current, previous }: { current: number; previous: number }) {
   const delta = current - previous;
@@ -60,19 +49,20 @@ export function QualityScoreCard({ evaluation, scoreHistory }: QualityScoreCardP
     Object.keys(evaluation.dimensions).length;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-          <BarChart3 className="size-4 text-primary" />
-          Quality Analysis
-        </h3>
-        <span className={`text-sm font-bold ${scoreColor(averageScore).text}`}>
-          {averageScore.toFixed(1)}/10 · {scoreColor(averageScore).label}
-        </span>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <BarChart3 className="size-4 text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">Quality Analysis</h3>
       </div>
 
+      {/* Central score ring */}
+      <div className="flex justify-center py-2">
+        <ScoreRing score={averageScore} />
+      </div>
+
+      {/* Dimension rows */}
       <div className="space-y-2">
-        {DIMENSIONS.map((dim) => {
+        {DIMENSIONS.map((dim, index) => {
           const entry = evaluation.dimensions[dim];
           if (!entry) return null;
           const { bar, text } = scoreColor(entry.score);
@@ -83,9 +73,11 @@ export function QualityScoreCard({ evaluation, scoreHistory }: QualityScoreCardP
               <div className="flex items-center gap-3">
                 <span className="text-xs text-foreground-secondary w-24 shrink-0">{dim}</span>
                 <div className="flex-1 h-2 rounded-full bg-elevated">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-300 ${bar}`}
-                    style={{ width: `${(entry.score / 10) * 100}%` }}
+                  <motion.div
+                    className={`h-2 rounded-full ${bar}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(entry.score / 10) * 100}%` }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 * index }}
                   />
                 </div>
                 <span className={`text-xs font-medium w-5 text-right ${text}`}>{entry.score}</span>

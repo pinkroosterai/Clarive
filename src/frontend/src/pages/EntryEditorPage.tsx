@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -249,7 +250,15 @@ const EntryEditorPage = () => {
   // ── Desktop layout ──
   return (
     <div className="grid h-full grid-cols-[minmax(0,1fr)_300px] gap-0">
-      <ScrollArea className="p-6">{editorContent}</ScrollArea>
+      <ScrollArea className="p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {editorContent}
+        </motion.div>
+      </ScrollArea>
 
       <ScrollArea
         className="bg-surface border-l border-border-subtle p-4"

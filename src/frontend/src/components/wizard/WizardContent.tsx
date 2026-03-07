@@ -1,6 +1,6 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { X, AlertTriangle } from 'lucide-react';
 
-import { ClarifyStep } from './ClarifyStep';
 import { DescribeStep } from './DescribeStep';
 import { ReviewStep } from './ReviewStep';
 import { SaveStep } from './SaveStep';
@@ -20,6 +20,30 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import type { PromptEntry } from '@/types';
+
+const stepVariants = {
+  enter: (dir: 'forward' | 'backward') => ({
+    x: dir === 'forward' ? 40 : -40,
+    opacity: 0,
+  }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: 'forward' | 'backward') => ({
+    x: dir === 'forward' ? -40 : 40,
+    opacity: 0,
+  }),
+};
+
+const stepTransition = {
+  type: 'spring' as const,
+  stiffness: 300,
+  damping: 30,
+  mass: 0.8,
+};
+
+const fadeTransition = {
+  duration: 0.25,
+  ease: [0.16, 1, 0.3, 1] as const,
+};
 
 interface WizardContentProps {
   mode: 'new' | 'enhance';
@@ -44,14 +68,11 @@ export function WizardContent({ mode, existingEntry, onClose }: WizardContentPro
     isGenerating,
     generatingOperation,
     currentStage,
+    progressLog,
     bootstrapState,
-    preGenQuestions,
-    preGenEnhancements,
     confirmDiscardOpen,
     setConfirmDiscardOpen,
     handleDescribe,
-    handleClarifyAndGenerate,
-    handleSkipClarify,
     handleRefine,
     requestClose,
     confirmDiscard,
@@ -76,92 +97,137 @@ export function WizardContent({ mode, existingEntry, onClose }: WizardContentPro
 
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto">
-          {step === 1 && !isGenerating && (
-            <div
-              key="step-1"
-              className={`max-w-2xl mx-auto space-y-6 p-6 ${direction === 'forward' ? 'animate-step-forward' : 'animate-step-backward'}`}
-            >
-              <DescribeStep onGenerate={handleDescribe} isGenerating={isGenerating} />
-            </div>
-          )}
-
-          {step === 1 && isGenerating && generatingOperation && (
-            <WizardLoadingOverlay operation={generatingOperation} currentStage={currentStage} />
-          )}
-
-          {step === 2 && !isGenerating && (
-            <div
-              key="step-2"
-              className={`max-w-2xl mx-auto space-y-6 p-6 ${direction === 'forward' ? 'animate-step-forward' : 'animate-step-backward'}`}
-            >
-              <ClarifyStep
-                questions={preGenQuestions}
-                enhancements={preGenEnhancements}
-                onContinue={handleClarifyAndGenerate}
-                onSkip={handleSkipClarify}
-                isLoading={isGenerating}
-              />
-            </div>
-          )}
-
-          {step === 2 && isGenerating && generatingOperation && (
-            <WizardLoadingOverlay operation={generatingOperation} currentStage={currentStage} />
-          )}
-
-          {step === 3 && bootstrapState === 'loading' && (
-            <WizardLoadingOverlay operation="enhance" currentStage={currentStage} />
-          )}
-
-          {step === 3 && bootstrapState === 'error' && (
-            <div
-              key="step-3-error"
-              className="flex flex-col items-center justify-center h-full gap-4"
-            >
-              <AlertTriangle className="size-8 text-destructive" />
-              <p className="text-foreground-secondary">Failed to initialize enhancement.</p>
-              <Button onClick={runBootstrap}>Try Again</Button>
-            </div>
-          )}
-
-          {step === 3 && bootstrapState === 'ready' && draft && !isGenerating && (
-            <div
-              key="step-3"
-              className={`h-full p-6 ${direction === 'forward' ? 'animate-step-forward' : 'animate-step-backward'}`}
-            >
-              <ReviewStep
-                draft={draft}
-                questions={questions}
-                enhancements={enhancements}
-                evaluation={evaluation}
-                scoreHistory={scoreHistory}
-                onRefine={handleRefine}
-                onAccept={() => setStep(4)}
-                isRefining={isGenerating}
-              />
-            </div>
-          )}
-
-          {step === 3 &&
-            bootstrapState === 'ready' &&
-            draft &&
-            isGenerating &&
-            generatingOperation && (
-              <WizardLoadingOverlay operation={generatingOperation} currentStage={currentStage} />
+          <AnimatePresence mode="wait" custom={direction}>
+            {step === 1 && !isGenerating && (
+              <motion.div
+                key="step-1"
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={stepTransition}
+                className="max-w-2xl mx-auto space-y-6 p-6"
+              >
+                <DescribeStep onGenerate={handleDescribe} isGenerating={isGenerating} />
+              </motion.div>
             )}
 
-          {step === 4 && draft && (
-            <div
-              key="step-4"
-              className={`max-w-2xl mx-auto space-y-6 p-6 ${direction === 'forward' ? 'animate-step-forward' : 'animate-step-backward'}`}
-            >
-              <SaveStep
-                draft={draft}
-                mode={mode}
-                onSave={(folderId) => saveMutation.mutate(folderId)}
-                isSaving={saveMutation.isPending}
-              />
-            </div>
-          )}
+            {step === 1 && isGenerating && generatingOperation && (
+              <motion.div
+                key="step-1-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={fadeTransition}
+                className="h-full"
+              >
+                <WizardLoadingOverlay
+                  operation={generatingOperation}
+                  currentStage={currentStage}
+                  progressLog={progressLog}
+                />
+              </motion.div>
+            )}
+
+            {step === 2 && bootstrapState === 'loading' && (
+              <motion.div
+                key="step-2-bootstrap"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={fadeTransition}
+                className="h-full"
+              >
+                <WizardLoadingOverlay
+                  operation="enhance"
+                  currentStage={currentStage}
+                  progressLog={progressLog}
+                />
+              </motion.div>
+            )}
+
+            {step === 2 && bootstrapState === 'error' && (
+              <motion.div
+                key="step-2-error"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={fadeTransition}
+                className="flex flex-col items-center justify-center h-full gap-4"
+              >
+                <AlertTriangle className="size-8 text-destructive" />
+                <p className="text-foreground-secondary">Failed to initialize enhancement.</p>
+                <Button onClick={runBootstrap}>Try Again</Button>
+              </motion.div>
+            )}
+
+            {step === 2 && bootstrapState === 'ready' && draft && !isGenerating && (
+              <motion.div
+                key="step-2"
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={stepTransition}
+                className="h-full p-6"
+              >
+                <ReviewStep
+                  draft={draft}
+                  questions={questions}
+                  enhancements={enhancements}
+                  evaluation={evaluation}
+                  scoreHistory={scoreHistory}
+                  onRefine={handleRefine}
+                  onAccept={() => setStep(3)}
+                  isRefining={isGenerating}
+                />
+              </motion.div>
+            )}
+
+            {step === 2 &&
+              bootstrapState === 'ready' &&
+              draft &&
+              isGenerating &&
+              generatingOperation && (
+                <motion.div
+                  key="step-2-loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={fadeTransition}
+                  className="h-full"
+                >
+                  <WizardLoadingOverlay
+                    operation={generatingOperation}
+                    currentStage={currentStage}
+                    progressLog={progressLog}
+                  />
+                </motion.div>
+              )}
+
+            {step === 3 && draft && (
+              <motion.div
+                key="step-3"
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={stepTransition}
+                className="max-w-2xl mx-auto space-y-6 p-6"
+              >
+                <SaveStep
+                  draft={draft}
+                  mode={mode}
+                  evaluation={evaluation}
+                  onSave={(folderId) => saveMutation.mutate(folderId)}
+                  isSaving={saveMutation.isPending}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

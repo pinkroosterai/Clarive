@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Loader2, RefreshCw, Check } from 'lucide-react';
 
 import { QualityScoreCard } from './QualityScoreCard';
@@ -57,19 +58,21 @@ export function ReviewStep({
                 {q.suggestions.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {q.suggestions.map((suggestion) => (
-                      <button
+                      <motion.button
                         key={suggestion}
                         type="button"
                         onClick={() => selectSuggestion(i, suggestion)}
                         disabled={isRefining}
-                        className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.97 }}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                           answers[i] === suggestion
-                            ? 'bg-primary/15 border-primary/50 text-primary font-medium'
-                            : 'bg-elevated border-border hover:border-primary/30 text-foreground-secondary'
+                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                            : 'bg-elevated border-border-subtle hover:bg-accent hover:border-primary/30 text-foreground-secondary'
                         }`}
                       >
                         {suggestion}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 )}
@@ -90,7 +93,14 @@ export function ReviewStep({
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-foreground">Suggested Enhancements</h3>
             {enhancements.map((enh) => (
-              <label key={enh} className="flex items-start gap-3 cursor-pointer">
+              <label
+                key={enh}
+                className={`flex items-start gap-3 cursor-pointer rounded-lg px-3 py-2.5 border transition-colors ${
+                  selectedEnhancements.includes(enh)
+                    ? 'bg-primary/8 border-primary/30'
+                    : 'bg-transparent border-transparent hover:bg-elevated'
+                }`}
+              >
                 <Checkbox
                   checked={selectedEnhancements.includes(enh)}
                   onCheckedChange={() => toggleEnhancement(enh)}

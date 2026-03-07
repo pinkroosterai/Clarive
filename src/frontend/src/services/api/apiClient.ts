@@ -1,4 +1,5 @@
 import { config } from '@/lib/config';
+import type { ProgressEvent } from '@/types';
 
 function resolveBaseUrl(): string {
   const envUrl = config.apiUrl;
@@ -182,7 +183,7 @@ export const api = {
   postSSE: async <T>(
     path: string,
     body: unknown,
-    onProgress: (stage: string) => void,
+    onProgress: (event: ProgressEvent) => void,
     signal?: AbortSignal,
     timeoutMs = 120_000
   ): Promise<T> => {
@@ -255,7 +256,7 @@ export const api = {
           if (eventType === 'progress' && data) {
             try {
               const parsed = JSON.parse(data);
-              onProgress(parsed.stage);
+              onProgress(parsed as ProgressEvent);
             } catch {
               /* ignore malformed progress */
             }

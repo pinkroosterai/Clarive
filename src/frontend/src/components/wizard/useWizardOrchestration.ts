@@ -9,7 +9,14 @@ import type { GeneratingOperation } from './WizardLoadingOverlay';
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, wizardService } from '@/services';
 import { ApiError } from '@/services/api/apiClient';
-import type { PromptEntry, ClarificationQuestion, Evaluation, IterationScore } from '@/types';
+import type {
+  PromptEntry,
+  ClarificationQuestion,
+  Evaluation,
+  IterationScore,
+  ProgressEvent,
+  ProgressLogEntry,
+} from '@/types';
 
 type BootstrapState = 'loading' | 'ready' | 'error';
 
@@ -31,8 +38,8 @@ export function useWizardOrchestration(
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const startStep = mode === 'enhance' ? 3 : 1;
-  const totalSteps = mode === 'enhance' ? 2 : 4;
+  const startStep = mode === 'enhance' ? 2 : 1;
+  const totalSteps = mode === 'enhance' ? 2 : 3;
 
   const [step, setStep] = useState(startStep);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -45,17 +52,53 @@ export function useWizardOrchestration(
   const [scoreHistory, setScoreHistory] = useState<IterationScore[] | undefined>();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingOperation, setGeneratingOperation] = useState<GeneratingOperation | null>(null);
-  const [currentStage, setCurrentStage] = useState<string | null>(null);
+  const [currentStage, setCurrentStage] = useState<ProgressEvent | null>(null);
+  const [progressLog, setProgressLog] = useState<ProgressLogEntry[]>([]);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
   const [bootstrapState, setBootstrapState] = useState<BootstrapState>(
     mode === 'enhance' ? 'loading' : 'ready'
   );
 
-  // Pre-gen clarify state
-  const [preGenQuestions, setPreGenQuestions] = useState<ClarificationQuestion[]>([]);
-  const [preGenEnhancements, setPreGenEnhancements] = useState<string[]>([]);
-  const [pendingDescription, setPendingDescription] = useState('');
-  const [pendingOptions, setPendingOptions] = useState<GenerateOptions | null>(null);
+  // --- Progress event handler ---
+  const handleProgress = useCallback((event: ProgressEvent) => {
+    if (event.type === 'stage') {
+      setCurrentStage(event);
+      setProgressLog((prev) => [
+        ...prev,
+        {
+          id: event.id,
+          icon: event.icon ?? '',
+          message: event.message ?? '',
+          detail: event.detail,
+          completed: true,
+          isStage: true,
+          timestamp: Date.now(),
+        },
+      ]);
+    } else if (event.type === 'tool_start') {
+      setProgressLog((prev) => [
+        ...prev,
+        {
+          id: event.id,
+          icon: event.icon ?? '',
+          message: event.message ?? '',
+          detail: event.detail,
+          completed: false,
+          isStage: false,
+          timestamp: Date.now(),
+        },
+      ]);
+    } else if (event.type === 'tool_end') {
+      setProgressLog((prev) =>
+        prev.map((entry) => (entry.id === event.id ? { ...entry, completed: true } : entry))
+      );
+    }
+  }, []);
+
+  const resetProgress = useCallback(() => {
+    setCurrentStage(null);
+    setProgressLog([]);
+  }, []);
 
   // --- Apply result helper ---
   const applyResult = useCallback(
@@ -84,8 +127,9 @@ export function useWizardOrchestration(
     setBootstrapState('loading');
     setIsGenerating(true);
     setGeneratingOperation('enhance');
+    resetProgress();
     wizardService
-      .enhanceEntry(existingEntryId, setCurrentStage)
+      .enhanceEntry(existingEntryId, handleProgress)
       .then((result) => {
         applyResult(result);
         setBootstrapState('ready');
@@ -101,9 +145,9 @@ export function useWizardOrchestration(
       .finally(() => {
         setIsGenerating(false);
         setGeneratingOperation(null);
-        setCurrentStage(null);
+        resetProgress();
       });
-  }, [existingEntryId, applyResult]);
+  }, [existingEntryId, applyResult, handleProgress, resetProgress]);
 
   useEffect(() => {
     if (mode !== 'enhance' || !existingEntryId) return;
@@ -121,88 +165,44 @@ export function useWizardOrchestration(
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [draft]);
 
-  // --- Step 1: Describe -> pre-gen clarify ---
-  const handleDescribe = useCallback(async (description: string, options: GenerateOptions) => {
-    setPendingDescription(description);
-    setPendingOptions(options);
-    setIsGenerating(true);
-    setGeneratingOperation('clarify');
-    try {
-      const result = await wizardService.preGenClarify(
-        description,
-        {
-          generateSystemMessage: options.generateSystemMessage,
-          generateTemplate: options.generateAsTemplate,
-          generateChain: options.generateAsChain,
-          toolIds: options.selectedToolIds,
-          enableWebSearch: options.enableWebSearch,
-        },
-        setCurrentStage
-      );
-      setSessionId(result.sessionId);
-      setPreGenQuestions(result.questions);
-      setPreGenEnhancements(result.enhancements);
-      setStep(2);
-    } catch (err) {
-      handleWizardError(err, 'Failed to get clarification questions');
-    } finally {
-      setIsGenerating(false);
-      setGeneratingOperation(null);
-      setCurrentStage(null);
-    }
-  }, []);
-
-  // --- Step 2: Clarify -> generate ---
-  const handleClarifyAndGenerate = useCallback(
-    async (
-      preGenAnswers: Array<{ questionIndex: number; answer: string }>,
-      selectedEnhancementNames: string[]
-    ) => {
-      if (!pendingOptions) return;
+  // --- Step 1: Describe -> generate directly ---
+  const handleDescribe = useCallback(
+    async (description: string, options: GenerateOptions) => {
       setIsGenerating(true);
       setGeneratingOperation('generate');
+      resetProgress();
       try {
-        const enhancementIndices = selectedEnhancementNames
-          .map((name) => preGenEnhancements.indexOf(name))
-          .filter((i) => i >= 0);
         const result = await wizardService.generatePrompt(
-          pendingDescription,
+          description,
           {
-            generateSystemMessage: pendingOptions.generateSystemMessage,
-            generateTemplate: pendingOptions.generateAsTemplate,
-            generateChain: pendingOptions.generateAsChain,
-            toolIds: pendingOptions.selectedToolIds,
-            enableWebSearch: pendingOptions.enableWebSearch,
-            sessionId: sessionId ?? undefined,
-            preGenAnswers: preGenAnswers.length > 0 ? preGenAnswers : undefined,
-            selectedEnhancements: enhancementIndices.length > 0 ? enhancementIndices : undefined,
+            generateSystemMessage: options.generateSystemMessage,
+            generateTemplate: options.generateAsTemplate,
+            generateChain: options.generateAsChain,
+            toolIds: options.selectedToolIds,
+            enableWebSearch: options.enableWebSearch,
           },
-          setCurrentStage
+          handleProgress
         );
         applyResult(result);
-        setStep(3);
+        setStep(2);
       } catch (err) {
         handleWizardError(err, 'Generation failed');
       } finally {
         setIsGenerating(false);
         setGeneratingOperation(null);
-        setCurrentStage(null);
+        resetProgress();
       }
     },
-    [pendingDescription, pendingOptions, sessionId, preGenEnhancements, applyResult]
+    [applyResult, handleProgress, resetProgress]
   );
 
-  // --- Skip clarify -> generate directly ---
-  const handleSkipClarify = useCallback(async () => {
-    await handleClarifyAndGenerate([], []);
-  }, [handleClarifyAndGenerate]);
-
-  // --- Step 3: Refine ---
+  // --- Step 2: Refine ---
   const handleRefine = useCallback(
     async (answers: string[], selectedEnhancementNames: string[]) => {
       if (!draft || !sessionId) return;
       setIsGenerating(true);
       setGeneratingOperation('refine');
+      resetProgress();
       try {
         const structuredAnswers = answers.map((answer, i) => ({
           questionIndex: i,
@@ -215,7 +215,7 @@ export function useWizardOrchestration(
           sessionId,
           structuredAnswers,
           enhancementIndices,
-          setCurrentStage
+          handleProgress
         );
         applyResult(result);
       } catch (err) {
@@ -227,10 +227,10 @@ export function useWizardOrchestration(
       } finally {
         setIsGenerating(false);
         setGeneratingOperation(null);
-        setCurrentStage(null);
+        resetProgress();
       }
     },
-    [draft, sessionId, enhancements, applyResult]
+    [draft, sessionId, enhancements, applyResult, handleProgress, resetProgress]
   );
 
   // --- Save ---
@@ -278,9 +278,8 @@ export function useWizardOrchestration(
   }, [onClose]);
 
   // --- Step progress ---
-  const displayStep = mode === 'enhance' ? step - 2 : step;
-  const stepLabels =
-    mode === 'new' ? ['Describe', 'Clarify', 'Review', 'Save'] : ['Review', 'Save'];
+  const displayStep = mode === 'enhance' ? step - 1 : step;
+  const stepLabels = mode === 'new' ? ['Describe', 'Review', 'Save'] : ['Review', 'Save'];
   const prevStepRef = useRef(displayStep);
   const direction = displayStep >= prevStepRef.current ? 'forward' : 'backward';
   useEffect(() => {
@@ -292,10 +291,8 @@ export function useWizardOrchestration(
       case 1:
         return 'Describe what you want to generate';
       case 2:
-        return 'Answer clarification questions or skip';
-      case 3:
         return 'Review the generated draft and optionally refine it';
-      case 4:
+      case 3:
         return 'Save your prompt entry';
       default:
         return '';
@@ -322,9 +319,8 @@ export function useWizardOrchestration(
     isGenerating,
     generatingOperation,
     currentStage,
+    progressLog,
     bootstrapState,
-    preGenQuestions,
-    preGenEnhancements,
 
     // Dialogs
     confirmDiscardOpen,
@@ -332,8 +328,6 @@ export function useWizardOrchestration(
 
     // Handlers
     handleDescribe,
-    handleClarifyAndGenerate,
-    handleSkipClarify,
     handleRefine,
     requestClose,
     confirmDiscard,

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Globe, Loader2, Sparkles, Mail } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -28,6 +28,7 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
   const webSearchAvailable = useAuthStore((s) => s.webSearchAvailable);
   const isVerified = currentUser?.emailVerified ?? false;
   const [description, setDescription] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [generateSystemMessage, setGenerateSystemMessage] = useState(false);
   const [generateAsTemplate, setGenerateAsTemplate] = useState(false);
   const [generateAsChain, setGenerateAsChain] = useState(false);
@@ -45,6 +46,13 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
     );
   };
 
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value);
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 320)}px`;
+  };
+
   const handleGenerate = () => {
     onGenerate(description.trim(), {
       generateSystemMessage,
@@ -57,23 +65,43 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="wizard-desc">Describe the prompt you want to create</Label>
-        <Textarea
-          id="wizard-desc"
-          rows={6}
-          placeholder="e.g. A prompt that helps users write professional emails given a topic and tone..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          disabled={isGenerating}
-          className="bg-elevated border-border focus:ring-2 focus:ring-primary/30 min-h-[160px] transition-shadow"
-        />
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 via-accent/30 to-primary/5 px-6 py-8">
+        <div className="absolute -top-12 -right-12 size-48 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-8 -left-8 size-36 rounded-full bg-accent/20 blur-2xl" />
+        <div className="relative space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">
+              What would you like to create?
+            </h2>
+          </div>
+          <p className="text-sm text-foreground-secondary max-w-md">
+            Describe your idea and the AI will generate a structured, high-quality prompt for you.
+          </p>
+        </div>
       </div>
+
+      <Textarea
+        ref={textareaRef}
+        id="wizard-desc"
+        placeholder="e.g. A prompt that helps users write professional emails given a topic and tone..."
+        value={description}
+        onChange={handleTextareaChange}
+        disabled={isGenerating}
+        style={{ minHeight: '160px' }}
+        className="bg-elevated border-border focus:ring-2 focus:ring-primary/30 resize-none overflow-hidden transition-shadow"
+      />
 
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-foreground">Configuration</h3>
         <div className="bg-elevated rounded-lg px-4 py-3 flex justify-between items-center hover:bg-overlay/50 transition-colors">
-          <Label htmlFor="sw-sys">Generate system message</Label>
+          <div>
+            <Label htmlFor="sw-sys">Generate system message</Label>
+            <p className="text-xs text-foreground-muted mt-0.5">
+              Sets the AI's role and behavior before the main prompt
+            </p>
+          </div>
           <Switch
             id="sw-sys"
             checked={generateSystemMessage}
@@ -82,7 +110,12 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
           />
         </div>
         <div className="bg-elevated rounded-lg px-4 py-3 flex justify-between items-center hover:bg-overlay/50 transition-colors">
-          <Label htmlFor="sw-tpl">Generate as prompt template</Label>
+          <div>
+            <Label htmlFor="sw-tpl">Generate as prompt template</Label>
+            <p className="text-xs text-foreground-muted mt-0.5">
+              {'Includes {{variable}} placeholders for dynamic content'}
+            </p>
+          </div>
           <Switch
             id="sw-tpl"
             checked={generateAsTemplate}
@@ -91,7 +124,12 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
           />
         </div>
         <div className="bg-elevated rounded-lg px-4 py-3 flex justify-between items-center hover:bg-overlay/50 transition-colors">
-          <Label htmlFor="sw-chain">Generate as prompt chain</Label>
+          <div>
+            <Label htmlFor="sw-chain">Generate as prompt chain</Label>
+            <p className="text-xs text-foreground-muted mt-0.5">
+              Splits into multiple sequential prompts for complex tasks
+            </p>
+          </div>
           <Switch
             id="sw-chain"
             checked={generateAsChain}
@@ -101,10 +139,15 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
         </div>
         {webSearchAvailable && (
           <div className="bg-elevated rounded-lg px-4 py-3 flex justify-between items-center hover:bg-overlay/50 transition-colors">
-            <Label htmlFor="sw-web" className="flex items-center gap-2">
-              <Globe className="size-4 text-primary" />
-              Enable web research
-            </Label>
+            <div>
+              <Label htmlFor="sw-web" className="flex items-center gap-2">
+                <Globe className="size-4 text-primary" />
+                Enable web research
+              </Label>
+              <p className="text-xs text-foreground-muted mt-0.5">
+                Searches the web for context to improve accuracy
+              </p>
+            </div>
             <Switch
               id="sw-web"
               checked={enableWebSearch}

@@ -6,13 +6,8 @@ import type {
   ClarificationQuestion,
   Evaluation,
   IterationScore,
+  ProgressEvent,
 } from '@/types';
-
-export interface PreGenClarifyResult {
-  sessionId: string;
-  questions: ClarificationQuestion[];
-  enhancements: string[];
-}
 
 export interface WizardResult {
   sessionId: string;
@@ -54,12 +49,6 @@ interface GenerateApiResponse {
   scoreHistory?: ApiIterationScore[];
 }
 
-interface PreGenClarifyApiResponse {
-  sessionId: string;
-  questions: ApiClarificationQuestion[];
-  enhancements: string[];
-}
-
 function apiDraftToEntry(draft: ApiDraft): PromptEntry {
   const now = new Date().toISOString();
   return {
@@ -94,35 +83,6 @@ function toWizardResult(res: GenerateApiResponse): WizardResult {
   };
 }
 
-export async function preGenClarify(
-  description: string,
-  options?: {
-    generateSystemMessage?: boolean;
-    generateTemplate?: boolean;
-    generateChain?: boolean;
-    toolIds?: string[];
-    enableWebSearch?: boolean;
-  },
-  onProgress?: (stage: string) => void
-): Promise<PreGenClarifyResult> {
-  const body = {
-    description,
-    generateSystemMessage: options?.generateSystemMessage ?? false,
-    generateTemplate: options?.generateTemplate ?? false,
-    generateChain: options?.generateChain ?? false,
-    toolIds: options?.toolIds,
-    enableWebSearch: options?.enableWebSearch ?? false,
-  };
-  const res = onProgress
-    ? await api.postSSE<PreGenClarifyApiResponse>('/api/ai/pre-gen-clarify', body, onProgress)
-    : await api.post<PreGenClarifyApiResponse>('/api/ai/pre-gen-clarify', body);
-  return {
-    sessionId: res.sessionId,
-    questions: res.questions,
-    enhancements: res.enhancements,
-  };
-}
-
 export async function generatePrompt(
   description: string,
   options?: {
@@ -131,11 +91,8 @@ export async function generatePrompt(
     generateChain?: boolean;
     toolIds?: string[];
     enableWebSearch?: boolean;
-    sessionId?: string;
-    preGenAnswers?: Array<{ questionIndex: number; answer: string }>;
-    selectedEnhancements?: number[];
   },
-  onProgress?: (stage: string) => void
+  onProgress?: (event: ProgressEvent) => void
 ): Promise<WizardResult> {
   const body = {
     description,
@@ -144,9 +101,6 @@ export async function generatePrompt(
     generateChain: options?.generateChain ?? false,
     toolIds: options?.toolIds,
     enableWebSearch: options?.enableWebSearch ?? false,
-    sessionId: options?.sessionId,
-    preGenAnswers: options?.preGenAnswers,
-    selectedEnhancements: options?.selectedEnhancements,
   };
   const res = onProgress
     ? await api.postSSE<GenerateApiResponse>('/api/ai/generate', body, onProgress)
@@ -158,7 +112,7 @@ export async function refinePrompt(
   sessionId: string,
   answers?: Array<{ questionIndex: number; answer: string }>,
   selectedEnhancements?: number[],
-  onProgress?: (stage: string) => void
+  onProgress?: (event: ProgressEvent) => void
 ): Promise<WizardResult> {
   const body = {
     sessionId,
@@ -173,7 +127,7 @@ export async function refinePrompt(
 
 export async function enhanceEntry(
   entryId: string,
-  onProgress?: (stage: string) => void
+  onProgress?: (event: ProgressEvent) => void
 ): Promise<WizardResult> {
   const body = { entryId };
   const res = onProgress

@@ -120,6 +120,24 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
+export interface ProgressEvent {
+  type: 'stage' | 'tool_start' | 'tool_end';
+  id: string;
+  icon?: string;
+  message?: string;
+  detail?: string;
+}
+
+export interface ProgressLogEntry {
+  id: string;
+  icon: string;
+  message: string;
+  detail?: string;
+  completed: boolean;
+  isStage: boolean;
+  timestamp: number;
+}
+
 export interface ClarificationQuestion {
   text: string;
   suggestions: string[];

@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { useMemo, useCallback } from 'react';
 
@@ -77,7 +78,7 @@ export function PromptEditor({ entry, onChange, isReadOnly }: PromptEditorProps)
         onChange={(e) => onChange({ title: e.target.value })}
         disabled={isReadOnly}
         placeholder="Entry title"
-        className="text-lg font-semibold h-12"
+        className="text-lg font-semibold h-12 border-transparent bg-transparent px-0 shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-primary/40 rounded-none transition-colors"
       />
 
       <SystemMessageSection
@@ -91,27 +92,31 @@ export function PromptEditor({ entry, onChange, isReadOnly }: PromptEditorProps)
       />
 
       <div className="space-y-4">
-        {sortedPrompts.map((prompt, i) => (
-          <PromptCard
-            key={prompt.id}
-            prompt={prompt}
-            index={i + 1}
-            isOnly={sortedPrompts.length === 1}
-            isLast={i === sortedPrompts.length - 1}
-            isReadOnly={isReadOnly}
-            onUpdate={updatePrompt}
-            onDelete={() => deletePrompt(prompt.id)}
-            onMoveUp={() => movePrompt(prompt.id, -1)}
-            onMoveDown={() => movePrompt(prompt.id, 1)}
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {sortedPrompts.map((prompt, i) => (
+            <PromptCard
+              key={prompt.id}
+              prompt={prompt}
+              index={i + 1}
+              isOnly={sortedPrompts.length === 1}
+              isLast={i === sortedPrompts.length - 1}
+              isReadOnly={isReadOnly}
+              onUpdate={updatePrompt}
+              onDelete={() => deletePrompt(prompt.id)}
+              onMoveUp={() => movePrompt(prompt.id, -1)}
+              onMoveDown={() => movePrompt(prompt.id, 1)}
+            />
+          ))}
+        </AnimatePresence>
       </div>
 
       {!isReadOnly && (
-        <Button variant="outline" className="gap-2" onClick={addPrompt}>
-          <Plus className="size-4" />
-          Add follow-up prompt
-        </Button>
+        <motion.div whileTap={{ scale: 0.98 }}>
+          <Button variant="outline" className="gap-2" onClick={addPrompt}>
+            <Plus className="size-4" />
+            Add follow-up prompt
+          </Button>
+        </motion.div>
       )}
 
       <UnifiedTemplateForm prompts={sortedPrompts} isReadOnly={isReadOnly} />

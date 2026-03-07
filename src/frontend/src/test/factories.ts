@@ -237,12 +237,13 @@ export function createEvaluationEntry(overrides?: Partial<EvaluationEntry>): Eva
 export function createEvaluation(overrides?: Partial<Evaluation>): Evaluation {
   return {
     dimensions: {
-      clarity: createEvaluationEntry({ score: 8, feedback: 'Clear and concise.' }),
-      specificity: createEvaluationEntry({ score: 7, feedback: 'Could be more specific.' }),
-      structure: createEvaluationEntry({ score: 9, feedback: 'Well organized.' }),
-      completeness: createEvaluationEntry({ score: 6, feedback: 'Missing edge cases.' }),
-      autonomy: createEvaluationEntry({ score: 8, feedback: 'Good self-direction.' }),
-      faithfulness: createEvaluationEntry({ score: 9, feedback: 'Stays on topic.' }),
+      Clarity: createEvaluationEntry({ score: 8, feedback: 'Clear and concise.' }),
+      Effectiveness: createEvaluationEntry({
+        score: 8,
+        feedback: 'Well structured and practical.',
+      }),
+      Completeness: createEvaluationEntry({ score: 6, feedback: 'Missing edge cases.' }),
+      Faithfulness: createEvaluationEntry({ score: 9, feedback: 'Stays on topic.' }),
     },
     ...overrides,
   };

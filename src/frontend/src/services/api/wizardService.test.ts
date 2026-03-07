@@ -15,7 +15,6 @@ vi.mock('@/services/api/apiClient', () => ({
 }));
 
 import {
-  preGenClarify,
   generatePrompt,
   refinePrompt,
   enhanceEntry,
@@ -78,56 +77,6 @@ function makeGenerateApiResponse(overrides?: Record<string, unknown>) {
   };
 }
 
-// ── preGenClarify ──
-
-describe('preGenClarify', () => {
-  it('calls POST /api/ai/pre-gen-clarify with description and default options', async () => {
-    const apiRes = {
-      sessionId: 's1',
-      questions: [{ text: 'What domain?', suggestions: ['Tech', 'Health'] }],
-      enhancements: ['Add context'],
-    };
-    mockApi.post.mockResolvedValue(apiRes);
-
-    const result = await preGenClarify('Build a chatbot');
-
-    expect(mockApi.post).toHaveBeenCalledWith('/api/ai/pre-gen-clarify', {
-      description: 'Build a chatbot',
-      generateSystemMessage: false,
-      generateTemplate: false,
-      generateChain: false,
-      toolIds: undefined,
-    });
-    expect(result.sessionId).toBe('s1');
-    expect(result.questions).toHaveLength(1);
-    expect(result.enhancements).toEqual(['Add context']);
-  });
-
-  it('passes all options when provided', async () => {
-    const apiRes = {
-      sessionId: 's2',
-      questions: [],
-      enhancements: [],
-    };
-    mockApi.post.mockResolvedValue(apiRes);
-
-    await preGenClarify('A prompt', {
-      generateSystemMessage: true,
-      generateTemplate: true,
-      generateChain: true,
-      toolIds: ['tool-1', 'tool-2'],
-    });
-
-    expect(mockApi.post).toHaveBeenCalledWith('/api/ai/pre-gen-clarify', {
-      description: 'A prompt',
-      generateSystemMessage: true,
-      generateTemplate: true,
-      generateChain: true,
-      toolIds: ['tool-1', 'tool-2'],
-    });
-  });
-});
-
 // ── generatePrompt ──
 
 describe('generatePrompt', () => {
@@ -143,9 +92,7 @@ describe('generatePrompt', () => {
       generateTemplate: false,
       generateChain: false,
       toolIds: undefined,
-      sessionId: undefined,
-      preGenAnswers: undefined,
-      selectedEnhancements: undefined,
+      enableWebSearch: false,
     });
     expect(result.sessionId).toBe('session-123');
   });
@@ -159,9 +106,7 @@ describe('generatePrompt', () => {
       generateTemplate: true,
       generateChain: true,
       toolIds: ['t1'],
-      sessionId: 's-existing',
-      preGenAnswers: [{ questionIndex: 0, answer: 'Formal' }],
-      selectedEnhancements: [0, 2],
+      enableWebSearch: true,
     });
 
     expect(mockApi.post).toHaveBeenCalledWith('/api/ai/generate', {
@@ -170,9 +115,7 @@ describe('generatePrompt', () => {
       generateTemplate: true,
       generateChain: true,
       toolIds: ['t1'],
-      sessionId: 's-existing',
-      preGenAnswers: [{ questionIndex: 0, answer: 'Formal' }],
-      selectedEnhancements: [0, 2],
+      enableWebSearch: true,
     });
   });
 

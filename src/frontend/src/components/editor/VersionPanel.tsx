@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import { GitCompareArrows } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -99,14 +100,15 @@ export function VersionPanel({
           const isEditing = !currentVersion && workingVersion?.version === v.version;
 
           return (
-            <button
+            <motion.button
               key={v.version}
-              className={`relative w-full text-left rounded-md px-3 py-2 text-sm transition-colors duration-150 hover:bg-elevated ${
+              whileHover={{ x: 2, backgroundColor: 'hsl(var(--background-elevated))' }}
+              transition={{ duration: 0.15 }}
+              className={`relative w-full text-left rounded-md px-3 py-2 text-sm transition-colors duration-150 ${
                 isActive ? 'bg-primary/8' : ''
               }`}
               onClick={() => {
                 if (workingVersion && v.version === workingVersion.version) {
-                  // Navigate to the editable view (no version in URL)
                   navigate(`/entry/${entryId}`);
                 } else {
                   navigate(`/entry/${entryId}/version/${v.version}`);
@@ -114,10 +116,20 @@ export function VersionPanel({
               }}
             >
               {/* Timeline dot */}
-              <div
+              <motion.div
                 className={`absolute -left-[25px] top-3 rounded-full ring-2 ring-background ${
-                  isActive ? 'size-3 bg-primary glow-brand-sm' : 'size-2.5 bg-foreground-muted/40'
+                  isActive ? 'size-3 bg-primary' : 'size-2.5 bg-foreground-muted/40'
                 }`}
+                animate={
+                  isActive
+                    ? { scale: [1, 1.25, 1], opacity: [0.8, 1, 0.8] }
+                    : { scale: 1, opacity: 1 }
+                }
+                transition={
+                  isActive
+                    ? { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
+                    : { duration: 0.2 }
+                }
               />
 
               <div className="flex items-center justify-between gap-2">
@@ -139,7 +151,7 @@ export function VersionPanel({
                   {v.publishedBy && ` by ${v.publishedBy}`}
                 </p>
               )}
-            </button>
+            </motion.button>
           );
         })}
       </div>

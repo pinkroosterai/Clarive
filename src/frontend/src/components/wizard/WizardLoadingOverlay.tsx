@@ -1,14 +1,19 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 
-export type GeneratingOperation = 'clarify' | 'generate' | 'refine' | 'enhance';
+import { AiLoadingAnimation } from './AiLoadingAnimation';
+
+import type { ProgressEvent, ProgressLogEntry } from '@/types';
+
+export type GeneratingOperation = 'generate' | 'refine' | 'enhance';
 
 interface WizardLoadingOverlayProps {
   operation: GeneratingOperation;
-  currentStage?: string | null;
+  currentStage?: ProgressEvent | null;
+  progressLog: ProgressLogEntry[];
 }
 
-const MESSAGES: Record<GeneratingOperation, string[]> = {
-  clarify: ['Understanding your request\u2026', 'Preparing questions\u2026', 'Almost ready\u2026'],
+const FALLBACK_MESSAGES: Record<GeneratingOperation, string[]> = {
   generate: [
     'Analyzing your description\u2026',
     'Crafting your prompt\u2026',
@@ -29,26 +34,22 @@ const MESSAGES: Record<GeneratingOperation, string[]> = {
   ],
 };
 
-const STAGE_MESSAGES: Record<string, string> = {
-  preparing: 'Preparing your request…',
-  clarifying: 'Generating clarification questions…',
-  generating: 'Crafting your prompt…',
-  evaluating: 'Evaluating quality…',
-  refining: 'Refining your prompt…',
-  bootstrapping: 'Analyzing existing entry…',
-};
-
 const ROTATION_INTERVAL = 2500;
+const VISIBLE_LOG_ENTRIES = 5;
+const OPACITY_STEPS = [0.2, 0.35, 0.55, 0.75, 1];
 
-export function WizardLoadingOverlay({ operation, currentStage }: WizardLoadingOverlayProps) {
-  const messages = MESSAGES[operation];
+export function WizardLoadingOverlay({
+  operation,
+  currentStage,
+  progressLog,
+}: WizardLoadingOverlayProps) {
+  const fallbackMessages = FALLBACK_MESSAGES[operation];
   const [messageIndex, setMessageIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [fading, setFading] = useState(false);
   const mountTime = useRef(Date.now());
 
-  // When a real stage arrives, show it with a fade transition
-  const stageMessage = currentStage ? STAGE_MESSAGES[currentStage] : null;
+  const hasLog = progressLog.length > 0;
 
   // Elapsed timer
   useEffect(() => {
@@ -58,39 +59,100 @@ export function WizardLoadingOverlay({ operation, currentStage }: WizardLoadingO
     return () => clearInterval(id);
   }, []);
 
-  // Message rotation with fade — only when no real stage is active
+  // Fallback message rotation — only when no log events have arrived yet
   useEffect(() => {
-    if (stageMessage || messages.length <= 1) return;
+    if (hasLog || fallbackMessages.length <= 1) return;
     const id = setInterval(() => {
       setFading(true);
       setTimeout(() => {
-        setMessageIndex((prev) => (prev + 1) % messages.length);
+        setMessageIndex((prev) => (prev + 1) % fallbackMessages.length);
         setFading(false);
       }, 200);
     }, ROTATION_INTERVAL);
     return () => clearInterval(id);
-  }, [messages, stageMessage]);
+  }, [fallbackMessages, hasLog]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 animate-step-forward">
-      {/* Pulsing orb */}
-      <div className="relative flex items-center justify-center">
-        <div className="absolute size-16 rounded-full bg-primary/15 animate-ping [animation-duration:2s]" />
-        <div className="absolute size-12 rounded-full bg-primary/10 animate-pulse" />
-        <div className="relative size-8 rounded-full bg-primary/80 shadow-[0_0_20px_rgba(var(--primary),0.3)]" />
+    <div className="relative flex flex-col items-center justify-center h-full gap-6">
+      {/* Ambient background glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/8 blur-3xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </div>
 
-      {/* Status message */}
-      <p
-        className={`text-sm font-medium text-foreground-secondary transition-opacity duration-200 ${
-          fading ? 'opacity-0' : 'opacity-100'
-        }`}
-      >
-        {stageMessage ?? messages[messageIndex]}
-      </p>
+      {/* Loading animation */}
+      <div className="relative">
+        <AiLoadingAnimation />
+      </div>
+
+      {/* Fallback message — only shown before any real events arrive */}
+      {!hasLog && (
+        <p
+          className={`text-sm font-medium text-foreground-secondary transition-opacity duration-200 ${
+            fading ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          {fallbackMessages[messageIndex]}
+        </p>
+      )}
 
       {/* Elapsed time */}
-      <span className="text-xs text-foreground-muted tabular-nums">{elapsed}s</span>
+      <span className="relative text-xs text-foreground-muted tabular-nums">{elapsed}s</span>
+
+      {/* Unified activity log — last N entries with cascading opacity */}
+      {hasLog &&
+        (() => {
+          const visible = progressLog.slice(-VISIBLE_LOG_ENTRIES);
+          return (
+            <div className="relative w-full max-w-2xl rounded-lg bg-background-secondary/50 px-4 py-3">
+              <div className="space-y-2">
+                <AnimatePresence initial={false}>
+                  {visible.map((entry, i) => {
+                    const opacityIndex = i - (visible.length - OPACITY_STEPS.length);
+                    const targetOpacity =
+                      OPACITY_STEPS[Math.max(0, Math.min(opacityIndex, OPACITY_STEPS.length - 1))];
+
+                    return (
+                      <motion.div
+                        key={`${entry.id}-${entry.timestamp}`}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: targetOpacity, y: 0 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        className="flex items-center gap-2.5 text-sm"
+                      >
+                        {/* Icon */}
+                        <AnimatePresence mode="wait">
+                          <motion.span
+                            key={entry.isStage ? 'stage' : entry.completed ? 'done' : 'pending'}
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                            className="shrink-0 w-5 text-center text-base"
+                          >
+                            {entry.isStage ? entry.icon : entry.completed ? '\u2705' : entry.icon}
+                          </motion.span>
+                        </AnimatePresence>
+
+                        {/* Message + detail */}
+                        <span className="min-w-0 flex items-baseline gap-1.5">
+                          <span className="font-medium text-foreground-secondary whitespace-nowrap">
+                            {entry.message}
+                          </span>
+                          {entry.detail && (
+                            <span className="text-foreground-muted truncate">{entry.detail}</span>
+                          )}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </div>
+          );
+        })()}
     </div>
   );
 }
