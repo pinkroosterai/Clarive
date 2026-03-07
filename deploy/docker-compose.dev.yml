@@ -49,6 +49,8 @@ services:
       context: ../src/frontend
       target: dev
     restart: no
+    ports:
+      - "8080:8080"
     environment:
       VITE_API_URL: ""
       VITE_API_PROXY_TARGET: http://backend:5000
@@ -57,4 +59,8 @@ services:
       - /app/node_modules
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
+
+networks:
+  proxy:
+    external: false

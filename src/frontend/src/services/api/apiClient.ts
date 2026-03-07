@@ -2,6 +2,9 @@ import { config } from '@/lib/config';
 
 function resolveBaseUrl(): string {
   const envUrl = config.apiUrl;
+  // Empty string means "use relative URLs" (Vite proxy or same-origin in production)
+  if (envUrl === '') return '';
+  // No config at all — fall back to backend on port 5000 at the same hostname
   if (!envUrl) return `${window.location.protocol}//${window.location.hostname}:5000`;
   // Relative paths like "/api" — paths already include the /api prefix, so BASE_URL is empty
   if (envUrl.startsWith('/')) return '';

@@ -130,6 +130,11 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
 
     try {
       for (const [key, value] of Object.entries(dirtyValues)) {
+        if (value === '') {
+          await resetConfigValue(key);
+          savedCount++;
+          continue;
+        }
         const result = await setConfigValue(key, value);
         savedCount++;
         if (result.requiresRestart) {

@@ -62,11 +62,13 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   const apiKeySetting = findSetting(settings, 'Ai:OpenAiApiKey');
   const defaultModelSetting = findSetting(settings, 'Ai:DefaultModel');
   const premiumModelSetting = findSetting(settings, 'Ai:PremiumModel');
+  const tavilyApiKeySetting = findSetting(settings, 'Ai:TavilyApiKey');
 
   const currentEndpoint = dirtyValues['Ai:EndpointUrl'] ?? endpointSetting?.value ?? '';
   const currentApiKeyDirty = dirtyValues['Ai:OpenAiApiKey'];
   const currentDefaultModel = dirtyValues['Ai:DefaultModel'] ?? defaultModelSetting?.value ?? '';
   const currentPremiumModel = dirtyValues['Ai:PremiumModel'] ?? premiumModelSetting?.value ?? '';
+  const currentTavilyKeyDirty = dirtyValues['Ai:TavilyApiKey'];
 
   const apiKeyIsConfigured = apiKeySetting?.isConfigured ?? false;
 
@@ -194,7 +196,11 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
     try {
       let savedCount = 0;
       for (const [key, value] of Object.entries(dirtyValues)) {
-        await setConfigValue(key, value);
+        if (value === '') {
+          await resetConfigValue(key);
+        } else {
+          await setConfigValue(key, value);
+        }
         savedCount++;
       }
 
@@ -347,6 +353,28 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
             </div>
           )}
         </SettingField>
+      )}
+
+      {/* Tavily API Key */}
+      {tavilyApiKeySetting && (
+        <>
+          <Separator className="my-4" />
+          <SettingField
+            setting={tavilyApiKeySetting}
+            onReset={() => resetMutation.mutate(tavilyApiKeySetting.key)}
+            isResetting={
+              resetMutation.isPending && resetMutation.variables === tavilyApiKeySetting.key
+            }
+          >
+            <Input
+              type="password"
+              value={currentTavilyKeyDirty ?? ''}
+              onChange={(e) => handleChange('Ai:TavilyApiKey', e.target.value)}
+              placeholder={tavilyApiKeySetting.validationHint ?? 'Enter Tavily API key...'}
+              className="max-w-md"
+            />
+          </SettingField>
+        </>
       )}
 
       {/* Save */}
