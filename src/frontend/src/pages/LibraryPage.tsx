@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Plus,
   Sparkles,
@@ -69,8 +70,11 @@ function SkeletonCards() {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div
+        <motion.div
           key={i}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05, duration: 0.3 }}
           className="rounded-xl bg-elevated skeleton-shimmer h-[180px] border border-border-subtle"
         />
       ))}
@@ -83,7 +87,7 @@ export default function LibraryPage() {
   const aiEnabled = useAiEnabled();
 
   useEffect(() => {
-    document.title = 'Clarive — Library';
+    document.title = 'Clarive \u2014 Library';
   }, []);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -195,7 +199,13 @@ export default function LibraryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
         <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -211,15 +221,20 @@ export default function LibraryPage() {
           </TooltipTrigger>
           {!aiEnabled && <TooltipContent>AI features are not configured</TooltipContent>}
         </Tooltip>
-      </div>
+      </motion.div>
 
       {/* Search & Filter Bar */}
       {totalCount > 0 && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col gap-3 sm:flex-row sm:items-center"
+        >
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-foreground-muted" />
             <Input
-              placeholder="Search prompts…"
+              placeholder="Search prompts\u2026"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
@@ -247,12 +262,19 @@ export default function LibraryPage() {
               </SelectContent>
             </Select>
           </div>
-          {hasActiveFilters && (
-            <span className="text-sm text-foreground-muted whitespace-nowrap">
-              {filtered.length} of {pageItemCount}
-            </span>
-          )}
-        </div>
+          <AnimatePresence>
+            {hasActiveFilters && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="text-sm text-foreground-muted whitespace-nowrap"
+              >
+                {filtered.length} of {pageItemCount}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {isLoading ? (
@@ -274,53 +296,74 @@ export default function LibraryPage() {
           />
         )
       ) : filtered.length === 0 ? (
-        <div className="py-12 text-center text-foreground-muted">
-          <Search className="mx-auto mb-3 size-8 opacity-40" />
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="py-12 text-center text-foreground-muted"
+        >
+          <motion.div
+            animate={{ scale: [1, 1.05, 1], opacity: [0.4, 0.6, 0.4] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Search className="mx-auto mb-3 size-8" />
+          </motion.div>
           <p className="text-sm">No prompts match your filters.</p>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((entry, index) => (
-            <div
-              key={entry.id}
-              {...(index === 0 ? { 'data-tour': 'entry-card', 'data-entry-id': entry.id } : {})}
-            >
-              <EntryCard
-                entry={entry}
-                index={index}
-                onDuplicate={handleDuplicate}
-                onTrash={handleTrash}
-              />
-            </div>
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filtered.map((entry, index) => (
+              <div
+                key={entry.id}
+                {...(index === 0 ? { 'data-tour': 'entry-card', 'data-entry-id': entry.id } : {})}
+              >
+                <EntryCard
+                  entry={entry}
+                  index={index}
+                  onDuplicate={handleDuplicate}
+                  onTrash={handleTrash}
+                />
+              </div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-border-subtle pt-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+          className="flex items-center justify-between border-t border-border-subtle pt-4"
+        >
           <span className="text-sm text-foreground-muted">
             Page {page} of {totalPages} ({totalCount} total)
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft className="size-4 mr-1" /> Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next <ChevronRight className="size-4 ml-1" />
-            </Button>
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className="size-4 mr-1" /> Previous
+              </Button>
+            </motion.div>
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next <ChevronRight className="size-4 ml-1" />
+              </Button>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

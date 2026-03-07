@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { FileText, Globe, PenLine, FolderOpen, LayoutDashboard } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -18,9 +19,15 @@ function getGreeting(name: string): string {
   return `Good ${timeOfDay}, ${firstName}`;
 }
 
+function getSubtitle(drafts: number, published: number): string {
+  if (drafts === 0 && published === 0) return 'Create your first entry to get started.';
+  if (drafts > 0) return `You have ${drafts} draft${drafts > 1 ? 's' : ''} pending review.`;
+  return 'All entries are published.';
+}
+
 export default function DashboardPage() {
   useEffect(() => {
-    document.title = 'Clarive — Dashboard';
+    document.title = 'Clarive \u2014 Dashboard';
   }, []);
 
   const currentUser = useAuthStore((s) => s.currentUser);
@@ -34,7 +41,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-20 w-full rounded-xl" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-[88px] rounded-xl" />
@@ -61,9 +68,7 @@ export default function DashboardPage() {
   if (!stats || (stats.totalEntries === 0 && stats.recentEntries.length === 0)) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {currentUser ? getGreeting(currentUser.name) : 'Dashboard'}
-        </h1>
+        <GreetingHero name={currentUser?.name} subtitle="Create your first entry to get started." />
         <div data-tour="dashboard-stats" data-tour-empty="true">
           <EmptyState
             icon={LayoutDashboard}
@@ -77,15 +82,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        {currentUser ? getGreeting(currentUser.name) : 'Dashboard'}
-      </h1>
+      <GreetingHero
+        name={currentUser?.name}
+        subtitle={getSubtitle(stats.draftEntries, stats.publishedEntries)}
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="dashboard-stats">
-        <StatCard icon={FileText} label="Entries" value={stats.totalEntries} />
-        <StatCard icon={Globe} label="Published" value={stats.publishedEntries} />
-        <StatCard icon={PenLine} label="Drafts" value={stats.draftEntries} />
-        <StatCard icon={FolderOpen} label="Folders" value={stats.totalFolders} />
+        <StatCard icon={FileText} label="Entries" value={stats.totalEntries} index={0} />
+        <StatCard icon={Globe} label="Published" value={stats.publishedEntries} index={1} />
+        <StatCard icon={PenLine} label="Drafts" value={stats.draftEntries} index={2} />
+        <StatCard icon={FolderOpen} label="Folders" value={stats.totalFolders} index={3} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="dashboard-recent">
@@ -93,5 +99,32 @@ export default function DashboardPage() {
         <ActivityFeed activities={stats.recentActivity} />
       </div>
     </div>
+  );
+}
+
+function GreetingHero({ name, subtitle }: { name?: string; subtitle: string }) {
+  const greeting = name ? getGreeting(name) : 'Dashboard';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-border-subtle px-6 py-5"
+    >
+      <div className="absolute top-2 right-12 size-20 rounded-full bg-primary/8 blur-2xl" />
+      <div className="absolute bottom-1 left-16 size-14 rounded-full bg-primary/6 blur-xl" />
+      <div className="relative">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{greeting}</h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15, duration: 0.3 }}
+          className="mt-1 text-sm text-foreground-muted"
+        >
+          {subtitle}
+        </motion.p>
+      </div>
+    </motion.div>
   );
 }
