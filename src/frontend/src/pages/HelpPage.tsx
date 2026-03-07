@@ -147,23 +147,37 @@ const sections = [
       <div className="space-y-3">
         <p>
           The AI Wizard helps you generate high-quality prompts from a simple description. It
-          follows a guided flow:
+          follows a three-step flow:
         </p>
         <ol className="list-decimal list-inside space-y-2">
           <li>
             <strong>Describe</strong> — Tell the wizard what kind of prompt you need. Be as specific
             as possible about the task, audience, and desired output. You can also configure
-            options: generate a system message, create a prompt template with variables, generate a
-            multi-step prompt chain, or select tools for the AI to use.
+            options:
+            <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+              <li>
+                <strong>System message</strong> — sets the AI&apos;s role and behavior before the
+                main prompt.
+              </li>
+              <li>
+                <strong>Template variables</strong> — includes {'{{variable}}'} placeholders for
+                dynamic content.
+              </li>
+              <li>
+                <strong>Prompt chain</strong> — splits into multiple sequential prompts for complex
+                tasks.
+              </li>
+              <li>
+                <strong>Web research</strong> — searches the web for context to improve accuracy
+                (requires Tavily configuration).
+              </li>
+            </ul>
           </li>
           <li>
-            <strong>Clarify</strong> — The wizard may ask follow-up questions to refine its
-            understanding. Answer them for a better result, or skip to proceed directly.
-          </li>
-          <li>
-            <strong>Review</strong> — Review the generated prompt with a quality score across six
-            dimensions: clarity, specificity, structure, completeness, autonomy, and faithfulness
-            (each scored 0–10). You can iteratively refine the prompt until you are satisfied.
+            <strong>Review</strong> — Review the generated prompt with a quality score across four
+            dimensions: clarity, effectiveness, completeness, and faithfulness (each scored 0–10).
+            The wizard may also present clarification questions to refine the result. You can select
+            enhancement suggestions and iteratively regenerate until satisfied.
           </li>
           <li>
             <strong>Save</strong> — Save the generated prompt as a new entry in your library.

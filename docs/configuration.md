@@ -29,6 +29,7 @@ All configuration is done via environment variables, loaded from `deploy/envs/<e
 | `AI_ENDPOINT_URL` | Custom endpoint URL for OpenAI-compatible providers (Ollama, LiteLLM, vLLM, etc.) | (optional, uses OpenAI default) |
 | `AI_DEFAULT_MODEL` | Default model for AI features | `gpt-4o-mini` |
 | `AI_PREMIUM_MODEL` | Premium model | `gpt-4o` |
+| `TAVILY_API_KEY` | API key for [Tavily](https://tavily.com) web search (enables research-backed generation) | (optional) |
 
 ## Application
 

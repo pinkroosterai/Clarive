@@ -37,7 +37,7 @@ info:
   contact:
     name: Clarive
   license:
-    name: Proprietary
+    name: MIT
 
 servers:
   - url: https://api.clarive.app

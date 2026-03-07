@@ -38,7 +38,7 @@ Clarive is a multi-tenant SaaS platform for managing, versioning, and AI-enhanci
 - **Serves on**: port 8080 (nginx in production, Vite in dev)
 
 ### Backend (`src/backend/Clarive.Api/`)
-- **Stack**: ASP.NET Core 9 Minimal APIs, EF Core 9
+- **Stack**: ASP.NET Core 10 Minimal APIs, EF Core 10
 - **Auth**: JWT (15-min access + 7-day refresh), Google OIDC, API keys
 - **AI**: OpenAI via Microsoft.Extensions.AI
 - **Serves on**: port 5000
@@ -64,7 +64,9 @@ Each user belongs to one or more tenants (workspaces). All data is scoped by `te
 
 - Prompt generation (wizard), enhancement, system message generation, and chain decomposition
 - Uses OpenAI models via `Microsoft.Extensions.AI` abstraction
-- Configurable default and premium models via environment variables
+- Configurable default and premium models via environment variables or in-app settings
+- Tavily web search integration for research-backed prompt generation
+- MCP (Model Context Protocol) tool import support
 
 ## Deployment
 

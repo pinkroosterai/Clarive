@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 20+
-- .NET SDK 9.0
+- .NET SDK 10.0
 - Docker (for PostgreSQL)
 - Git
 
@@ -38,7 +38,7 @@ The app will be available at:
 clarive/
 ├── src/
 │   ├── frontend/          # React + TypeScript + Vite
-│   └── backend/           # ASP.NET Core 9 + EF Core
+│   └── backend/           # ASP.NET Core 10 + EF Core
 ├── tests/
 │   └── backend/           # xUnit unit + integration tests
 ├── deploy/                # Docker Compose + env files
@@ -80,7 +80,7 @@ make db-reset       # Destroy and recreate data
 
 The backend reads configuration from `appsettings.json` and environment variables. For local development, the defaults work out of the box with the local PostgreSQL container.
 
-For AI features, set `OPENAI_API_KEY` in your environment or `appsettings.Development.json`. For OpenAI-compatible providers (Ollama, LiteLLM, etc.), also set `AI_ENDPOINT_URL`.
+For AI features, set `OPENAI_API_KEY` in your environment or `appsettings.Development.json`. For OpenAI-compatible providers (Ollama, LiteLLM, etc.), also set `AI_ENDPOINT_URL`. For AI web search during generation, set `TAVILY_API_KEY`.
 
 ## Testing
 

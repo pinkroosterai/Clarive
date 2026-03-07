@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Clarive is an open-source platform for managing, versioning, and AI-enhancing LLM prompts across teams. AGPL-3.0 licensed.
+Clarive is an open-source platform for managing, versioning, and AI-enhancing LLM prompts across teams. MIT licensed.
 
 ## Architecture
 
@@ -16,7 +16,7 @@ Frontend (React 18 + TS + Vite)  →  Backend (.NET 10 Minimal APIs)  →  Postg
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (Radix), Tiptap v3 editor
 - **Backend**: C# ASP.NET Core 10 Minimal APIs, EF Core 10 (Npgsql)
 - **Auth**: JWT (15-min) + rotating refresh tokens (7-day), Google OIDC, API key auth (`X-Api-Key` header)
-- **AI**: OpenAI via agent-based orchestration (generation, evaluation, clarification agents)
+- **AI**: OpenAI via agent-based orchestration (generation, evaluation, clarification agents), Tavily web search
 - **State**: Zustand (auth store only), TanStack React Query (server state)
 
 ## Common Commands

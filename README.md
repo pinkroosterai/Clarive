@@ -8,7 +8,7 @@
   <a href="https://github.com/pinkroosterai/Clarive/actions/workflows/ci.yml"><img src="https://github.com/pinkroosterai/Clarive/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/pinkroosterai/Clarive/releases"><img src="https://img.shields.io/github/v/release/pinkroosterai/Clarive?style=flat-square" alt="Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" /></a>
-  <img src="https://img.shields.io/badge/.NET_10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 9" />
+  <img src="https://img.shields.io/badge/.NET_10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10" />
   <img src="https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18" />
   <img src="https://img.shields.io/badge/PostgreSQL_16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
@@ -141,7 +141,7 @@ CLARIVE_VERSION=1.2.0
 
 ### Local Development
 
-**Prerequisites:** [Node.js](https://nodejs.org/) 20+, [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/9.0), [Docker](https://docs.docker.com/get-docker/).
+**Prerequisites:** [Node.js](https://nodejs.org/) 20+, [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 make install    # install frontend + backend dependencies
@@ -183,6 +183,7 @@ All configuration is done via environment variables. Copy `.env.example` to `.en
 | `CONFIG_ENCRYPTION_KEY` | Encryption key for stored secrets | Yes | — |
 | `OPENAI_API_KEY` | OpenAI-compatible API key (AI features disabled if blank) | No | — |
 | `AI_ENDPOINT_URL` | Custom endpoint for OpenAI-compatible providers | No | — |
+| `TAVILY_API_KEY` | Tavily API key for AI web search during generation | No | — |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | No | — |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | No | — |
 | `CORS_ORIGINS` | Allowed CORS origins | No | `http://localhost:8080` |
