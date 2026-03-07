@@ -196,6 +196,61 @@ public class AiGenerationTests : IntegrationTestBase
             .Should().NotBeNullOrEmpty();
     }
 
+    // ── Web Search ──
+
+    [Fact]
+    public async Task Generate_WithWebSearchEnabled_ReturnsOk()
+    {
+        var token = await AuthHelper.GetEditorTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/ai/generate", new
+        {
+            description = "Explain quantum computing best practices",
+            enableWebSearch = true
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.GetProperty("sessionId").GetString().Should().NotBeNullOrEmpty();
+        body.GetProperty("draft").GetProperty("title").GetString().Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task PreGenClarify_WithWebSearchEnabled_ReturnsOk()
+    {
+        var token = await AuthHelper.GetEditorTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/ai/pre-gen-clarify", new
+        {
+            description = "Research novel AI safety techniques",
+            enableWebSearch = true
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.GetProperty("sessionId").GetString().Should().NotBeNullOrEmpty();
+        body.GetProperty("questions").GetArrayLength().Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task StatusEndpoint_ReportsWebSearchAvailable()
+    {
+        var token = await AuthHelper.GetEditorTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/auth/login", new
+        {
+            email = "jane@clarive.dev",
+            password = "password"
+        });
+
+        // Status endpoint is public
+        var statusResponse = await Client.GetAsync("/api/status");
+        statusResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await statusResponse.Content.ReadFromJsonAsync<JsonElement>();
+        status.GetProperty("webSearchAvailable").GetBoolean().Should().BeTrue();
+    }
+
     // ── Refine ──
 
     [Fact]

@@ -1,5 +1,6 @@
 using Clarive.Api.Models.Agents;
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 
 namespace Clarive.Api.Services.Agents;
 
@@ -8,7 +9,7 @@ namespace Clarive.Api.Services.Agents;
 /// </summary>
 public interface IAgentFactory
 {
-    AIAgent CreateGenerationAgent(GenerationConfig config);
+    AIAgent CreateGenerationAgent(GenerationConfig config, IList<AITool>? tools = null);
     AIAgent CreateEvaluationAgent(GenerationConfig config);
     AIAgent CreateClarificationAgent();
     AIAgent CreatePreGenClarificationAgent();

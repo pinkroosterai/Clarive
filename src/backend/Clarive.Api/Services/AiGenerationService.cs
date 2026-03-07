@@ -18,12 +18,12 @@ public class AiGenerationService(
     public async Task<AiGenerationResult> PreGenClarifyAsync(
         Guid tenantId, string description,
         bool generateSystemMessage, bool generateTemplate, bool generateChain,
-        List<Guid>? toolIds, CancellationToken ct,
+        List<Guid>? toolIds, bool enableWebSearch, CancellationToken ct,
         Func<string, Task>? onProgress = null)
     {
         var config = await BuildGenerationConfig(
             description, generateSystemMessage, generateTemplate, generateChain,
-            toolIds, tenantId, ct);
+            toolIds, enableWebSearch, tenantId, ct);
 
         var result = await orchestrator.PreGenClarifyAsync(config, ct, onProgress);
 
@@ -61,7 +61,7 @@ public class AiGenerationService(
         var config = existingSession?.Config ?? await BuildGenerationConfig(
             request.Description, request.GenerateSystemMessage,
             request.GenerateTemplate, request.GenerateChain,
-            request.ToolIds, tenantId, ct);
+            request.ToolIds, request.EnableWebSearch, tenantId, ct);
 
         // Resolve pre-gen answers
         List<AnsweredQuestion>? preGenAnswers = null;
@@ -337,7 +337,8 @@ public class AiGenerationService(
     private async Task<GenerationConfig> BuildGenerationConfig(
         string description, bool generateSystemMessage,
         bool generateTemplate, bool generateChain,
-        List<Guid>? toolIds, Guid tenantId, CancellationToken ct)
+        List<Guid>? toolIds, bool enableWebSearch,
+        Guid tenantId, CancellationToken ct)
     {
         var tools = new List<ToolInfo>();
         if (toolIds is { Count: > 0 })
@@ -352,7 +353,8 @@ public class AiGenerationService(
             GenerateSystemMessage = generateSystemMessage,
             GenerateAsPromptTemplate = generateTemplate,
             GenerateAsPromptChain = generateChain,
-            SelectedTools = tools
+            SelectedTools = tools,
+            EnableWebSearch = enableWebSearch
         };
     }
 

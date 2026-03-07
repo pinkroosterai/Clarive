@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Requests;
+using Clarive.Api.Services.Interfaces;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.OpenAI;
 using Microsoft.Extensions.AI;
@@ -15,6 +16,7 @@ public class PromptOrchestrator : IPromptOrchestrator
 {
     private readonly IAgentFactory _factory;
     private readonly IAgentSessionPool _pool;
+    private readonly ITavilyClientService _tavilyClient;
     private readonly ILogger<PromptOrchestrator> _logger;
 
     public bool IsConfigured => _factory.IsConfigured;
@@ -22,10 +24,12 @@ public class PromptOrchestrator : IPromptOrchestrator
     public PromptOrchestrator(
         IAgentFactory factory,
         IAgentSessionPool pool,
+        ITavilyClientService tavilyClient,
         ILogger<PromptOrchestrator> logger)
     {
         _factory = factory;
         _pool = pool;
+        _tavilyClient = tavilyClient;
         _logger = logger;
     }
 
@@ -35,8 +39,13 @@ public class PromptOrchestrator : IPromptOrchestrator
     {
         if (onProgress is not null) await onProgress("preparing");
 
+        // Fetch web search tools if enabled
+        IList<AITool>? webSearchTools = config.EnableWebSearch
+            ? await _tavilyClient.GetToolsAsync(ct)
+            : null;
+
         // Create the agent session upfront (for later use in GenerateAsync)
-        var agentSessionId = await _pool.CreateSessionAsync(config, ct);
+        var agentSessionId = await _pool.CreateSessionAsync(config, ct, webSearchTools);
 
         try
         {

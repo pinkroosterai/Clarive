@@ -49,7 +49,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         });
     }
 
-    public AIAgent CreateGenerationAgent(GenerationConfig config)
+    public AIAgent CreateGenerationAgent(GenerationConfig config, IList<AITool>? tools = null)
     {
         _lock.EnterReadLock();
         try
@@ -58,6 +58,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             return _premiumClient!.AsAIAgent(
                 instructions: AgentInstructions.BuildGeneration(config),
                 name: "PromptGenerator",
+                tools: tools,
                 loggerFactory: _loggerFactory);
         }
         finally { _lock.ExitReadLock(); }

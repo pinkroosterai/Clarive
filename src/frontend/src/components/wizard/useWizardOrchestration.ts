@@ -135,6 +135,7 @@ export function useWizardOrchestration(
           generateTemplate: options.generateAsTemplate,
           generateChain: options.generateAsChain,
           toolIds: options.selectedToolIds,
+          enableWebSearch: options.enableWebSearch,
         },
         setCurrentStage
       );
@@ -171,6 +172,7 @@ export function useWizardOrchestration(
             generateTemplate: pendingOptions.generateAsTemplate,
             generateChain: pendingOptions.generateAsChain,
             toolIds: pendingOptions.selectedToolIds,
+            enableWebSearch: pendingOptions.enableWebSearch,
             sessionId: sessionId ?? undefined,
             preGenAnswers: preGenAnswers.length > 0 ? preGenAnswers : undefined,
             selectedEnhancements: enhancementIndices.length > 0 ? enhancementIndices : undefined,

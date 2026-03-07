@@ -249,6 +249,7 @@ builder.Services.AddSingleton<IAgentFactory, OpenAIAgentFactory>();
 builder.Services.AddSingleton<IAgentSessionPool, AgentSessionPool>();
 builder.Services.AddScoped<IPromptOrchestrator, PromptOrchestrator>();
 builder.Services.AddScoped<IMcpImportService, McpImportService>();
+builder.Services.AddSingleton<ITavilyClientService, TavilyClientService>();
 
 // ── Background Services ──
 builder.Services.AddHostedService<Clarive.Api.Services.Background.AccountPurgeBackgroundService>();
@@ -427,8 +428,8 @@ app.MapDashboardEndpoints();
 app.MapSuperEndpoints();
 app.MapConfigEndpoints();
 
-app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode, IAgentFactory agentFactory) =>
-    Results.Ok(new { maintenance = maintenanceMode.IsEnabled, aiConfigured = agentFactory.IsConfigured }))
+app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode, IAgentFactory agentFactory, ITavilyClientService tavilyClient) =>
+    Results.Ok(new { maintenance = maintenanceMode.IsEnabled, aiConfigured = agentFactory.IsConfigured, webSearchAvailable = tavilyClient.IsConfigured }))
     .WithTags("System")
     .AllowAnonymous();
 

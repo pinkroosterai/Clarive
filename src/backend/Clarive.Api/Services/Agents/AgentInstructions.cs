@@ -163,6 +163,18 @@ public static class AgentInstructions
         independently address their objective without requiring prior steps.
         """;
 
+    private const string GenerationWebSearchEnabled = """
+        ## Web Research
+        You have access to web search and content extraction tools. Use them strategically:
+        - Search for best practices when the topic involves novel, complex, or emerging concepts
+        - Search for domain-specific knowledge for specialized fields, frameworks, or technologies
+        - Use content extraction to pull detailed information from specific authoritative sources
+        - Do NOT search for trivial or widely-known topics — use your existing knowledge
+        - Keep searches focused: 1-2 targeted queries, not broad exploration
+        - Incorporate findings naturally into the generated prompts — don't dump raw search results
+        - When searching, prefer queries like "best practices for X" or "X implementation patterns"
+        """;
+
     private const string GenerationToolGuidanceWithSystemMessage = """
         Define each tool's purpose and usage rules in the system message: when to use it, why, acceptable inputs, and expected behavior.
         Every specified tool must be actively used in at least one prompt — do not define tools that no prompt ever invokes.
@@ -201,6 +213,10 @@ public static class AgentInstructions
                 ? GenerationToolGuidanceWithSystemMessage
                 : GenerationToolGuidanceNoSystemMessage);
         }
+
+        // Web search
+        if (config.EnableWebSearch)
+            parts.Add(GenerationWebSearchEnabled);
 
         return string.Join("\n", parts);
     }

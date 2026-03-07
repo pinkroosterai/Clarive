@@ -101,6 +101,7 @@ export async function preGenClarify(
     generateTemplate?: boolean;
     generateChain?: boolean;
     toolIds?: string[];
+    enableWebSearch?: boolean;
   },
   onProgress?: (stage: string) => void
 ): Promise<PreGenClarifyResult> {
@@ -110,6 +111,7 @@ export async function preGenClarify(
     generateTemplate: options?.generateTemplate ?? false,
     generateChain: options?.generateChain ?? false,
     toolIds: options?.toolIds,
+    enableWebSearch: options?.enableWebSearch ?? false,
   };
   const res = onProgress
     ? await api.postSSE<PreGenClarifyApiResponse>('/api/ai/pre-gen-clarify', body, onProgress)
@@ -128,6 +130,7 @@ export async function generatePrompt(
     generateTemplate?: boolean;
     generateChain?: boolean;
     toolIds?: string[];
+    enableWebSearch?: boolean;
     sessionId?: string;
     preGenAnswers?: Array<{ questionIndex: number; answer: string }>;
     selectedEnhancements?: number[];
@@ -140,6 +143,7 @@ export async function generatePrompt(
     generateTemplate: options?.generateTemplate ?? false,
     generateChain: options?.generateChain ?? false,
     toolIds: options?.toolIds,
+    enableWebSearch: options?.enableWebSearch ?? false,
     sessionId: options?.sessionId,
     preGenAnswers: options?.preGenAnswers,
     selectedEnhancements: options?.selectedEnhancements,

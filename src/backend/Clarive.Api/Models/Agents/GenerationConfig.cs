@@ -11,6 +11,7 @@ public record GenerationConfig
     public bool GenerateAsPromptTemplate { get; init; }
     public bool GenerateAsPromptChain { get; init; }
     public List<ToolInfo> SelectedTools { get; init; } = [];
+    public bool EnableWebSearch { get; init; }
 }
 
 public record ToolInfo(string Name, string Description);

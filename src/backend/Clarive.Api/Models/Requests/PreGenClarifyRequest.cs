@@ -5,5 +5,6 @@ public record PreGenClarifyRequest(
     bool GenerateSystemMessage = false,
     bool GenerateTemplate = false,
     bool GenerateChain = false,
-    List<Guid>? ToolIds = null
+    List<Guid>? ToolIds = null,
+    bool EnableWebSearch = false
 );

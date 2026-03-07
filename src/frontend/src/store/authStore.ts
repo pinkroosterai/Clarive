@@ -21,6 +21,7 @@ interface AuthState {
   isInitialized: boolean;
   maintenanceMode: boolean;
   aiConfigured: boolean;
+  webSearchAvailable: boolean;
   setUser: (user: User) => void;
   setMaintenanceMode: (enabled: boolean) => void;
   setWorkspaces: (workspaces: Workspace[]) => void;
@@ -37,6 +38,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isInitialized: false,
   maintenanceMode: false,
   aiConfigured: true,
+  webSearchAvailable: false,
   setMaintenanceMode: (enabled: boolean) => set({ maintenanceMode: enabled }),
   setUser: (user: User) => {
     set({ currentUser: user, isAuthenticated: true, isInitialized: true });
@@ -45,6 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .then((status) => {
         if (status.maintenance) set({ maintenanceMode: true });
         if (status.aiConfigured === false) set({ aiConfigured: false });
+        set({ webSearchAvailable: status.webSearchAvailable ?? false });
       })
       .catch(() => {});
   },
@@ -80,6 +83,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isInitialized: true,
       maintenanceMode: false,
       aiConfigured: true,
+      webSearchAvailable: false,
     });
   },
   initializeAuth: async () => {
@@ -103,6 +107,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const status = await getSystemStatus();
         if (status.maintenance) set({ maintenanceMode: true });
         if (status.aiConfigured === false) set({ aiConfigured: false });
+        set({ webSearchAvailable: status.webSearchAvailable ?? false });
       } catch {
         // Ignore — maintenance status is non-critical
       }

@@ -102,6 +102,10 @@ internal class ClariveApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IEmailService>();
             services.AddScoped<IEmailService, TestEmailService>();
 
+            // Replace Tavily client with deterministic mock
+            services.RemoveAll<ITavilyClientService>();
+            services.AddSingleton<ITavilyClientService, MockTavilyClientService>();
+
         });
 
         // Raise rate limit for tests (all requests share loopback IP)

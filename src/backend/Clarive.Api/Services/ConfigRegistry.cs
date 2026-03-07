@@ -85,6 +85,11 @@ public static class ConfigRegistry
             ConfigSection.Ai, false, false,
             "e.g., gpt-4o"),
 
+        new ConfigDefinition("Ai:TavilyApiKey", "Tavily API Key",
+            "API key for Tavily web search. Enables the generation agent to research best practices and novel concepts during prompt creation.",
+            ConfigSection.Ai, true, false,
+            "tvly-..."),
+
         // ── Email › Provider ──
         new ConfigDefinition("Email:Provider", "Email Provider",
             "Email delivery provider. 'none' disables emails and skips verification for new users.",

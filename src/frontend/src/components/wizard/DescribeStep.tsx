@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Sparkles, Mail } from 'lucide-react';
+import { Globe, Loader2, Sparkles, Mail } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ export interface GenerateOptions {
   generateAsTemplate: boolean;
   generateAsChain: boolean;
   selectedToolIds: string[];
+  enableWebSearch: boolean;
 }
 
 interface DescribeStepProps {
@@ -24,12 +25,14 @@ interface DescribeStepProps {
 
 export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
   const currentUser = useAuthStore((s) => s.currentUser);
+  const webSearchAvailable = useAuthStore((s) => s.webSearchAvailable);
   const isVerified = currentUser?.emailVerified ?? false;
   const [description, setDescription] = useState('');
   const [generateSystemMessage, setGenerateSystemMessage] = useState(false);
   const [generateAsTemplate, setGenerateAsTemplate] = useState(false);
   const [generateAsChain, setGenerateAsChain] = useState(false);
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
+  const [enableWebSearch, setEnableWebSearch] = useState(false);
 
   const { data: tools = [] } = useQuery({
     queryKey: ['tools'],
@@ -48,6 +51,7 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
       generateAsTemplate,
       generateAsChain,
       selectedToolIds,
+      enableWebSearch,
     });
   };
 
@@ -95,6 +99,20 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
             disabled={isGenerating}
           />
         </div>
+        {webSearchAvailable && (
+          <div className="bg-elevated rounded-lg px-4 py-3 flex justify-between items-center hover:bg-overlay/50 transition-colors">
+            <Label htmlFor="sw-web" className="flex items-center gap-2">
+              <Globe className="size-4 text-primary" />
+              Enable web research
+            </Label>
+            <Switch
+              id="sw-web"
+              checked={enableWebSearch}
+              onCheckedChange={setEnableWebSearch}
+              disabled={isGenerating}
+            />
+          </div>
+        )}
       </div>
 
       {tools.length > 0 && (

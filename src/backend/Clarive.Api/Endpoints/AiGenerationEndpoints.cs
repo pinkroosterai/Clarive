@@ -56,7 +56,7 @@ public static class AiGenerationEndpoints
             var result = await aiService.PreGenClarifyAsync(
                 ctx.GetTenantId(), request.Description,
                 request.GenerateSystemMessage, request.GenerateTemplate, request.GenerateChain,
-                request.ToolIds, ct);
+                request.ToolIds, request.EnableWebSearch, ct);
 
             return Results.Ok(new PreGenClarifyResponse(result.SessionId, result.Questions, result.Enhancements));
         }
@@ -70,7 +70,7 @@ public static class AiGenerationEndpoints
             var result = await aiService.PreGenClarifyAsync(
                 ctx.GetTenantId(), request.Description,
                 request.GenerateSystemMessage, request.GenerateTemplate, request.GenerateChain,
-                request.ToolIds, ct,
+                request.ToolIds, request.EnableWebSearch, ct,
                 stage => sse.WriteProgressAsync(stage, ct));
 
             await sse.WriteDoneAsync(new PreGenClarifyResponse(result.SessionId, result.Questions, result.Enhancements), ct);

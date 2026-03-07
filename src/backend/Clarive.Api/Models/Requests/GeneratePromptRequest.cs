@@ -8,7 +8,8 @@ public record GeneratePromptRequest(
     List<Guid>? ToolIds = null,
     Guid? SessionId = null,
     List<AnsweredQuestionInput>? PreGenAnswers = null,
-    List<int>? SelectedEnhancements = null
+    List<int>? SelectedEnhancements = null,
+    bool EnableWebSearch = false
 );
 
 public record AnsweredQuestionInput(int QuestionIndex, string Answer);

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Clarive.Api.Models.Agents;
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 
 namespace Clarive.Api.Services.Agents;
 
@@ -29,7 +30,7 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
         _factory.OnReconfigured += InvalidateAll;
     }
 
-    public async Task<string> CreateSessionAsync(GenerationConfig config, CancellationToken ct = default)
+    public async Task<string> CreateSessionAsync(GenerationConfig config, CancellationToken ct = default, IList<AITool>? tools = null)
     {
         if (_sessions.Count >= _maxPoolSize)
         {
@@ -41,7 +42,7 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
                     $"Agent session pool is at capacity ({_maxPoolSize}). Please try again later.");
         }
 
-        var agent = _factory.CreateGenerationAgent(config);
+        var agent = _factory.CreateGenerationAgent(config, tools);
         var session = await agent.CreateSessionAsync(ct);
         var id = Guid.NewGuid().ToString("N");
 

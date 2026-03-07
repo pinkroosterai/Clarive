@@ -13,7 +13,7 @@ public interface IAiGenerationService
     Task<AiGenerationResult> PreGenClarifyAsync(
         Guid tenantId, string description,
         bool generateSystemMessage, bool generateTemplate, bool generateChain,
-        List<Guid>? toolIds, CancellationToken ct = default,
+        List<Guid>? toolIds, bool enableWebSearch = false, CancellationToken ct = default,
         Func<string, Task>? onProgress = null);
 
     /// <summary>
