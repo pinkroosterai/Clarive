@@ -1,3 +1,4 @@
+using Humanizer;
 using Microsoft.Extensions.AI;
 
 namespace Clarive.Api.Services.Agents.AiExtensions;
@@ -60,36 +61,33 @@ public sealed class TavilyToolProgressHandler
     private static ProgressEvent FormatSearch(string callId, AIFunctionArguments? args)
     {
         var query = GetArg(args, "query");
-        return ProgressEvent.ToolStart(callId, "\U0001f50d", "Searching\u2026", query is not null ? Truncate(query, 80) : null);
+        return ProgressEvent.ToolStart(callId, "\U0001f50d", "Searching\u2026", query is not null ? query.Truncate(80) : null);
     }
 
     private static ProgressEvent FormatResearch(string callId, AIFunctionArguments? args)
     {
         var query = GetArg(args, "query");
-        return ProgressEvent.ToolStart(callId, "\U0001f52c", "Researching\u2026", query is not null ? Truncate(query, 80) : null);
+        return ProgressEvent.ToolStart(callId, "\U0001f52c", "Researching\u2026", query is not null ? query.Truncate(80) : null);
     }
 
     private static ProgressEvent FormatExtract(string callId, AIFunctionArguments? args)
     {
         var url = GetArg(args, "url") ?? GetArg(args, "urls");
-        return ProgressEvent.ToolStart(callId, "\U0001f4c4", "Reading content\u2026", url is not null ? Truncate(url, 60) : null);
+        return ProgressEvent.ToolStart(callId, "\U0001f4c4", "Reading content\u2026", url is not null ? url.Truncate(60) : null);
     }
 
     private static ProgressEvent FormatCrawl(string callId, AIFunctionArguments? args)
     {
         var url = GetArg(args, "url");
-        return ProgressEvent.ToolStart(callId, "\U0001f577\ufe0f", "Crawling\u2026", url is not null ? Truncate(url, 60) : null);
+        return ProgressEvent.ToolStart(callId, "\U0001f577\ufe0f", "Crawling\u2026", url is not null ? url.Truncate(60) : null);
     }
 
     private static ProgressEvent FormatMap(string callId, AIFunctionArguments? args)
     {
         var url = GetArg(args, "url");
-        return ProgressEvent.ToolStart(callId, "\U0001f5fa\ufe0f", "Mapping site\u2026", url is not null ? Truncate(url, 60) : null);
+        return ProgressEvent.ToolStart(callId, "\U0001f5fa\ufe0f", "Mapping site\u2026", url is not null ? url.Truncate(60) : null);
     }
 
     private static string? GetArg(AIFunctionArguments? args, string key)
         => args?.TryGetValue(key, out var val) == true ? val?.ToString() : null;
-
-    private static string Truncate(string s, int max)
-        => s.Length <= max ? s : string.Concat(s.AsSpan(0, max - 1), "\u2026");
 }

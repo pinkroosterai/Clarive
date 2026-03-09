@@ -58,21 +58,18 @@ public static class UserEndpoints
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Role must be 'admin', 'editor', or 'viewer'.");
 
-        var (result, errorCode, errorMessage) = await userManagementService.ChangeRoleAsync(tenantId, userId, role, ct);
-        if (result is null)
-        {
-            var statusCode = errorCode == "NOT_FOUND" ? 404 : 422;
-            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!, "User", userId.ToString());
-        }
+        var result = await userManagementService.ChangeRoleAsync(tenantId, userId, role, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "User", userId.ToString());
 
         await auditLogger.SafeLogAsync(tenantId, currentUserId, ctx.GetUserName(), AuditAction.UserRoleChanged,
-            "user", userId, result.User.Email, $"Changed role from {result.OldRole} to {result.NewRole}", ct);
+            "user", userId, result.Value.User.Email, $"Changed role from {result.Value.OldRole} to {result.Value.NewRole}", ct);
 
         return Results.Ok(new
         {
-            result.User.Id, result.User.Email, result.User.Name,
-            Role = result.NewRole,
-            result.User.CreatedAt
+            result.Value.User.Id, result.Value.User.Email, result.Value.User.Name,
+            Role = result.Value.NewRole,
+            result.Value.User.CreatedAt
         });
     }
 
@@ -89,20 +86,12 @@ public static class UserEndpoints
         if (userId == currentUserId)
             return ctx.ErrorResult(409, "CANNOT_DELETE_SELF", "Cannot delete your own account.", "User", userId.ToString());
 
-        var (removedUser, errorCode, errorMessage) = await userManagementService.RemoveMemberAsync(tenantId, userId, ct);
-        if (removedUser is null)
-        {
-            var statusCode = errorCode switch
-            {
-                "NOT_FOUND" => 404,
-                "LAST_ADMIN" => 409,
-                _ => 422
-            };
-            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!);
-        }
+        var result = await userManagementService.RemoveMemberAsync(tenantId, userId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
         await auditLogger.SafeLogAsync(tenantId, currentUserId, ctx.GetUserName(), AuditAction.UserDeleted,
-            "user", userId, removedUser.Email, $"Removed {removedUser.Name} ({removedUser.Email}) from workspace", ct);
+            "user", userId, result.Value.Email, $"Removed {result.Value.Name} ({result.Value.Email}) from workspace", ct);
 
         return Results.NoContent();
     }
@@ -120,23 +109,20 @@ public static class UserEndpoints
         if (!string.Equals(request.Confirmation, "TRANSFER", StringComparison.Ordinal))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Confirmation must be exactly 'TRANSFER'.");
 
-        var (result, errorCode, errorMessage) = await userManagementService.TransferOwnershipAsync(
+        var result = await userManagementService.TransferOwnershipAsync(
             tenantId, currentUserId, request.TargetUserId, ct);
 
-        if (result is null)
-        {
-            var statusCode = errorCode!.Contains("NOT_FOUND") ? 404 : 422;
-            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!, "User", request.TargetUserId.ToString());
-        }
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "User", request.TargetUserId.ToString());
 
         await auditLogger.SafeLogAsync(tenantId, currentUserId, ctx.GetUserName(), AuditAction.OwnershipTransferred,
-            "user", result.NewAdmin.Id, result.NewAdmin.Email,
-            $"Transferred ownership from {result.PreviousAdmin.Name} to {result.NewAdmin.Name}", ct);
+            "user", result.Value.NewAdmin.Id, result.Value.NewAdmin.Email,
+            $"Transferred ownership from {result.Value.PreviousAdmin.Name} to {result.Value.NewAdmin.Name}", ct);
 
         return Results.Ok(new
         {
-            PreviousAdmin = new { result.PreviousAdmin.Id, result.PreviousAdmin.Email, Role = "editor" },
-            NewAdmin = new { result.NewAdmin.Id, result.NewAdmin.Email, Role = "admin" }
+            PreviousAdmin = new { result.Value.PreviousAdmin.Id, result.Value.PreviousAdmin.Email, Role = "editor" },
+            NewAdmin = new { result.Value.NewAdmin.Id, result.Value.NewAdmin.Email, Role = "admin" }
         });
     }
 }

@@ -52,22 +52,19 @@ public static class InvitationEndpoints
         IInvitationService invitationService,
         CancellationToken ct)
     {
-        if (Validator.RequireValidEmail(request.Email) is { } emailErr) return emailErr;
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role) || role == UserRole.Admin)
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Role must be 'editor' or 'viewer'.");
 
-        var (result, errorCode, errorMessage) = await invitationService.CreateAsync(
+        var result = await invitationService.CreateAsync(
             ctx.GetTenantId(), ctx.GetUserId(), ctx.GetUserName(), request.Email, role, ct);
 
-        if (result is null)
-        {
-            var statusCode = errorCode == "ALREADY_MEMBER" || errorCode == "INVITATION_EXISTS" ? 409 : 422;
-            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!);
-        }
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        var inv = result.Invitation;
-        if (result.IsExistingUser)
+        var inv = result.Value.Invitation;
+        if (result.Value.IsExistingUser)
         {
             return Results.Created($"/api/invitations/{inv.Id}", new
             {
@@ -114,8 +111,7 @@ public static class InvitationEndpoints
         IAuditLogger auditLogger,
         CancellationToken ct)
     {
-        if (Validator.RequireString(request.Name, "Name") is { } nameErr) return nameErr;
-        if (Validator.RequirePassword(request.Password) is { } pwErr) return pwErr;
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         var result = await accountService.AcceptInvitationAsync(token, request.Name, request.Password, ct);
         if (result is null)
@@ -197,15 +193,12 @@ public static class InvitationEndpoints
         var userId = ctx.GetUserId();
         var userName = ctx.GetUserName();
 
-        var (result, errorCode, errorMessage) = await invitationService.RespondAsync(userId, id, request.Accept, ct);
+        var result = await invitationService.RespondAsync(userId, id, request.Accept, ct);
 
-        if (result is null)
-        {
-            var statusCode = errorCode == "ALREADY_MEMBER" ? 409 : 404;
-            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!);
-        }
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        if (!result.Accepted)
+        if (!result.Value.Accepted)
         {
             await auditLogger.SafeLogAsync(Guid.Empty, userId, userName, AuditAction.InvitationDeclined,
                 "invitation", id, "", $"{userName} declined invitation to workspace", ct);
@@ -213,19 +206,19 @@ public static class InvitationEndpoints
             return Results.Ok(new { message = "Invitation declined" });
         }
 
-        await auditLogger.SafeLogAsync(result.Membership!.TenantId, userId, userName, AuditAction.InvitationAccepted,
-            "invitation", id, "", $"{userName} accepted invitation as {result.Membership.Role.ToString().ToLower()}", ct);
+        await auditLogger.SafeLogAsync(result.Value.Membership!.TenantId, userId, userName, AuditAction.InvitationAccepted,
+            "invitation", id, "", $"{userName} accepted invitation as {result.Value.Membership.Role.ToString().ToLower()}", ct);
 
         return Results.Ok(new
         {
-            message = $"You have joined {result.WorkspaceName}",
+            message = $"You have joined {result.Value.WorkspaceName}",
             workspace = new WorkspaceDto(
-                result.Membership.TenantId,
-                result.WorkspaceName ?? "Unknown",
-                result.Membership.Role.ToString().ToLower(),
+                result.Value.Membership.TenantId,
+                result.Value.WorkspaceName ?? "Unknown",
+                result.Value.Membership.Role.ToString().ToLower(),
                 false,
-                result.MemberCount ?? 0,
-                result.AvatarUrl)
+                result.Value.MemberCount ?? 0,
+                result.Value.AvatarUrl)
         });
     }
 

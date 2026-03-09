@@ -5,6 +5,7 @@ using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
+using ErrorOr;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Services;
@@ -161,15 +162,15 @@ public class SuperAdminService(
         return true;
     }
 
-    public async Task<(string? Password, string? ErrorCode, string? ErrorMessage)> ResetUserPasswordAsync(
+    public async Task<ErrorOr<string>> ResetUserPasswordAsync(
         Guid userId, CancellationToken ct)
     {
         var user = await userRepo.GetByIdCrossTenantsAsync(userId, ct);
         if (user is null)
-            return (null, "NOT_FOUND", "User not found.");
+            return Error.NotFound("NOT_FOUND", "User not found.");
 
         if (user.GoogleId != null)
-            return (null, "GOOGLE_ACCOUNT", "Cannot reset password for Google accounts.");
+            return Error.Validation("GOOGLE_ACCOUNT", "Cannot reset password for Google accounts.");
 
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
         var passwordChars = new char[16];
@@ -180,6 +181,6 @@ public class SuperAdminService(
         user.PasswordHash = passwordHasher.Hash(password);
         await userRepo.UpdateAsync(user, ct);
 
-        return (password, null, null);
+        return password;
     }
 }

@@ -4,6 +4,7 @@ using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Results;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
+using ErrorOr;
 
 namespace Clarive.Api.Services;
 
@@ -42,18 +43,18 @@ public class UserManagementService(
         return new MemberListResult(items, items.Count, page, pageSize);
     }
 
-    public async Task<(ChangeRoleResult? Result, string? ErrorCode, string? ErrorMessage)> ChangeRoleAsync(
+    public async Task<ErrorOr<ChangeRoleResult>> ChangeRoleAsync(
         Guid tenantId, Guid targetUserId, UserRole newRole, CancellationToken ct)
     {
         var user = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (user is null)
-            return (null, "NOT_FOUND", "User not found.");
+            return Error.NotFound("NOT_FOUND", "User not found.");
 
         var oldRole = user.Role.ToString().ToLower();
 
         var membership = await membershipRepo.GetAsync(targetUserId, tenantId, ct);
         if (membership is null)
-            return (null, "MEMBERSHIP_NOT_FOUND", "User membership not found for this workspace.");
+            return Error.NotFound("MEMBERSHIP_NOT_FOUND", "User membership not found for this workspace.");
 
         membership.Role = newRole;
         await membershipRepo.UpdateAsync(membership, ct);
@@ -65,15 +66,15 @@ public class UserManagementService(
             await userRepo.UpdateAsync(user, ct);
         }
 
-        return (new ChangeRoleResult(user, newRole.ToString().ToLower(), oldRole), null, null);
+        return new ChangeRoleResult(user, newRole.ToString().ToLower(), oldRole);
     }
 
-    public async Task<(User? RemovedUser, string? ErrorCode, string? ErrorMessage)> RemoveMemberAsync(
+    public async Task<ErrorOr<User>> RemoveMemberAsync(
         Guid tenantId, Guid targetUserId, CancellationToken ct)
     {
         var user = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (user is null)
-            return (null, "NOT_FOUND", "User not found.");
+            return Error.NotFound("NOT_FOUND", "User not found.");
 
         // Prevent removing the last admin
         var membership = await membershipRepo.GetAsync(targetUserId, tenantId, ct);
@@ -81,7 +82,7 @@ public class UserManagementService(
         {
             var adminCount = await membershipRepo.CountAdminsAsync(tenantId, ct);
             if (adminCount <= 1)
-                return (null, "LAST_ADMIN", "Cannot remove the last admin. Transfer ownership first.");
+                return Error.Conflict("LAST_ADMIN", "Cannot remove the last admin. Transfer ownership first.");
         }
 
         // Remove membership from this workspace
@@ -108,19 +109,19 @@ public class UserManagementService(
             await userRepo.DeleteAsync(tenantId, targetUserId, ct);
         }
 
-        return (user, null, null);
+        return user;
     }
 
-    public async Task<(TransferOwnershipResult? Result, string? ErrorCode, string? ErrorMessage)> TransferOwnershipAsync(
+    public async Task<ErrorOr<TransferOwnershipResult>> TransferOwnershipAsync(
         Guid tenantId, Guid currentUserId, Guid targetUserId, CancellationToken ct)
     {
         var targetUser = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (targetUser is null)
-            return (null, "TARGET_NOT_FOUND", "Target user not found.");
+            return Error.NotFound("TARGET_NOT_FOUND", "Target user not found.");
 
         var currentUser = await userRepo.GetByIdAsync(tenantId, currentUserId, ct);
         if (currentUser is null)
-            return (null, "CURRENT_NOT_FOUND", "Current user not found.");
+            return Error.NotFound("CURRENT_NOT_FOUND", "Current user not found.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -148,6 +149,6 @@ public class UserManagementService(
 
         await tx.CommitAsync(ct);
 
-        return (new TransferOwnershipResult(currentUser, targetUser), null, null);
+        return new TransferOwnershipResult(currentUser, targetUser);
     }
 }

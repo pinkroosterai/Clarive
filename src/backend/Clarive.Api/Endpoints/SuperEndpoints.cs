@@ -103,14 +103,11 @@ public static class SuperEndpoints
         ISuperAdminService superAdminService,
         CancellationToken ct = default)
     {
-        var (password, errorCode, errorMessage) = await superAdminService.ResetUserPasswordAsync(userId, ct);
+        var result = await superAdminService.ResetUserPasswordAsync(userId, ct);
 
-        if (errorCode == "NOT_FOUND")
-            return Results.NotFound();
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        if (errorCode != null)
-            return ctx.ErrorResult(400, errorCode, errorMessage!);
-
-        return Results.Ok(new ResetPasswordResponse(NewPassword: password!));
+        return Results.Ok(new ResetPasswordResponse(NewPassword: result.Value));
     }
 }

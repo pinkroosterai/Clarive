@@ -64,19 +64,11 @@ public static class ProfileEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var (user, errorCode, message) = await profileService.UpdateProfileAsync(tenantId, userId, request, ct);
-        if (user is null)
-        {
-            var statusCode = errorCode switch
-            {
-                "NOT_FOUND" => 404,
-                "EMAIL_EXISTS" => 409,
-                _ => 422
-            };
-            return ctx.ErrorResult(statusCode, errorCode!, message!);
-        }
+        var result = await profileService.UpdateProfileAsync(tenantId, userId, request, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        return Results.Ok(ToUserDto(user));
+        return Results.Ok(ToUserDto(result.Value));
     }
 
     private static async Task<IResult> HandleCompleteOnboarding(
@@ -87,9 +79,9 @@ public static class ProfileEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var (success, errorCode, message) = await profileService.CompleteOnboardingAsync(tenantId, userId, ct);
-        if (!success)
-            return ctx.ErrorResult(404, errorCode!, message!);
+        var result = await profileService.CompleteOnboardingAsync(tenantId, userId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
         return Results.NoContent();
     }

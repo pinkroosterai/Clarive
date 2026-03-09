@@ -1,11 +1,13 @@
+using ErrorOr;
+
 namespace Clarive.Api.Services.Interfaces;
 
 public interface IAuthService
 {
-    Task<(bool Success, string? ErrorCode, string? Message)> VerifyEmailAsync(
+    Task<ErrorOr<string>> VerifyEmailAsync(
         string token, CancellationToken ct = default);
 
-    Task<(bool Success, string? ErrorCode, string? Message)> ResendVerificationAsync(
+    Task<ErrorOr<string>> ResendVerificationAsync(
         Guid tenantId, Guid userId, CancellationToken ct = default);
 
     /// <summary>
@@ -14,6 +16,6 @@ public interface IAuthService
     /// </summary>
     Task ForgotPasswordAsync(string? email, CancellationToken ct = default);
 
-    Task<(bool Success, string? ErrorCode, string? Message)> ResetPasswordAsync(
+    Task<ErrorOr<string>> ResetPasswordAsync(
         string token, string newPassword, CancellationToken ct = default);
 }

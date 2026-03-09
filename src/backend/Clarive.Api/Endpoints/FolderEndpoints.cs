@@ -61,7 +61,7 @@ public static class FolderEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        if (Validator.RequireString(request.Name, "Folder name") is { } nameErr) return nameErr;
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         if (request.ParentId is not null && await folderRepo.GetByIdAsync(tenantId, request.ParentId.Value, ct) is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "Parent folder not found.", "Folder", request.ParentId.Value.ToString());
@@ -95,7 +95,7 @@ public static class FolderEndpoints
         if (folder is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "Folder not found.", "Folder", folderId.ToString());
 
-        if (Validator.RequireString(request.Name, "Folder name") is { } nameErr) return nameErr;
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         folder.Name = request.Name.Trim();
         await folderRepo.UpdateAsync(folder, ct);

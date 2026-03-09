@@ -1,4 +1,5 @@
 using Clarive.Api.Helpers;
+using Clarive.Api.Services;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Models.Results;
@@ -45,11 +46,7 @@ public static class AiGenerationEndpoints
         IAiGenerationService aiService,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Description))
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Description is required.");
-
-        if (request.Description.Length > 2000)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Description must not exceed 2000 characters.");
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         if (!WantsSse(ctx))
         {
@@ -92,15 +89,12 @@ public static class AiGenerationEndpoints
         {
             try
             {
-                var (result, errorCode, errorMessage) = await aiService.RefineAsync(ctx.GetTenantId(), request, ct);
+                var result = await aiService.RefineAsync(ctx.GetTenantId(), request, ct);
 
-                if (result is null)
-                {
-                    var statusCode = errorCode == "NOT_FOUND" ? 404 : 422;
-                    return ctx.ErrorResult(statusCode, errorCode!, errorMessage!);
-                }
+                if (result.IsError)
+                    return result.Errors.ToHttpResult(ctx);
 
-                return Results.Ok(ToResponse(result));
+                return Results.Ok(ToResponse(result.Value));
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("expired"))
             {
@@ -114,17 +108,17 @@ public static class AiGenerationEndpoints
 
         try
         {
-            var (result, errorCode, errorMessage) = await aiService.RefineAsync(
+            var result = await aiService.RefineAsync(
                 ctx.GetTenantId(), request, ct,
                 progress => sse.WriteProgressAsync(progress, ct));
 
-            if (result is null)
+            if (result.IsError)
             {
-                await sse.WriteErrorAsync(errorCode!, errorMessage!, ct);
+                await sse.WriteErrorAsync(result.FirstError.Code, result.FirstError.Description, ct);
             }
             else
             {
-                await sse.WriteDoneAsync(ToResponse(result), ct);
+                await sse.WriteDoneAsync(ToResponse(result.Value), ct);
             }
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("expired"))
@@ -151,15 +145,12 @@ public static class AiGenerationEndpoints
 
         if (!WantsSse(ctx))
         {
-            var (result, errorCode, errorMessage) = await aiService.EnhanceAsync(tenantId, request.EntryId, ct);
+            var result = await aiService.EnhanceAsync(tenantId, request.EntryId, ct);
 
-            if (result is null)
-            {
-                var statusCode = errorCode == "NOT_FOUND" ? 404 : 409;
-                return ctx.ErrorResult(statusCode, errorCode!, errorMessage!, "Entry", request.EntryId.ToString());
-            }
+            if (result.IsError)
+                return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
-            return Results.Ok(ToResponse(result));
+            return Results.Ok(ToResponse(result.Value));
         }
 
         // SSE path
@@ -168,17 +159,17 @@ public static class AiGenerationEndpoints
 
         try
         {
-            var (result, errorCode, errorMessage) = await aiService.EnhanceAsync(
+            var result = await aiService.EnhanceAsync(
                 tenantId, request.EntryId, ct,
                 progress => sse.WriteProgressAsync(progress, ct));
 
-            if (result is null)
+            if (result.IsError)
             {
-                await sse.WriteErrorAsync(errorCode!, errorMessage!, ct);
+                await sse.WriteErrorAsync(result.FirstError.Code, result.FirstError.Description, ct);
             }
             else
             {
-                await sse.WriteDoneAsync(ToResponse(result), ct);
+                await sse.WriteDoneAsync(ToResponse(result.Value), ct);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -199,14 +190,11 @@ public static class AiGenerationEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        var (systemMessage, errorCode, errorMessage) = await aiService.GenerateSystemMessageAsync(tenantId, request.EntryId, ct);
-        if (systemMessage is null)
-        {
-            var statusCode = errorCode switch { "NOT_FOUND" => 404, "ALREADY_EXISTS" => 409, _ => 422 };
-            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!, "Entry", request.EntryId.ToString());
-        }
+        var result = await aiService.GenerateSystemMessageAsync(tenantId, request.EntryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
-        return Results.Ok(new GenerateSystemMessageResponse(systemMessage));
+        return Results.Ok(new GenerateSystemMessageResponse(result.Value));
     }
 
     // ── Decompose (no SSE — fast single-turn) ──
@@ -219,14 +207,11 @@ public static class AiGenerationEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        var (prompts, errorCode, errorMessage) = await aiService.DecomposeAsync(tenantId, request.EntryId, ct);
-        if (prompts is null)
-        {
-            var statusCode = errorCode switch { "NOT_FOUND" => 404, "ALREADY_CHAIN" => 409, _ => 422 };
-            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!, "Entry", request.EntryId.ToString());
-        }
+        var result = await aiService.DecomposeAsync(tenantId, request.EntryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
-        return Results.Ok(new DecomposeResponse(prompts));
+        return Results.Ok(new DecomposeResponse(result.Value));
     }
 
     private static GeneratePromptResponse ToResponse(AiGenerationResult result) =>

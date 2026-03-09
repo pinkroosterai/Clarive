@@ -2,6 +2,7 @@ using Clarive.Api.Auth;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
+using ErrorOr;
 using Microsoft.Extensions.Options;
 
 namespace Clarive.Api.Services;
@@ -15,47 +16,47 @@ public class AuthService(
     JwtService jwtService,
     PasswordHasher passwordHasher) : IAuthService
 {
-    public async Task<(bool Success, string? ErrorCode, string? Message)> VerifyEmailAsync(
+    public async Task<ErrorOr<string>> VerifyEmailAsync(
         string token, CancellationToken ct)
     {
         var tokenHash = JwtService.HashRefreshToken(token);
         var verification = await tokenRepo.GetVerificationByHashAsync(tokenHash, ct);
 
         if (verification is null || verification.UsedAt is not null || verification.ExpiresAt < DateTime.UtcNow)
-            return (false, "INVALID_TOKEN", "Verification token is invalid or expired.");
+            return Error.Validation("INVALID_TOKEN", "Verification token is invalid or expired.");
 
         var user = await userRepo.GetByIdCrossTenantsAsync(verification.UserId, ct);
         if (user is null)
-            return (false, "INVALID_TOKEN", "Verification token is invalid or expired.");
+            return Error.Validation("INVALID_TOKEN", "Verification token is invalid or expired.");
 
         if (user.EmailVerified)
         {
             await tokenRepo.MarkVerificationUsedAsync(verification.Id, ct);
-            return (true, null, "Email already verified.");
+            return "Email already verified.";
         }
 
         user.EmailVerified = true;
         await userRepo.UpdateAsync(user, ct);
         await tokenRepo.MarkVerificationUsedAsync(verification.Id, ct);
 
-        return (true, null, "Email verified successfully.");
+        return "Email verified successfully.";
     }
 
-    public async Task<(bool Success, string? ErrorCode, string? Message)> ResendVerificationAsync(
+    public async Task<ErrorOr<string>> ResendVerificationAsync(
         Guid tenantId, Guid userId, CancellationToken ct)
     {
         var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
 
         if (user is null)
-            return (false, "NOT_FOUND", "User not found.");
+            return Error.NotFound("NOT_FOUND", "User not found.");
 
         if (user.EmailVerified)
-            return (false, "ALREADY_VERIFIED", "Email is already verified.");
+            return Error.Conflict("ALREADY_VERIFIED", "Email is already verified.");
 
         // Rate limit: max 1 token per 2 minutes
         var recentCount = await tokenRepo.CountRecentVerificationTokensAsync(userId, TimeSpan.FromMinutes(2), ct);
         if (recentCount >= 1)
-            return (false, "RATE_LIMIT", "Please wait before requesting another verification email.");
+            return Error.Custom(429, "RATE_LIMIT", "Please wait before requesting another verification email.");
 
         var (rawToken, _) = jwtService.GenerateRefreshToken();
         await tokenRepo.CreateVerificationTokenAsync(new EmailVerificationToken
@@ -70,7 +71,7 @@ public class AuthService(
         var verifyUrl = $"{appSettings.Value.FrontendUrl}/verify-email?token={rawToken}";
         await emailService.SendVerificationEmailAsync(user.Email, user.Name, verifyUrl, ct);
 
-        return (true, null, "Verification email sent.");
+        return "Verification email sent.";
     }
 
     public async Task ForgotPasswordAsync(string? email, CancellationToken ct)
@@ -101,24 +102,24 @@ public class AuthService(
         await emailService.SendPasswordResetEmailAsync(user.Email, user.Name, resetUrl, ct);
     }
 
-    public async Task<(bool Success, string? ErrorCode, string? Message)> ResetPasswordAsync(
+    public async Task<ErrorOr<string>> ResetPasswordAsync(
         string token, string newPassword, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(newPassword))
-            return (false, "VALIDATION_ERROR", "Password is required.");
+            return Error.Validation("VALIDATION_ERROR", "Password is required.");
 
         if (newPassword.Length < 8)
-            return (false, "VALIDATION_ERROR", "Password must be at least 8 characters.");
+            return Error.Validation("VALIDATION_ERROR", "Password must be at least 8 characters.");
 
         var tokenHash = JwtService.HashRefreshToken(token);
         var reset = await tokenRepo.GetResetByHashAsync(tokenHash, ct);
 
         if (reset is null || reset.UsedAt is not null || reset.ExpiresAt < DateTime.UtcNow)
-            return (false, "INVALID_TOKEN", "Reset token is invalid or expired.");
+            return Error.Validation("INVALID_TOKEN", "Reset token is invalid or expired.");
 
         var user = await userRepo.GetByIdCrossTenantsAsync(reset.UserId, ct);
         if (user is null)
-            return (false, "INVALID_TOKEN", "Reset token is invalid or expired.");
+            return Error.Validation("INVALID_TOKEN", "Reset token is invalid or expired.");
 
         user.PasswordHash = passwordHasher.Hash(newPassword);
         await userRepo.UpdateAsync(user, ct);
@@ -127,6 +128,6 @@ public class AuthService(
         // Revoke all refresh tokens for security
         await refreshTokenRepo.RevokeAllForUserAsync(user.Id, ct);
 
-        return (true, null, "Password reset successfully.");
+        return "Password reset successfully.";
     }
 }

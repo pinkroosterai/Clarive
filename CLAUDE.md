@@ -14,7 +14,7 @@ Frontend (React 18 + TS + Vite)  →  Backend (.NET 10 Minimal APIs)  →  Postg
 ```
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (Radix), Tiptap v3 editor
-- **Backend**: C# ASP.NET Core 10 Minimal APIs, EF Core 10 (Npgsql)
+- **Backend**: C# ASP.NET Core 10 Minimal APIs, EF Core 10 (Npgsql), ErrorOr, MiniValidation, Humanizer
 - **Auth**: JWT (15-min) + rotating refresh tokens (7-day), Google OIDC, API key auth (`X-Api-Key` header)
 - **AI**: OpenAI via agent-based orchestration (generation, evaluation, clarification agents), Tavily web search
 - **State**: Zustand (auth store only), TanStack React Query (server state)
@@ -82,10 +82,32 @@ public static class FooEndpoints {
 - Errors returned via `ctx.ErrorResult(statusCode, errorCode, message)`
 - Endpoints registered in `Program.cs` as `app.MapFooEndpoints()`
 
+### Error Handling (ErrorOr)
+Services return `ErrorOr<T>` for operations that can fail. Endpoints consume via:
+```csharp
+var result = await service.DoSomethingAsync(...);
+if (result.IsError)
+    return result.Errors.ToHttpResult(ctx);  // bridges to ctx.ErrorResult()
+return Results.Ok(result.Value);
+```
+- `Error.NotFound(code, desc)` → 404, `Error.Validation(...)` → 422, `Error.Conflict(...)` → 409
+- `Error.Custom(429, ...)` for non-standard status codes
+- `ErrorOr<Success>` with `Result.Success` for void-success operations
+- Extension in `Helpers/ErrorOrExtensions.cs` maps ErrorType to HTTP status codes
+
+### Request Validation (MiniValidation)
+Request records use Data Annotations (`[property: Required]`, `[property: StringLength(...)]`, etc.):
+```csharp
+if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
+```
+- `Validator.ValidateRequest<T>()` in `Services/Validator.cs` uses `MiniValidator.TryValidate()`
+- Returns 422 with `VALIDATION_ERROR` code on first error; null if valid
+- `Validator.IsValidEmail()` and `Validator.MinPasswordLength` still available for service-layer business logic
+
 ### Repository + Service Layers
 - **Repositories**: Interface-based (`IFooRepository` → `EfFooRepository`), scoped lifetime, tenant-isolated via global query filter on `ITenantScoped`
 - **Services**: Business logic with constructor injection (primary constructors), explicit DB transactions via `db.Database.BeginTransactionAsync()`
-- Validation methods return `string?` (null = valid) or `(bool Success, string? ErrorCode, string? Message)` tuples for multi-failure operations
+- Service methods return `ErrorOr<T>` for failable operations (migrated from tuple patterns)
 
 ### Multi-Tenancy
 Global EF Core query filter on all `ITenantScoped` entities. `ITenantProvider` (scoped) extracts tenant from JWT claims. Null tenant ID allows cross-tenant queries (superuser).

@@ -116,9 +116,7 @@ public static class AuthEndpoints
         IConfiguration configuration,
         CancellationToken ct)
     {
-        if (Validator.RequireValidEmail(request.Email) is { } emailErr) return emailErr;
-        if (Validator.RequireString(request.Name, "Name") is { } nameErr) return nameErr;
-        if (Validator.RequirePassword(request.Password) is { } pwErr) return pwErr;
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         // Block registration if disabled (always allow first user for initial setup)
         if (!IsRegistrationAllowed(configuration) && await userRepo.AnyUsersExistAsync(ct))
@@ -176,11 +174,11 @@ public static class AuthEndpoints
         if (string.IsNullOrWhiteSpace(request.Token))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Token is required.");
 
-        var (success, errorCode, message) = await authService.VerifyEmailAsync(request.Token, ct);
-        if (!success)
-            return ctx.ErrorResult(400, errorCode!, message!);
+        var result = await authService.VerifyEmailAsync(request.Token, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        return Results.Ok(new { message });
+        return Results.Ok(new { message = result.Value });
     }
 
     private static async Task<IResult> HandleResendVerification(
@@ -191,20 +189,11 @@ public static class AuthEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var (success, errorCode, message) = await authService.ResendVerificationAsync(tenantId, userId, ct);
-        if (!success)
-        {
-            var statusCode = errorCode switch
-            {
-                "NOT_FOUND" => 404,
-                "ALREADY_VERIFIED" => 409,
-                "RATE_LIMIT" => 429,
-                _ => 400
-            };
-            return ctx.ErrorResult(statusCode, errorCode!, message!);
-        }
+        var result = await authService.ResendVerificationAsync(tenantId, userId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        return Results.Ok(new { message });
+        return Results.Ok(new { message = result.Value });
     }
 
     private static async Task<IResult> HandleForgotPassword(
@@ -227,18 +216,11 @@ public static class AuthEndpoints
         if (string.IsNullOrWhiteSpace(request.Token))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Token is required.");
 
-        var (success, errorCode, message) = await authService.ResetPasswordAsync(request.Token, request.NewPassword, ct);
-        if (!success)
-        {
-            var statusCode = errorCode switch
-            {
-                "VALIDATION_ERROR" => 422,
-                _ => 400
-            };
-            return ctx.ErrorResult(statusCode, errorCode!, message!);
-        }
+        var result = await authService.ResetPasswordAsync(request.Token, request.NewPassword, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        return Results.Ok(new { message });
+        return Results.Ok(new { message = result.Value });
     }
 
     private static async Task<IResult> HandleGoogleAuth(

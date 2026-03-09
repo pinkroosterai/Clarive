@@ -1,6 +1,7 @@
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Results;
+using ErrorOr;
 
 namespace Clarive.Api.Services.Interfaces;
 
@@ -16,7 +17,7 @@ public interface IUserManagementService
     /// Changes a user's role in a workspace. Updates both membership and user entity.
     /// Returns an error if the user is not found or membership doesn't exist.
     /// </summary>
-    Task<(ChangeRoleResult? Result, string? ErrorCode, string? ErrorMessage)> ChangeRoleAsync(
+    Task<ErrorOr<ChangeRoleResult>> ChangeRoleAsync(
         Guid tenantId, Guid targetUserId, UserRole newRole, CancellationToken ct = default);
 
     /// <summary>
@@ -24,14 +25,14 @@ public interface IUserManagementService
     /// Deletes the user entity if they have no remaining memberships.
     /// Returns an error if the user is not found or is the last admin.
     /// </summary>
-    Task<(User? RemovedUser, string? ErrorCode, string? ErrorMessage)> RemoveMemberAsync(
+    Task<ErrorOr<User>> RemoveMemberAsync(
         Guid tenantId, Guid targetUserId, CancellationToken ct = default);
 
     /// <summary>
     /// Transfers workspace ownership: current admin becomes editor, target user becomes admin.
     /// Runs in a transaction. Returns an error if either user is not found.
     /// </summary>
-    Task<(TransferOwnershipResult? Result, string? ErrorCode, string? ErrorMessage)> TransferOwnershipAsync(
+    Task<ErrorOr<TransferOwnershipResult>> TransferOwnershipAsync(
         Guid tenantId, Guid currentUserId, Guid targetUserId, CancellationToken ct = default);
 }
 

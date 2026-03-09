@@ -1,6 +1,7 @@
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Results;
+using ErrorOr;
 
 namespace Clarive.Api.Services.Interfaces;
 
@@ -8,9 +9,9 @@ public interface IInvitationService
 {
     /// <summary>
     /// Creates an invitation for a new or existing user.
-    /// Returns an error string if validation fails (ALREADY_MEMBER, INVITATION_EXISTS), or a result on success.
+    /// Returns an error if validation fails (ALREADY_MEMBER, INVITATION_EXISTS), or a result on success.
     /// </summary>
-    Task<(CreateInvitationResult? Result, string? ErrorCode, string? ErrorMessage)> CreateAsync(
+    Task<ErrorOr<CreateInvitationResult>> CreateAsync(
         Guid tenantId, Guid invitedById, string inviterName,
         string email, UserRole role, CancellationToken ct = default);
 
@@ -35,9 +36,9 @@ public interface IInvitationService
 
     /// <summary>
     /// Responds to a pending invitation (accept or decline) for an existing user.
-    /// Returns an error string if validation fails, or a result on success.
+    /// Returns an error if validation fails, or a result on success.
     /// </summary>
-    Task<(RespondInvitationResult? Result, string? ErrorCode, string? ErrorMessage)> RespondAsync(
+    Task<ErrorOr<RespondInvitationResult>> RespondAsync(
         Guid userId, Guid invitationId, bool accept, CancellationToken ct = default);
 
     /// <summary>

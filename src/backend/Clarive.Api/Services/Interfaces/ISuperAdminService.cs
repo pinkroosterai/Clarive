@@ -1,4 +1,5 @@
 using Clarive.Api.Models.Responses;
+using ErrorOr;
 
 namespace Clarive.Api.Services.Interfaces;
 
@@ -13,6 +14,6 @@ public interface ISuperAdminService
 
     Task<bool> SoftDeleteUserAsync(Guid userId, CancellationToken ct);
 
-    Task<(string? Password, string? ErrorCode, string? ErrorMessage)> ResetUserPasswordAsync(
+    Task<ErrorOr<string>> ResetUserPasswordAsync(
         Guid userId, CancellationToken ct);
 }

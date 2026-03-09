@@ -7,6 +7,7 @@ using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Clarive.Api.Services.Interfaces;
+using ErrorOr;
 
 namespace Clarive.Api.Services;
 
@@ -52,16 +53,16 @@ public class AiGenerationService(
         return ToResult(sessionId, draft, questions, enhancements, result.Evaluation, scoreHistory);
     }
 
-    public async Task<(AiGenerationResult? Result, string? ErrorCode, string? ErrorMessage)> RefineAsync(
+    public async Task<ErrorOr<AiGenerationResult>> RefineAsync(
         Guid tenantId, RefinePromptRequest request, CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null)
     {
         var session = await sessionRepo.GetByIdAsync(tenantId, request.SessionId, ct);
         if (session is null)
-            return (null, "NOT_FOUND", "Session not found or expired.");
+            return Error.NotFound("NOT_FOUND", "Session not found or expired.");
 
         if (session.AgentSessionId is null || session.Config is null)
-            return (null, "VALIDATION_ERROR", "Session does not have an active agent workflow.");
+            return Error.Validation("VALIDATION_ERROR", "Session does not have an active agent workflow.");
 
         // Resolve answers
         var answers = request.Answers?
@@ -115,20 +116,20 @@ public class AiGenerationService(
         session.ScoreHistory = newScoreHistory;
         await sessionRepo.UpdateAsync(session, ct);
 
-        return (ToResult(request.SessionId, draft, questions, enhancements, result.Evaluation, newScoreHistory), null, null);
+        return ToResult(request.SessionId, draft, questions, enhancements, result.Evaluation, newScoreHistory);
     }
 
-    public async Task<(AiGenerationResult? Result, string? ErrorCode, string? ErrorMessage)> EnhanceAsync(
+    public async Task<ErrorOr<AiGenerationResult>> EnhanceAsync(
         Guid tenantId, Guid entryId, CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return (null, "NOT_FOUND", "Entry not found.");
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (working is null)
-            return (null, "NOT_FOUND", "No version found for this entry.");
+            return Error.NotFound("NOT_FOUND", "No version found for this entry.");
 
         var prompts = working.Prompts.OrderBy(p => p.Order)
             .Select(p => new PromptInput(p.Content, p.IsTemplate))
@@ -164,22 +165,22 @@ public class AiGenerationService(
             CreatedAt = DateTime.UtcNow
         }, ct);
 
-        return (ToResult(sessionId, draft, questions, enhancements, result.Evaluation, scoreHistory), null, null);
+        return ToResult(sessionId, draft, questions, enhancements, result.Evaluation, scoreHistory);
     }
 
-    public async Task<(string? SystemMessage, string? ErrorCode, string? ErrorMessage)> GenerateSystemMessageAsync(
+    public async Task<ErrorOr<string>> GenerateSystemMessageAsync(
         Guid tenantId, Guid entryId, CancellationToken ct)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return (null, "NOT_FOUND", "Entry not found.");
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (working is null)
-            return (null, "NOT_FOUND", "No version found for this entry.");
+            return Error.NotFound("NOT_FOUND", "No version found for this entry.");
 
         if (!string.IsNullOrEmpty(working.SystemMessage))
-            return (null, "ALREADY_EXISTS", "Entry already has a system message.");
+            return Error.Conflict("ALREADY_EXISTS", "Entry already has a system message.");
 
         var promptInputs = working.Prompts.OrderBy(p => p.Order)
             .Select(p => new PromptInput(p.Content, p.IsTemplate))
@@ -187,27 +188,27 @@ public class AiGenerationService(
 
         // This can throw — caller should handle failure
         var systemMessage = await orchestrator.GenerateSystemMessageAsync(promptInputs, ct);
-        return (systemMessage, null, null);
+        return systemMessage;
     }
 
-    public async Task<(List<PromptInput>? Prompts, string? ErrorCode, string? ErrorMessage)> DecomposeAsync(
+    public async Task<ErrorOr<List<PromptInput>>> DecomposeAsync(
         Guid tenantId, Guid entryId, CancellationToken ct)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return (null, "NOT_FOUND", "Entry not found.");
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (working is null)
-            return (null, "NOT_FOUND", "No version found for this entry.");
+            return Error.NotFound("NOT_FOUND", "No version found for this entry.");
 
         if (working.Prompts.Count != 1)
-            return (null, "ALREADY_CHAIN", "Entry must have exactly one prompt to decompose.");
+            return Error.Conflict("ALREADY_CHAIN", "Entry must have exactly one prompt to decompose.");
 
         // This can throw — caller should handle failure
         var decomposed = await orchestrator.DecomposeAsync(
             working.Prompts[0].Content, working.Prompts[0].IsTemplate, working.SystemMessage, ct);
-        return (decomposed, null, null);
+        return decomposed;
     }
 
     // ── Private helpers ──

@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
+using Humanizer;
 using ModelContextProtocol.Client;
 
 namespace Clarive.Api.Services;
@@ -72,9 +73,9 @@ public class McpImportService : IMcpImportService
             {
                 Id = Guid.NewGuid(),
                 TenantId = tenantId,
-                Name = Truncate(mcp.Title ?? Humanize(mcp.Name), 100),
-                ToolName = Truncate(mcp.Name, 100),
-                Description = Truncate(mcp.Description ?? "", 500),
+                Name = (mcp.Title ?? mcp.Name.Humanize(LetterCasing.Sentence)).Truncate(100),
+                ToolName = mcp.Name.Truncate(100),
+                Description = (mcp.Description ?? "").Truncate(500),
                 InputSchema = mcp.JsonSchema.ValueKind != System.Text.Json.JsonValueKind.Undefined
                     ? JsonNode.Parse(mcp.JsonSchema.GetRawText())
                     : null,
@@ -89,13 +90,4 @@ public class McpImportService : IMcpImportService
         return new McpImportResult(newTools, skippedCount);
     }
 
-    private static string Truncate(string value, int maxLength)
-        => value.Length <= maxLength ? value : value[..maxLength];
-
-    private static string Humanize(string toolName)
-    {
-        var spaced = toolName.Replace('_', ' ').Replace('-', ' ').Replace('.', ' ');
-        if (spaced.Length == 0) return toolName;
-        return char.ToUpper(spaced[0]) + spaced[1..];
-    }
 }

@@ -5,6 +5,7 @@ using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Results;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
+using ErrorOr;
 using Microsoft.Extensions.Options;
 
 namespace Clarive.Api.Services;
@@ -20,7 +21,7 @@ public class InvitationService(
     IOptions<AppSettings> appSettings,
     ILogger<InvitationService> logger) : IInvitationService
 {
-    public async Task<(CreateInvitationResult? Result, string? ErrorCode, string? ErrorMessage)> CreateAsync(
+    public async Task<ErrorOr<CreateInvitationResult>> CreateAsync(
         Guid tenantId, Guid invitedById, string inviterName,
         string email, UserRole role, CancellationToken ct)
     {
@@ -102,17 +103,17 @@ public class InvitationService(
         return invitation;
     }
 
-    public async Task<(RespondInvitationResult? Result, string? ErrorCode, string? ErrorMessage)> RespondAsync(
+    public async Task<ErrorOr<RespondInvitationResult>> RespondAsync(
         Guid userId, Guid invitationId, bool accept, CancellationToken ct)
     {
         var invitation = await invitationRepo.GetByIdCrossTenantsAsync(invitationId, ct);
         if (invitation is null || invitation.TargetUserId != userId || invitation.ExpiresAt <= DateTime.UtcNow)
-            return (null, "NOT_FOUND", "Invitation not found or expired.");
+            return Error.NotFound("NOT_FOUND", "Invitation not found or expired.");
 
         if (!accept)
         {
             await invitationRepo.DeleteCrossTenantsAsync(invitationId, ct);
-            return (new RespondInvitationResult(false, null, null, null, null), null, null);
+            return new RespondInvitationResult(false, null, null, null, null);
         }
 
         // Accept — check not already a member
@@ -120,7 +121,7 @@ public class InvitationService(
         if (existingMembership is not null)
         {
             await invitationRepo.DeleteCrossTenantsAsync(invitationId, ct);
-            return (null, "ALREADY_MEMBER", "You are already a member of this workspace.");
+            return Error.Conflict("ALREADY_MEMBER", "You are already a member of this workspace.");
         }
 
         var membership = await membershipRepo.CreateAsync(new TenantMembership
@@ -140,8 +141,8 @@ public class InvitationService(
 
         var avatarUrl = AvatarHelpers.TenantAvatarUrl(tenant);
 
-        return (new RespondInvitationResult(
-            true, membership, tenant?.Name ?? "the workspace", memberCount, avatarUrl), null, null);
+        return new RespondInvitationResult(
+            true, membership, tenant?.Name ?? "the workspace", memberCount, avatarUrl);
     }
 
     public async Task<List<PendingInvitationInfo>> GetPendingAsync(Guid userId, CancellationToken ct)
@@ -172,16 +173,16 @@ public class InvitationService(
         return invitations.Count(i => i.ExpiresAt > DateTime.UtcNow);
     }
 
-    private async Task<(CreateInvitationResult? Result, string? ErrorCode, string? ErrorMessage)> CreateForExistingUserAsync(
+    private async Task<ErrorOr<CreateInvitationResult>> CreateForExistingUserAsync(
         Guid tenantId, Guid invitedById, string inviterName,
         string normalizedEmail, UserRole role, User existingUser, CancellationToken ct)
     {
         var existingMembership = await membershipRepo.GetAsync(existingUser.Id, tenantId, ct);
         if (existingMembership is not null)
-            return (null, "ALREADY_MEMBER", "This user is already a member of this workspace.");
+            return Error.Conflict("ALREADY_MEMBER", "This user is already a member of this workspace.");
 
         if (await invitationRepo.GetActiveByEmailAsync(tenantId, normalizedEmail, ct) is not null)
-            return (null, "INVITATION_EXISTS", "An active invitation for this email already exists.");
+            return Error.Conflict("INVITATION_EXISTS", "An active invitation for this email already exists.");
 
         var pendingInvite = await invitationRepo.CreateAsync(new Invitation
         {
@@ -208,15 +209,15 @@ public class InvitationService(
             "invitation", pendingInvite.Id, normalizedEmail,
             $"Invited {normalizedEmail} as {role.ToString().ToLower()}", ct);
 
-        return (new CreateInvitationResult(pendingInvite, true, null), null, null);
+        return new CreateInvitationResult(pendingInvite, true, null);
     }
 
-    private async Task<(CreateInvitationResult? Result, string? ErrorCode, string? ErrorMessage)> CreateForNewUserAsync(
+    private async Task<ErrorOr<CreateInvitationResult>> CreateForNewUserAsync(
         Guid tenantId, Guid invitedById, string inviterName,
         string normalizedEmail, UserRole role, CancellationToken ct)
     {
         if (await invitationRepo.GetActiveByEmailAsync(tenantId, normalizedEmail, ct) is not null)
-            return (null, "INVITATION_EXISTS", "An active invitation for this email already exists.");
+            return Error.Conflict("INVITATION_EXISTS", "An active invitation for this email already exists.");
 
         var (rawToken, tokenHash) = jwtService.GenerateInvitationToken();
 
@@ -244,7 +245,7 @@ public class InvitationService(
             "invitation", invitation.Id, normalizedEmail,
             $"Invited {normalizedEmail} as {role.ToString().ToLower()}", ct);
 
-        return (new CreateInvitationResult(invitation, false, rawToken), null, null);
+        return new CreateInvitationResult(invitation, false, rawToken);
     }
 
     private void FireAndForgetEmail(Func<Task> sendEmail)

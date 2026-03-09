@@ -61,7 +61,7 @@ public static class TenantEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        if (Validator.RequireString(request.Name, "Name") is { } nameErr) return nameErr;
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
         if (tenant is null)
