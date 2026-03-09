@@ -37,8 +37,8 @@ vi.mock('@/services/api/apiClient', () => {
   };
 });
 
-// Mock authService
-vi.mock('@/services/api/authService', () => ({
+// Mock profileService
+vi.mock('@/services/api/profileService', () => ({
   getMe: vi.fn(),
 }));
 
@@ -56,7 +56,7 @@ vi.mock('@/lib/queryClient', () => ({
 import { useAuthStore } from './authStore';
 
 import { getToken, setToken, setRefreshToken } from '@/services/api/apiClient';
-import { getMe } from '@/services/api/authService';
+import { getMe } from '@/services/api/profileService';
 
 const mockedGetToken = vi.mocked(getToken);
 const mockedSetToken = vi.mocked(setToken);

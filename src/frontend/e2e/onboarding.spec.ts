@@ -91,7 +91,7 @@ test.describe('Onboarding — Tour Flow', () => {
 
     // Wait for the completeOnboarding API call to finish before skipping
     const apiPromise = page.waitForResponse(
-      (resp) => resp.url().includes('/api/auth/complete-onboarding') && resp.status() === 204
+      (resp) => resp.url().includes('/api/profile/complete-onboarding') && resp.status() === 204
     );
     await tourDialog.getByText('Skip tour').click();
     await apiPromise;

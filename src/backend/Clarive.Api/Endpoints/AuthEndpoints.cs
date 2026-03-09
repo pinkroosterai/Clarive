@@ -54,15 +54,6 @@ public static class AuthEndpoints
         group.MapGet("/setup-status", HandleSetupStatus)
             .AllowAnonymous();
 
-        group.MapGet("/me", HandleGetMe)
-            .RequireAuthorization();
-
-        group.MapPatch("/profile", HandleUpdateProfile)
-            .RequireAuthorization();
-
-        group.MapPost("/complete-onboarding", HandleCompleteOnboarding)
-            .RequireAuthorization();
-
         // Avatar serving (public, no auth required)
         app.MapGet("/api/users/{userId:guid}/avatar", HandleGetAvatar)
             .WithTags("Users")
@@ -211,147 +202,75 @@ public static class AuthEndpoints
     private static async Task<IResult> HandleVerifyEmail(
         HttpContext ctx,
         VerifyEmailRequest request,
-        IUserRepository userRepo,
-        ITokenRepository tokenRepo,
+        IAuthService authService,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Token))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Token is required.");
 
-        var tokenHash = JwtService.HashRefreshToken(request.Token);
-        var verification = await tokenRepo.GetVerificationByHashAsync(tokenHash, ct);
+        var (success, errorCode, message) = await authService.VerifyEmailAsync(request.Token, ct);
+        if (!success)
+            return ctx.ErrorResult(400, errorCode!, message!);
 
-        if (verification is null || verification.UsedAt is not null || verification.ExpiresAt < DateTime.UtcNow)
-            return ctx.ErrorResult(400, "INVALID_TOKEN", "Verification token is invalid or expired.");
-
-        var user = await userRepo.GetByIdCrossTenantsAsync(verification.UserId, ct);
-        if (user is null)
-            return ctx.ErrorResult(400, "INVALID_TOKEN", "Verification token is invalid or expired.");
-
-        if (user.EmailVerified)
-        {
-            // Already verified — mark token used and return success
-            await tokenRepo.MarkVerificationUsedAsync(verification.Id, ct);
-            return Results.Ok(new { message = "Email already verified." });
-        }
-
-        user.EmailVerified = true;
-        await userRepo.UpdateAsync(user, ct);
-        await tokenRepo.MarkVerificationUsedAsync(verification.Id, ct);
-
-        return Results.Ok(new { message = "Email verified successfully." });
+        return Results.Ok(new { message });
     }
 
     private static async Task<IResult> HandleResendVerification(
         HttpContext ctx,
-        IUserRepository userRepo,
-        ITokenRepository tokenRepo,
-        IEmailService emailService,
-        IOptions<AppSettings> appSettings,
-        JwtService jwtService,
+        IAuthService authService,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
-        var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
 
-        if (user is null)
-            return ctx.ErrorResult(404, "NOT_FOUND", "User not found.", "User", userId.ToString());
-
-        if (user.EmailVerified)
-            return ctx.ErrorResult(409, "ALREADY_VERIFIED", "Email is already verified.");
-
-        // Rate limit: max 1 token per 2 minutes
-        var recentCount = await tokenRepo.CountRecentVerificationTokensAsync(userId, TimeSpan.FromMinutes(2), ct);
-        if (recentCount >= 1)
-            return ctx.ErrorResult(429, "RATE_LIMIT", "Please wait before requesting another verification email.");
-
-        var (rawToken, _) = jwtService.GenerateRefreshToken();
-        await tokenRepo.CreateVerificationTokenAsync(new EmailVerificationToken
+        var (success, errorCode, message) = await authService.ResendVerificationAsync(tenantId, userId, ct);
+        if (!success)
         {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            TokenHash = JwtService.HashRefreshToken(rawToken),
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
-            CreatedAt = DateTime.UtcNow
-        }, ct);
+            var statusCode = errorCode switch
+            {
+                "NOT_FOUND" => 404,
+                "ALREADY_VERIFIED" => 409,
+                "RATE_LIMIT" => 429,
+                _ => 400
+            };
+            return ctx.ErrorResult(statusCode, errorCode!, message!);
+        }
 
-        var verifyUrl = $"{appSettings.Value.FrontendUrl}/verify-email?token={rawToken}";
-        await emailService.SendVerificationEmailAsync(user.Email, user.Name, verifyUrl, ct);
-
-        return Results.Ok(new { message = "Verification email sent." });
+        return Results.Ok(new { message });
     }
 
     private static async Task<IResult> HandleForgotPassword(
-        HttpContext ctx,
         ForgotPasswordRequest request,
-        IUserRepository userRepo,
-        ITokenRepository tokenRepo,
-        IEmailService emailService,
-        IOptions<AppSettings> appSettings,
-        JwtService jwtService,
+        IAuthService authService,
         CancellationToken ct)
     {
+        await authService.ForgotPasswordAsync(request.Email, ct);
+
         // Always return 200 to prevent email enumeration
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return Results.Ok(new { message = "If an account exists, a reset email has been sent." });
-
-        var user = await userRepo.GetByEmailAsync(request.Email, ct);
-        if (user is null)
-            return Results.Ok(new { message = "If an account exists, a reset email has been sent." });
-
-        // Rate limit: max 3 tokens per user per hour
-        var recentCount = await tokenRepo.CountRecentResetTokensAsync(user.Id, TimeSpan.FromHours(1), ct);
-        if (recentCount >= 3)
-            return Results.Ok(new { message = "If an account exists, a reset email has been sent." });
-
-        var (rawToken, _) = jwtService.GenerateRefreshToken();
-        await tokenRepo.CreateResetTokenAsync(new PasswordResetToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TokenHash = JwtService.HashRefreshToken(rawToken),
-            ExpiresAt = DateTime.UtcNow.AddHours(1),
-            CreatedAt = DateTime.UtcNow
-        }, ct);
-
-        var resetUrl = $"{appSettings.Value.FrontendUrl}/reset-password?token={rawToken}";
-        await emailService.SendPasswordResetEmailAsync(user.Email, user.Name, resetUrl, ct);
-
         return Results.Ok(new { message = "If an account exists, a reset email has been sent." });
     }
 
     private static async Task<IResult> HandleResetPassword(
         HttpContext ctx,
         ResetPasswordRequest request,
-        IUserRepository userRepo,
-        ITokenRepository tokenRepo,
-        IRefreshTokenRepository refreshTokenRepo,
-        PasswordHasher passwordHasher,
+        IAuthService authService,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Token))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Token is required.");
-        if (Validator.RequirePassword(request.NewPassword) is { } pwErr) return pwErr;
 
-        var tokenHash = JwtService.HashRefreshToken(request.Token);
-        var reset = await tokenRepo.GetResetByHashAsync(tokenHash, ct);
+        var (success, errorCode, message) = await authService.ResetPasswordAsync(request.Token, request.NewPassword, ct);
+        if (!success)
+        {
+            var statusCode = errorCode switch
+            {
+                "VALIDATION_ERROR" => 422,
+                _ => 400
+            };
+            return ctx.ErrorResult(statusCode, errorCode!, message!);
+        }
 
-        if (reset is null || reset.UsedAt is not null || reset.ExpiresAt < DateTime.UtcNow)
-            return ctx.ErrorResult(400, "INVALID_TOKEN", "Reset token is invalid or expired.");
-
-        var user = await userRepo.GetByIdCrossTenantsAsync(reset.UserId, ct);
-        if (user is null)
-            return ctx.ErrorResult(400, "INVALID_TOKEN", "Reset token is invalid or expired.");
-
-        user.PasswordHash = passwordHasher.Hash(request.NewPassword);
-        await userRepo.UpdateAsync(user, ct);
-        await tokenRepo.MarkResetUsedAsync(reset.Id, ct);
-
-        // Revoke all refresh tokens for security
-        await refreshTokenRepo.RevokeAllForUserAsync(user.Id, ct);
-
-        return Results.Ok(new { message = "Password reset successfully." });
+        return Results.Ok(new { message });
     }
 
     private static async Task<IResult> HandleGoogleAuth(
@@ -438,149 +357,6 @@ public static class AuthEndpoints
         var value = configuration["App:AllowRegistration"];
         // Default to true if not explicitly set to "false"
         return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static async Task<IResult> HandleGetMe(
-        HttpContext ctx,
-        IUserRepository userRepo,
-        ITenantMembershipRepository membershipRepo,
-        ITenantRepository tenantRepo,
-        CancellationToken ct)
-    {
-        var tenantId = ctx.GetTenantId();
-        var userId = ctx.GetUserId();
-        var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
-
-        if (user is null)
-            return ctx.ErrorResult(404, "NOT_FOUND", "User not found.", "User", userId.ToString());
-
-        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, userId, ct);
-        var dto = ToDto(user);
-        return Results.Ok(new
-        {
-            dto.Id, dto.Email, dto.Name, dto.Role, dto.EmailVerified, dto.OnboardingCompleted, dto.AvatarUrl,
-            dto.HasPassword, dto.IsSuperUser, dto.ThemePreference, Workspaces = workspaces
-        });
-    }
-
-    private static async Task<IResult> HandleUpdateProfile(
-        HttpContext ctx,
-        UpdateProfileRequest request,
-        IUserRepository userRepo,
-        PasswordHasher passwordHasher,
-        CancellationToken ct)
-    {
-        var tenantId = ctx.GetTenantId();
-        var userId = ctx.GetUserId();
-        var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
-
-        if (user is null)
-            return ctx.ErrorResult(404, "NOT_FOUND", "User not found.", "User", userId.ToString());
-
-        if (ValidateCurrentPassword(ctx, request, user, passwordHasher) is { } pwError)
-            return pwError;
-
-        if (ApplyNameUpdate(ctx, request, user) is { } nameError)
-            return nameError;
-
-        if (await ApplyEmailUpdateAsync(ctx, request, user, userRepo, ct) is { } emailError)
-            return emailError;
-
-        if (ApplyPasswordUpdate(request, user, passwordHasher) is { } newPwError)
-            return newPwError;
-
-        if (ApplyThemePreferenceUpdate(ctx, request, user) is { } themeError)
-            return themeError;
-
-        await userRepo.UpdateAsync(user, ct);
-        return Results.Ok(ToDto(user));
-    }
-
-    private static IResult? ValidateCurrentPassword(
-        HttpContext ctx, UpdateProfileRequest request, User user, PasswordHasher passwordHasher)
-    {
-        if (request.NewPassword is not null && user.PasswordHash is null)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Password changes are not available for accounts using external sign-in.");
-
-        if ((request.Email is not null || request.NewPassword is not null)
-            && string.IsNullOrWhiteSpace(request.CurrentPassword))
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Current password is required to change email or password.");
-
-        if (request.CurrentPassword is not null
-            && (user.PasswordHash is null || !passwordHasher.Verify(request.CurrentPassword, user.PasswordHash)))
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Current password is incorrect.");
-
-        return null;
-    }
-
-    private static IResult? ApplyNameUpdate(HttpContext ctx, UpdateProfileRequest request, User user)
-    {
-        if (request.Name is null) return null;
-
-        if (request.Name.Length > 255)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Name must be 255 characters or fewer.");
-
-        user.Name = request.Name;
-        return null;
-    }
-
-    private static async Task<IResult?> ApplyEmailUpdateAsync(
-        HttpContext ctx, UpdateProfileRequest request, User user, IUserRepository userRepo, CancellationToken ct)
-    {
-        if (request.Email is null) return null;
-
-        if (!Validator.IsValidEmail(request.Email))
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Invalid email format.");
-
-        var existing = await userRepo.GetByEmailAsync(request.Email, ct);
-        if (existing is not null && existing.Id != user.Id)
-            return ctx.ErrorResult(409, "EMAIL_EXISTS", "An account with this email already exists.");
-
-        user.Email = request.Email.Trim().ToLowerInvariant();
-        return null;
-    }
-
-    private static IResult? ApplyPasswordUpdate(
-        UpdateProfileRequest request, User user, PasswordHasher passwordHasher)
-    {
-        if (request.NewPassword is null) return null;
-
-        if (Validator.RequirePassword(request.NewPassword) is { } newPwErr)
-            return newPwErr;
-
-        user.PasswordHash = passwordHasher.Hash(request.NewPassword);
-        return null;
-    }
-
-    private static readonly HashSet<string> ValidThemePreferences = ["light", "dark", "system"];
-
-    private static IResult? ApplyThemePreferenceUpdate(HttpContext ctx, UpdateProfileRequest request, User user)
-    {
-        if (request.ThemePreference is null) return null;
-
-        if (!ValidThemePreferences.Contains(request.ThemePreference))
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Theme preference must be 'light', 'dark', or 'system'.");
-
-        user.ThemePreference = request.ThemePreference;
-        return null;
-    }
-
-    private static async Task<IResult> HandleCompleteOnboarding(
-        HttpContext ctx,
-        IUserRepository userRepo,
-        CancellationToken ct)
-    {
-        var tenantId = ctx.GetTenantId();
-        var userId = ctx.GetUserId();
-        var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
-
-        if (user is null)
-            return ctx.ErrorResult(404, "NOT_FOUND", "User not found.");
-
-        user.OnboardingCompleted = true;
-        await userRepo.UpdateAsync(user, ct);
-
-        return Results.NoContent();
     }
 
     internal static async Task<List<WorkspaceDto>> BuildWorkspaceListAsync(

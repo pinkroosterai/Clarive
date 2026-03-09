@@ -1,6 +1,6 @@
 import { api, getRefreshToken } from './apiClient';
 
-import type { Session, User } from '@/types';
+import type { Session, User, Workspace } from '@/types';
 
 export interface UpdateProfileRequest {
   name?: string;
@@ -10,8 +10,16 @@ export interface UpdateProfileRequest {
   themePreference?: 'light' | 'dark' | 'system';
 }
 
+export async function getMe(): Promise<User & { workspaces?: Workspace[] }> {
+  return api.get<User & { workspaces?: Workspace[] }>('/api/profile/me');
+}
+
 export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
-  return api.patch<User>('/api/auth/profile', data);
+  return api.patch<User>('/api/profile', data);
+}
+
+export async function completeOnboarding(): Promise<void> {
+  await api.post<void>('/api/profile/complete-onboarding');
 }
 
 export async function uploadAvatar(file: File): Promise<{ avatarUrl: string }> {

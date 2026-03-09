@@ -23,6 +23,11 @@ const localStorageMock = (() => {
 
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+// Mock config so apiUrl is undefined (not '') — triggers the fallback to http://localhost:5000
+vi.mock('@/lib/config', () => ({
+  config: { apiUrl: undefined, googleClientId: '', mode: 'test' },
+}));
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -34,7 +39,7 @@ Object.defineProperty(window, 'location', {
   writable: true,
 });
 
-// BASE_URL will resolve to "http://localhost:5000" in jsdom since VITE_API_URL is unset
+// BASE_URL resolves to "http://localhost:5000" because apiUrl is undefined (fallback path)
 const BASE_URL = 'http://localhost:5000';
 
 // Must import AFTER mocks are set up

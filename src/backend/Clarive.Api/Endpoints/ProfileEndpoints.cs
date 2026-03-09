@@ -1,5 +1,6 @@
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
+using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
@@ -14,6 +15,10 @@ public static class ProfileEndpoints
             .WithTags("Profile")
             .RequireAuthorization();
 
+        group.MapGet("/me", HandleGetMe);
+        group.MapPatch("/", HandleUpdateProfile);
+        group.MapPost("/complete-onboarding", HandleCompleteOnboarding);
+
         group.MapPost("/avatar", HandleUploadAvatar)
             .DisableAntiforgery();
 
@@ -24,6 +29,68 @@ public static class ProfileEndpoints
         group.MapPost("/sessions/revoke-others", HandleRevokeOtherSessions);
 
         return group;
+    }
+
+    private static async Task<IResult> HandleGetMe(
+        HttpContext ctx,
+        IUserRepository userRepo,
+        ITenantMembershipRepository membershipRepo,
+        ITenantRepository tenantRepo,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+        var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
+
+        if (user is null)
+            return ctx.ErrorResult(404, "NOT_FOUND", "User not found.", "User", userId.ToString());
+
+        var workspaces = await AuthEndpoints.BuildWorkspaceListAsync(membershipRepo, tenantRepo, userId, ct);
+        var dto = AuthEndpoints.ToDto(user);
+        return Results.Ok(new
+        {
+            dto.Id, dto.Email, dto.Name, dto.Role, dto.EmailVerified, dto.OnboardingCompleted, dto.AvatarUrl,
+            dto.HasPassword, dto.IsSuperUser, dto.ThemePreference, Workspaces = workspaces
+        });
+    }
+
+    private static async Task<IResult> HandleUpdateProfile(
+        HttpContext ctx,
+        UpdateProfileRequest request,
+        IProfileService profileService,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var (user, errorCode, message) = await profileService.UpdateProfileAsync(tenantId, userId, request, ct);
+        if (user is null)
+        {
+            var statusCode = errorCode switch
+            {
+                "NOT_FOUND" => 404,
+                "EMAIL_EXISTS" => 409,
+                _ => 422
+            };
+            return ctx.ErrorResult(statusCode, errorCode!, message!);
+        }
+
+        return Results.Ok(AuthEndpoints.ToDto(user));
+    }
+
+    private static async Task<IResult> HandleCompleteOnboarding(
+        HttpContext ctx,
+        IProfileService profileService,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var (success, errorCode, message) = await profileService.CompleteOnboardingAsync(tenantId, userId, ct);
+        if (!success)
+            return ctx.ErrorResult(404, errorCode!, message!);
+
+        return Results.NoContent();
     }
 
     private static async Task<IResult> HandleUploadAvatar(

@@ -94,7 +94,7 @@ export default function ProfileSection() {
 
   async function refreshUser() {
     try {
-      const { getMe } = await import('@/services/api/authService');
+      const { getMe } = await import('@/services/api/profileService');
       const user = await getMe();
       setUser(user);
     } catch {

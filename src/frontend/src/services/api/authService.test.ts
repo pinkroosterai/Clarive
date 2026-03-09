@@ -20,7 +20,6 @@ import {
   register,
   googleAuth,
   refreshTokens,
-  getMe,
   verifyEmail,
   resendVerification,
   forgotPassword,
@@ -30,7 +29,7 @@ import {
 } from './authService';
 
 import { api, setToken, setRefreshToken, getRefreshToken } from '@/services/api/apiClient';
-import { createAuthResponse, createUser, createWorkspace } from '@/test/factories';
+import { createAuthResponse } from '@/test/factories';
 
 const mockApi = vi.mocked(api);
 const mockSetToken = vi.mocked(setToken);
@@ -174,35 +173,6 @@ describe('refreshTokens', () => {
 
     expect(mockSetToken).toHaveBeenCalledWith('refreshed-jwt');
     expect(mockSetRefreshToken).toHaveBeenCalledWith('refreshed-rt');
-  });
-});
-
-// ── getMe ──
-
-describe('getMe', () => {
-  it('calls GET /api/auth/me and returns user', async () => {
-    const user = createUser({ email: 'me@test.com' });
-    mockApi.get.mockResolvedValue(user);
-
-    const result = await getMe();
-
-    expect(mockApi.get).toHaveBeenCalledWith('/api/auth/me');
-    expect(result).toEqual(user);
-  });
-
-  it('returns user with workspaces when present', async () => {
-    const workspaces = [
-      createWorkspace({ name: 'Personal', isPersonal: true }),
-      createWorkspace({ name: 'Team', isPersonal: false, role: 'editor' }),
-    ];
-    const userWithWorkspaces = { ...createUser({ email: 'me@test.com' }), workspaces };
-    mockApi.get.mockResolvedValue(userWithWorkspaces);
-
-    const result = await getMe();
-
-    expect(result.workspaces).toHaveLength(2);
-    expect(result.workspaces![0].name).toBe('Personal');
-    expect(result.workspaces![1].role).toBe('editor');
   });
 });
 

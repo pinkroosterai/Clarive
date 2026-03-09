@@ -8,7 +8,7 @@ import {
   getActiveWorkspaceId,
   setActiveWorkspaceId,
 } from '@/services/api/apiClient';
-import { getMe } from '@/services/api/authService';
+import { getMe } from '@/services/api/profileService';
 import { getSystemStatus } from '@/services/api/superService';
 import { switchWorkspace as apiSwitchWorkspace } from '@/services/api/workspaceService';
 import type { User, Workspace } from '@/types';

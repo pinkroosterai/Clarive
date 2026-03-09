@@ -49,7 +49,7 @@ vi.mock('driver.js/dist/driver.css', () => ({}));
 vi.mock('./onboardingTheme.css', () => ({}));
 
 const mockCompleteOnboarding = vi.fn(() => Promise.resolve());
-vi.mock('@/services/api/authService', () => ({
+vi.mock('@/services/api/profileService', () => ({
   completeOnboarding: () => mockCompleteOnboarding(),
 }));
 

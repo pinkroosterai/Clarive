@@ -19,7 +19,7 @@ public class AuthMeProfileTests : IntegrationTestBase
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.GetAsync("/api/auth/me");
+        var response = await Client.GetAsync("/api/profile/me");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -32,7 +32,7 @@ public class AuthMeProfileTests : IntegrationTestBase
     [Fact]
     public async Task GetMe_NoToken_Returns401()
     {
-        var response = await Client.GetAsync("/api/auth/me");
+        var response = await Client.GetAsync("/api/profile/me");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -53,7 +53,7 @@ public class AuthMeProfileTests : IntegrationTestBase
 
         Client.WithBearerToken(token);
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/auth/profile", new
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
         {
             name = "Updated Name"
         });
@@ -69,7 +69,7 @@ public class AuthMeProfileTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/auth/profile", new
+        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
         {
             newPassword = "newSecurePass123"
             // missing currentPassword

@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 import { ONBOARDING_STEPS, EDITOR_STEPS_END } from './tourSteps';
 
-import { completeOnboarding } from '@/services/api/authService';
+import { completeOnboarding } from '@/services/api/profileService';
 import { useAuthStore } from '@/store/authStore';
 
 const LOGO_HTML = `<img src="/clarive-icon.svg" alt="Clarive" />`;

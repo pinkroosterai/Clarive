@@ -1039,9 +1039,9 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /api/auth/me:
+  /api/profile/me:
     get:
-      tags: [Auth]
+      tags: [Profile]
       summary: Get current authenticated user
       responses:
         '200':
@@ -1053,9 +1053,9 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/auth/profile:
+  /api/profile:
     patch:
-      tags: [Auth]
+      tags: [Profile]
       summary: Update own profile (name, email, password)
       requestBody:
         required: true

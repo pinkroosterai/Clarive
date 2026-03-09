@@ -107,7 +107,7 @@ public class OnboardingTests : IntegrationTestBase
         var token = regJson.GetProperty("token").GetString()!;
         Client.WithBearerToken(token);
 
-        var meResponse = await Client.GetAsync("/api/auth/me");
+        var meResponse = await Client.GetAsync("/api/profile/me");
         var meJson = await meResponse.ReadJsonAsync();
         meJson.GetProperty("onboardingCompleted").GetBoolean().Should().BeFalse();
     }
@@ -127,11 +127,11 @@ public class OnboardingTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Complete onboarding
-        var completeResponse = await Client.PostAsync("/api/auth/complete-onboarding", null);
+        var completeResponse = await Client.PostAsync("/api/profile/complete-onboarding", null);
         completeResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify via /me
-        var meResponse = await Client.GetAsync("/api/auth/me");
+        var meResponse = await Client.GetAsync("/api/profile/me");
         var meJson = await meResponse.ReadJsonAsync();
         meJson.GetProperty("onboardingCompleted").GetBoolean().Should().BeTrue();
     }
@@ -151,10 +151,10 @@ public class OnboardingTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Call twice — both should return 204
-        var first = await Client.PostAsync("/api/auth/complete-onboarding", null);
+        var first = await Client.PostAsync("/api/profile/complete-onboarding", null);
         first.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var second = await Client.PostAsync("/api/auth/complete-onboarding", null);
+        var second = await Client.PostAsync("/api/profile/complete-onboarding", null);
         second.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
@@ -164,7 +164,7 @@ public class OnboardingTests : IntegrationTestBase
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var meResponse = await Client.GetAsync("/api/auth/me");
+        var meResponse = await Client.GetAsync("/api/profile/me");
         var meJson = await meResponse.ReadJsonAsync();
         meJson.GetProperty("onboardingCompleted").GetBoolean().Should().BeTrue();
     }

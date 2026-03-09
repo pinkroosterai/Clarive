@@ -1,6 +1,6 @@
 import { api, setToken, setRefreshToken, getRefreshToken } from './apiClient';
 
-import type { AuthResponse, User, Workspace } from '@/types';
+import type { AuthResponse } from '@/types';
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const res = await api.post<AuthResponse>('/api/auth/login', {
@@ -45,10 +45,6 @@ export async function refreshTokens(): Promise<AuthResponse> {
   return res;
 }
 
-export async function getMe(): Promise<User & { workspaces?: Workspace[] }> {
-  return api.get<User & { workspaces?: Workspace[] }>('/api/auth/me');
-}
-
 export async function verifyEmail(token: string): Promise<void> {
   await api.post<void>('/api/auth/verify-email', { token });
 }
@@ -63,10 +59,6 @@ export async function forgotPassword(email: string): Promise<void> {
 
 export async function resetPassword(token: string, newPassword: string): Promise<void> {
   await api.post<void>('/api/auth/reset-password', { token, newPassword });
-}
-
-export async function completeOnboarding(): Promise<void> {
-  await api.post<void>('/api/auth/complete-onboarding');
 }
 
 export async function deleteAccount(confirmation: string): Promise<void> {

@@ -199,6 +199,8 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<IAiGenerationService, AiGenerationService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IImportExportService, ImportExportService>();
 builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));
 builder.Services.AddScoped<IAvatarService, AvatarService>();

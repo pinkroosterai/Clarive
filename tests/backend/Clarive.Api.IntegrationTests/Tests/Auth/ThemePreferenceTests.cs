@@ -33,7 +33,7 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/auth/profile", new
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
         {
             themePreference = "dark"
         });
@@ -47,7 +47,7 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/auth/profile", new
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
         {
             themePreference = "light"
         });
@@ -61,7 +61,7 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/auth/profile", new
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
         {
             themePreference = "system"
         });
@@ -75,7 +75,7 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/auth/profile", new
+        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
         {
             themePreference = "invalid-value"
         });
@@ -89,13 +89,13 @@ public class ThemePreferenceTests : IntegrationTestBase
         await RegisterFreshUserAsync();
 
         // Set theme
-        await Client.PatchJsonAsync<JsonElement>("/api/auth/profile", new
+        await Client.PatchJsonAsync<JsonElement>("/api/profile", new
         {
             themePreference = "light"
         });
 
         // Verify it persists via GET /me
-        var meResponse = await Client.GetAsync("/api/auth/me");
+        var meResponse = await Client.GetAsync("/api/profile/me");
         meResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var meJson = await meResponse.ReadJsonAsync();
         meJson.GetProperty("themePreference").GetString().Should().Be("light");
@@ -106,7 +106,7 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/auth/profile", new
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
         {
             name = "Updated Name",
             themePreference = "dark"
@@ -122,7 +122,7 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var meResponse = await Client.GetAsync("/api/auth/me");
+        var meResponse = await Client.GetAsync("/api/profile/me");
         var meJson = await meResponse.ReadJsonAsync();
         // WhenWritingNull is configured, so null themePreference is omitted from JSON
         meJson.TryGetProperty("themePreference", out _).Should().BeFalse(
