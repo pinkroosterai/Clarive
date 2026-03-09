@@ -85,7 +85,7 @@ public static class FooEndpoints {
 ### Repository + Service Layers
 - **Repositories**: Interface-based (`IFooRepository` → `EfFooRepository`), scoped lifetime, tenant-isolated via global query filter on `ITenantScoped`
 - **Services**: Business logic with constructor injection (primary constructors), explicit DB transactions via `db.Database.BeginTransactionAsync()`
-- Validation methods return `string?` (null = valid)
+- Validation methods return `string?` (null = valid) or `(bool Success, string? ErrorCode, string? Message)` tuples for multi-failure operations
 
 ### Multi-Tenancy
 Global EF Core query filter on all `ITenantScoped` entities. `ITenantProvider` (scoped) extracts tenant from JWT claims. Null tenant ID allows cross-tenant queries (superuser).
@@ -95,9 +95,9 @@ Global EF Core query filter on all `ITenantScoped` entities. `ITenantProvider` (
 
 ### DI Registration Pattern
 - Repositories: scoped
-- Services (business logic): scoped
+- Services (business logic — EntryService, AccountService, AuthService, ProfileService, etc.): scoped
 - Services (cryptographic — JwtService, PasswordHasher): singleton
-- Email: conditional (`ResendEmailService` or `ConsoleEmailService`)
+- Email: conditional (`ResendEmailService`, `SmtpEmailService`, or `ConsoleEmailService`)
 - AI: `IAgentFactory` singleton, `IPromptOrchestrator` scoped
 - 4 background hosted services (cleanup, maintenance sync)
 
@@ -109,7 +109,7 @@ Environment variables → `appsettings.json` → DB-encrypted config (`DbConfigu
 ### Directory Structure (`src/frontend/src/`)
 - `pages/` — route-level page components (lazy-loaded)
 - `components/` — organized by feature (auth, editor, library, wizard, settings, ui, etc.)
-- `services/api/` — 26 domain-specific API service files using shared `apiClient`
+- `services/api/` — 17 domain-specific API service files using shared `apiClient`
 - `hooks/` — custom React hooks (useEditorState, useEditorMutations, useDnd, etc.)
 - `store/` — single Zustand auth store (`authStore.ts`)
 - `types/` — shared TypeScript types
