@@ -26,41 +26,23 @@ public interface IAiGenerationService
         Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
-    /// Validates that an entry exists and has a version suitable for enhancement.
-    /// Returns (true, null, null) on success.
+    /// Validates and enhances an existing entry's prompts in a single atomic operation.
+    /// Returns error tuple on validation failure. Throws on orchestrator failure.
     /// </summary>
-    Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForEnhanceAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct = default);
-
-    /// <summary>
-    /// Enhances an existing entry's prompts.    /// Throws on orchestrator failure.
-    /// </summary>
-    Task<AiGenerationResult?> EnhanceAsync(
+    Task<(AiGenerationResult? Result, string? ErrorCode, string? ErrorMessage)> EnhanceAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default,
         Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
-    /// Validates that an entry exists, has a version, and no system message.
-    /// Returns (true, null, null) on success.
-    /// </summary>
-    Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForSystemMessageAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct = default);
-
-    /// <summary>
-    /// Generates a system message for an existing entry.    /// Throws on orchestrator failure.
+    /// Validates and generates a system message for an existing entry in a single atomic operation.
+    /// Returns error tuple on validation failure. Throws on orchestrator failure.
     /// </summary>
     Task<(string? SystemMessage, string? ErrorCode, string? ErrorMessage)> GenerateSystemMessageAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default);
 
     /// <summary>
-    /// Validates that an entry exists, has a version, and exactly one prompt.
-    /// Returns (true, null, null) on success.
-    /// </summary>
-    Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForDecomposeAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct = default);
-
-    /// <summary>
-    /// Decomposes a single-prompt entry into a chain.    /// Throws on orchestrator failure.
+    /// Validates and decomposes a single-prompt entry into a chain in a single atomic operation.
+    /// Returns error tuple on validation failure. Throws on orchestrator failure.
     /// </summary>
     Task<(List<PromptInput>? Prompts, string? ErrorCode, string? ErrorMessage)> DecomposeAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default);

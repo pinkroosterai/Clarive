@@ -1,6 +1,5 @@
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
-using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Models.Results;
@@ -8,7 +7,7 @@ using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 using Microsoft.Extensions.Options;
-using Clarive.Api.Models.Enums;
+using static Clarive.Api.Helpers.ResponseMappers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -85,46 +84,29 @@ public static class AuthEndpoints
     private static async Task<IResult> HandleLogin(
         HttpContext ctx,
         LoginRequest request,
-        IUserRepository userRepo,
-        IRefreshTokenRepository refreshTokenRepo,
+        IAccountService accountService,
         ILoginSessionRepository sessionRepo,
         ITenantMembershipRepository membershipRepo,
         ITenantRepository tenantRepo,
-        JwtService jwtService,
-        PasswordHasher passwordHasher,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Email and password are required.");
 
-        var user = await userRepo.GetByEmailAsync(request.Email, ct);
-        if (user is null || user.PasswordHash is null || !passwordHasher.Verify(request.Password, user.PasswordHash))
+        var result = await accountService.LoginAsync(request.Email, request.Password, ct);
+        if (result is null)
             return ctx.ErrorResult(401, "INVALID_CREDENTIALS", "Email or password is incorrect.");
 
-        var accessToken = jwtService.GenerateToken(user);
-        var (rawRefresh, refreshHash) = jwtService.GenerateRefreshToken();
+        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.RefreshTokenId, ct);
 
-        var refreshTokenId = Guid.NewGuid();
-        await refreshTokenRepo.CreateAsync(new RefreshToken
-        {
-            Id = refreshTokenId,
-            UserId = user.Id,
-            TokenHash = refreshHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(jwtService.RefreshTokenExpirationDays),
-            CreatedAt = DateTime.UtcNow
-        }, ct);
-
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, user.Id, refreshTokenId, ct);
-
-        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, user.Id, ct);
-        return Results.Ok(new AuthResponse(accessToken, rawRefresh, ToDto(user), workspaces));
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
+        return Results.Ok(new AuthResponse(result.AccessToken, result.RawRefreshToken, ToUserDto(result.User), workspaces));
     }
 
     private static async Task<IResult> HandleRegister(
         HttpContext ctx,
         RegisterRequest request,
         IAccountService accountService,
-        IRefreshTokenRepository refreshTokenRepo,
         ILoginSessionRepository sessionRepo,
         ITenantMembershipRepository membershipRepo,
         ITenantRepository tenantRepo,
@@ -132,7 +114,6 @@ public static class AuthEndpoints
         IEmailService emailService,
         IOptions<AppSettings> appSettings,
         IConfiguration configuration,
-        JwtService jwtService,
         CancellationToken ct)
     {
         if (Validator.RequireValidEmail(request.Email) is { } emailErr) return emailErr;
@@ -147,20 +128,7 @@ public static class AuthEndpoints
         if (result is null)
             return ctx.ErrorResult(422, "REGISTRATION_FAILED", "Unable to create account. Please try again or contact support.");
 
-        var accessToken = jwtService.GenerateToken(result.User);
-        var (rawRefresh, refreshHash) = jwtService.GenerateRefreshToken();
-
-        var refreshTokenId = Guid.NewGuid();
-        await refreshTokenRepo.CreateAsync(new RefreshToken
-        {
-            Id = refreshTokenId,
-            UserId = result.User.Id,
-            TokenHash = refreshHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(jwtService.RefreshTokenExpirationDays),
-            CreatedAt = DateTime.UtcNow
-        }, ct);
-
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, refreshTokenId, ct);
+        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.RefreshTokenId, ct);
 
         // Send verification email (fire-and-forget) — skip for first user (auto-verified super admin)
         if (result.RawVerificationToken is not null)
@@ -174,7 +142,7 @@ public static class AuthEndpoints
         }
 
         var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Created("/api/auth/me", new AuthResponse(accessToken, rawRefresh, ToDto(result.User), workspaces));
+        return Results.Created("/api/auth/me", new AuthResponse(result.AccessToken, result.RawRefreshToken, ToUserDto(result.User), workspaces));
     }
 
     private static async Task<IResult> HandleRefresh(
@@ -196,7 +164,7 @@ public static class AuthEndpoints
         await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.NewRefreshTokenId, ct);
 
         var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Ok(new AuthResponse(result.AccessToken, result.RawRefreshToken, ToDto(result.User), workspaces));
+        return Results.Ok(new AuthResponse(result.AccessToken, result.RawRefreshToken, ToUserDto(result.User), workspaces));
     }
 
     private static async Task<IResult> HandleVerifyEmail(
@@ -278,13 +246,11 @@ public static class AuthEndpoints
         GoogleAuthRequest request,
         IGoogleAuthService googleAuthService,
         IAccountService accountService,
-        IRefreshTokenRepository refreshTokenRepo,
         ILoginSessionRepository sessionRepo,
         ITenantMembershipRepository membershipRepo,
         ITenantRepository tenantRepo,
         IUserRepository userRepo,
         IConfiguration configuration,
-        JwtService jwtService,
         CancellationToken ct)
     {
         if (!googleAuthService.IsConfigured)
@@ -310,34 +276,20 @@ public static class AuthEndpoints
             }
         }
 
-        GoogleAuthResult result;
+        GoogleAuthLoginResult result;
         try
         {
-            result = await accountService.AuthenticateWithGoogleAsync(request.IdToken, ct);
+            result = await accountService.LoginWithGoogleAsync(request.IdToken, ct);
         }
         catch (Exception)
         {
             return ctx.ErrorResult(401, "INVALID_GOOGLE_TOKEN", "Google ID token is invalid or expired.");
         }
 
-        // Generate tokens
-        var accessToken = jwtService.GenerateToken(result.User);
-        var (rawRefresh, refreshHash) = jwtService.GenerateRefreshToken();
-
-        var refreshTokenId = Guid.NewGuid();
-        await refreshTokenRepo.CreateAsync(new RefreshToken
-        {
-            Id = refreshTokenId,
-            UserId = result.User.Id,
-            TokenHash = refreshHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(jwtService.RefreshTokenExpirationDays),
-            CreatedAt = DateTime.UtcNow
-        }, ct);
-
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, refreshTokenId, ct);
+        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.RefreshTokenId, ct);
 
         var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Ok(new { token = accessToken, refreshToken = rawRefresh, user = ToDto(result.User), isNewUser = result.IsNewUser, workspaces });
+        return Results.Ok(new { token = result.AccessToken, refreshToken = result.RawRefreshToken, user = ToUserDto(result.User), isNewUser = result.IsNewUser, workspaces });
     }
 
     private static async Task<IResult> HandleSetupStatus(
@@ -358,39 +310,5 @@ public static class AuthEndpoints
         // Default to true if not explicitly set to "false"
         return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
     }
-
-    internal static async Task<List<WorkspaceDto>> BuildWorkspaceListAsync(
-        ITenantMembershipRepository membershipRepo,
-        ITenantRepository tenantRepo,
-        Guid userId,
-        CancellationToken ct)
-    {
-        var memberships = await membershipRepo.GetByUserIdAsync(userId, ct);
-        if (memberships.Count == 0) return [];
-
-        var tenantIds = memberships.Select(m => m.TenantId).ToList();
-        var tenants = await tenantRepo.GetByIdsAsync(tenantIds, ct);
-        var memberCounts = await membershipRepo.CountMembersByTenantIdsAsync(tenantIds, ct);
-
-        var workspaces = new List<WorkspaceDto>();
-        foreach (var m in memberships)
-        {
-            if (!tenants.TryGetValue(m.TenantId, out var tenant)) continue;
-
-            workspaces.Add(new WorkspaceDto(
-                m.TenantId,
-                tenant.Name,
-                m.Role.ToString().ToLower(),
-                m.IsPersonal,
-                memberCounts.GetValueOrDefault(m.TenantId, 0),
-                TenantEndpoints.TenantAvatarUrl(tenant)));
-        }
-
-        return workspaces;
-    }
-
-    internal static UserDto ToDto(User user) =>
-        new(user.Id, user.Email, user.Name, user.Role.ToString().ToLower(), user.EmailVerified, user.OnboardingCompleted,
-            AvatarHelpers.UserAvatarUrl(user), user.PasswordHash is not null, user.IsSuperUser, user.ThemePreference);
 
 }

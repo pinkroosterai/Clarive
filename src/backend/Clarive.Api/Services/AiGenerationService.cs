@@ -118,29 +118,17 @@ public class AiGenerationService(
         return (ToResult(request.SessionId, draft, questions, enhancements, result.Evaluation, newScoreHistory), null, null);
     }
 
-    public async Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForEnhanceAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct)
-    {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null)
-            return (false, "NOT_FOUND", "Entry not found.");
-
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
-            return (false, "NOT_FOUND", "No version found for this entry.");
-
-        return (true, null, null);
-    }
-
-    public async Task<AiGenerationResult?> EnhanceAsync(
+    public async Task<(AiGenerationResult? Result, string? ErrorCode, string? ErrorMessage)> EnhanceAsync(
         Guid tenantId, Guid entryId, CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null) return null;
+        if (entry is null)
+            return (null, "NOT_FOUND", "Entry not found.");
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null) return null;
+        if (working is null)
+            return (null, "NOT_FOUND", "No version found for this entry.");
 
         var prompts = working.Prompts.OrderBy(p => p.Order)
             .Select(p => new PromptInput(p.Content, p.IsTemplate))
@@ -176,24 +164,7 @@ public class AiGenerationService(
             CreatedAt = DateTime.UtcNow
         }, ct);
 
-        return ToResult(sessionId, draft, questions, enhancements, result.Evaluation, scoreHistory);
-    }
-
-    public async Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForSystemMessageAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct)
-    {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null)
-            return (false, "NOT_FOUND", "Entry not found.");
-
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
-            return (false, "NOT_FOUND", "No version found for this entry.");
-
-        if (!string.IsNullOrEmpty(working.SystemMessage))
-            return (false, "ALREADY_EXISTS", "Entry already has a system message.");
-
-        return (true, null, null);
+        return (ToResult(sessionId, draft, questions, enhancements, result.Evaluation, scoreHistory), null, null);
     }
 
     public async Task<(string? SystemMessage, string? ErrorCode, string? ErrorMessage)> GenerateSystemMessageAsync(
@@ -217,23 +188,6 @@ public class AiGenerationService(
         // This can throw — caller should handle failure
         var systemMessage = await orchestrator.GenerateSystemMessageAsync(promptInputs, ct);
         return (systemMessage, null, null);
-    }
-
-    public async Task<(bool Valid, string? ErrorCode, string? ErrorMessage)> ValidateEntryForDecomposeAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct)
-    {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null)
-            return (false, "NOT_FOUND", "Entry not found.");
-
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
-            return (false, "NOT_FOUND", "No version found for this entry.");
-
-        if (working.Prompts.Count != 1)
-            return (false, "ALREADY_CHAIN", "Entry must have exactly one prompt to decompose.");
-
-        return (true, null, null);
     }
 
     public async Task<(List<PromptInput>? Prompts, string? ErrorCode, string? ErrorMessage)> DecomposeAsync(

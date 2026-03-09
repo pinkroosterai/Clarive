@@ -90,20 +90,13 @@ public static class TenantEndpoints
         if (tenant is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "Tenant not found.");
 
-        if (!ctx.Request.HasFormContentType || ctx.Request.Form.Files.Count == 0)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "No file uploaded.");
-
-        var file = ctx.Request.Form.Files[0];
-
-        if (file.Length == 0)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Uploaded file is empty.");
-
-        if (file.Length > 3 * 1024 * 1024)
-            return ctx.ErrorResult(413, "FILE_TOO_LARGE", "Image exceeds the 3 MB size limit.");
+        var (file, validationError) = AvatarHelpers.ValidateUpload(ctx);
+        if (validationError is not null)
+            return validationError;
 
         try
         {
-            await using var stream = file.OpenReadStream();
+            await using var stream = file!.OpenReadStream();
             var relativePath = await avatarService.SaveTenantAvatarAsync(tenantId, stream, file.ContentType, ct);
 
             tenant.AvatarPath = relativePath;

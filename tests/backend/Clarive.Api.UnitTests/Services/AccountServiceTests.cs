@@ -106,6 +106,8 @@ public class AccountServiceTests : IDisposable
         result!.User.IsSuperUser.Should().BeTrue();
         result.User.EmailVerified.Should().BeTrue();
         result.RawVerificationToken.Should().BeNull();
+        result.AccessToken.Should().NotBeNullOrEmpty();
+        result.RawRefreshToken.Should().StartWith("rt_");
     }
 
     [Fact]
@@ -173,7 +175,7 @@ public class AccountServiceTests : IDisposable
     // ── Google Auth ──
 
     [Fact]
-    public async Task AuthenticateWithGoogleAsync_ExistingGoogleId_ReturnsUser()
+    public async Task LoginWithGoogleAsync_ExistingGoogleId_ReturnsUser()
     {
         var user = new User { Id = Guid.NewGuid(), GoogleId = "google123", Email = "g@test.com" };
         _googleAuth.ValidateIdTokenAsync("token", Arg.Any<CancellationToken>())
@@ -181,14 +183,16 @@ public class AccountServiceTests : IDisposable
         _userRepo.GetByGoogleIdAsync("google123", Arg.Any<CancellationToken>())
             .Returns(user);
 
-        var result = await _sut.AuthenticateWithGoogleAsync("token", default);
+        var result = await _sut.LoginWithGoogleAsync("token", default);
 
         result.User.Should().BeSameAs(user);
         result.IsNewUser.Should().BeFalse();
+        result.AccessToken.Should().NotBeNullOrEmpty();
+        result.RawRefreshToken.Should().StartWith("rt_");
     }
 
     [Fact]
-    public async Task AuthenticateWithGoogleAsync_ExistingEmail_NoGoogleId_Throws()
+    public async Task LoginWithGoogleAsync_ExistingEmail_NoGoogleId_Throws()
     {
         _googleAuth.ValidateIdTokenAsync("token", Arg.Any<CancellationToken>())
             .Returns(new GoogleUserInfo("google123", "existing@test.com", "User"));
@@ -197,14 +201,14 @@ public class AccountServiceTests : IDisposable
         _userRepo.GetByEmailAsync("existing@test.com", Arg.Any<CancellationToken>())
             .Returns(new User { Email = "existing@test.com" });
 
-        var act = () => _sut.AuthenticateWithGoogleAsync("token", default);
+        var act = () => _sut.LoginWithGoogleAsync("token", default);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*already exists*");
     }
 
     [Fact]
-    public async Task AuthenticateWithGoogleAsync_NewUser_CreatesAccount()
+    public async Task LoginWithGoogleAsync_NewUser_CreatesAccount()
     {
         _googleAuth.ValidateIdTokenAsync("token", Arg.Any<CancellationToken>())
             .Returns(new GoogleUserInfo("google123", "new@test.com", "New User"));
@@ -213,11 +217,68 @@ public class AccountServiceTests : IDisposable
         _userRepo.GetByEmailAsync("new@test.com", Arg.Any<CancellationToken>())
             .Returns((User?)null);
 
-        var result = await _sut.AuthenticateWithGoogleAsync("token", default);
+        var result = await _sut.LoginWithGoogleAsync("token", default);
 
         result.IsNewUser.Should().BeTrue();
         result.User.GoogleId.Should().Be("google123");
         result.User.EmailVerified.Should().BeTrue();
+        result.AccessToken.Should().NotBeNullOrEmpty();
+    }
+
+    // ── Login ──
+
+    [Fact]
+    public async Task LoginAsync_InvalidCredentials_ReturnsNull()
+    {
+        _userRepo.GetByEmailAsync("user@test.com", Arg.Any<CancellationToken>())
+            .Returns((User?)null);
+
+        var result = await _sut.LoginAsync("user@test.com", "password", default);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LoginAsync_WrongPassword_ReturnsNull()
+    {
+        _userRepo.GetByEmailAsync("user@test.com", Arg.Any<CancellationToken>())
+            .Returns(new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "user@test.com",
+                PasswordHash = _passwordHasher.Hash("correct-password"),
+                Role = UserRole.Admin,
+                TenantId = Guid.NewGuid()
+            });
+
+        var result = await _sut.LoginAsync("user@test.com", "wrong-password", default);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LoginAsync_ValidCredentials_ReturnsTokens()
+    {
+        var userId = Guid.NewGuid();
+        _userRepo.GetByEmailAsync("user@test.com", Arg.Any<CancellationToken>())
+            .Returns(new User
+            {
+                Id = userId,
+                Email = "user@test.com",
+                Name = "Test User",
+                PasswordHash = _passwordHasher.Hash("Password1!"),
+                Role = UserRole.Admin,
+                TenantId = Guid.NewGuid()
+            });
+
+        var result = await _sut.LoginAsync("user@test.com", "Password1!", default);
+
+        result.Should().NotBeNull();
+        result!.User.Email.Should().Be("user@test.com");
+        result.AccessToken.Should().NotBeNullOrEmpty();
+        result.RawRefreshToken.Should().StartWith("rt_");
+        await _refreshTokenRepo.Received(1).CreateAsync(
+            Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
     }
 
     // ── Refresh Tokens ──

@@ -149,14 +149,17 @@ public static class AiGenerationEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        var (valResult, valErrorCode, valErrorMessage) = await aiService.ValidateEntryForEnhanceAsync(tenantId, request.EntryId, ct);
-        if (valErrorCode is not null)
-            return ctx.ErrorResult(valErrorCode == "NOT_FOUND" ? 404 : 409, valErrorCode, valErrorMessage!, "Entry", request.EntryId.ToString());
-
         if (!WantsSse(ctx))
         {
-            var result = await aiService.EnhanceAsync(tenantId, request.EntryId, ct);
-            return Results.Ok(ToResponse(result!));
+            var (result, errorCode, errorMessage) = await aiService.EnhanceAsync(tenantId, request.EntryId, ct);
+
+            if (result is null)
+            {
+                var statusCode = errorCode == "NOT_FOUND" ? 404 : 409;
+                return ctx.ErrorResult(statusCode, errorCode!, errorMessage!, "Entry", request.EntryId.ToString());
+            }
+
+            return Results.Ok(ToResponse(result));
         }
 
         // SSE path
@@ -165,11 +168,18 @@ public static class AiGenerationEndpoints
 
         try
         {
-            var result = await aiService.EnhanceAsync(
+            var (result, errorCode, errorMessage) = await aiService.EnhanceAsync(
                 tenantId, request.EntryId, ct,
                 progress => sse.WriteProgressAsync(progress, ct));
 
-            await sse.WriteDoneAsync(ToResponse(result!), ct);
+            if (result is null)
+            {
+                await sse.WriteErrorAsync(errorCode!, errorMessage!, ct);
+            }
+            else
+            {
+                await sse.WriteDoneAsync(ToResponse(result), ct);
+            }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -189,16 +199,12 @@ public static class AiGenerationEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        var (_, valErrorCode, valErrorMessage) = await aiService.ValidateEntryForSystemMessageAsync(tenantId, request.EntryId, ct);
-        if (valErrorCode is not null)
-        {
-            var statusCode = valErrorCode switch { "NOT_FOUND" => 404, "ALREADY_EXISTS" => 409, _ => 422 };
-            return ctx.ErrorResult(statusCode, valErrorCode, valErrorMessage!, "Entry", request.EntryId.ToString());
-        }
-
         var (systemMessage, errorCode, errorMessage) = await aiService.GenerateSystemMessageAsync(tenantId, request.EntryId, ct);
         if (systemMessage is null)
-            return ctx.ErrorResult(404, errorCode!, errorMessage!, "Entry", request.EntryId.ToString());
+        {
+            var statusCode = errorCode switch { "NOT_FOUND" => 404, "ALREADY_EXISTS" => 409, _ => 422 };
+            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!, "Entry", request.EntryId.ToString());
+        }
 
         return Results.Ok(new GenerateSystemMessageResponse(systemMessage));
     }
@@ -213,16 +219,12 @@ public static class AiGenerationEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        var (_, valErrorCode, valErrorMessage) = await aiService.ValidateEntryForDecomposeAsync(tenantId, request.EntryId, ct);
-        if (valErrorCode is not null)
-        {
-            var statusCode = valErrorCode switch { "NOT_FOUND" => 404, "ALREADY_CHAIN" => 409, _ => 422 };
-            return ctx.ErrorResult(statusCode, valErrorCode, valErrorMessage!, "Entry", request.EntryId.ToString());
-        }
-
         var (prompts, errorCode, errorMessage) = await aiService.DecomposeAsync(tenantId, request.EntryId, ct);
         if (prompts is null)
-            return ctx.ErrorResult(404, errorCode!, errorMessage!, "Entry", request.EntryId.ToString());
+        {
+            var statusCode = errorCode switch { "NOT_FOUND" => 404, "ALREADY_CHAIN" => 409, _ => 422 };
+            return ctx.ErrorResult(statusCode, errorCode!, errorMessage!, "Entry", request.EntryId.ToString());
+        }
 
         return Results.Ok(new DecomposeResponse(prompts));
     }

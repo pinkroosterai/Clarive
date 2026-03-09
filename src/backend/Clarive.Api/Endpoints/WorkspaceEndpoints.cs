@@ -6,6 +6,7 @@ using Clarive.Api.Services.Interfaces;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Responses;
 using Serilog;
+using static Clarive.Api.Helpers.ResponseMappers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -66,7 +67,7 @@ public static class WorkspaceEndpoints
             CreatedAt = DateTime.UtcNow
         }, ct);
 
-        return Results.Ok(new { token = accessToken, refreshToken = rawRefresh, user = AuthEndpoints.ToDto(user) });
+        return Results.Ok(new { token = accessToken, refreshToken = rawRefresh, user = ToUserDto(user) });
     }
 
     private static async Task<IResult> HandleList(
@@ -76,7 +77,7 @@ public static class WorkspaceEndpoints
         CancellationToken ct)
     {
         var userId = ctx.GetUserId();
-        var workspaces = await AuthEndpoints.BuildWorkspaceListAsync(membershipRepo, tenantRepo, userId, ct);
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, userId, ct);
         return Results.Ok(new { workspaces });
     }
 

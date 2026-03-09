@@ -163,6 +163,13 @@ public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task CreateBatchAsync(List<PromptEntry> entries, List<PromptEntryVersion> versions, CancellationToken ct = default)
+    {
+        db.PromptEntries.AddRange(entries);
+        db.PromptEntryVersions.AddRange(versions);
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task ReplacePromptsAsync(PromptEntryVersion version, List<Prompt> newPrompts, CancellationToken ct = default)
     {
         // Clear existing prompts — EF Core will delete orphans for required relationships

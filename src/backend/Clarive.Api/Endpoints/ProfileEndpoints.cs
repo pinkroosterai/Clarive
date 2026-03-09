@@ -4,6 +4,7 @@ using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
+using static Clarive.Api.Helpers.ResponseMappers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -45,8 +46,8 @@ public static class ProfileEndpoints
         if (user is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "User not found.", "User", userId.ToString());
 
-        var workspaces = await AuthEndpoints.BuildWorkspaceListAsync(membershipRepo, tenantRepo, userId, ct);
-        var dto = AuthEndpoints.ToDto(user);
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, userId, ct);
+        var dto = ToUserDto(user);
         return Results.Ok(new
         {
             dto.Id, dto.Email, dto.Name, dto.Role, dto.EmailVerified, dto.OnboardingCompleted, dto.AvatarUrl,
@@ -75,7 +76,7 @@ public static class ProfileEndpoints
             return ctx.ErrorResult(statusCode, errorCode!, message!);
         }
 
-        return Results.Ok(AuthEndpoints.ToDto(user));
+        return Results.Ok(ToUserDto(user));
     }
 
     private static async Task<IResult> HandleCompleteOnboarding(
@@ -106,20 +107,13 @@ public static class ProfileEndpoints
         if (user is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "User not found.", "User", userId.ToString());
 
-        if (!ctx.Request.HasFormContentType || ctx.Request.Form.Files.Count == 0)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "No file uploaded.");
-
-        var file = ctx.Request.Form.Files[0];
-
-        if (file.Length == 0)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Uploaded file is empty.");
-
-        if (file.Length > 3 * 1024 * 1024)
-            return ctx.ErrorResult(413, "FILE_TOO_LARGE", "Image exceeds the 3 MB size limit.");
+        var (file, validationError) = AvatarHelpers.ValidateUpload(ctx);
+        if (validationError is not null)
+            return validationError;
 
         try
         {
-            await using var stream = file.OpenReadStream();
+            await using var stream = file!.OpenReadStream();
             var relativePath = await avatarService.SaveAsync(userId, stream, file.ContentType, ct);
 
             user.AvatarPath = relativePath;

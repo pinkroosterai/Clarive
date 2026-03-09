@@ -202,6 +202,7 @@ builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IImportExportService, ImportExportService>();
+builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
 builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));
 builder.Services.AddScoped<IAvatarService, AvatarService>();
 // ── Email (all providers registered, resolved dynamically per-request) ──

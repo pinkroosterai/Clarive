@@ -24,6 +24,7 @@ public interface IEntryRepository
     Task<PromptEntryVersion> UpdateVersionAsync(PromptEntryVersion version, CancellationToken ct = default);
     Task DeleteVersionAsync(PromptEntryVersion version, CancellationToken ct = default);
     Task ReplacePromptsAsync(PromptEntryVersion version, List<Prompt> newPrompts, CancellationToken ct = default);
+    Task CreateBatchAsync(List<PromptEntry> entries, List<PromptEntryVersion> versions, CancellationToken ct = default);
 
     // Dashboard
     Task<(int Total, int Published, int Drafts)> GetStatsAsync(Guid tenantId, CancellationToken ct = default);

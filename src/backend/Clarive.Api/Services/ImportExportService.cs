@@ -48,6 +48,8 @@ public class ImportExportService(
     {
         var folderCache = new Dictionary<string, Guid>();
         var createdEntries = new List<PromptEntrySummary>();
+        var batchEntries = new List<PromptEntry>();
+        var batchVersions = new List<PromptEntryVersion>();
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -73,7 +75,7 @@ public class ImportExportService(
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            db.PromptEntries.Add(entry);
+            batchEntries.Add(entry);
 
             var version = new PromptEntryVersion
             {
@@ -85,12 +87,12 @@ public class ImportExportService(
                 Prompts = prompts,
                 CreatedAt = DateTime.UtcNow
             };
-            db.PromptEntryVersions.Add(version);
+            batchVersions.Add(version);
 
             createdEntries.Add(PromptEntrySummary.FromEntryAndVersion(entry, version));
         }
 
-        await db.SaveChangesAsync(ct);
+        await entryRepo.CreateBatchAsync(batchEntries, batchVersions, ct);
         await tx.CommitAsync(ct);
 
         TenantCacheKeys.EvictFolderData(cache, tenantId);

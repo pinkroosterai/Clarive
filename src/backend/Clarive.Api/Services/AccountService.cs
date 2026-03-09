@@ -22,6 +22,16 @@ public class AccountService(
     IConfiguration configuration,
     ClariveDbContext db) : IAccountService
 {
+    public async Task<LoginResult?> LoginAsync(string email, string password, CancellationToken ct)
+    {
+        var user = await userRepo.GetByEmailAsync(email, ct);
+        if (user is null || user.PasswordHash is null || !passwordHasher.Verify(password, user.PasswordHash))
+            return null;
+
+        var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
+        return new LoginResult(user, accessToken, rawRefresh, refreshTokenId);
+    }
+
     public async Task<RegisterResult?> RegisterAsync(string email, string name, string password, CancellationToken ct)
     {
         if (await userRepo.GetByEmailAsync(email, ct) is not null)
@@ -55,19 +65,24 @@ public class AccountService(
             }, ct);
         }
 
+        var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
+
         await tx.CommitAsync(ct);
 
-        return new RegisterResult(user, tenant, rawVerify);
+        return new RegisterResult(user, tenant, rawVerify, accessToken, rawRefresh, refreshTokenId);
     }
 
-    public async Task<GoogleAuthResult> AuthenticateWithGoogleAsync(string idToken, CancellationToken ct)
+    public async Task<GoogleAuthLoginResult> LoginWithGoogleAsync(string idToken, CancellationToken ct)
     {
         var googleUser = await googleAuthService.ValidateIdTokenAsync(idToken, ct);
 
         // 1. Find by GoogleId — existing linked account
         var user = await userRepo.GetByGoogleIdAsync(googleUser.GoogleId, ct);
         if (user is not null)
-            return new GoogleAuthResult(user, false);
+        {
+            var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
+            return new GoogleAuthLoginResult(user, accessToken, rawRefresh, refreshTokenId, false);
+        }
 
         // 2. Find by email — reject silent linking (user must link from Settings)
         user = await userRepo.GetByEmailAsync(googleUser.Email, ct);
@@ -86,9 +101,11 @@ public class AccountService(
             passwordHash: null, googleId: googleUser.GoogleId,
             emailVerified: true, ct: ct);
 
+        var (at, rr, rtId) = await IssueTokensAsync(user, ct);
+
         await tx.CommitAsync(ct);
 
-        return new GoogleAuthResult(user, true);
+        return new GoogleAuthLoginResult(user, at, rr, rtId, true);
     }
 
     public async Task<RefreshResult?> RefreshTokensAsync(string refreshToken, CancellationToken ct)
@@ -206,9 +223,25 @@ public class AccountService(
 
         await invitationRepo.DeleteAsync(invitation.TenantId, invitation.Id, ct);
 
-        // Generate tokens
+        var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
+
+        await tx.CommitAsync(ct);
+
+        return new InvitationAcceptResult(user, accessToken, rawRefresh, refreshTokenId);
+    }
+
+    // ── Private helpers ──
+
+    /// <summary>
+    /// Issues a JWT access token and a persisted refresh token for the given user.
+    /// </summary>
+    private async Task<(string AccessToken, string RawRefreshToken, Guid RefreshTokenId)> IssueTokensAsync(
+        User user, CancellationToken ct)
+    {
+        var accessToken = jwtService.GenerateToken(user);
         var (rawRefresh, refreshHash) = jwtService.GenerateRefreshToken();
         var refreshTokenId = Guid.NewGuid();
+
         await refreshTokenRepo.CreateAsync(new RefreshToken
         {
             Id = refreshTokenId,
@@ -218,10 +251,7 @@ public class AccountService(
             CreatedAt = DateTime.UtcNow
         }, ct);
 
-        await tx.CommitAsync(ct);
-
-        var accessToken = jwtService.GenerateToken(user);
-        return new InvitationAcceptResult(user, accessToken, rawRefresh, refreshTokenId);
+        return (accessToken, rawRefresh, refreshTokenId);
     }
 
     /// <summary>

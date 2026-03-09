@@ -7,6 +7,7 @@ using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 using Clarive.Api.Auth;
 using Clarive.Api.Models.Entities;
+using static Clarive.Api.Helpers.ResponseMappers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -125,8 +126,8 @@ public static class InvitationEndpoints
         await auditLogger.SafeLogAsync(result.User.TenantId, result.User.Id, result.User.Name, AuditAction.InvitationAccepted,
             "invitation", Guid.Empty, result.User.Email, $"{result.User.Name} accepted invitation", ct);
 
-        var workspaces = await AuthEndpoints.BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Created($"/api/auth/me", new AuthResponse(result.AccessToken, result.RawRefreshToken, AuthEndpoints.ToDto(result.User), workspaces));
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
+        return Results.Created($"/api/auth/me", new AuthResponse(result.AccessToken, result.RawRefreshToken, ToUserDto(result.User), workspaces));
     }
 
     private static async Task<IResult> HandleResend(
