@@ -5,9 +5,10 @@ namespace Clarive.Api.Repositories.Interfaces;
 
 public interface IEntryRepository
 {
-    Task<(List<PromptEntry> Items, int TotalCount)> GetByFolderAsync(Guid tenantId, Guid? folderId, bool includeAll, int page = 1, int pageSize = 50, CancellationToken ct = default);
+    Task<(List<PromptEntry> Items, int TotalCount)> GetByFolderAsync(Guid tenantId, Guid? folderId, bool includeAll, int page = 1, int pageSize = 50, CancellationToken ct = default, HashSet<Guid>? filteredEntryIds = null);
     Task<(List<PromptEntry> Items, int TotalCount)> GetTrashedAsync(Guid tenantId, int page = 1, int pageSize = 50, CancellationToken ct = default);
     Task<PromptEntry?> GetByIdAsync(Guid tenantId, Guid entryId, CancellationToken ct = default);
+    Task<Dictionary<Guid, PromptEntry>> GetByIdsAsync(Guid tenantId, IEnumerable<Guid> entryIds, CancellationToken ct = default);
     Task<PromptEntry> CreateAsync(PromptEntry entry, CancellationToken ct = default);
     Task<PromptEntry> UpdateAsync(PromptEntry entry, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid tenantId, Guid entryId, CancellationToken ct = default);

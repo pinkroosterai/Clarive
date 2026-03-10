@@ -16,10 +16,14 @@ public record PromptEntrySummary(
     int PromptCount,
     string? FirstPromptPreview,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    List<string> Tags,
+    bool IsFavorited
 )
 {
-    public static PromptEntrySummary FromEntryAndVersion(PromptEntry entry, PromptEntryVersion? version)
+    public static PromptEntrySummary FromEntryAndVersion(
+        PromptEntry entry, PromptEntryVersion? version,
+        List<string>? tags = null, bool isFavorited = false)
     {
         var preview = version?.Prompts.OrderBy(p => p.Order).FirstOrDefault()?.Content;
         if (preview is not null && preview.Length > 100)
@@ -38,7 +42,9 @@ public record PromptEntrySummary(
             PromptCount: version?.Prompts.Count ?? 0,
             FirstPromptPreview: preview,
             entry.CreatedAt,
-            entry.UpdatedAt
+            entry.UpdatedAt,
+            Tags: tags ?? [],
+            IsFavorited: isFavorited
         );
     }
 }

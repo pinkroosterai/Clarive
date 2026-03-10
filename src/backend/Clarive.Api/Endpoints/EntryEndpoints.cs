@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
@@ -13,8 +15,11 @@ using Serilog;
 
 namespace Clarive.Api.Endpoints;
 
-public static class EntryEndpoints
+public static partial class EntryEndpoints
 {
+    [GeneratedRegex(@"^[a-z0-9][a-z0-9 \-]*$")]
+    private static partial Regex TagNamePattern();
+
     public static RouteGroupBuilder MapEntryEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/entries")
@@ -26,6 +31,18 @@ public static class EntryEndpoints
         group.MapGet("/{entryId:guid}", HandleGet);
         group.MapGet("/{entryId:guid}/versions", HandleGetVersions);
         group.MapGet("/{entryId:guid}/versions/{version:int}", HandleGetVersion);
+        group.MapGet("/{entryId:guid}/activity", HandleGetActivity);
+
+        // Tags
+        group.MapGet("/{entryId:guid}/tags", HandleGetEntryTags);
+        group.MapPost("/{entryId:guid}/tags", HandleAddTags)
+            .RequireAuthorization("EditorOrAdmin");
+        group.MapDelete("/{entryId:guid}/tags/{tagName}", HandleRemoveTag)
+            .RequireAuthorization("EditorOrAdmin");
+
+        // Favorites
+        group.MapPost("/{entryId:guid}/favorite", HandleFavorite);
+        group.MapDelete("/{entryId:guid}/favorite", HandleUnfavorite);
 
         group.MapPost("/", HandleCreate)
             .RequireAuthorization("EditorOrAdmin");
@@ -60,12 +77,17 @@ public static class EntryEndpoints
     private static async Task<IResult> HandleList(
         HttpContext ctx,
         IEntryRepository entryRepo,
+        ITagRepository tagRepo,
+        IFavoriteRepository favoriteRepo,
         CancellationToken ct,
         string? folderId = null,
+        [Description("Comma-separated tag names")] string? tags = null,
+        [Description("Tag filter mode: 'and' or 'or'")] string? tagMode = null,
         [Description("Page number (1-based)")] int? page = null,
         [Description("Items per page (max 100)")] int? pageSize = null)
     {
         var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
         bool includeAll = string.Equals(folderId, "all", StringComparison.OrdinalIgnoreCase);
         Guid? parsedFolderId = null;
 
@@ -76,9 +98,28 @@ public static class EntryEndpoints
             parsedFolderId = gid;
         }
 
+        // Parse tag filter
+        HashSet<Guid>? filteredEntryIds = null;
+        if (!string.IsNullOrWhiteSpace(tags))
+        {
+            var tagList = tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(t => t.ToLowerInvariant())
+                .Distinct()
+                .ToList();
+
+            if (tagList.Count > 0)
+            {
+                var matchAll = string.Equals(tagMode, "and", StringComparison.OrdinalIgnoreCase);
+                filteredEntryIds = await tagRepo.GetEntryIdsByTagsAsync(tenantId, tagList, matchAll, ct);
+
+                if (filteredEntryIds.Count == 0)
+                    return Results.Ok(new PaginatedResponse<PromptEntrySummary>([], 0, 1, pageSize ?? 50));
+            }
+        }
+
         var (p, ps) = NormalizePagination(page, pageSize);
-        var (entries, totalCount) = await entryRepo.GetByFolderAsync(tenantId, parsedFolderId, includeAll, p, ps, ct);
-        var summaries = await BuildSummariesBatchAsync(entries, entryRepo, tenantId, ct);
+        var (entries, totalCount) = await entryRepo.GetByFolderAsync(tenantId, parsedFolderId, includeAll, p, ps, ct, filteredEntryIds);
+        var summaries = await BuildSummariesBatchAsync(entries, entryRepo, tagRepo, favoriteRepo, tenantId, userId, ct);
         return Results.Ok(new PaginatedResponse<PromptEntrySummary>(summaries, totalCount, p, ps));
     }
 
@@ -86,14 +127,17 @@ public static class EntryEndpoints
     private static async Task<IResult> HandleListTrashed(
         HttpContext ctx,
         IEntryRepository entryRepo,
+        ITagRepository tagRepo,
+        IFavoriteRepository favoriteRepo,
         CancellationToken ct,
         [Description("Page number (1-based)")] int? page = null,
         [Description("Items per page (max 100)")] int? pageSize = null)
     {
         var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
         var (p, ps) = NormalizePagination(page, pageSize);
         var (entries, totalCount) = await entryRepo.GetTrashedAsync(tenantId, p, ps, ct);
-        var summaries = await BuildSummariesBatchAsync(entries, entryRepo, tenantId, ct);
+        var summaries = await BuildSummariesBatchAsync(entries, entryRepo, tagRepo, favoriteRepo, tenantId, userId, ct);
         return Results.Ok(new PaginatedResponse<PromptEntrySummary>(summaries, totalCount, p, ps));
     }
 
@@ -102,10 +146,12 @@ public static class EntryEndpoints
         Guid entryId,
         HttpContext ctx,
         IEntryRepository entryRepo,
+        IFavoriteRepository favoriteRepo,
         IUserRepository userRepo,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
@@ -114,7 +160,8 @@ public static class EntryEndpoints
         if (version is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "No version found for this entry.", "Entry", entryId.ToString());
 
-        return Results.Ok(await BuildFullResponseAsync(entry, version, userRepo, tenantId, ct));
+        var isFavorited = await favoriteRepo.ExistsAsync(tenantId, userId, entryId, ct);
+        return Results.Ok(await BuildFullResponseAsync(entry, version, userRepo, tenantId, ct, isFavorited));
     }
 
     // ── Get version history ──
@@ -212,9 +259,11 @@ public static class EntryEndpoints
         UpdateEntryRequest request,
         IEntryService entryService,
         IUserRepository userRepo,
+        IAuditLogger auditLogger,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
 
         var error = entryService.ValidateUpdateRequest(request);
         if (error is not null)
@@ -223,6 +272,10 @@ public static class EntryEndpoints
         try
         {
             var (entry, working) = await entryService.UpdateEntryAsync(tenantId, entryId, request, ct);
+
+            await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryDraftUpdated,
+                "prompt_entry", entry.Id, entry.Title, $"Updated draft v{working.Version}", ct);
+
             return Results.Ok(await BuildFullResponseAsync(entry, working, userRepo, tenantId, ct));
         }
         catch (KeyNotFoundException ex)
@@ -418,6 +471,164 @@ public static class EntryEndpoints
         }
     }
 
+    // ── Tags ──
+
+    private static async Task<IResult> HandleGetEntryTags(
+        Guid entryId,
+        HttpContext ctx,
+        IEntryRepository entryRepo,
+        ITagRepository tagRepo,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
+
+        var tags = await tagRepo.GetByEntryIdAsync(tenantId, entryId, ct);
+        return Results.Ok(tags);
+    }
+
+    private static async Task<IResult> HandleAddTags(
+        Guid entryId,
+        HttpContext ctx,
+        AddTagsRequest request,
+        IEntryRepository entryRepo,
+        ITagRepository tagRepo,
+        IMemoryCache cache,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
+
+        if (request.Tags is null || request.Tags.Count == 0)
+            return ctx.ErrorResult(422, "VALIDATION_ERROR", "At least one tag is required.");
+
+        var normalized = new List<string>();
+        foreach (var tag in request.Tags)
+        {
+            var name = tag.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(name) || name.Length > 50 || !TagNamePattern().IsMatch(name))
+                return ctx.ErrorResult(422, "VALIDATION_ERROR", $"Invalid tag name: '{tag}'. Tags can only contain lowercase letters, numbers, hyphens, and spaces.");
+            normalized.Add(name);
+        }
+
+        await tagRepo.AddAsync(tenantId, entryId, normalized.Distinct().ToList(), ct);
+        TenantCacheKeys.EvictTagData(cache, tenantId);
+
+        var tags = await tagRepo.GetByEntryIdAsync(tenantId, entryId, ct);
+        return Results.Ok(tags);
+    }
+
+    private static async Task<IResult> HandleRemoveTag(
+        Guid entryId,
+        string tagName,
+        HttpContext ctx,
+        IEntryRepository entryRepo,
+        ITagRepository tagRepo,
+        IMemoryCache cache,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
+
+        await tagRepo.RemoveAsync(tenantId, entryId, tagName.Trim().ToLowerInvariant(), ct);
+        TenantCacheKeys.EvictTagData(cache, tenantId);
+
+        return Results.NoContent();
+    }
+
+    // ── Favorites ──
+
+    private static async Task<IResult> HandleFavorite(
+        Guid entryId,
+        HttpContext ctx,
+        IEntryRepository entryRepo,
+        IFavoriteRepository favoriteRepo,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
+
+        if (await favoriteRepo.ExistsAsync(tenantId, userId, entryId, ct))
+            return Results.NoContent();
+
+        await favoriteRepo.AddAsync(new EntryFavorite
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            UserId = userId,
+            EntryId = entryId,
+            CreatedAt = DateTime.UtcNow
+        }, ct);
+
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> HandleUnfavorite(
+        Guid entryId,
+        HttpContext ctx,
+        IFavoriteRepository favoriteRepo,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+        await favoriteRepo.RemoveAsync(tenantId, userId, entryId, ct);
+        return Results.NoContent();
+    }
+
+    // ── Activity ──
+
+    private static async Task<IResult> HandleGetActivity(
+        Guid entryId,
+        HttpContext ctx,
+        IEntryRepository entryRepo,
+        IAuditLogRepository auditRepo,
+        CancellationToken ct,
+        [Description("Page number (1-based)")] int? page = null,
+        [Description("Items per page (max 50)")] int? pageSize = null)
+    {
+        var tenantId = ctx.GetTenantId();
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
+
+        var p = page is > 0 ? page.Value : 1;
+        var ps = pageSize is > 0 ? Math.Min(pageSize.Value, 50) : 20;
+
+        var (entries, total) = await auditRepo.GetByEntityIdAsync(tenantId, entryId, p, ps, ct);
+
+        var items = entries.Select(a =>
+        {
+            // Extract version number from details if present (e.g., "Published version 2")
+            int? version = null;
+            if (a.Details is not null)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(a.Details, @"v(?:ersion\s+)?(\d+)");
+                if (match.Success && int.TryParse(match.Groups[1].Value, out var v))
+                    version = v;
+            }
+
+            return new EntryActivityItem(
+                a.Id,
+                JsonNamingPolicy.SnakeCaseLower.ConvertName(a.Action.ToString()),
+                a.UserName,
+                a.Details,
+                version,
+                a.Timestamp);
+        }).ToList();
+
+        return Results.Ok(new EntryActivityResponse(items, total, p, ps));
+    }
+
     // ── Presentation Helpers ──
 
     private static async Task SafeLogAsync(
@@ -446,16 +657,22 @@ public static class EntryEndpoints
     private static async Task<List<PromptEntrySummary>> BuildSummariesBatchAsync(
         List<PromptEntry> entries,
         IEntryRepository entryRepo,
+        ITagRepository tagRepo,
+        IFavoriteRepository favoriteRepo,
         Guid tenantId,
+        Guid userId,
         CancellationToken ct)
     {
         var entryIds = entries.Select(e => e.Id).ToList();
         var workingVersions = await entryRepo.GetWorkingVersionsBatchAsync(tenantId, entryIds, ct);
+        var tagsByEntry = await tagRepo.GetByEntryIdsBatchAsync(tenantId, entryIds, ct);
+        var favoritedIds = await favoriteRepo.GetFavoritedEntryIdsAsync(tenantId, userId, entryIds, ct);
 
         return entries.Select(entry =>
         {
             workingVersions.TryGetValue(entry.Id, out var version);
-            return PromptEntrySummary.FromEntryAndVersion(entry, version);
+            tagsByEntry.TryGetValue(entry.Id, out var tags);
+            return PromptEntrySummary.FromEntryAndVersion(entry, version, tags, favoritedIds.Contains(entry.Id));
         }).ToList();
     }
 
@@ -464,7 +681,8 @@ public static class EntryEndpoints
         PromptEntryVersion version,
         IUserRepository userRepo,
         Guid tenantId,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool? isFavorited = null)
     {
         var userIds = new HashSet<Guid> { entry.CreatedBy };
         if (version.PublishedBy.HasValue) userIds.Add(version.PublishedBy.Value);
@@ -504,7 +722,8 @@ public static class EntryEndpoints
             entry.UpdatedAt,
             CreatedBy = creatorName ?? entry.CreatedBy.ToString(),
             version.PublishedAt,
-            PublishedBy = publisherName
+            PublishedBy = publisherName,
+            IsFavorited = isFavorited ?? false
         };
     }
 }

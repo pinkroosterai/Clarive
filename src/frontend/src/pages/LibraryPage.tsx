@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
 import { EntryCard } from '@/components/library/EntryCard';
+import { TagFilter } from '@/components/library/TagFilter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -29,6 +30,7 @@ import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { useDebounce } from '@/hooks/useDebounce';
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, folderService } from '@/services';
+import * as favoriteService from '@/services/api/favoriteService';
 import type { PromptEntry } from '@/types';
 
 type StatusFilter = 'all' | 'draft' | 'published';
@@ -96,6 +98,8 @@ export default function LibraryPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [page, setPage] = useState(1);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagMode, setTagMode] = useState<'and' | 'or'>('or');
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Reset search and page when navigating to a different folder
@@ -108,8 +112,15 @@ export default function LibraryPage() {
   }, [folderId, resetFilters]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['entries', folderId ?? null, page],
-    queryFn: () => entryService.getEntriesList(folderId ?? null, page, PAGE_SIZE),
+    queryKey: ['entries', folderId ?? null, page, selectedTags, tagMode],
+    queryFn: () =>
+      entryService.getEntriesList(
+        folderId ?? null,
+        page,
+        PAGE_SIZE,
+        selectedTags.length > 0 ? selectedTags : undefined,
+        selectedTags.length > 0 ? tagMode : undefined
+      ),
   });
 
   const entries = data?.items;
@@ -166,12 +177,26 @@ export default function LibraryPage() {
     onError: (err: unknown) => handleApiError(err),
   });
 
+  const favoriteMutation = useMutation({
+    mutationFn: ({ id, isFavorited }: { id: string; isFavorited: boolean }) =>
+      isFavorited ? favoriteService.unfavoriteEntry(id) : favoriteService.favoriteEntry(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+    },
+    onError: (err: unknown) => handleApiError(err),
+  });
+
   const handleDuplicate = useCallback(
     (e: PromptEntry) => duplicateMutation.mutate(e),
     [duplicateMutation]
   );
 
   const handleTrash = useCallback((id: string) => trashMutation.mutate(id), [trashMutation]);
+
+  const handleToggleFavorite = useCallback(
+    (id: string, isFavorited: boolean) => favoriteMutation.mutate({ id, isFavorited }),
+    [favoriteMutation]
+  );
 
   const heading = folderName ?? 'All Prompts';
 
@@ -262,6 +287,12 @@ export default function LibraryPage() {
               </SelectContent>
             </Select>
           </div>
+          <TagFilter
+            selectedTags={selectedTags}
+            tagMode={tagMode}
+            onTagsChange={setSelectedTags}
+            onTagModeChange={setTagMode}
+          />
           <AnimatePresence>
             {hasActiveFilters && (
               <motion.span
@@ -323,6 +354,7 @@ export default function LibraryPage() {
                   index={index}
                   onDuplicate={handleDuplicate}
                   onTrash={handleTrash}
+                  onToggleFavorite={handleToggleFavorite}
                 />
               </div>
             ))}

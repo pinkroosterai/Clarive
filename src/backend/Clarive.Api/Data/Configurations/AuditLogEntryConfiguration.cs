@@ -34,5 +34,9 @@ public class AuditLogEntryConfiguration : IEntityTypeConfiguration<AuditLogEntry
             .IsDescending(false, true)
             .HasDatabaseName("ix_audit_log_tenant_timestamp");
         builder.HasIndex(a => a.ExpiresAt).HasDatabaseName("ix_audit_log_expires");
+
+        builder.HasIndex(a => new { a.TenantId, a.EntityId, a.Timestamp })
+            .IsDescending(false, false, true)
+            .HasDatabaseName("ix_audit_log_tenant_entity_timestamp");
     }
 }

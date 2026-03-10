@@ -4,6 +4,8 @@ using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Clarive.Api.Auth;
+using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 
 namespace Clarive.Api.Endpoints;
 
@@ -25,10 +27,12 @@ public static class DashboardEndpoints
         IEntryRepository entryRepo,
         IFolderRepository folderRepo,
         IAuditLogRepository auditRepo,
+        IFavoriteRepository favoriteRepo,
         IMemoryCache cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
         var cacheKey = TenantCacheKeys.DashboardStats(tenantId);
 
         // Cache aggregate stats (counts change infrequently relative to page views)
@@ -53,8 +57,30 @@ public static class DashboardEndpoints
             a.Details,
             a.Timestamp)).ToList();
 
+        // Favorites — per-user, fetched live
+        var userFavorites = await favoriteRepo.GetByUserAsync(tenantId, userId, 8, ct);
+        var favoriteEntryIds = userFavorites.Select(f => f.EntryId).ToList();
+        var favoriteVersions = favoriteEntryIds.Count > 0
+            ? await entryRepo.GetWorkingVersionsBatchAsync(tenantId, favoriteEntryIds, ct)
+            : new Dictionary<Guid, PromptEntryVersion>();
+
+        // Resolve entry titles and build DTOs (batch fetch to avoid N+1)
+        var favoriteEntries = new List<FavoriteEntryDto>();
+        if (favoriteEntryIds.Count > 0)
+        {
+            var entriesById = await entryRepo.GetByIdsAsync(tenantId, favoriteEntryIds, ct);
+            foreach (var (entryId, favoritedAt) in userFavorites)
+            {
+                if (!entriesById.TryGetValue(entryId, out var entry) || entry.IsTrashed) continue;
+
+                favoriteVersions.TryGetValue(entryId, out var version);
+                var versionState = (version?.VersionState ?? Models.Enums.VersionState.Draft).ToString().ToLower();
+                favoriteEntries.Add(new FavoriteEntryDto(entryId, entry.Title, versionState, favoritedAt));
+            }
+        }
+
         return Results.Ok(new DashboardStatsResponse(
             stats.total, stats.published, stats.drafts, stats.folderCount,
-            recentEntries, recentActivity));
+            recentEntries, recentActivity, favoriteEntries));
     }
 }

@@ -14,11 +14,14 @@ import {
   Redo2,
   Copy,
   Check,
+  History,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
+import { ActivityTimeline } from '@/components/editor/ActivityTimeline';
+import { TagEditor } from '@/components/editor/TagEditor';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,6 +105,8 @@ export function EditorActionPanel({
   const aiEnabled = useAiEnabled();
   const hasDraft = versions.some((v) => v.versionState === 'draft');
   const publishedVersion = versions.find((v) => v.versionState === 'published')?.version;
+
+  const [showActivity, setShowActivity] = useState(false);
 
   // Save success feedback
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -356,6 +361,12 @@ export function EditorActionPanel({
         </>
       )}
 
+      <ActionGroup label="Tags">
+        <TagEditor entryId={entry.id} readOnly={isReadOnly} />
+      </ActionGroup>
+
+      <Separator />
+
       <ActionGroup label="Metadata">
         <div className="space-y-2.5 text-sm">
           <div className="flex items-center gap-2 text-foreground-muted">
@@ -400,6 +411,21 @@ export function EditorActionPanel({
             </Button>
           )}
         </div>
+      </ActionGroup>
+
+      <Separator />
+
+      <ActionGroup label="Activity">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 w-full justify-start"
+          onClick={() => setShowActivity(!showActivity)}
+        >
+          <History className="size-3.5" />
+          {showActivity ? 'Hide activity' : 'Show activity'}
+        </Button>
+        {showActivity && <ActivityTimeline entryId={entry.id} />}
       </ActionGroup>
     </motion.div>
   );

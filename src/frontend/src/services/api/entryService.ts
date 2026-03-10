@@ -16,6 +16,8 @@ interface EntrySummary {
   firstPromptPreview: string | null;
   createdAt: string;
   updatedAt: string;
+  tags: string[];
+  isFavorited: boolean;
 }
 
 function summaryToEntry(s: EntrySummary): PromptEntry {
@@ -36,18 +38,24 @@ function summaryToEntry(s: EntrySummary): PromptEntry {
     isChain: s.isChain,
     promptCount: s.promptCount,
     firstPromptPreview: s.firstPromptPreview,
+    tags: s.tags,
+    isFavorited: s.isFavorited,
   };
 }
 
 export async function getEntriesList(
   folderId?: string | null,
   page: number = 1,
-  pageSize: number = 50
+  pageSize: number = 50,
+  tags?: string[],
+  tagMode?: 'and' | 'or'
 ): Promise<PaginatedResponse<PromptEntry>> {
   const params = new URLSearchParams();
   params.set('folderId', folderId ?? 'all');
   params.set('page', String(page));
   params.set('pageSize', String(pageSize));
+  if (tags && tags.length > 0) params.set('tags', tags.join(','));
+  if (tagMode) params.set('tagMode', tagMode);
   const res = await api.get<PaginatedResponse<EntrySummary>>(`/api/entries?${params}`);
   return {
     items: res.items.map(summaryToEntry),

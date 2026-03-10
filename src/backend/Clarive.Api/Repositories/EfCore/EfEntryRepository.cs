@@ -9,11 +9,13 @@ namespace Clarive.Api.Repositories.EfCore;
 
 public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
 {
-    public async Task<(List<PromptEntry> Items, int TotalCount)> GetByFolderAsync(Guid tenantId, Guid? folderId, bool includeAll, int page = 1, int pageSize = 50, CancellationToken ct = default)
+    public async Task<(List<PromptEntry> Items, int TotalCount)> GetByFolderAsync(Guid tenantId, Guid? folderId, bool includeAll, int page = 1, int pageSize = 50, CancellationToken ct = default, HashSet<Guid>? filteredEntryIds = null)
     {
         var query = db.PromptEntries.AsNoTracking().Where(e => e.TenantId == tenantId && !e.IsTrashed);
         if (!includeAll)
             query = query.Where(e => e.FolderId == folderId);
+        if (filteredEntryIds is not null)
+            query = query.Where(e => filteredEntryIds.Contains(e.Id));
         query = query.OrderByDescending(e => e.UpdatedAt);
 
         var totalCount = await query.CountAsync(ct);
@@ -37,6 +39,16 @@ public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
     {
         return await db.PromptEntries
             .FirstOrDefaultAsync(e => e.Id == entryId && e.TenantId == tenantId, ct);
+    }
+
+    public async Task<Dictionary<Guid, PromptEntry>> GetByIdsAsync(Guid tenantId, IEnumerable<Guid> entryIds, CancellationToken ct = default)
+    {
+        var ids = entryIds.ToList();
+        if (ids.Count == 0) return new Dictionary<Guid, PromptEntry>();
+        return await db.PromptEntries
+            .AsNoTracking()
+            .Where(e => e.TenantId == tenantId && ids.Contains(e.Id))
+            .ToDictionaryAsync(e => e.Id, ct);
     }
 
     public async Task<PromptEntry> CreateAsync(PromptEntry entry, CancellationToken ct = default)

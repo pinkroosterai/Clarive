@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { AlertTriangle, Star } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
@@ -14,12 +15,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEditorKeyboardShortcuts } from '@/hooks/useEditorKeyboardShortcuts';
 import { useEditorMutations } from '@/hooks/useEditorMutations';
 import { useEditorState } from '@/hooks/useEditorState';
 import { findFolderName } from '@/lib/folderUtils';
 import { entryService, folderService } from '@/services';
+import * as favoriteService from '@/services/api/favoriteService';
 import { useAuthStore } from '@/store/authStore';
 
 const EntryEditorPage = () => {
@@ -81,6 +84,38 @@ const EntryEditorPage = () => {
     onUndo: editor.handleUndo,
     onRedo: editor.handleRedo,
   });
+
+  // ── Favorite toggle ──
+  const queryClient = useQueryClient();
+  const [isFavorited, setIsFavorited] = useState(entryData?.isFavorited ?? false);
+
+  useEffect(() => {
+    if (entryData?.isFavorited !== undefined) {
+      setIsFavorited(entryData.isFavorited);
+    }
+  }, [entryData?.isFavorited]);
+
+  const favoriteMutation = useMutation({
+    mutationFn: (currentlyFavorited: boolean) =>
+      currentlyFavorited
+        ? favoriteService.unfavoriteEntry(entryId!)
+        : favoriteService.favoriteEntry(entryId!),
+    onMutate: () => {
+      setIsFavorited((prev) => !prev);
+    },
+    onError: () => {
+      setIsFavorited((prev) => !prev);
+      toast.error('Failed to update favorite');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+    },
+  });
+
+  const handleToggleFavorite = useCallback(() => {
+    favoriteMutation.mutate(isFavorited);
+  }, [favoriteMutation, isFavorited]);
 
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);
@@ -159,9 +194,30 @@ const EntryEditorPage = () => {
 
   const editorContent = (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        {versionBadge}
-        {unsavedIndicator}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {versionBadge}
+          {unsavedIndicator}
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+              onClick={handleToggleFavorite}
+              disabled={favoriteMutation.isPending}
+            >
+              <Star
+                className={`size-4.5 transition-colors ${isFavorited ? 'fill-yellow-500 text-yellow-500' : 'text-foreground-muted hover:text-yellow-500'}`}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          </TooltipContent>
+        </Tooltip>
       </div>
       {readOnlyBanner}
       {editor.showEditNotice && (

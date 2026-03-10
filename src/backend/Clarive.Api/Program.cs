@@ -186,6 +186,8 @@ builder.Services.AddScoped<ITokenRepository, EfTokenRepository>();
 builder.Services.AddScoped<ILoginSessionRepository, EfLoginSessionRepository>();
 builder.Services.AddScoped<IInvitationRepository, EfInvitationRepository>();
 builder.Services.AddScoped<ITenantMembershipRepository, EfTenantMembershipRepository>();
+builder.Services.AddScoped<ITagRepository, EfTagRepository>();
+builder.Services.AddScoped<IFavoriteRepository, EfFavoriteRepository>();
 
 // ── Services ──
 builder.Services.AddSingleton<MaintenanceModeService>();
@@ -428,6 +430,7 @@ app.MapAiGenerationEndpoints();
 app.MapAccountEndpoints();
 app.MapProfileEndpoints();
 app.MapDashboardEndpoints();
+app.MapTagEndpoints();
 app.MapSuperEndpoints();
 app.MapConfigEndpoints();
 

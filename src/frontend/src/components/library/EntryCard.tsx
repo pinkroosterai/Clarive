@@ -9,8 +9,9 @@ import {
   FileCode,
   GitBranch,
   GripVertical,
+  Star,
 } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { draggableEntryId } from '@/lib/dnd/types';
 import { parseTemplateTags } from '@/lib/templateParser';
+import * as favoriteService from '@/services/api/favoriteService';
 import type { PromptEntry } from '@/types';
 
 interface EntryCardProps {
@@ -33,6 +35,7 @@ interface EntryCardProps {
   index?: number;
   onDuplicate: (entry: PromptEntry) => void;
   onTrash: (id: string) => void;
+  onToggleFavorite?: (id: string, isFavorited: boolean) => void;
 }
 
 const badgeVariant: Record<
@@ -49,6 +52,7 @@ export const EntryCard = memo(function EntryCard({
   index = 0,
   onDuplicate,
   onTrash,
+  onToggleFavorite,
 }: EntryCardProps) {
   const navigate = useNavigate();
 
@@ -107,6 +111,21 @@ export const EntryCard = memo(function EntryCard({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <Badge variant={badge.variant}>{badgeLabel}</Badge>
+            {onToggleFavorite && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFavorite(entry.id, !!entry.isFavorited);
+                }}
+              >
+                <Star
+                  className={`size-4 transition-colors ${entry.isFavorited ? 'fill-yellow-500 text-yellow-500' : 'text-foreground-muted'}`}
+                />
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -141,6 +160,18 @@ export const EntryCard = memo(function EntryCard({
           <p className="text-sm text-foreground-secondary line-clamp-2">
             {preview || 'Empty prompt'}
           </p>
+          {entry.tags && entry.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {entry.tags.slice(0, 4).map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
+                  {tag}
+                </Badge>
+              ))}
+              {entry.tags.length > 4 && (
+                <span className="text-xs text-foreground-muted">+{entry.tags.length - 4}</span>
+              )}
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="gap-3 pt-0 pb-4">

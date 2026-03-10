@@ -1,14 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FileText, Globe, PenLine, FolderOpen, LayoutDashboard } from 'lucide-react';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import { EmptyState } from '@/components/common/EmptyState';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
+import { FavoritesList } from '@/components/dashboard/FavoritesList';
 import { RecentEntriesList } from '@/components/dashboard/RecentEntriesList';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { dashboardService } from '@/services';
+import * as favoriteService from '@/services/api/favoriteService';
 import { useAuthStore } from '@/store/authStore';
 
 function getGreeting(name: string): string {
@@ -31,6 +33,20 @@ export default function DashboardPage() {
   }, []);
 
   const currentUser = useAuthStore((s) => s.currentUser);
+  const queryClient = useQueryClient();
+
+  const unfavoriteMutation = useMutation({
+    mutationFn: (entryId: string) => favoriteService.unfavoriteEntry(entryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+    },
+  });
+
+  const handleUnfavorite = useCallback(
+    (entryId: string) => unfavoriteMutation.mutate(entryId),
+    [unfavoriteMutation]
+  );
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard', 'stats'],
@@ -93,6 +109,10 @@ export default function DashboardPage() {
         <StatCard icon={PenLine} label="Drafts" value={stats.draftEntries} index={2} />
         <StatCard icon={FolderOpen} label="Folders" value={stats.totalFolders} index={3} />
       </div>
+
+      {stats.favoriteEntries && stats.favoriteEntries.length > 0 && (
+        <FavoritesList entries={stats.favoriteEntries} onUnfavorite={handleUnfavorite} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="dashboard-recent">
         <RecentEntriesList entries={stats.recentEntries} />

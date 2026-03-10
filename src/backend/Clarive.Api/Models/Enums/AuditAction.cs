@@ -21,5 +21,6 @@ public enum AuditAction
     InvitationDeclined,
     WorkspaceSwitched,
     MaintenanceEnabled,
-    MaintenanceDisabled
+    MaintenanceDisabled,
+    EntryDraftUpdated
 }

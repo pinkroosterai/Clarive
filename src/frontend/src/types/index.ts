@@ -31,6 +31,8 @@ export interface PromptEntry {
   isChain?: boolean;
   promptCount?: number;
   firstPromptPreview?: string | null;
+  tags?: string[];
+  isFavorited?: boolean;
 }
 
 export interface Folder {
@@ -188,6 +190,34 @@ export interface AuthResponse {
   workspaces?: Workspace[];
 }
 
+export interface TagSummary {
+  name: string;
+  entryCount: number;
+}
+
+export interface FavoriteEntry {
+  id: string;
+  title: string;
+  versionState: 'draft' | 'published' | 'historical';
+  favoritedAt: string;
+}
+
+export interface EntryActivityItem {
+  id: string;
+  action: string;
+  userName: string;
+  details: string | null;
+  version: number | null;
+  timestamp: string;
+}
+
+export interface EntryActivityResponse {
+  items: EntryActivityItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface DashboardStats {
   totalEntries: number;
   publishedEntries: number;
@@ -195,6 +225,7 @@ export interface DashboardStats {
   totalFolders: number;
   recentEntries: RecentEntry[];
   recentActivity: RecentActivity[];
+  favoriteEntries: FavoriteEntry[];
 }
 
 export interface RecentEntry {

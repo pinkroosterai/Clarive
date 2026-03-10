@@ -14,6 +14,7 @@ namespace Clarive.Api.Services;
 public class ImportExportService(
     IEntryRepository entryRepo,
     IFolderRepository folderRepo,
+    ITagRepository tagRepo,
     ClariveDbContext db,
     IMemoryCache cache) : IImportExportService
 {
@@ -93,10 +94,21 @@ public class ImportExportService(
         }
 
         await entryRepo.CreateBatchAsync(batchEntries, batchVersions, ct);
+
+        // Import tags
+        for (var i = 0; i < batchEntries.Count; i++)
+        {
+            if (entryList[i] is not Dictionary<object, object> rawItem) continue;
+            var importTags = ParseImportTags(rawItem);
+            if (importTags.Count > 0)
+                await tagRepo.AddAsync(tenantId, batchEntries[i].Id, importTags, ct);
+        }
+
         await tx.CommitAsync(ct);
 
         TenantCacheKeys.EvictFolderData(cache, tenantId);
         TenantCacheKeys.EvictEntryData(cache, tenantId);
+        TenantCacheKeys.EvictTagData(cache, tenantId);
 
         return new ImportResponse(createdEntries.Count, createdEntries);
     }
@@ -144,6 +156,7 @@ public class ImportExportService(
     {
         var entryIds = entries.Select(e => e.Id).ToList();
         var publishedVersions = await entryRepo.GetPublishedVersionsBatchAsync(tenantId, entryIds, ct);
+        var tagsByEntry = await tagRepo.GetByEntryIdsBatchAsync(tenantId, entryIds, ct);
 
         var folderIdSet = entries
             .Where(e => e.FolderId.HasValue)
@@ -177,6 +190,10 @@ public class ImportExportService(
                 exportEntry["systemMessage"] = published.SystemMessage;
 
             exportEntry["prompts"] = prompts;
+
+            if (tagsByEntry.TryGetValue(entry.Id, out var entryTags) && entryTags.Count > 0)
+                exportEntry["tags"] = entryTags;
+
             exportEntries.Add(exportEntry);
         }
 
@@ -219,6 +236,18 @@ public class ImportExportService(
 
         folderCache[folderName] = folder.Id;
         return folder.Id;
+    }
+
+    private static List<string> ParseImportTags(Dictionary<object, object> raw)
+    {
+        if (!raw.TryGetValue("tags", out var tagsObj) || tagsObj is not List<object> tagList)
+            return [];
+
+        return tagList
+            .Select(t => t?.ToString()?.Trim().ToLowerInvariant())
+            .Where(t => !string.IsNullOrEmpty(t) && t.Length <= 50)
+            .Distinct()
+            .ToList()!;
     }
 
     private static List<Prompt> ParseImportPrompts(Dictionary<object, object> raw)
