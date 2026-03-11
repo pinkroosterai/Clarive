@@ -36,6 +36,7 @@ export function FolderTree() {
   const { data: entriesData } = useQuery({
     queryKey: ['entries', null, 1],
     queryFn: () => entryService.getEntriesList(null, 1, 1000),
+    staleTime: 60_000, // avoid refetching on every navigation — 1 min cache
   });
   const entries = entriesData?.items ?? [];
 
