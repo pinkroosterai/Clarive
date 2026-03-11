@@ -1,3 +1,3 @@
 namespace Clarive.Api.Models.Requests;
 
-public record GoogleAuthRequest(string IdToken);
+public record GoogleAuthRequest(string IdToken, string? Nonce);

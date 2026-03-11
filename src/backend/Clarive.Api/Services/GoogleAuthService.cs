@@ -15,7 +15,7 @@ public class GoogleAuthService : IGoogleAuthService
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_optionsMonitor.CurrentValue.ClientId);
 
-    public async Task<GoogleUserInfo> ValidateIdTokenAsync(string idToken, CancellationToken ct = default)
+    public async Task<GoogleUserInfo> ValidateIdTokenAsync(string idToken, string? nonce = null, CancellationToken ct = default)
     {
         var settings = _optionsMonitor.CurrentValue;
 
@@ -24,6 +24,9 @@ public class GoogleAuthService : IGoogleAuthService
             {
                 Audience = [settings.ClientId]
             });
+
+        if (!string.IsNullOrWhiteSpace(nonce) && payload.Nonce != nonce)
+            throw new InvalidJwtException("Nonce mismatch in Google ID token.");
 
         return new GoogleUserInfo(
             GoogleId: payload.Subject,

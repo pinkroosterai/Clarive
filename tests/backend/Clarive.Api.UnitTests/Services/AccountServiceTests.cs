@@ -178,7 +178,7 @@ public class AccountServiceTests : IDisposable
     public async Task LoginWithGoogleAsync_ExistingGoogleId_ReturnsUser()
     {
         var user = new User { Id = Guid.NewGuid(), GoogleId = "google123", Email = "g@test.com" };
-        _googleAuth.ValidateIdTokenAsync("token", Arg.Any<CancellationToken>())
+        _googleAuth.ValidateIdTokenAsync("token", Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(new GoogleUserInfo("google123", "g@test.com", "Google User"));
         _userRepo.GetByGoogleIdAsync("google123", Arg.Any<CancellationToken>())
             .Returns(user);
@@ -194,7 +194,7 @@ public class AccountServiceTests : IDisposable
     [Fact]
     public async Task LoginWithGoogleAsync_ExistingEmail_NoGoogleId_Throws()
     {
-        _googleAuth.ValidateIdTokenAsync("token", Arg.Any<CancellationToken>())
+        _googleAuth.ValidateIdTokenAsync("token", Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(new GoogleUserInfo("google123", "existing@test.com", "User"));
         _userRepo.GetByGoogleIdAsync("google123", Arg.Any<CancellationToken>())
             .Returns((User?)null);
@@ -210,7 +210,7 @@ public class AccountServiceTests : IDisposable
     [Fact]
     public async Task LoginWithGoogleAsync_NewUser_CreatesAccount()
     {
-        _googleAuth.ValidateIdTokenAsync("token", Arg.Any<CancellationToken>())
+        _googleAuth.ValidateIdTokenAsync("token", Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(new GoogleUserInfo("google123", "new@test.com", "New User"));
         _userRepo.GetByGoogleIdAsync("google123", Arg.Any<CancellationToken>())
             .Returns((User?)null);

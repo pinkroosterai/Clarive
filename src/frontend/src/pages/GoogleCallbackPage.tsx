@@ -33,8 +33,11 @@ const GoogleCallbackPage = () => {
         return;
       }
 
+      const nonce = sessionStorage.getItem('google_nonce') ?? '';
+      sessionStorage.removeItem('google_nonce');
+
       try {
-        const res = await authService.googleAuth(idToken);
+        const res = await authService.googleAuth(idToken, nonce);
         if (cancelled) return;
         setUser(res.user);
         if (res.workspaces) setWorkspaces(res.workspaces);

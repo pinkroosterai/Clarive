@@ -72,9 +72,9 @@ public class AccountService(
         return new RegisterResult(user, tenant, rawVerify, accessToken, rawRefresh, refreshTokenId);
     }
 
-    public async Task<GoogleAuthLoginResult> LoginWithGoogleAsync(string idToken, CancellationToken ct)
+    public async Task<GoogleAuthLoginResult> LoginWithGoogleAsync(string idToken, string? nonce = null, CancellationToken ct = default)
     {
-        var googleUser = await googleAuthService.ValidateIdTokenAsync(idToken, ct);
+        var googleUser = await googleAuthService.ValidateIdTokenAsync(idToken, nonce, ct);
 
         // 1. Find by GoogleId — existing linked account
         var user = await userRepo.GetByGoogleIdAsync(googleUser.GoogleId, ct);

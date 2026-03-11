@@ -104,14 +104,15 @@ describe('register', () => {
 // ── googleAuth ──
 
 describe('googleAuth', () => {
-  it('calls POST /api/auth/google with idToken', async () => {
+  it('calls POST /api/auth/google with idToken and nonce', async () => {
     const authRes = { ...createAuthResponse(), isNewUser: true };
     mockApi.post.mockResolvedValue(authRes);
 
-    const result = await googleAuth('google-id-token-abc');
+    const result = await googleAuth('google-id-token-abc', 'test-nonce-123');
 
     expect(mockApi.post).toHaveBeenCalledWith('/api/auth/google', {
       idToken: 'google-id-token-abc',
+      nonce: 'test-nonce-123',
     });
     expect(result.isNewUser).toBe(true);
   });
@@ -123,7 +124,7 @@ describe('googleAuth', () => {
     };
     mockApi.post.mockResolvedValue(authRes);
 
-    await googleAuth('token');
+    await googleAuth('token', 'nonce-xyz');
 
     expect(mockSetToken).toHaveBeenCalledWith('g-jwt');
     expect(mockSetRefreshToken).toHaveBeenCalledWith('g-refresh');

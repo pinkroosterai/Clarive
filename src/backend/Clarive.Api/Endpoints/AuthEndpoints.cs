@@ -246,7 +246,7 @@ public static class AuthEndpoints
         {
             try
             {
-                var googleUser = await googleAuthService.ValidateIdTokenAsync(request.IdToken, ct);
+                var googleUser = await googleAuthService.ValidateIdTokenAsync(request.IdToken, request.Nonce, ct);
                 var existsByGoogle = await userRepo.GetByGoogleIdAsync(googleUser.GoogleId, ct);
                 var existsByEmail = existsByGoogle ?? await userRepo.GetByEmailAsync(googleUser.Email, ct);
                 if (existsByEmail is null)
@@ -261,7 +261,7 @@ public static class AuthEndpoints
         GoogleAuthLoginResult result;
         try
         {
-            result = await accountService.LoginWithGoogleAsync(request.IdToken, ct);
+            result = await accountService.LoginWithGoogleAsync(request.IdToken, request.Nonce, ct);
         }
         catch (Exception)
         {

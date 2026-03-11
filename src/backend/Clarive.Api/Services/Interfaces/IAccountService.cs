@@ -23,7 +23,7 @@ public interface IAccountService
     /// Throws InvalidOperationException if the email already exists with a password-only account.
     /// Throws if the Google token is invalid.
     /// </summary>
-    Task<GoogleAuthLoginResult> LoginWithGoogleAsync(string idToken, CancellationToken ct = default);
+    Task<GoogleAuthLoginResult> LoginWithGoogleAsync(string idToken, string? nonce = null, CancellationToken ct = default);
 
     /// <summary>
     /// Validates a refresh token, ensures user still has active workspace membership

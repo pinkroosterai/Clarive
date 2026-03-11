@@ -27,9 +27,13 @@ export async function register(
   return res;
 }
 
-export async function googleAuth(idToken: string): Promise<AuthResponse & { isNewUser: boolean }> {
+export async function googleAuth(
+  idToken: string,
+  nonce: string
+): Promise<AuthResponse & { isNewUser: boolean }> {
   const res = await api.post<AuthResponse & { isNewUser: boolean }>('/api/auth/google', {
     idToken,
+    nonce,
   });
   setToken(res.token);
   setRefreshToken(res.refreshToken);
