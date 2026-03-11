@@ -51,7 +51,7 @@ function SetupGuard({ children }: { children: React.ReactNode }) {
         setAllowRegistration(s.allowRegistration);
       })
       .catch(() => setSetupComplete(true)); // assume setup done on error
-  }, [location.pathname]);
+  }, []);
 
   if (setupComplete === null) {
     return <LoadingSpinner />;

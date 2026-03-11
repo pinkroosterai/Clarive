@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Clarive.Api.Auth;
 using Clarive.Api.Data;
 using Clarive.Api.Models.Entities;
@@ -39,37 +40,45 @@ public class AccountService(
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
-        var isFirstUser = !await userRepo.AnyUsersExistAsync(ct);
-        var emailProvider = configuration["Email:Provider"] ?? "none";
-        var skipVerification = isFirstUser
-            || emailProvider.Equals("none", StringComparison.OrdinalIgnoreCase);
-
-        var (user, tenant) = await CreateUserWithPersonalWorkspaceAsync(
-            email.Trim().ToLowerInvariant(), name.Trim(),
-            passwordHash: passwordHasher.Hash(password),
-            googleId: null, emailVerified: skipVerification,
-            isSuperUser: isFirstUser, ct);
-
-        // Skip verification token when auto-verified (first user or no email provider)
-        string? rawVerify = null;
-        if (!skipVerification)
+        try
         {
-            (rawVerify, _) = jwtService.GenerateRefreshToken();
-            await tokenRepo.CreateVerificationTokenAsync(new EmailVerificationToken
+            var isFirstUser = !await userRepo.AnyUsersExistAsync(ct);
+            var emailProvider = configuration["Email:Provider"] ?? "none";
+            var skipVerification = isFirstUser
+                || emailProvider.Equals("none", StringComparison.OrdinalIgnoreCase);
+
+            var (user, tenant) = await CreateUserWithPersonalWorkspaceAsync(
+                email.Trim().ToLowerInvariant(), name.Trim(),
+                passwordHash: passwordHasher.Hash(password),
+                googleId: null, emailVerified: skipVerification,
+                isSuperUser: isFirstUser, ct);
+
+            // Skip verification token when auto-verified (first user or no email provider)
+            string? rawVerify = null;
+            if (!skipVerification)
             {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                TokenHash = JwtService.HashRefreshToken(rawVerify),
-                ExpiresAt = DateTime.UtcNow.AddHours(24),
-                CreatedAt = DateTime.UtcNow
-            }, ct);
+                (rawVerify, _) = jwtService.GenerateRefreshToken();
+                await tokenRepo.CreateVerificationTokenAsync(new EmailVerificationToken
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    TokenHash = JwtService.HashRefreshToken(rawVerify),
+                    ExpiresAt = DateTime.UtcNow.AddHours(24),
+                    CreatedAt = DateTime.UtcNow
+                }, ct);
+            }
+
+            var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
+
+            await tx.CommitAsync(ct);
+
+            return new RegisterResult(user, tenant, rawVerify, accessToken, rawRefresh, refreshTokenId);
         }
-
-        var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
-
-        await tx.CommitAsync(ct);
-
-        return new RegisterResult(user, tenant, rawVerify, accessToken, rawRefresh, refreshTokenId);
+        catch (DbUpdateException)
+        {
+            // Unique constraint violation on email — concurrent registration won the race
+            return null;
+        }
     }
 
     public async Task<GoogleAuthLoginResult> LoginWithGoogleAsync(string idToken, string? nonce = null, CancellationToken ct = default)
