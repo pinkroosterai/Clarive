@@ -5,9 +5,12 @@ EXPOSE 5000
 
 # ── Stage: dev (hot-reload) ─────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dev
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --ingroup appgroup appuser
 WORKDIR /app/Clarive.Api
 EXPOSE 5000
 ENV DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+USER appuser
 CMD ["sh", "-c", "dotnet restore && dotnet watch run --no-launch-profile"]
 
 # ── Stage: build ─────────────────────────────────────────────

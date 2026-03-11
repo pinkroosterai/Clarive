@@ -59,8 +59,15 @@ const AcceptInvitationPage = () => {
     return <Navigate to="/" replace />;
   }
 
+  const MIN_PASSWORD_LENGTH = 12;
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
@@ -162,6 +169,7 @@ const AcceptInvitationPage = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      minLength={MIN_PASSWORD_LENGTH}
                       autoComplete="new-password"
                       className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
                     />

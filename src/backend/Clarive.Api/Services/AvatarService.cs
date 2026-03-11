@@ -23,6 +23,20 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
         "image/webp"
     ];
 
+    private static readonly byte[] JpegMagic = [0xFF, 0xD8, 0xFF];
+    private static readonly byte[] PngMagic = [0x89, 0x50, 0x4E, 0x47];
+    private static readonly byte[] WebPRiff = [0x52, 0x49, 0x46, 0x46]; // "RIFF"
+    private static readonly byte[] WebPTag = [0x57, 0x45, 0x42, 0x50]; // "WEBP"
+
+    private static bool HasValidMagicBytes(ReadOnlySpan<byte> data)
+    {
+        if (data.Length < 12) return false;
+        if (data[..3].SequenceEqual(JpegMagic)) return true;
+        if (data[..4].SequenceEqual(PngMagic)) return true;
+        if (data[..4].SequenceEqual(WebPRiff) && data[8..12].SequenceEqual(WebPTag)) return true;
+        return false;
+    }
+
     public async Task<string> SaveAsync(Guid userId, Stream imageStream, string contentType, CancellationToken ct = default)
     {
         if (!AllowedContentTypes.Contains(contentType))
@@ -34,6 +48,9 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
 
         if (memoryStream.Length > MaxFileBytes)
             throw new InvalidOperationException($"Image exceeds the {MaxFileBytes / 1024} KB size limit.");
+
+        if (!HasValidMagicBytes(memoryStream.GetBuffer().AsSpan(0, (int)Math.Min(memoryStream.Length, 12))))
+            throw new InvalidOperationException("File content does not match a supported image format.");
 
         memoryStream.Position = 0;
 
@@ -85,6 +102,9 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
 
         if (memoryStream.Length > MaxFileBytes)
             throw new InvalidOperationException($"Image exceeds the {MaxFileBytes / 1024} KB size limit.");
+
+        if (!HasValidMagicBytes(memoryStream.GetBuffer().AsSpan(0, (int)Math.Min(memoryStream.Length, 12))))
+            throw new InvalidOperationException("File content does not match a supported image format.");
 
         memoryStream.Position = 0;
 
