@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-clarive}
       POSTGRES_USER: ${POSTGRES_USER:-clarive}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clarive}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
     expose:
       - "5432"
     volumes:
@@ -34,8 +34,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:5000
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD:-clarive}"
-      Jwt__Secret: ${JWT_SECRET:-}
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}"
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in deploy/.env}
       Jwt__Issuer: ${JWT_ISSUER:-Clarive}
       Jwt__Audience: ${JWT_AUDIENCE:-Clarive}
       Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
@@ -57,7 +57,7 @@ services:
       Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@clarive.app}
       Email__FromName: ${EMAIL_FROM_NAME:-Clarive}
       RateLimiting__StrictPermitLimit: ${RATE_LIMIT_STRICT:-5}
-      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:-}
+      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?Set CONFIG_ENCRYPTION_KEY in deploy/.env}
     volumes:
       - avatars:/app/data/avatars
     depends_on:

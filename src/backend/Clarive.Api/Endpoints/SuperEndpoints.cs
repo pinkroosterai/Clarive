@@ -64,6 +64,8 @@ public static class SuperEndpoints
         return Results.Ok(new { enabled = maintenanceMode.IsEnabled });
     }
 
+    private const int MaxPageSize = 200;
+
     private static async Task<IResult> HandleGetUsers(
         ISuperAdminService superAdminService,
         int page = 1,
@@ -73,6 +75,7 @@ public static class SuperEndpoints
         bool sortDesc = true,
         CancellationToken ct = default)
     {
+        pageSize = Math.Min(pageSize, MaxPageSize);
         var (users, total) = await superAdminService.GetAllUsersPagedAsync(page, pageSize, search, sortBy, sortDesc, ct);
         return Results.Ok(new SuperUsersPagedResponse(users, total, page, pageSize));
     }
