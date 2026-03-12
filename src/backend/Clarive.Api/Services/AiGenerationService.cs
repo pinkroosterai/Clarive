@@ -124,7 +124,7 @@ public class AiGenerationService(
         Func<ProgressEvent, Task>? onProgress = null)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null)
+        if (entry is null || entry.IsTrashed)
             return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
@@ -172,7 +172,7 @@ public class AiGenerationService(
         Guid tenantId, Guid entryId, CancellationToken ct)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null)
+        if (entry is null || entry.IsTrashed)
             return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
@@ -195,7 +195,7 @@ public class AiGenerationService(
         Guid tenantId, Guid entryId, CancellationToken ct)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null)
+        if (entry is null || entry.IsTrashed)
             return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
