@@ -52,7 +52,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
               Something went wrong
             </h1>
             <p className="text-sm text-foreground-muted">
-              {this.state.error?.message || 'An unexpected error occurred.'}
+              {import.meta.env.DEV
+                ? this.state.error?.message || 'An unexpected error occurred.'
+                : 'An unexpected error occurred. Please try reloading the page.'}
             </p>
             <Button onClick={() => window.location.reload()}>Reload Page</Button>
           </div>
@@ -69,7 +71,9 @@ export function PageErrorFallback({ error, resetError }: { error: Error; resetEr
     <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
       <AlertTriangle className="size-10 text-destructive" />
       <h2 className="text-lg font-semibold text-foreground">This page encountered an error</h2>
-      <p className="text-sm text-foreground-muted max-w-sm">{error.message}</p>
+      <p className="text-sm text-foreground-muted max-w-sm">
+        {import.meta.env.DEV ? error.message : 'Something went wrong. Please try again.'}
+      </p>
       <div className="flex gap-3">
         <Button variant="outline" onClick={resetError}>
           Try Again
