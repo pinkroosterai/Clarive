@@ -17,9 +17,6 @@ namespace Clarive.Api.Endpoints;
 
 public static partial class EntryEndpoints
 {
-    [GeneratedRegex(@"^[a-z0-9][a-z0-9 \-]*$")]
-    private static partial Regex TagNamePattern();
-
     [GeneratedRegex(@"v(?:ersion\s+)?(\d+)")]
     private static partial Regex VersionPattern();
 
@@ -510,7 +507,7 @@ public static partial class EntryEndpoints
         foreach (var tag in request.Tags)
         {
             var name = tag.Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(name) || name.Length > 50 || !TagNamePattern().IsMatch(name))
+            if (string.IsNullOrWhiteSpace(name) || name.Length > 50 || !TagValidation.TagNamePattern().IsMatch(name))
                 return ctx.ErrorResult(422, "VALIDATION_ERROR", $"Invalid tag name: '{tag}'. Tags can only contain lowercase letters, numbers, hyphens, and spaces.");
             normalized.Add(name);
         }

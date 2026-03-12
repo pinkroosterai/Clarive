@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
@@ -9,7 +8,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Clarive.Api.Endpoints;
 
-public static partial class TagEndpoints
+public static class TagEndpoints
 {
     public static RouteGroupBuilder MapTagEndpoints(this IEndpointRouteBuilder app)
     {
@@ -24,9 +23,6 @@ public static partial class TagEndpoints
         return group;
     }
 
-    [GeneratedRegex(@"^[a-z0-9][a-z0-9 \-]*$")]
-    private static partial Regex TagNamePattern();
-
     private static string? NormalizeTagName(string? name)
     {
         return name?.Trim().ToLowerInvariant();
@@ -38,7 +34,7 @@ public static partial class TagEndpoints
             return "Tag name is required.";
         if (name.Length > 50)
             return "Tag name must be 50 characters or fewer.";
-        if (!TagNamePattern().IsMatch(name))
+        if (!TagValidation.TagNamePattern().IsMatch(name))
             return "Tag name can only contain lowercase letters, numbers, hyphens, and spaces.";
         return null;
     }
