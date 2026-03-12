@@ -7,13 +7,13 @@ namespace Clarive.Api.Data;
 
 public class ClariveDbContext : DbContext
 {
-    private readonly Guid? _tenantId;
+    private Guid? TenantId { get; }
 
     public ClariveDbContext(
         DbContextOptions<ClariveDbContext> options,
         ITenantProvider? tenantProvider = null) : base(options)
     {
-        _tenantId = tenantProvider?.TenantId;
+        TenantId = tenantProvider?.TenantId;
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -50,10 +50,10 @@ public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
             var parameter = Expression.Parameter(entityType.ClrType, "e");
             var tenantIdProp = Expression.Property(parameter, nameof(ITenantScoped.TenantId));
-            var contextTenantId = Expression.Field(
-                Expression.Constant(this), "_tenantId");
+            var contextTenantId = Expression.Property(
+                Expression.Constant(this, typeof(ClariveDbContext)), nameof(TenantId));
 
-            // _tenantId == null || (Guid?)e.TenantId == _tenantId
+            // TenantId == null || (Guid?)e.TenantId == TenantId
             var filter = Expression.Lambda(
                 Expression.OrElse(
                     Expression.Equal(
