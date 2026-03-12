@@ -160,12 +160,11 @@ public static partial class EntryEndpoints
         if (entry is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
 
-        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (version is null)
-            return ctx.ErrorResult(404, "NOT_FOUND", "No version found for this entry.", "Entry", entryId.ToString());
+        var (version, versionErr) = await GetWorkingVersionOrError(ctx, entryRepo, tenantId, entryId, ct);
+        if (versionErr is not null) return versionErr;
 
         var isFavorited = await favoriteRepo.ExistsAsync(tenantId, userId, entryId, ct);
-        return Results.Ok(await BuildFullResponseAsync(entry, version, userRepo, tenantId, ct, isFavorited));
+        return Results.Ok(await BuildFullResponseAsync(entry, version!, userRepo, tenantId, ct, isFavorited));
     }
 
     // ── Get version history ──
@@ -366,11 +365,10 @@ public static partial class EntryEndpoints
         {
             var entry = await entryService.MoveEntryAsync(tenantId, entryId, request.FolderId, ct);
 
-            var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-            if (version is null)
-                return ctx.ErrorResult(404, "NOT_FOUND", "No version found for this entry.", "Entry", entryId.ToString());
+            var (version, versionErr) = await GetWorkingVersionOrError(ctx, entryRepo, tenantId, entryId, ct);
+            if (versionErr is not null) return versionErr;
 
-            return Results.Ok(await BuildFullResponseAsync(entry, version, userRepo, tenantId, ct));
+            return Results.Ok(await BuildFullResponseAsync(entry, version!, userRepo, tenantId, ct));
         }
         catch (KeyNotFoundException ex)
         {
@@ -428,10 +426,9 @@ public static partial class EntryEndpoints
             await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryRestored,
                 "prompt_entry", entry.Id, entry.Title, $"Restored '{entry.Title}' from trash", ct);
 
-            var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-            if (version is null)
-                return ctx.ErrorResult(404, "NOT_FOUND", "No version found for this entry.", "Entry", entryId.ToString());
-            return Results.Ok(await BuildFullResponseAsync(entry, version, userRepo, tenantId, ct));
+            var (version, versionErr) = await GetWorkingVersionOrError(ctx, entryRepo, tenantId, entryId, ct);
+            if (versionErr is not null) return versionErr;
+            return Results.Ok(await BuildFullResponseAsync(entry, version!, userRepo, tenantId, ct));
         }
         catch (KeyNotFoundException ex)
         {
@@ -729,5 +726,14 @@ public static partial class EntryEndpoints
             PublishedBy = publisherName,
             IsFavorited = isFavorited ?? false
         };
+    }
+
+    private static async Task<(PromptEntryVersion? version, IResult? error)> GetWorkingVersionOrError(
+        HttpContext ctx, IEntryRepository entryRepo, Guid tenantId, Guid entryId, CancellationToken ct)
+    {
+        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        if (version is null)
+            return (null, ctx.ErrorResult(404, "NOT_FOUND", "No version found for this entry.", "Entry", entryId.ToString()));
+        return (version, null);
     }
 }
