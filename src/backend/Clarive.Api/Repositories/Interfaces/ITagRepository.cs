@@ -10,4 +10,5 @@ public interface ITagRepository
     Task AddAsync(Guid tenantId, Guid entryId, List<string> tagNames, CancellationToken ct = default);
     Task RemoveAsync(Guid tenantId, Guid entryId, string tagName, CancellationToken ct = default);
     Task<HashSet<Guid>> GetEntryIdsByTagsAsync(Guid tenantId, List<string> tags, bool matchAll, CancellationToken ct = default);
+    IQueryable<Guid> GetEntryIdsByTagsQuery(Guid tenantId, List<string> tags, bool matchAll);
 }

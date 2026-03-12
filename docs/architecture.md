@@ -70,4 +70,4 @@ Each user belongs to one or more tenants (workspaces). All data is scoped by `te
 
 ## Deployment
 
-See [deployment-guide.md](deployment-guide.md) for full details. Uses Docker Compose with a Makefile-driven pipeline: `make deploy` (dev) → `make promote` (prod).
+See [deployment-guide.md](deployment-guide.md) for full details. Uses Docker Compose with Makefile commands: `make dev` for development (hot reload) and `make deploy` for production.

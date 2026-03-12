@@ -4,7 +4,7 @@
 # volume-mounted source code for hot reload. No image builds needed
 # for code changes.
 #
-# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Usage: make dev
 
 services:
   postgres:
@@ -30,6 +30,7 @@ services:
       Jwt__Audience: Clarive
       Cors__AllowedOrigins__0: http://localhost:8080
       App__FrontendUrl: http://localhost:8080
+      AllowedHosts: "localhost;127.0.0.1"
       CONFIG_ENCRYPTION_KEY: "j71XleMO3XGcPGXmqdcucaLMVbrKP+LXUR0aGBGfjOo="
       RateLimiting__StrictPermitLimit: "100"
     volumes:
@@ -60,7 +61,3 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-
-networks:
-  proxy:
-    external: false

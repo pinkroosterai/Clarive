@@ -27,8 +27,8 @@
 ```bash
 git clone https://github.com/pinkroosterai/Clarive.git
 cd Clarive
-./scripts/setup.sh   # generates .env with random secrets
-docker compose up -d  # starts postgres, backend, frontend
+make setup    # generates .env files with random secrets
+make deploy   # builds images and starts postgres, backend, frontend
 ```
 
 Open **http://localhost:8080** and create your first account.
@@ -76,12 +76,14 @@ Open **http://localhost:8080** and create your first account.
 ## Architecture
 
 ```
+                         :8080
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │   Frontend   │────▶│   Backend    │────▶│  PostgreSQL   │
 │  React / TS  │     │  .NET 10 API  │     │     16        │
 │  Vite / nginx│     │  EF Core 10   │     │               │
 └──────────────┘     └──────────────┘     └──────────────┘
-     :8080                :5000                :5432
+  nginx proxies
+  /api/ → backend
 ```
 
 | Layer | Technology |
@@ -103,78 +105,72 @@ Clarive/
 ├── tests/
 │   └── backend/           # xUnit integration + unit tests
 ├── docs/                  # Architecture, API spec, guides
-├── deploy/                # Internal deployment compose + env templates
+├── deploy/                # Docker Compose files + production env template
 ├── scripts/               # Setup and utility scripts
-├── docker-compose.yml     # Self-host compose (GHCR images)
-├── .env.example           # Configuration template
-└── Makefile               # Developer commands
+├── .env.example           # Development env template
+└── Makefile               # Dev + deploy commands
 ```
 
 ## Getting Started
 
 ### Self-Hosting (Docker)
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2.
 
 ```bash
 git clone https://github.com/pinkroosterai/Clarive.git
 cd Clarive
-
-# Option A: auto-generate .env with random secrets
-./scripts/setup.sh
-
-# Option B: manual
-cp .env.example .env
-# Edit .env — set POSTGRES_PASSWORD, JWT_SECRET, CONFIG_ENCRYPTION_KEY
-
-# Start everything
-docker compose up -d
+make setup    # generates deploy/.env with random secrets
+make deploy   # builds images and starts the stack
 ```
 
-Open **http://localhost:8080**. The backend runs on port 5000.
+Open **http://localhost:8080**. All traffic (frontend + API) is served through a single port via nginx reverse proxy.
 
-To pin a specific version, set `CLARIVE_VERSION` in your `.env`:
-
-```env
-CLARIVE_VERSION=1.2.0
-```
+To configure optional features (AI, Google OAuth, email), edit `deploy/.env` before deploying. See [Configuration](#configuration) for all variables.
 
 ### Local Development
 
-**Prerequisites:** [Node.js](https://nodejs.org/) 20+, [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), [Docker](https://docs.docker.com/get-docker/).
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2.
+
+Development runs entirely in Docker with hot reload (Vite HMR for frontend, `dotnet watch` for backend).
 
 ```bash
-make install    # install frontend + backend dependencies
-make dev-all    # start database + frontend + backend
+make setup    # generates .env with dev defaults
+make dev      # starts postgres, backend, and frontend with hot reload
 ```
 
-Frontend: http://localhost:8080 | Backend: http://localhost:5000
-
-Three seed users are created in development (password: `password`):
-- `admin@clarive.test` (admin)
-- `editor@clarive.test` (editor)
-- `viewer@clarive.test` (viewer)
+Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to the backend internally.
 
 #### Useful Commands
 
 | Command | Description |
 |---|---|
-| `make dev-all` | Start database + frontend + backend |
-| `make stop-all` | Stop everything |
-| `make build` | Build both projects |
-| `make test` | Run all tests |
-| `make test-backend` | Run backend integration + unit tests |
+| `make dev` | Start all services with hot reload |
+| `make stop` | Stop development services |
+| `make restart` | Restart development services |
+| `make dev-reset` | Stop, wipe database, and restart fresh |
+| `make status` | Show running containers and health |
+| `make logs` | Tail development service logs |
+| `make build` | Build both projects (local, no Docker) |
+| `make test` | Run all tests (frontend + backend) |
+| `make test-backend` | Run backend unit + integration tests |
 | `make test-frontend` | Run frontend tests (Vitest) |
+| `make test-e2e` | Run Playwright E2E tests |
+| `make test-filter FILTER=Auth` | Run filtered tests |
 | `make lint` | Lint frontend |
-| `make db-migrate` | Apply EF Core migrations |
 | `make db-shell` | Open psql shell |
-| `make db-reset` | Destroy and recreate database |
+| `make db-migrate` | Apply EF Core migrations |
+| `make db-migration-add NAME=X` | Create a new migration |
+| `make db-reset` | Destroy and recreate database volumes |
 | `make clean` | Remove build artifacts |
 | `make help` | Show all commands |
 
 ## Configuration
 
-All configuration is done via environment variables. Copy `.env.example` to `.env` or run `./scripts/setup.sh` to auto-generate secrets.
+Configuration is done via environment variables. `make setup` generates env files with random secrets automatically.
+
+- **Development**: `.env` (root) — used by `make dev`
+- **Production**: `deploy/.env` — used by `make deploy`
 
 | Variable | Description | Required | Default |
 |---|---|---|---|
@@ -183,15 +179,12 @@ All configuration is done via environment variables. Copy `.env.example` to `.en
 | `CONFIG_ENCRYPTION_KEY` | Encryption key for stored secrets | Yes | — |
 | `OPENAI_API_KEY` | OpenAI-compatible API key (AI features disabled if blank) | No | — |
 | `AI_ENDPOINT_URL` | Custom endpoint for OpenAI-compatible providers | No | — |
-| `TAVILY_API_KEY` | Tavily API key for AI web search during generation | No | — |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | No | — |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | No | — |
 | `CORS_ORIGINS` | Allowed CORS origins | No | `http://localhost:8080` |
 | `ALLOW_REGISTRATION` | Allow new user registration | No | `true` |
 | `FRONTEND_PORT` | Frontend port | No | `8080` |
-| `BACKEND_PORT` | Backend port | No | `5000` |
 | `EMAIL_PROVIDER` | `none`, `console`, `resend`, or `smtp` | No | `none` |
-| `CLARIVE_VERSION` | Docker image tag | No | `latest` |
 
 See [docs/configuration.md](docs/configuration.md) for the full reference.
 

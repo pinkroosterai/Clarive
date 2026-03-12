@@ -111,26 +111,26 @@ public class EfTagRepository(ClariveDbContext db) : ITagRepository
         if (tags.Count == 0)
             return [];
 
+        var entryIds = await GetEntryIdsByTagsQuery(tenantId, tags, matchAll).ToListAsync(ct);
+        return entryIds.ToHashSet();
+    }
+
+    public IQueryable<Guid> GetEntryIdsByTagsQuery(Guid tenantId, List<string> tags, bool matchAll)
+    {
         if (matchAll)
         {
-            var entryIds = await db.EntryTags
+            return db.EntryTags
                 .AsNoTracking()
                 .Where(t => t.TenantId == tenantId && tags.Contains(t.TagName))
                 .GroupBy(t => t.EntryId)
                 .Where(g => g.Select(t => t.TagName).Distinct().Count() == tags.Count)
-                .Select(g => g.Key)
-                .ToListAsync(ct);
-            return entryIds.ToHashSet();
+                .Select(g => g.Key);
         }
-        else
-        {
-            var entryIds = await db.EntryTags
-                .AsNoTracking()
-                .Where(t => t.TenantId == tenantId && tags.Contains(t.TagName))
-                .Select(t => t.EntryId)
-                .Distinct()
-                .ToListAsync(ct);
-            return entryIds.ToHashSet();
-        }
+
+        return db.EntryTags
+            .AsNoTracking()
+            .Where(t => t.TenantId == tenantId && tags.Contains(t.TagName))
+            .Select(t => t.EntryId)
+            .Distinct();
     }
 }

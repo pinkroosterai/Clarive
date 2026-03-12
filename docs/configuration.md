@@ -1,6 +1,9 @@
 # Configuration
 
-All configuration is done via environment variables, loaded from `deploy/envs/<env>.env` files. See `deploy/.env.example` for a complete template.
+All configuration is done via environment variables. Run `make setup` to generate env files with random secrets, or copy the templates manually:
+
+- **Development**: `.env` (from `.env.example`) — used by `make dev`
+- **Production**: `deploy/.env` (from `deploy/.env.example`) — used by `make deploy`
 
 ## Database
 

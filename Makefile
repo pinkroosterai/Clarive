@@ -1,8 +1,9 @@
-.PHONY: help setup dev stop restart logs deploy undeploy \
+.PHONY: help setup dev stop restart dev-reset logs status \
+       deploy undeploy \
        build build-frontend build-backend \
        test test-frontend test-backend test-filter test-e2e test-e2e-ui lint clean \
        db-shell db-migrate db-migration-add db-reset \
-       _health-check
+       _health-check _require-docker _require-sdk
 
 SHELL   := /bin/bash
 ROOT    := $(shell pwd)
@@ -29,8 +30,11 @@ C_DIM    := \033[2m
 
 help: ## Show this help
 	@printf "$(C_BOLD)$(C_CYAN)Clarive$(C_RESET) — development & deployment commands\n\n"
+	@printf "$(C_BOLD)QUICK START$(C_RESET)\n"
+	@printf "  $(C_DIM)Development:$(C_RESET)  make setup → make dev\n"
+	@printf "  $(C_DIM)Production:$(C_RESET)   make setup → make deploy\n\n"
 	@printf "$(C_BOLD)DEVELOPMENT$(C_RESET)\n"
-	@grep -E '^(dev|stop|restart|logs):.*?## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^(dev|stop|restart|dev-reset|logs|status):.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@printf "$(C_BOLD)DEPLOYMENT$(C_RESET)\n"
@@ -42,43 +46,99 @@ help: ## Show this help
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@printf "$(C_BOLD)BUILD / TEST$(C_RESET)\n"
-	@grep -E '^(build|test|lint|clean):.*?## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^(build|test|lint|clean)[a-z-]*:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
 	@echo ""
 
+## —— Prerequisites ————————————————————————————————————————
+
+_require-docker:
+	@command -v docker >/dev/null 2>&1 || { \
+		printf "$(C_RED)Error: docker is not installed.$(C_RESET)\n"; \
+		printf "  Install: $(C_CYAN)https://docs.docker.com/get-docker/$(C_RESET)\n"; \
+		exit 1; \
+	}
+	@docker compose version >/dev/null 2>&1 || { \
+		printf "$(C_RED)Error: docker compose (v2) is not available.$(C_RESET)\n"; \
+		printf "  Install: $(C_CYAN)https://docs.docker.com/compose/install/$(C_RESET)\n"; \
+		exit 1; \
+	}
+	@docker info >/dev/null 2>&1 || { \
+		printf "$(C_RED)Error: Docker daemon is not running.$(C_RESET)\n"; \
+		printf "  Start it with: $(C_CYAN)sudo systemctl start docker$(C_RESET)\n"; \
+		exit 1; \
+	}
+
+_require-sdk:
+	@command -v dotnet >/dev/null 2>&1 || { \
+		printf "$(C_RED)Error: dotnet SDK is not installed.$(C_RESET)\n"; \
+		printf "  Install: $(C_CYAN)https://dot.net/download$(C_RESET)\n"; \
+		exit 1; \
+	}
+	@command -v node >/dev/null 2>&1 || { \
+		printf "$(C_RED)Error: Node.js is not installed.$(C_RESET)\n"; \
+		printf "  Install: $(C_CYAN)https://nodejs.org/$(C_RESET)\n"; \
+		exit 1; \
+	}
+	@command -v npm >/dev/null 2>&1 || { \
+		printf "$(C_RED)Error: npm is not installed.$(C_RESET)\n"; \
+		printf "  Install Node.js which includes npm: $(C_CYAN)https://nodejs.org/$(C_RESET)\n"; \
+		exit 1; \
+	}
+
+## —— Setup ————————————————————————————————————————————————
+
+setup: ## Generate .env (dev) and deploy/.env (prod) with random secrets
+	@bash $(ROOT)/scripts/setup.sh
+
 ## —— Development (all Docker, hot reload) ————————————————
 
-dev: ## Start all services with hot reload
+dev: _require-docker ## Start all services with hot reload
 	@printf "$(C_CYAN)Starting development environment...$(C_RESET)\n"
-	@env -u OPENAI_API_KEY -u GOOGLE_CLIENT_ID -u GOOGLE_CLIENT_SECRET -u EMAIL_API_KEY \
-		$(DEV_COMPOSE) up --build --force-recreate -d
-	@printf "\n$(C_BOLD)$(C_GREEN)Development environment started.$(C_RESET)\n"
-	@printf "  Frontend: $(C_CYAN)http://localhost:8080$(C_RESET)  (Vite HMR)\n"
-	@printf "  Backend:  $(C_CYAN)http://localhost:5000$(C_RESET)  (dotnet watch)\n"
-	@printf "  Logs:     $(C_YELLOW)make logs$(C_RESET)\n\n"
+	@$(DEV_COMPOSE) up --build --force-recreate -d
+	@printf "\n$(C_BOLD)$(C_GREEN)Development environment ready.$(C_RESET)\n"
+	@printf "  App:    $(C_CYAN)http://localhost:8080$(C_RESET)\n"
+	@printf "  Logs:   $(C_YELLOW)make logs$(C_RESET)\n"
+	@printf "  Stop:   $(C_YELLOW)make stop$(C_RESET)\n\n"
 
-stop: ## Stop all development services
+stop: ## Stop development services
 	@$(DEV_COMPOSE) down
 	@printf "$(C_GREEN)Development environment stopped.$(C_RESET)\n"
 
-restart: ## Restart all development services
+restart: _require-docker ## Restart development services
 	@$(DEV_COMPOSE) down
 	@$(DEV_COMPOSE) up --build -d
 	@printf "$(C_GREEN)Development environment restarted.$(C_RESET)\n"
 
+dev-reset: _require-docker ## Stop, wipe database, and restart fresh
+	@printf "$(C_RED)This will destroy all development database data. Continue? [y/N] $(C_RESET)"
+	@read -r ans; \
+	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ]; then \
+		$(DEV_COMPOSE) down -v; \
+		printf "$(C_CYAN)Starting fresh environment...$(C_RESET)\n"; \
+		$(DEV_COMPOSE) up --build --force-recreate -d; \
+		printf "\n$(C_BOLD)$(C_GREEN)Fresh development environment ready.$(C_RESET)\n"; \
+		printf "  App:    $(C_CYAN)http://localhost:8080$(C_RESET)\n\n"; \
+	else \
+		printf "$(C_YELLOW)Cancelled.$(C_RESET)\n"; \
+	fi
+
 logs: ## Tail development service logs
 	@$(DEV_COMPOSE) logs -f
 
+status: ## Show running containers and health status
+	@printf "$(C_BOLD)Development$(C_RESET)\n"
+	@$(DEV_COMPOSE) ps 2>/dev/null || printf "  $(C_DIM)Not running$(C_RESET)\n"
+	@echo ""
+	@printf "$(C_BOLD)Production$(C_RESET)\n"
+	@$(PROD_COMPOSE) ps 2>/dev/null || printf "  $(C_DIM)Not running$(C_RESET)\n"
+
 ## —— Deployment (production) —————————————————————————————
 
-setup: ## Generate deploy/.env with random secrets
-	@scripts/setup.sh
-
-deploy: ## Build images and deploy production stack
+deploy: _require-docker ## Build images and deploy production stack
 	@if [ ! -f "$(DEPLOY)/.env" ]; then \
 		printf "$(C_RED)Missing: deploy/.env$(C_RESET)\n"; \
-		printf "$(C_YELLOW)  cp deploy/.env.example deploy/.env && edit it$(C_RESET)\n"; \
-		printf "$(C_YELLOW)  or run: make setup$(C_RESET)\n"; \
+		printf "  Run $(C_GREEN)make setup$(C_RESET) to generate it, then review and deploy.\n"; \
 		exit 1; \
 	fi
 	@TAG=$$(git rev-parse --short HEAD) && \
@@ -92,7 +152,9 @@ deploy: ## Build images and deploy production stack
 	\
 	$(MAKE) --no-print-directory _health-check && \
 	\
-	printf "\n$(C_BOLD)$(C_GREEN)Deployed$(C_RESET) (tag: $$TAG)\n\n"
+	printf "\n$(C_BOLD)$(C_GREEN)Deployed$(C_RESET) (tag: $$TAG)\n" && \
+	printf "  App:  $(C_CYAN)http://localhost:8080$(C_RESET)\n" && \
+	printf "  Stop: $(C_YELLOW)make undeploy$(C_RESET)\n\n"
 
 undeploy: ## Stop and remove production stack
 	@$(PROD_COMPOSE) down
@@ -100,16 +162,22 @@ undeploy: ## Stop and remove production stack
 
 ## —— Database ———————————————————————————————————————————
 
-db-shell: ## Open psql shell
-	@docker exec -it $$(docker ps --format '{{.Names}}' --filter name=clarive.*postgres | head -1) \
-		psql -U clarive -d clarive
+db-shell: ## Open psql shell (auto-detects dev or prod)
+	@CONTAINER=$$(docker ps --format '{{.Names}}' --filter name=clarive.*postgres | head -1); \
+	if [ -z "$$CONTAINER" ]; then \
+		printf "$(C_RED)No running Postgres container found.$(C_RESET)\n"; \
+		printf "  Start one with $(C_GREEN)make dev$(C_RESET) or $(C_GREEN)make deploy$(C_RESET)\n"; \
+		exit 1; \
+	fi; \
+	printf "$(C_CYAN)Connecting to $$CONTAINER...$(C_RESET)\n"; \
+	docker exec -it "$$CONTAINER" psql -U clarive -d clarive
 
-db-migrate: ## Apply EF Core migrations (requires dotnet SDK)
+db-migrate: _require-sdk ## Apply EF Core migrations (requires dotnet SDK)
 	@printf "$(C_CYAN)Applying EF Core migrations...$(C_RESET)\n"
 	@cd $(BE_DIR) && dotnet ef database update
 	@printf "$(C_GREEN)Migrations applied.$(C_RESET)\n"
 
-db-migration-add: ## Create a new migration. Usage: make db-migration-add NAME=MyMigration
+db-migration-add: _require-sdk ## Create a new migration. Usage: make db-migration-add NAME=MyMigration
 	@if [ -z "$(NAME)" ]; then \
 		printf "$(C_RED)Usage: make db-migration-add NAME=MigrationName$(C_RESET)\n"; \
 		exit 1; \
@@ -121,46 +189,46 @@ db-migration-add: ## Create a new migration. Usage: make db-migration-add NAME=M
 		dotnet ef migrations add $(NAME) --output-dir Data/Migrations
 	@printf "$(C_GREEN)Migration created.$(C_RESET)\n"
 
-db-reset: ## Destroy and recreate database volume
-	@printf "$(C_RED)This will destroy all database data. Continue? [y/N] $(C_RESET)"; \
-	read -r ans; \
+db-reset: ## Destroy and recreate database volume (with confirmation)
+	@printf "$(C_RED)This will destroy ALL database data (dev + prod). Continue? [y/N] $(C_RESET)"
+	@read -r ans; \
 	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ]; then \
-		$(DEV_COMPOSE) down -v 2>/dev/null; \
-		$(PROD_COMPOSE) down -v 2>/dev/null; \
-		printf "$(C_GREEN)Database volume removed. Run 'make dev' or 'make deploy' to recreate.$(C_RESET)\n"; \
+		$(DEV_COMPOSE) down -v 2>/dev/null || true; \
+		$(PROD_COMPOSE) down -v 2>/dev/null || true; \
+		printf "$(C_GREEN)Database volumes removed. Run 'make dev' or 'make deploy' to recreate.$(C_RESET)\n"; \
 	else \
 		printf "$(C_YELLOW)Cancelled.$(C_RESET)\n"; \
 	fi
 
 ## —— Build / Test ————————————————————————————————————————
 
-build: build-frontend build-backend ## Build both projects
+build: _require-sdk build-frontend build-backend ## Build both projects (local, no Docker)
 
-build-frontend: ## Build frontend for production
+build-frontend: _require-sdk ## Build frontend for production
 	@printf "$(C_CYAN)Building frontend...$(C_RESET)\n"
 	@cd $(FE_DIR) && npm run build
 	@printf "$(C_GREEN)Frontend built.$(C_RESET)\n"
 
-build-backend: ## Build backend
+build-backend: _require-sdk ## Build backend
 	@printf "$(C_CYAN)Building backend...$(C_RESET)\n"
 	@cd $(BE_DIR) && dotnet build --configuration Release --nologo -v q
 	@printf "$(C_GREEN)Backend built.$(C_RESET)\n"
 
-test: ## Run all tests
+test: _require-sdk ## Run all tests (frontend + backend)
 	@$(MAKE) --no-print-directory test-frontend
 	@$(MAKE) --no-print-directory test-backend
 
-test-frontend: ## Run frontend tests (vitest)
+test-frontend: _require-sdk ## Run frontend tests (vitest)
 	@printf "$(C_CYAN)Running frontend tests...$(C_RESET)\n"
 	@cd $(FE_DIR) && npx vitest run --passWithNoTests
 
-test-backend: ## Run backend unit + integration tests
+test-backend: _require-sdk ## Run backend unit + integration tests
 	@printf "$(C_CYAN)Running backend unit tests...$(C_RESET)\n"
 	@cd $(ROOT)/tests/backend/Clarive.Api.UnitTests && dotnet test --nologo --verbosity normal
 	@printf "$(C_CYAN)Running backend integration tests...$(C_RESET)\n"
 	@cd $(ROOT)/tests/backend/Clarive.Api.IntegrationTests && dotnet test --nologo --verbosity normal
 
-test-filter: ## Run filtered tests. Usage: make test-filter FILTER=Auth
+test-filter: _require-sdk ## Run filtered tests. Usage: make test-filter FILTER=Auth
 	@if [ -z "$(FILTER)" ]; then \
 		printf "$(C_RED)Usage: make test-filter FILTER=ClassName$(C_RESET)\n"; \
 		exit 1; \
@@ -169,51 +237,51 @@ test-filter: ## Run filtered tests. Usage: make test-filter FILTER=Auth
 	@cd $(ROOT)/tests/backend/Clarive.Api.UnitTests && dotnet test --nologo --verbosity normal --filter "$(FILTER)" || true
 	@cd $(ROOT)/tests/backend/Clarive.Api.IntegrationTests && dotnet test --nologo --verbosity normal --filter "$(FILTER)"
 
-lint: ## Run frontend linter
-	@printf "$(C_CYAN)Linting frontend...$(C_RESET)\n"
-	@cd $(FE_DIR) && npm run lint
-
-test-e2e: ## Run E2E tests (requires running dev environment)
+test-e2e: _require-sdk ## Run E2E tests (requires running dev environment)
 	@printf "$(C_CYAN)Running E2E tests...$(C_RESET)\n"
 	@cd $(FE_DIR) && npx playwright test
 
-test-e2e-ui: ## Run E2E tests in interactive UI mode
+test-e2e-ui: _require-sdk ## Run E2E tests in interactive UI mode
 	@printf "$(C_CYAN)Opening Playwright UI...$(C_RESET)\n"
 	@cd $(FE_DIR) && npx playwright test --ui
 
+lint: _require-sdk ## Run frontend linter
+	@printf "$(C_CYAN)Linting frontend...$(C_RESET)\n"
+	@cd $(FE_DIR) && npm run lint
+
 ## —— Utilities ————————————————————————————————————————————
 
-clean: ## Remove build artifacts and logs
+clean: ## Remove build artifacts and caches
 	@printf "$(C_CYAN)Cleaning...$(C_RESET)\n"
 	@rm -rf $(FE_DIR)/dist $(FE_DIR)/node_modules/.vite
-	@cd $(BE_DIR) && dotnet clean --nologo -v q 2>/dev/null
-	@rm -f $(ROOT)/.frontend.log $(ROOT)/.backend.log $(ROOT)/.frontend.pid $(ROOT)/.backend.pid
+	@cd $(BE_DIR) && dotnet clean --nologo -v q 2>/dev/null || true
 	@printf "$(C_GREEN)Clean.$(C_RESET)\n"
 
 ## —— Internal Helpers ————————————————————————————————————
 
 _health-check:
-	@CONTAINER=$$(docker ps --format '{{.Names}}' --filter name=clarive.*backend | head -1); \
+	@CONTAINER=$$(docker ps --format '{{.Names}}' --filter name=clarive-backend | head -1); \
 	if [ -z "$$CONTAINER" ]; then \
-		printf "$(C_RED)Backend container not found$(C_RESET)\n"; \
+		printf "$(C_RED)Backend container not found.$(C_RESET)\n"; \
 		exit 1; \
 	fi; \
-	printf "$(C_CYAN)Waiting for $$CONTAINER to become healthy...$(C_RESET)\n"; \
+	printf "$(C_CYAN)Waiting for backend to become healthy...$(C_RESET)\n"; \
 	ATTEMPTS=0; \
 	MAX_ATTEMPTS=20; \
 	while [ $$ATTEMPTS -lt $$MAX_ATTEMPTS ]; do \
 		HEALTH=$$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-check{{end}}' $$CONTAINER 2>/dev/null || echo "not_found"); \
 		case $$HEALTH in \
 			healthy) \
-				printf "$(C_GREEN)  ✓ $$CONTAINER is healthy$(C_RESET)\n"; \
+				printf "$(C_GREEN)  Backend is healthy.$(C_RESET)\n"; \
 				exit 0;; \
 			unhealthy) \
-				printf "$(C_RED)  ✗ $$CONTAINER is unhealthy$(C_RESET)\n"; \
+				printf "$(C_RED)  Backend is unhealthy. Check logs with: docker logs $$CONTAINER$(C_RESET)\n"; \
 				exit 1;; \
 		esac; \
 		ATTEMPTS=$$((ATTEMPTS + 1)); \
-		printf "$(C_DIM)  Attempt $$ATTEMPTS/$$MAX_ATTEMPTS ($$HEALTH)...$(C_RESET)\n"; \
+		printf "$(C_DIM)  Waiting... ($$ATTEMPTS/$$MAX_ATTEMPTS)$(C_RESET)\n"; \
 		sleep 3; \
 	done; \
-	printf "$(C_RED)  ✗ Health check timed out after $$((MAX_ATTEMPTS * 3))s$(C_RESET)\n"; \
+	printf "$(C_RED)  Health check timed out after $$((MAX_ATTEMPTS * 3))s.$(C_RESET)\n"; \
+	printf "  Check logs with: $(C_CYAN)docker logs $$CONTAINER$(C_RESET)\n"; \
 	exit 1
