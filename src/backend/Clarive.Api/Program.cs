@@ -162,11 +162,7 @@ builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
 // ── Database ──
 builder.Services.AddDbContext<ClariveDbContext>(options =>
 {
-    options.UseNpgsql(connectionString, npgsqlOptions =>
-        npgsqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 3,
-            maxRetryDelay: TimeSpan.FromSeconds(5),
-            errorCodesToAdd: null));
+    options.UseNpgsql(connectionString);
     // Suppress during multi-phase development; remove after generating the migration
     options.ConfigureWarnings(w => w
         .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)
