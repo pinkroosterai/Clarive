@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -87,27 +87,29 @@ const EntryEditorPage = () => {
 
   // ── Favorite toggle ──
   const queryClient = useQueryClient();
-  const [isFavorited, setIsFavorited] = useState(entryData?.isFavorited ?? false);
-
-  useEffect(() => {
-    if (entryData?.isFavorited !== undefined) {
-      setIsFavorited(entryData.isFavorited);
-    }
-  }, [entryData?.isFavorited]);
+  const isFavorited = entryData?.isFavorited ?? false;
 
   const favoriteMutation = useMutation({
     mutationFn: (currentlyFavorited: boolean) =>
       currentlyFavorited
         ? favoriteService.unfavoriteEntry(entryId!)
         : favoriteService.favoriteEntry(entryId!),
-    onMutate: () => {
-      setIsFavorited((prev) => !prev);
+    onMutate: async (currentlyFavorited) => {
+      await queryClient.cancelQueries({ queryKey: ['entry', entryId] });
+      const previous = queryClient.getQueryData(['entry', entryId]);
+      queryClient.setQueryData(['entry', entryId], (old: typeof entryData) =>
+        old ? { ...old, isFavorited: !currentlyFavorited } : old
+      );
+      return { previous };
     },
-    onError: () => {
-      setIsFavorited((prev) => !prev);
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['entry', entryId], context.previous);
+      }
       toast.error('Failed to update favorite');
     },
     onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
       queryClient.invalidateQueries({ queryKey: ['entries'] });
     },
