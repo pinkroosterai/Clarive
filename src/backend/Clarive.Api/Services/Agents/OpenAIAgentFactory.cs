@@ -93,56 +93,26 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     }
 
     public AIAgent CreateEvaluationAgent(GenerationConfig config)
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            EnsureConfigured();
-            return _defaultClient!.AsAIAgent(
-                instructions: AgentInstructions.BuildEvaluation(config),
-                name: "PromptEvaluator",
-                loggerFactory: _loggerFactory);
-        }
-        finally { _lock.ExitReadLock(); }
-    }
+        => CreateDefaultAgent(AgentInstructions.BuildEvaluation(config), "PromptEvaluator");
 
     public AIAgent CreateClarificationAgent()
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            EnsureConfigured();
-            return _defaultClient!.AsAIAgent(
-                instructions: AgentInstructions.Clarification,
-                name: "PromptClarifier",
-                loggerFactory: _loggerFactory);
-        }
-        finally { _lock.ExitReadLock(); }
-    }
+        => CreateDefaultAgent(AgentInstructions.Clarification, "PromptClarifier");
 
     public AIAgent CreateSystemMessageAgent()
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            EnsureConfigured();
-            return _defaultClient!.AsAIAgent(
-                instructions: AgentInstructions.SystemMessage,
-                name: "SystemMessageGenerator",
-                loggerFactory: _loggerFactory);
-        }
-        finally { _lock.ExitReadLock(); }
-    }
+        => CreateDefaultAgent(AgentInstructions.SystemMessage, "SystemMessageGenerator");
 
     public AIAgent CreateDecomposeAgent()
+        => CreateDefaultAgent(AgentInstructions.Decompose, "PromptDecomposer");
+
+    private ChatClientAgent CreateDefaultAgent(string instructions, string name)
     {
         _lock.EnterReadLock();
         try
         {
             EnsureConfigured();
             return _defaultClient!.AsAIAgent(
-                instructions: AgentInstructions.Decompose,
-                name: "PromptDecomposer",
+                instructions: instructions,
+                name: name,
                 loggerFactory: _loggerFactory);
         }
         finally { _lock.ExitReadLock(); }
