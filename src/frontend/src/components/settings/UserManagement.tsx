@@ -5,6 +5,7 @@ import { InviteUserDialog } from './InviteUserDialog';
 import { MembersTable } from './MembersTable';
 import { TransferOwnershipDialog } from './TransferOwnershipDialog';
 
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleApiError } from '@/lib/handleApiError';
 import { userService, invitationService } from '@/services';
@@ -16,7 +17,12 @@ export default function UserManagement() {
   const { currentUser } = useAuthStore();
   const isAdmin = currentUser?.role === 'admin';
 
-  const { data: members, isLoading } = useQuery({
+  const {
+    data: members,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['users'],
     queryFn: userService.getUsersList,
   });
@@ -67,6 +73,17 @@ export default function UserManagement() {
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-12 w-full" />
         ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-10 text-center">
+        <p className="text-sm text-foreground-muted">Failed to load team members.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }
