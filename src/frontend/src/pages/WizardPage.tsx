@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -13,8 +13,10 @@ const WizardPage = () => {
     document.title = 'Clarive — AI Wizard';
   }, []);
 
+  const hasRedirected = useRef(false);
   useEffect(() => {
-    if (!aiEnabled) {
+    if (!aiEnabled && !hasRedirected.current) {
+      hasRedirected.current = true;
       toast.error('AI features are not configured.');
       navigate('/library', { replace: true });
     }
