@@ -3,6 +3,7 @@ using System.Text;
 using Clarive.Api.Services;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using Serilog;
 
 namespace Clarive.Api.Configuration;
 
@@ -33,7 +34,7 @@ public class DbConfigurationProvider : ConfigurationProvider, IDisposable
         _reloadTimer = new Timer(_ =>
         {
             try { LoadFromDb(); }
-            catch { /* env vars remain as fallback */ }
+            catch (Exception ex) { Log.Warning(ex, "Failed to reload config from database"); }
         }, null, Timeout.Infinite, Timeout.Infinite);
     }
 
@@ -43,10 +44,10 @@ public class DbConfigurationProvider : ConfigurationProvider, IDisposable
         {
             LoadFromDb();
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail on first load — env vars remain as fallback.
-            // Expected on first startup before migration runs.
+            // env vars remain as fallback — expected on first startup before migration runs.
+            Log.Warning(ex, "Failed to load config from database on startup");
         }
 
         // Start periodic reload after initial load attempt
@@ -88,9 +89,9 @@ public class DbConfigurationProvider : ConfigurationProvider, IDisposable
                 {
                     value = DecryptValue(encryptedValue);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Decryption failed — skip this key, env var remains as fallback
+                    Log.Warning(ex, "Failed to decrypt config key {Key}", key);
                     continue;
                 }
             }
