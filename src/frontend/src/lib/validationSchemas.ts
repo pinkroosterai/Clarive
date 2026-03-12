@@ -64,3 +64,24 @@ export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
+
+// --- Non-RHF schemas (used for inline validation) ---
+
+export const inviteUserSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  role: z.enum(['editor', 'viewer']),
+});
+
+export const apiKeyNameSchema = z
+  .string()
+  .min(1, 'Name is required')
+  .max(100, 'Name must be 100 characters or fewer');
+
+export const workspaceNameSchema = z
+  .string()
+  .min(1, 'Name is required')
+  .max(255, 'Name must be 255 characters or fewer');
+
+export type InviteUserFormData = z.infer<typeof inviteUserSchema>;
+export type ApiKeyNameFormData = z.infer<typeof apiKeyNameSchema>;
+export type WorkspaceNameFormData = z.infer<typeof workspaceNameSchema>;

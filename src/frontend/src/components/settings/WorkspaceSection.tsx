@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleApiError } from '@/lib/handleApiError';
+import { workspaceNameSchema } from '@/lib/validationSchemas';
 import { tenantService, workspaceService } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 
@@ -41,6 +42,7 @@ export default function WorkspaceSection() {
   });
 
   const [name, setName] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
 
   // Sync initial value once loaded
@@ -203,15 +205,27 @@ export default function WorkspaceSection() {
             <Input
               id="workspace-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError) setNameError(null);
+              }}
               placeholder="My workspace"
               disabled={!isAdmin}
+              maxLength={255}
             />
+            {nameError && <p className="text-xs text-destructive">{nameError}</p>}
           </div>
           {isAdmin && (
             <Button
               disabled={!isDirty || !name.trim() || updateMutation.isPending}
-              onClick={() => updateMutation.mutate()}
+              onClick={() => {
+                const result = workspaceNameSchema.safeParse(name.trim());
+                if (!result.success) {
+                  setNameError(result.error.issues[0]?.message ?? 'Invalid name');
+                  return;
+                }
+                updateMutation.mutate();
+              }}
             >
               {updateMutation.isPending ? 'Saving...' : 'Save'}
             </Button>

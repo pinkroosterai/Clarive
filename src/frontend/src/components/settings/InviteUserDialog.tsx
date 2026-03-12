@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { handleApiError } from '@/lib/handleApiError';
+import { inviteUserSchema } from '@/lib/validationSchemas';
 import { invitationService } from '@/services';
 
 export function InviteUserDialog() {
@@ -30,6 +31,7 @@ export function InviteUserDialog() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const inviteMutation = useMutation({
     mutationFn: () => invitationService.createInvitation(inviteEmail, inviteRole),
@@ -51,6 +53,7 @@ export function InviteUserDialog() {
         if (!o) {
           setInviteEmail('');
           setInviteRole('editor');
+          setEmailError(null);
         }
       }}
     >
@@ -72,9 +75,13 @@ export function InviteUserDialog() {
               id="invite-email"
               type="email"
               value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
+              onChange={(e) => {
+                setInviteEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
               placeholder="user@example.com"
             />
+            {emailError && <p className="text-xs text-destructive">{emailError}</p>}
           </div>
           <div className="space-y-2">
             <Label>Role</Label>
@@ -95,7 +102,14 @@ export function InviteUserDialog() {
         <DialogFooter>
           <Button
             disabled={!inviteEmail || inviteMutation.isPending}
-            onClick={() => inviteMutation.mutate()}
+            onClick={() => {
+              const result = inviteUserSchema.safeParse({ email: inviteEmail, role: inviteRole });
+              if (!result.success) {
+                setEmailError(result.error.issues[0]?.message ?? 'Invalid input');
+                return;
+              }
+              inviteMutation.mutate();
+            }}
           >
             {inviteMutation.isPending ? 'Sending\u2026' : 'Send Invitation'}
           </Button>

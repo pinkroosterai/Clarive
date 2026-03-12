@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/table';
 import { handleApiError } from '@/lib/handleApiError';
 import { copyToClipboard } from '@/lib/utils';
+import { apiKeyNameSchema } from '@/lib/validationSchemas';
 import { apiKeyService } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 
@@ -45,6 +46,7 @@ export default function ApiKeyPanel() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [keyName, setKeyName] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
   const [createdKey, setCreatedKey] = useState<{ fullKey: string; name: string } | null>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -88,6 +90,7 @@ export default function ApiKeyPanel() {
     setCreateOpen(false);
     setCreatedKey(null);
     setKeyName('');
+    setNameError(null);
   };
 
   const handleCopy = async () => {
@@ -199,8 +202,13 @@ export default function ApiKeyPanel() {
               <Input
                 placeholder='e.g. "Production", "Staging"'
                 value={keyName}
-                onChange={(e) => setKeyName(e.target.value)}
+                onChange={(e) => {
+                  setKeyName(e.target.value);
+                  if (nameError) setNameError(null);
+                }}
+                maxLength={100}
               />
+              {nameError && <p className="text-xs text-destructive">{nameError}</p>}
             </div>
           )}
 
@@ -210,7 +218,14 @@ export default function ApiKeyPanel() {
             ) : (
               <Button
                 disabled={!keyName.trim() || createMutation.isPending}
-                onClick={() => createMutation.mutate(keyName.trim())}
+                onClick={() => {
+                  const result = apiKeyNameSchema.safeParse(keyName.trim());
+                  if (!result.success) {
+                    setNameError(result.error.issues[0]?.message ?? 'Invalid name');
+                    return;
+                  }
+                  createMutation.mutate(keyName.trim());
+                }}
               >
                 {createMutation.isPending ? 'Creating…' : 'Create'}
               </Button>
