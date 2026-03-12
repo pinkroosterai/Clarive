@@ -38,36 +38,6 @@ type SortBy = 'recent' | 'alphabetical' | 'oldest';
 
 const PAGE_SIZE = 50;
 
-function filterAndSort(
-  entries: PromptEntry[],
-  search: string,
-  status: StatusFilter,
-  sort: SortBy
-): PromptEntry[] {
-  let result = entries;
-
-  if (search) {
-    const q = search.toLowerCase();
-    result = result.filter((e) => e.title.toLowerCase().includes(q));
-  }
-
-  if (status !== 'all') {
-    result = result.filter((e) => e.versionState === status);
-  }
-
-  return [...result].sort((a, b) => {
-    switch (sort) {
-      case 'alphabetical':
-        return a.title.localeCompare(b.title);
-      case 'oldest':
-        return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-      case 'recent':
-      default:
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    }
-  });
-}
-
 function SkeletonCards() {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -102,6 +72,11 @@ export default function LibraryPage() {
   const [tagMode, setTagMode] = useState<'and' | 'or'>('or');
   const debouncedSearch = useDebounce(searchQuery, 300);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter, sortBy, selectedTags, tagMode]);
+
   // Reset search and page when navigating to a different folder
   const resetFilters = useCallback(() => {
     setSearchQuery('');
@@ -112,14 +87,26 @@ export default function LibraryPage() {
   }, [folderId, resetFilters]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['entries', folderId ?? null, page, selectedTags, tagMode],
+    queryKey: [
+      'entries',
+      folderId ?? null,
+      page,
+      selectedTags,
+      tagMode,
+      debouncedSearch,
+      statusFilter,
+      sortBy,
+    ],
     queryFn: () =>
       entryService.getEntriesList(
         folderId ?? null,
         page,
         PAGE_SIZE,
         selectedTags.length > 0 ? selectedTags : undefined,
-        selectedTags.length > 0 ? tagMode : undefined
+        selectedTags.length > 0 ? tagMode : undefined,
+        debouncedSearch || undefined,
+        statusFilter !== 'all' ? statusFilter : undefined,
+        sortBy !== 'recent' ? sortBy : undefined
       ),
   });
 
@@ -146,11 +133,7 @@ export default function LibraryPage() {
     return find(folders);
   }, [folderId, folders]);
 
-  const filtered = useMemo(
-    () => (entries ? filterAndSort(entries, debouncedSearch, statusFilter, sortBy) : []),
-    [entries, debouncedSearch, statusFilter, sortBy]
-  );
-  const pageItemCount = entries?.length ?? 0;
+  const filtered = entries ?? [];
   const hasActiveFilters = debouncedSearch !== '' || statusFilter !== 'all';
 
   const trashMutation = useMutation({
@@ -249,7 +232,7 @@ export default function LibraryPage() {
       </motion.div>
 
       {/* Search & Filter Bar */}
-      {totalCount > 0 && (
+      {(totalCount > 0 || hasActiveFilters) && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -301,7 +284,7 @@ export default function LibraryPage() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="text-sm text-foreground-muted whitespace-nowrap"
               >
-                {filtered.length} of {pageItemCount}
+                {totalCount} result{totalCount !== 1 ? 's' : ''}
               </motion.span>
             )}
           </AnimatePresence>

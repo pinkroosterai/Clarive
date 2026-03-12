@@ -84,7 +84,10 @@ public static partial class EntryEndpoints
         [Description("Comma-separated tag names")] string? tags = null,
         [Description("Tag filter mode: 'and' or 'or'")] string? tagMode = null,
         [Description("Page number (1-based)")] int? page = null,
-        [Description("Items per page (max 100)")] int? pageSize = null)
+        [Description("Items per page (max 100)")] int? pageSize = null,
+        [Description("Search by title (case-insensitive)")] string? search = null,
+        [Description("Filter by status: 'draft' or 'published'")] string? status = null,
+        [Description("Sort order: 'recent', 'alphabetical', or 'oldest'")] string? sortBy = null)
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -115,7 +118,7 @@ public static partial class EntryEndpoints
         }
 
         var (p, ps) = NormalizePagination(page, pageSize);
-        var (entries, totalCount) = await entryRepo.GetByFolderAsync(tenantId, parsedFolderId, includeAll, p, ps, ct, filteredEntryIds);
+        var (entries, totalCount) = await entryRepo.GetByFolderAsync(tenantId, parsedFolderId, includeAll, p, ps, ct, filteredEntryIds, search, status, sortBy);
         var summaries = await BuildSummariesBatchAsync(entries, entryRepo, tagRepo, favoriteRepo, tenantId, userId, ct);
         return Results.Ok(new PaginatedResponse<PromptEntrySummary>(summaries, totalCount, p, ps));
     }

@@ -48,7 +48,10 @@ export async function getEntriesList(
   page: number = 1,
   pageSize: number = 50,
   tags?: string[],
-  tagMode?: 'and' | 'or'
+  tagMode?: 'and' | 'or',
+  search?: string,
+  status?: string,
+  sortBy?: string
 ): Promise<PaginatedResponse<PromptEntry>> {
   const params = new URLSearchParams();
   params.set('folderId', folderId ?? 'all');
@@ -56,6 +59,9 @@ export async function getEntriesList(
   params.set('pageSize', String(pageSize));
   if (tags && tags.length > 0) params.set('tags', tags.join(','));
   if (tagMode) params.set('tagMode', tagMode);
+  if (search) params.set('search', search);
+  if (status && status !== 'all') params.set('status', status);
+  if (sortBy && sortBy !== 'recent') params.set('sortBy', sortBy);
   const res = await api.get<PaginatedResponse<EntrySummary>>(`/api/entries?${params}`);
   return {
     items: res.items.map(summaryToEntry),
