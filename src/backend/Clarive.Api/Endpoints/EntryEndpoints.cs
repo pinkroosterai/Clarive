@@ -20,6 +20,9 @@ public static partial class EntryEndpoints
     [GeneratedRegex(@"^[a-z0-9][a-z0-9 \-]*$")]
     private static partial Regex TagNamePattern();
 
+    [GeneratedRegex(@"v(?:ersion\s+)?(\d+)")]
+    private static partial Regex VersionPattern();
+
     public static RouteGroupBuilder MapEntryEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/entries")
@@ -98,8 +101,8 @@ public static partial class EntryEndpoints
             parsedFolderId = gid;
         }
 
-        // Parse tag filter
-        HashSet<Guid>? filteredEntryIds = null;
+        // Parse tag filter — compose as IQueryable subquery to avoid unbounded IN() clause
+        IQueryable<Guid>? filteredEntryIds = null;
         if (!string.IsNullOrWhiteSpace(tags))
         {
             var tagList = tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -110,10 +113,7 @@ public static partial class EntryEndpoints
             if (tagList.Count > 0)
             {
                 var matchAll = string.Equals(tagMode, "and", StringComparison.OrdinalIgnoreCase);
-                filteredEntryIds = await tagRepo.GetEntryIdsByTagsAsync(tenantId, tagList, matchAll, ct);
-
-                if (filteredEntryIds.Count == 0)
-                    return Results.Ok(new PaginatedResponse<PromptEntrySummary>([], 0, 1, pageSize ?? 50));
+                filteredEntryIds = tagRepo.GetEntryIdsByTagsQuery(tenantId, tagList, matchAll);
             }
         }
 
@@ -612,7 +612,7 @@ public static partial class EntryEndpoints
             int? version = null;
             if (a.Details is not null)
             {
-                var match = System.Text.RegularExpressions.Regex.Match(a.Details, @"v(?:ersion\s+)?(\d+)");
+                var match = VersionPattern().Match(a.Details);
                 if (match.Success && int.TryParse(match.Groups[1].Value, out var v))
                     version = v;
             }
