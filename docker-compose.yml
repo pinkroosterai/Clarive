@@ -47,6 +47,7 @@ services:
       Email__ApiKey: ${EMAIL_API_KEY:-}
       Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@localhost}
       Email__FromName: ${EMAIL_FROM_NAME:-Clarive}
+      AllowedHosts: ${ALLOWED_HOSTS:-${CORS_ORIGINS:-localhost}}
       CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?Set CONFIG_ENCRYPTION_KEY in .env}
     volumes:
       - avatars:/app/data/avatars

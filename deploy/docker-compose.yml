@@ -57,6 +57,7 @@ services:
       Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@clarive.app}
       Email__FromName: ${EMAIL_FROM_NAME:-Clarive}
       RateLimiting__StrictPermitLimit: ${RATE_LIMIT_STRICT:-5}
+      AllowedHosts: ${ALLOWED_HOSTS:-${CORS_ORIGINS:-localhost}}
       CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?Set CONFIG_ENCRYPTION_KEY in deploy/.env}
     volumes:
       - avatars:/app/data/avatars
