@@ -30,6 +30,10 @@ Thumbs.db
 # Deployment state (contain secrets)
 .deploy-state/
 
+# Local deployment overrides (machine-specific)
+deploy/docker-compose.local.yml
+scripts/deploy-local.sh
+
 # Database backups
 backups/
 
