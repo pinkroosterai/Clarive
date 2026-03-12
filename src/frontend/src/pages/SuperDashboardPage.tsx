@@ -34,6 +34,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { safeSessionStorageGet } from '@/lib/utils';
 import { getAllConfig, type ConfigSetting } from '@/services/api/configService';
 import { getSuperStats } from '@/services/api/superService';
 
@@ -100,21 +101,11 @@ const SuperDashboardPage = () => {
 
   // Load restart-required keys from sessionStorage
   useEffect(() => {
-    try {
-      const parsed = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || '[]');
-      setRestartKeys(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setRestartKeys([]);
-    }
+    setRestartKeys(safeSessionStorageGet<string[]>(RESTART_STORAGE_KEY, []));
   }, []);
 
   const refreshRestartKeys = () => {
-    try {
-      const parsed = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || '[]');
-      setRestartKeys(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setRestartKeys([]);
-    }
+    setRestartKeys(safeSessionStorageGet<string[]>(RESTART_STORAGE_KEY, []));
   };
 
   const clearRestartKeys = () => {

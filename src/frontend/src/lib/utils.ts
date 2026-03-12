@@ -5,6 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function safeSessionStorageGet<T>(key: string, fallback: T): T {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(key) || JSON.stringify(fallback));
+    return Array.isArray(fallback) ? (Array.isArray(parsed) ? parsed : fallback) : parsed;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function copyToClipboard(text: string): Promise<void> {
   if (navigator.clipboard && window.isSecureContext) {
     await navigator.clipboard.writeText(text);

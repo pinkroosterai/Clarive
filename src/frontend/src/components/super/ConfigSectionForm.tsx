@@ -29,20 +29,16 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { handleApiError } from '@/lib/handleApiError';
-import { cn } from '@/lib/utils';
+import { cn, safeSessionStorageGet } from '@/lib/utils';
 import { setConfigValue, resetConfigValue, type ConfigSetting } from '@/services/api/configService';
 
 const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
 
 function addRestartKey(key: string) {
-  try {
-    const existing = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || '[]') as string[];
-    if (!existing.includes(key)) {
-      existing.push(key);
-      sessionStorage.setItem(RESTART_STORAGE_KEY, JSON.stringify(existing));
-    }
-  } catch {
-    sessionStorage.setItem(RESTART_STORAGE_KEY, JSON.stringify([key]));
+  const existing = safeSessionStorageGet<string[]>(RESTART_STORAGE_KEY, []);
+  if (!existing.includes(key)) {
+    existing.push(key);
+    sessionStorage.setItem(RESTART_STORAGE_KEY, JSON.stringify(existing));
   }
 }
 
