@@ -28,6 +28,8 @@ public class AccountPurgeBackgroundService(
         }
     }
 
+    private const int BatchSize = 50;
+
     private async Task PurgeExpiredAccountsAsync(CancellationToken ct)
     {
         using var scope = scopeFactory.CreateScope();
@@ -35,53 +37,67 @@ public class AccountPurgeBackgroundService(
         var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
         var now = DateTime.UtcNow;
+        var totalTenants = 0;
+        var totalUsers = 0;
 
-        // Purge tenants scheduled for deletion
-        var tenants = await db.Tenants
-            .Include(t => t.Users)
-            .Where(t => t.DeleteScheduledAt != null && t.DeleteScheduledAt <= now)
-            .ToListAsync(ct);
-
-        foreach (var tenant in tenants)
+        // Purge tenants scheduled for deletion — in batches for bounded memory and partial-failure resilience
+        while (true)
         {
-            logger.LogInformation("Purging tenant {TenantId} ({TenantName})", tenant.Id, tenant.Name);
+            var tenants = await db.Tenants
+                .Include(t => t.Users)
+                .Where(t => t.DeleteScheduledAt != null && t.DeleteScheduledAt <= now)
+                .Take(BatchSize)
+                .ToListAsync(ct);
 
-            // Notify admin(s) before permanent deletion
-            foreach (var user in tenant.Users)
+            if (tenants.Count == 0) break;
+
+            foreach (var tenant in tenants)
             {
-                _ = emailService.SendAccountDeletionCompletedAsync(
-                    user.Email, user.Name, CancellationToken.None)
-                    .ContinueWith(t => logger.LogWarning(t.Exception,
-                        "Failed to send deletion-completed email to {Email}", user.Email),
-                        TaskContinuationOptions.OnlyOnFaulted);
+                logger.LogInformation("Purging tenant {TenantId} ({TenantName})", tenant.Id, tenant.Name);
+
+                // Notify admin(s) before permanent deletion
+                foreach (var user in tenant.Users)
+                {
+                    _ = emailService.SendAccountDeletionCompletedAsync(
+                        user.Email, user.Name, CancellationToken.None)
+                        .ContinueWith(t => logger.LogWarning(t.Exception,
+                            "Failed to send deletion-completed email to {Email}", user.Email),
+                            TaskContinuationOptions.OnlyOnFaulted);
+                }
+
+                // Cascade delete handles all child entities
+                db.Tenants.Remove(tenant);
+                logger.LogInformation("Tenant {TenantId} permanently deleted", tenant.Id);
             }
 
-            // Cascade delete handles all child entities
-            db.Tenants.Remove(tenant);
-            logger.LogInformation("Tenant {TenantId} permanently deleted", tenant.Id);
+            await db.SaveChangesAsync(ct);
+            totalTenants += tenants.Count;
         }
 
-        if (tenants.Count > 0)
-            await db.SaveChangesAsync(ct);
-
-        // Purge individual users (non-admin) scheduled for deletion
-        var users = await db.Users
-            .Where(u => u.DeleteScheduledAt != null && u.DeleteScheduledAt <= now)
-            .ToListAsync(ct);
-
-        foreach (var user in users)
+        // Purge individual users (non-admin) scheduled for deletion — in batches
+        while (true)
         {
-            logger.LogInformation("Purging user {UserId} ({UserEmail})", user.Id, user.Email);
-            db.Users.Remove(user);
+            var users = await db.Users
+                .Where(u => u.DeleteScheduledAt != null && u.DeleteScheduledAt <= now)
+                .Take(BatchSize)
+                .ToListAsync(ct);
+
+            if (users.Count == 0) break;
+
+            foreach (var user in users)
+            {
+                logger.LogInformation("Purging user {UserId} ({UserEmail})", user.Id, user.Email);
+                db.Users.Remove(user);
+            }
+
+            await db.SaveChangesAsync(ct);
+            totalUsers += users.Count;
         }
 
-        if (users.Count > 0)
-            await db.SaveChangesAsync(ct);
-
-        if (tenants.Count > 0 || users.Count > 0)
+        if (totalTenants > 0 || totalUsers > 0)
         {
             logger.LogInformation("Account purge complete: {TenantCount} tenants, {UserCount} users deleted",
-                tenants.Count, users.Count);
+                totalTenants, totalUsers);
         }
     }
 }
