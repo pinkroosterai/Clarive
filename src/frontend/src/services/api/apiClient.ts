@@ -128,9 +128,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       headers['X-No-Retry'] = '1';
       return request<T>(path, { ...options, headers });
     }
-    setToken(null);
-    setRefreshToken(null);
-    window.location.href = '/login';
+    const { useAuthStore } = await import('@/store/authStore');
+    useAuthStore.getState().logout();
     throw new ApiError(401, 'SESSION_EXPIRED', 'Session expired');
   }
 
@@ -214,9 +213,8 @@ export const api = {
           headers['Authorization'] = `Bearer ${getToken()}`;
           return api.postSSE<T>(path, body, onProgress, signal, timeoutMs);
         }
-        setToken(null);
-        setRefreshToken(null);
-        window.location.href = '/login';
+        const { useAuthStore } = await import('@/store/authStore');
+        useAuthStore.getState().logout();
         throw new ApiError(401, 'SESSION_EXPIRED', 'Session expired');
       }
 

@@ -28,6 +28,12 @@ vi.mock('@/lib/config', () => ({
   config: { apiUrl: undefined, googleClientId: '', mode: 'test' },
 }));
 
+// Mock auth store logout
+const mockLogout = vi.fn();
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: { getState: () => ({ logout: mockLogout }) },
+}));
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -342,9 +348,7 @@ describe('apiClient', () => {
 
       await expect(api.get('/api/entries')).rejects.toThrow(ApiError);
 
-      expect(getToken()).toBeNull();
-      expect(getRefreshToken()).toBeNull();
-      expect(locationMock.href).toBe('/login');
+      expect(mockLogout).toHaveBeenCalled();
     });
 
     it('clears tokens when refresh fails', async () => {
@@ -358,8 +362,7 @@ describe('apiClient', () => {
 
       await expect(api.get('/api/entries')).rejects.toThrow(ApiError);
 
-      expect(getToken()).toBeNull();
-      expect(locationMock.href).toBe('/login');
+      expect(mockLogout).toHaveBeenCalled();
     });
 
     it('does NOT refresh on auth endpoints', async () => {
