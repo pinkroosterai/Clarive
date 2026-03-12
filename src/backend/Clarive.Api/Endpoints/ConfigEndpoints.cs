@@ -1,4 +1,5 @@
 using System.ClientModel;
+using System.Data.Common;
 using Clarive.Api.Data;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
@@ -41,7 +42,7 @@ public static class ConfigEndpoints
                 .AsNoTracking()
                 .ToDictionaryAsync(c => c.Key, c => c, ct);
         }
-        catch
+        catch (DbException)
         {
             // Table may not exist yet if migration hasn't been applied
             overrides = new Dictionary<string, ServiceConfig>();
