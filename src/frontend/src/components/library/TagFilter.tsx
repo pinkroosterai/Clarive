@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Tag, X } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,15 +33,18 @@ export const TagFilter = memo(function TagFilter({
     staleTime: 60_000,
   });
 
-  if (tags.length === 0) return null;
+  const toggleTag = useCallback(
+    (name: string) => {
+      if (selectedTags.includes(name)) {
+        onTagsChange(selectedTags.filter((t) => t !== name));
+      } else {
+        onTagsChange([...selectedTags, name]);
+      }
+    },
+    [selectedTags, onTagsChange]
+  );
 
-  const toggleTag = (name: string) => {
-    if (selectedTags.includes(name)) {
-      onTagsChange(selectedTags.filter((t) => t !== name));
-    } else {
-      onTagsChange([...selectedTags, name]);
-    }
-  };
+  if (tags.length === 0) return null;
 
   return (
     <div className="flex items-center gap-2">
