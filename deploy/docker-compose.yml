@@ -1,7 +1,11 @@
-# Clarive — Production compose file.
+# Clarive — Build-from-source deployment
 #
-# Production:  make deploy          (builds images, uses deploy/.env)
-# Development: make dev             (uses docker-compose.dev.yml override)
+# Builds the unified image locally from the root Dockerfile.
+# Uses deploy/.env for configuration.
+#
+# Usage:
+#   make deploy          (recommended — builds, tags, health-checks)
+#   make dev             (development with hot reload)
 
 services:
   postgres:
@@ -22,15 +26,18 @@ services:
       retries: 5
       start_period: 15s
 
-  backend:
-    container_name: clarive-backend
-    image: clarive-backend:${CLARIVE_TAG:-latest}
+  clarive:
+    container_name: clarive-app
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: production
+    image: clarive:${CLARIVE_TAG:-latest}
     restart: unless-stopped
-    expose:
-      - "5000"
+    ports:
+      - "${CLARIVE_PORT:-8080}:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      ASPNETCORE_URLS: http://+:5000
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}"
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in deploy/.env}
       Jwt__Issuer: ${JWT_ISSUER:-Clarive}
@@ -38,6 +45,7 @@ services:
       Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
       App__FrontendUrl: ${CORS_ORIGINS:-http://localhost:8080}
       App__AllowRegistration: ${ALLOW_REGISTRATION:-true}
+      AllowedHosts: "*"
       Ai__OpenAiApiKey: ${OPENAI_API_KEY:-}
       Ai__EndpointUrl: ${AI_ENDPOINT_URL:-}
       Ai__DefaultModel: ${AI_DEFAULT_MODEL:-gpt-4o-mini}
@@ -54,25 +62,19 @@ services:
       Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@clarive.app}
       Email__FromName: ${EMAIL_FROM_NAME:-Clarive}
       RateLimiting__StrictPermitLimit: ${RATE_LIMIT_STRICT:-5}
-      AllowedHosts: ${ALLOWED_HOSTS:-localhost;127.0.0.1}
       CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?Set CONFIG_ENCRYPTION_KEY in deploy/.env}
+      VITE_API_URL: /api
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     volumes:
       - avatars:/app/data/avatars
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:5000/healthz/live || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
     depends_on:
       postgres:
-        condition: service_healthy
-
-  frontend:
-    container_name: clarive-frontend
-    image: clarive-frontend:${CLARIVE_TAG:-latest}
-    restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-8080}:8080"
-    environment:
-      VITE_API_URL: ${VITE_API_URL:-/api}
-      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
-    depends_on:
-      backend:
         condition: service_healthy
 
 volumes:

@@ -8,7 +8,7 @@ escape_js() {
 }
 
 # Generate runtime config from environment variables.
-# This makes the frontend Docker image portable across environments.
+# This makes the image portable across environments.
 cat > /usr/share/nginx/html/config.js << JSEOF
 window.__CLARIVE_CONFIG__ = {
   apiUrl: "$(escape_js "${VITE_API_URL:-/api}")",
@@ -17,4 +17,4 @@ window.__CLARIVE_CONFIG__ = {
 };
 JSEOF
 
-exec nginx -g 'daemon off;'
+exec supervisord -c /etc/supervisor/conf.d/clarive.conf

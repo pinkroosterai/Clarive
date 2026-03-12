@@ -25,13 +25,14 @@
 ## Quick Start
 
 ```bash
-git clone https://github.com/pinkroosterai/Clarive.git
-cd Clarive
-make setup    # generates .env files with random secrets
-make deploy   # builds images and starts postgres, backend, frontend
+cp .env.example .env
+# Fill in the 3 secrets (generation commands are in the file)
+docker compose up -d
 ```
 
 Open **http://localhost:8080** and create your first account.
+
+> This pulls the pre-built image from [Docker Hub](https://hub.docker.com/r/pinkrooster/clarive). To build from source instead, see [Build from Source](#build-from-source).
 
 ---
 
@@ -40,7 +41,8 @@ Open **http://localhost:8080** and create your first account.
 - [Features](#features)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
-  - [Self-Hosting (Docker)](#self-hosting-docker)
+  - [Self-Hosting (Docker Hub)](#self-hosting-docker-hub)
+  - [Build from Source](#build-from-source)
   - [Local Development](#local-development)
 - [Configuration](#configuration)
 - [Contributing](#contributing)
@@ -75,15 +77,18 @@ Open **http://localhost:8080** and create your first account.
 
 ## Architecture
 
+Clarive runs as a single unified container: nginx serves the React frontend and reverse-proxies `/api/` requests to the .NET backend. Supervisor manages both processes.
+
 ```
-                         :8080
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Frontend   │────▶│   Backend    │────▶│  PostgreSQL   │
-│  React / TS  │     │  .NET 10 API  │     │     16        │
-│  Vite / nginx│     │  EF Core 10   │     │               │
-└──────────────┘     └──────────────┘     └──────────────┘
-  nginx proxies
-  /api/ → backend
+               :8080 (nginx)
+┌─────────────────────────────────┐     ┌──────────────┐
+│         Clarive Container       │     │  PostgreSQL   │
+│  ┌──────────┐   ┌────────────┐  │────▶│     16        │
+│  │  nginx   │──▶│ .NET 10 API│  │     │               │
+│  │ (frontend)│  │ (backend)  │  │     └──────────────┘
+│  └──────────┘   └────────────┘  │
+│         supervisor              │
+└─────────────────────────────────┘
 ```
 
 | Layer | Technology |
@@ -105,28 +110,45 @@ Clarive/
 ├── tests/
 │   └── backend/           # xUnit integration + unit tests
 ├── docs/                  # Architecture, API spec, guides
-├── deploy/                # Docker Compose files + production env template
-├── scripts/               # Setup and utility scripts
-├── .env.example           # Development env template
+├── deploy/                # Build-from-source Compose + env template
+│   └── unified/           # nginx, supervisord, entrypoint configs
+├── scripts/               # Setup, release, and utility scripts
+├── Dockerfile             # Multi-stage: production, dev-backend, dev-frontend
+├── docker-compose.yml     # Self-host Compose (Docker Hub pull)
+├── .env.example           # Self-host env template (3 required secrets)
 └── Makefile               # Dev + deploy commands
 ```
 
 ## Getting Started
 
-### Self-Hosting (Docker)
+### Self-Hosting (Docker Hub)
 
 **Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2.
+
+```bash
+cp .env.example .env
+# Generate and fill in the 3 secrets (commands are in the file)
+docker compose up -d
+```
+
+Open **http://localhost:8080**. All traffic (frontend + API) is served through a single port via nginx reverse proxy.
+
+To pin a specific version, set `CLARIVE_VERSION` in `.env` (e.g., `CLARIVE_VERSION=1.0.0`). By default it pulls `latest`.
+
+To configure optional features (AI, Google OAuth, email), see [Configuration](#configuration).
+
+### Build from Source
+
+For contributors or custom deployments, build the image locally:
 
 ```bash
 git clone https://github.com/pinkroosterai/Clarive.git
 cd Clarive
 make setup    # generates deploy/.env with random secrets
-make deploy   # builds images and starts the stack
+make deploy   # builds unified image and starts the stack
 ```
 
-Open **http://localhost:8080**. All traffic (frontend + API) is served through a single port via nginx reverse proxy.
-
-To configure optional features (AI, Google OAuth, email), edit `deploy/.env` before deploying. See [Configuration](#configuration) for all variables.
+This uses `deploy/docker-compose.yml` which builds from the root `Dockerfile`. Edit `deploy/.env` for full configuration options.
 
 ### Local Development
 
@@ -152,6 +174,7 @@ Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to 
 | `make status` | Show running containers and health |
 | `make logs` | Tail development service logs |
 | `make build` | Build both projects (local, no Docker) |
+| `make build-image` | Build unified production image locally |
 | `make test` | Run all tests (frontend + backend) |
 | `make test-backend` | Run backend unit + integration tests |
 | `make test-frontend` | Run frontend tests (Vitest) |
@@ -167,23 +190,26 @@ Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to 
 
 ## Configuration
 
-Configuration is done via environment variables. `make setup` generates env files with random secrets automatically.
+Configuration is done via environment variables.
 
-- **Development**: `.env` (root) — used by `make dev`
-- **Production**: `deploy/.env` — used by `make deploy`
+- **Self-hosting** (Docker Hub): `.env` (root) — used by `docker compose up`
+- **Build from source**: `deploy/.env` — used by `make deploy`
+
+`make setup` auto-generates both files with random secrets.
 
 | Variable | Description | Required | Default |
 |---|---|---|---|
 | `POSTGRES_PASSWORD` | Database password | Yes | — |
 | `JWT_SECRET` | JWT signing key (min 32 chars) | Yes | — |
 | `CONFIG_ENCRYPTION_KEY` | Encryption key for stored secrets | Yes | — |
+| `CORS_ORIGINS` | Allowed CORS origins | No | `http://localhost:8080` |
+| `CLARIVE_PORT` | Host port to expose | No | `8080` |
+| `CLARIVE_VERSION` | Docker Hub image tag (self-host only) | No | `latest` |
 | `OPENAI_API_KEY` | OpenAI-compatible API key (AI features disabled if blank) | No | — |
 | `AI_ENDPOINT_URL` | Custom endpoint for OpenAI-compatible providers | No | — |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | No | — |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | No | — |
-| `CORS_ORIGINS` | Allowed CORS origins | No | `http://localhost:8080` |
 | `ALLOW_REGISTRATION` | Allow new user registration | No | `true` |
-| `FRONTEND_PORT` | Frontend port | No | `8080` |
 | `EMAIL_PROVIDER` | `none`, `console`, `resend`, or `smtp` | No | `none` |
 
 See [docs/configuration.md](docs/configuration.md) for the full reference.

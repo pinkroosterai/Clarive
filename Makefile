@@ -1,5 +1,5 @@
 .PHONY: help setup dev stop restart dev-reset logs status \
-       deploy undeploy \
+       deploy undeploy build-image \
        build build-frontend build-backend \
        test test-frontend test-backend test-filter test-e2e test-e2e-ui lint clean \
        db-shell db-migrate db-migration-add db-reset \
@@ -38,7 +38,7 @@ help: ## Show this help
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@printf "$(C_BOLD)DEPLOYMENT$(C_RESET)\n"
-	@grep -E '^(setup|deploy|undeploy):.*?## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^(setup|deploy|undeploy|build-image):.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-28s$(C_RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@printf "$(C_BOLD)DATABASE$(C_RESET)\n"
@@ -135,17 +135,16 @@ status: ## Show running containers and health status
 
 ## —— Deployment (production) —————————————————————————————
 
-deploy: _require-docker ## Build images and deploy production stack
+deploy: _require-docker ## Build unified image and deploy production stack
 	@if [ ! -f "$(DEPLOY)/.env" ]; then \
 		printf "$(C_RED)Missing: deploy/.env$(C_RESET)\n"; \
 		printf "  Run $(C_GREEN)make setup$(C_RESET) to generate it, then review and deploy.\n"; \
 		exit 1; \
 	fi
 	@TAG=$$(git rev-parse --short HEAD) && \
-	printf "$(C_CYAN)Building images (tag: $$TAG)...$(C_RESET)\n" && \
-	docker build --target production -t clarive-backend:$$TAG $(ROOT)/src/backend && \
-	docker build --target production -t clarive-frontend:$$TAG $(ROOT)/src/frontend && \
-	printf "$(C_GREEN)Images built.$(C_RESET)\n" && \
+	printf "$(C_CYAN)Building unified image (tag: $$TAG)...$(C_RESET)\n" && \
+	docker build --target production -t clarive:$$TAG $(ROOT) && \
+	printf "$(C_GREEN)Image built.$(C_RESET)\n" && \
 	\
 	printf "$(C_CYAN)Deploying...$(C_RESET)\n" && \
 	CLARIVE_TAG=$$TAG $(PROD_COMPOSE) up -d && \
@@ -159,6 +158,11 @@ deploy: _require-docker ## Build images and deploy production stack
 undeploy: ## Stop and remove production stack
 	@$(PROD_COMPOSE) down
 	@printf "$(C_GREEN)Production stack stopped.$(C_RESET)\n"
+
+build-image: _require-docker ## Build unified production image locally
+	@printf "$(C_CYAN)Building unified production image...$(C_RESET)\n"
+	@docker build --target production -t pinkrooster/clarive:latest $(ROOT)
+	@printf "$(C_GREEN)Image built: pinkrooster/clarive:latest$(C_RESET)\n"
 
 ## —— Database ———————————————————————————————————————————
 
@@ -260,7 +264,7 @@ clean: ## Remove build artifacts and caches
 ## —— Internal Helpers ————————————————————————————————————
 
 _health-check:
-	@CONTAINER=$$(docker ps --format '{{.Names}}' --filter name=clarive-backend | head -1); \
+	@CONTAINER=$$(docker ps --format '{{.Names}}' --filter name=clarive-app | head -1); \
 	if [ -z "$$CONTAINER" ]; then \
 		printf "$(C_RED)Backend container not found.$(C_RESET)\n"; \
 		exit 1; \

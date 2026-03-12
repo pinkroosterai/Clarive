@@ -44,13 +44,15 @@ write_env() {
 
   cp "$template" "$target"
 
-  # Replace placeholders — supports both .env.example formats
-  sed -i "s|POSTGRES_PASSWORD=CHANGE_ME|POSTGRES_PASSWORD=$pg_pass|" "$target"
-  sed -i "s|POSTGRES_PASSWORD=changeme|POSTGRES_PASSWORD=$pg_pass|" "$target"
-  sed -i "s|JWT_SECRET=CHANGE_ME_minimum_32_characters_long_for_hmac_sha256|JWT_SECRET=$jwt_sec|" "$target"
-  sed -i "s|JWT_SECRET=changeme-minimum-32-characters-long|JWT_SECRET=$jwt_sec|" "$target"
-  sed -i "s|CONFIG_ENCRYPTION_KEY=CHANGE_ME_base64_encoded_32_byte_key|CONFIG_ENCRYPTION_KEY=$enc_key|" "$target"
-  sed -i "s|CONFIG_ENCRYPTION_KEY=changeme-base64-32-byte-key|CONFIG_ENCRYPTION_KEY=$enc_key|" "$target"
+  # Replace secret placeholders — supports both formats:
+  #   Blank values (self-hoster .env.example): POSTGRES_PASSWORD=
+  #   CHANGE_ME values (deploy/.env.example):  POSTGRES_PASSWORD=CHANGE_ME
+  sed -i "s|^POSTGRES_PASSWORD=$|POSTGRES_PASSWORD=$pg_pass|" "$target"
+  sed -i "s|^POSTGRES_PASSWORD=CHANGE_ME$|POSTGRES_PASSWORD=$pg_pass|" "$target"
+  sed -i "s|^JWT_SECRET=$|JWT_SECRET=$jwt_sec|" "$target"
+  sed -i "s|^JWT_SECRET=CHANGE_ME.*$|JWT_SECRET=$jwt_sec|" "$target"
+  sed -i "s|^CONFIG_ENCRYPTION_KEY=$|CONFIG_ENCRYPTION_KEY=$enc_key|" "$target"
+  sed -i "s|^CONFIG_ENCRYPTION_KEY=CHANGE_ME.*$|CONFIG_ENCRYPTION_KEY=$enc_key|" "$target"
 
   printf "${C_GREEN}  Created %s${C_RESET}\n" "$label"
   return 0
@@ -60,13 +62,13 @@ printf "\n${C_BOLD}${C_CYAN}Clarive Setup${C_RESET}\n\n"
 
 wrote_any=false
 
-# Generate deploy/.env (production)
-if write_env "$DEPLOY_DIR/.env" "$DEPLOY_DIR/.env.example" "deploy/.env (production)"; then
+# Generate .env (self-hoster / simple deployment)
+if write_env "$ROOT_DIR/.env" "$ROOT_DIR/.env.example" ".env (self-hosted — for docker compose up)"; then
   wrote_any=true
 fi
 
-# Generate .env (development)
-if write_env "$ROOT_DIR/.env" "$ROOT_DIR/.env.example" ".env (development)"; then
+# Generate deploy/.env (build-from-source deployment)
+if write_env "$DEPLOY_DIR/.env" "$DEPLOY_DIR/.env.example" "deploy/.env (build-from-source — for make deploy)"; then
   wrote_any=true
 fi
 
@@ -74,13 +76,15 @@ printf "\n"
 
 if [ "$wrote_any" = true ]; then
   printf "${C_BOLD}${C_GREEN}Setup complete!${C_RESET}\n\n"
-  printf "  ${C_BOLD}For development:${C_RESET}\n"
-  printf "    ${C_GREEN}make dev${C_RESET}          Start dev environment with hot reload\n"
+  printf "  ${C_BOLD}Self-hosted (Docker Hub image):${C_RESET}\n"
+  printf "    ${C_GREEN}docker compose up -d${C_RESET}\n"
   printf "    Open: ${C_CYAN}http://localhost:8080${C_RESET}\n\n"
-  printf "  ${C_BOLD}For production:${C_RESET}\n"
+  printf "  ${C_BOLD}Build from source:${C_RESET}\n"
   printf "    1. Review ${C_CYAN}deploy/.env${C_RESET} and set optional values (OpenAI, OAuth, etc.)\n"
   printf "    2. ${C_GREEN}make deploy${C_RESET}    Build and start production stack\n"
   printf "    3. Open: ${C_CYAN}http://localhost:8080${C_RESET}\n\n"
+  printf "  ${C_BOLD}Development:${C_RESET}\n"
+  printf "    ${C_GREEN}make dev${C_RESET}          Start dev environment with hot reload\n\n"
 else
   printf "${C_YELLOW}No files were created.${C_RESET}\n\n"
 fi

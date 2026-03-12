@@ -34,6 +34,9 @@ Thumbs.db
 deploy/docker-compose.local.yml
 scripts/deploy-local.sh
 
+# Release script (not tracked — contains release workflow)
+scripts/release.sh
+
 # Database backups
 backups/
 

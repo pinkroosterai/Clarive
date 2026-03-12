@@ -1,17 +1,52 @@
+# Version control & CI
 .git
 .github
-.deploy-state
+
+# Environment files (contain secrets)
+.env
+.env.*
+deploy/.env
+deploy/.env.*
+
+# Deploy compose files (not needed in image — only deploy/unified/ is)
+deploy/docker-compose*.yml
+deploy/.env.example
+
+# IDE & editor
+.editorconfig
+.vscode
+.idea
+
+# AI tooling
+.claude
 .serena
 .playwright-mcp
-.editorconfig
+claudedocs
+
+# Documentation & metadata
+docs
+*.md
+LICENSE
+Makefile
+
+# Scripts (not needed in image)
+scripts
+
+# Tests
+tests
+
+# Backups
+backups
+
+# Build state & logs
+.deploy-state
 .frontend.pid
 .backend.pid
 .frontend.log
 .backend.log
-backups
-claudedocs
-docs
-scripts
-*.md
-LICENSE
-Makefile
+
+# Node/dotnet build artifacts (use fresh builds in Docker)
+src/frontend/node_modules
+src/frontend/dist
+src/backend/**/bin
+src/backend/**/obj
