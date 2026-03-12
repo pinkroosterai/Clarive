@@ -85,7 +85,9 @@ function MaintenanceGuard({ children }: { children: React.ReactNode }) {
       .then((s) => {
         if (s.maintenance) setMaintenanceMode(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        // Non-critical — maintenance check is best-effort for unauthenticated visitors
+      });
   }, [currentUser, maintenanceMode, setMaintenanceMode]);
 
   if (maintenanceMode && !currentUser?.isSuperUser) {

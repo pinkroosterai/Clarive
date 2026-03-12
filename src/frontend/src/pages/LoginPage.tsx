@@ -38,7 +38,9 @@ const LoginPage = () => {
         setAllowRegistration(s.allowRegistration);
         setEmailEnabled(s.emailEnabled);
       })
-      .catch(() => {});
+      .catch(() => {
+        // Non-critical — registration/email flags default to safe values
+      });
   }, []);
 
   const form = useForm<LoginFormData>({

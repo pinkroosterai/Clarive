@@ -49,7 +49,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (status.aiConfigured === false) set({ aiConfigured: false });
         set({ webSearchAvailable: status.webSearchAvailable ?? false });
       })
-      .catch(() => {});
+      .catch(() => {
+        // Non-critical — system status (AI, maintenance) uses safe defaults
+      });
   },
   setWorkspaces: (workspaces: Workspace[]) => {
     const activeId = getActiveWorkspaceId();
