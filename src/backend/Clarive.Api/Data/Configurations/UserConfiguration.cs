@@ -37,5 +37,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.GoogleId).IsUnique()
             .HasFilter("google_id IS NOT NULL")
             .HasDatabaseName("uq_users_google_id");
+        builder.HasIndex(u => u.IsSuperUser)
+            .HasFilter("is_super_user = true")
+            .HasDatabaseName("ix_users_is_super_user");
     }
 }

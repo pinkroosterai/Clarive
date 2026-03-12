@@ -4,17 +4,20 @@ using System.Collections.Generic;
 using Clarive.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Clarive.Api.Migrations
+namespace Clarive.Api.Data.Migrations
 {
     [DbContext(typeof(ClariveDbContext))]
-    partial class ClariveDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260312132512_AddSuperUserIndex")]
+    partial class AddSuperUserIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
