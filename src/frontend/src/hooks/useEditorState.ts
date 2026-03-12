@@ -21,11 +21,8 @@ export function useEditorState(entryData: PromptEntry | undefined) {
   // Keep refs in sync
   useEffect(() => {
     isDirtyRef.current = isDirty;
-  }, [isDirty]);
-
-  useEffect(() => {
     localEntryRef.current = localEntry;
-  }, [localEntry]);
+  }, [isDirty, localEntry]);
 
   // Document title
   const localTitle = localEntry?.title;
