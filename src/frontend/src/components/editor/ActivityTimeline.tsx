@@ -1,13 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { History } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as activityService from '@/services/api/activityService';
+
+const PAGE_SIZE = 20;
 
 const actionLabels: Record<string, string> = {
   entry_created: 'Created',
@@ -35,16 +37,18 @@ interface ActivityTimelineProps {
 
 export const ActivityTimeline = memo(function ActivityTimeline({ entryId }: ActivityTimelineProps) {
   const navigate = useNavigate();
-  const [loadedPages, setLoadedPages] = useState(1);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['entry-activity', entryId, loadedPages],
-    queryFn: () => activityService.getEntryActivity(entryId, 1, loadedPages * 20),
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ['entry-activity', entryId],
+    queryFn: ({ pageParam }) => activityService.getEntryActivity(entryId, pageParam, PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const loadedSoFar = lastPage.page * lastPage.pageSize;
+      return loadedSoFar < lastPage.total ? lastPage.page + 1 : undefined;
+    },
   });
 
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
-  const hasMore = items.length < total;
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
 
   if (isLoading && items.length === 0) {
     return (
@@ -106,15 +110,16 @@ export const ActivityTimeline = memo(function ActivityTimeline({ entryId }: Acti
         );
       })}
 
-      {hasMore && (
+      {hasNextPage && (
         <div className="pl-5 pt-1">
           <Button
             variant="ghost"
             size="sm"
             className="text-xs h-6 px-2"
-            onClick={() => setLoadedPages((p) => p + 1)}
+            disabled={isFetchingNextPage}
+            onClick={() => fetchNextPage()}
           >
-            Show more
+            {isFetchingNextPage ? 'Loading...' : 'Show more'}
           </Button>
         </div>
       )}
