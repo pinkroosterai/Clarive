@@ -4,6 +4,7 @@
 **/logs
 **/.git
 **/node_modules
-PromptForge.Api.IntegrationTests
+Clarive.Api.IntegrationTests
+Clarive.Api.UnitTests
 **/appsettings.Development.json
 *.md
