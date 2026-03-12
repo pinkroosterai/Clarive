@@ -48,59 +48,57 @@ public static class ConfigEndpoints
             overrides = new Dictionary<string, ServiceConfig>();
         }
 
-        var result = ConfigRegistry.All.Select(def =>
-        {
-            var hasOverride = overrides.ContainsKey(def.Key);
-            string? value = null;
-            var effectiveValue = configuration[def.Key];
-
-            if (!def.IsSecret)
-            {
-                // Use DB value directly when override exists (IConfiguration may not have reloaded yet)
-                if (hasOverride && !overrides[def.Key].IsEncrypted)
-                    value = overrides[def.Key].EncryptedValue;
-                else
-                    value = effectiveValue ?? "";
-            }
-
-            // Determine if the setting has any value from any source
-            bool isConfigured;
-            if (def.IsSecret)
-            {
-                // For secrets: configured if there's a DB override OR the env var is non-empty
-                isConfigured = hasOverride || !string.IsNullOrEmpty(effectiveValue);
-            }
-            else
-            {
-                isConfigured = !string.IsNullOrEmpty(effectiveValue);
-            }
-
-            // Source: "dashboard" if DB override, "environment" if env var provides value, "none" otherwise
-            var source = hasOverride ? "dashboard"
-                : isConfigured ? "environment"
-                : "none";
-
-            return new ConfigSettingResponse(
-                Key: def.Key,
-                Label: def.Label,
-                Description: def.Description,
-                Section: def.Section.ToString(),
-                IsSecret: def.IsSecret,
-                RequiresRestart: def.RequiresRestart,
-                ValidationHint: def.ValidationHint,
-                Value: value,
-                IsOverridden: hasOverride,
-                IsConfigured: isConfigured,
-                Source: source,
-                InputType: def.InputType.ToString().ToLowerInvariant(),
-                SelectOptions: def.SelectOptions,
-                SubGroup: def.SubGroup,
-                VisibleWhen: def.VisibleWhen is not null
-                    ? new ConfigVisibleWhenResponse(def.VisibleWhen.Key, def.VisibleWhen.Values)
-                    : null);
-        }).ToList();
+        var result = ConfigRegistry.All
+            .Select(def => ResolveConfigSetting(def, overrides, configuration))
+            .ToList();
 
         return Results.Ok(result);
+    }
+
+    private static ConfigSettingResponse ResolveConfigSetting(
+        ConfigDefinition def,
+        Dictionary<string, ServiceConfig> overrides,
+        IConfiguration configuration)
+    {
+        var hasOverride = overrides.ContainsKey(def.Key);
+        var effectiveValue = configuration[def.Key];
+
+        // Resolve displayed value (secrets are never exposed)
+        string? value = null;
+        if (!def.IsSecret)
+        {
+            value = hasOverride && !overrides[def.Key].IsEncrypted
+                ? overrides[def.Key].EncryptedValue
+                : effectiveValue ?? "";
+        }
+
+        // For secrets: configured if there's a DB override OR the env var is non-empty
+        var isConfigured = def.IsSecret
+            ? hasOverride || !string.IsNullOrEmpty(effectiveValue)
+            : !string.IsNullOrEmpty(effectiveValue);
+
+        var source = hasOverride ? "dashboard"
+            : isConfigured ? "environment"
+            : "none";
+
+        return new ConfigSettingResponse(
+            Key: def.Key,
+            Label: def.Label,
+            Description: def.Description,
+            Section: def.Section.ToString(),
+            IsSecret: def.IsSecret,
+            RequiresRestart: def.RequiresRestart,
+            ValidationHint: def.ValidationHint,
+            Value: value,
+            IsOverridden: hasOverride,
+            IsConfigured: isConfigured,
+            Source: source,
+            InputType: def.InputType.ToString().ToLowerInvariant(),
+            SelectOptions: def.SelectOptions,
+            SubGroup: def.SubGroup,
+            VisibleWhen: def.VisibleWhen is not null
+                ? new ConfigVisibleWhenResponse(def.VisibleWhen.Key, def.VisibleWhen.Values)
+                : null);
     }
 
     private static async Task<IResult> HandleSetValue(
