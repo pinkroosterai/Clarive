@@ -101,8 +101,8 @@ const SuperDashboardPage = () => {
   // Load restart-required keys from sessionStorage
   useEffect(() => {
     try {
-      const stored = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || '[]') as string[];
-      setRestartKeys(stored);
+      const parsed = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || '[]');
+      setRestartKeys(Array.isArray(parsed) ? parsed : []);
     } catch {
       setRestartKeys([]);
     }
@@ -110,8 +110,8 @@ const SuperDashboardPage = () => {
 
   const refreshRestartKeys = () => {
     try {
-      const stored = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || '[]') as string[];
-      setRestartKeys(stored);
+      const parsed = JSON.parse(sessionStorage.getItem(RESTART_STORAGE_KEY) || '[]');
+      setRestartKeys(Array.isArray(parsed) ? parsed : []);
     } catch {
       setRestartKeys([]);
     }
