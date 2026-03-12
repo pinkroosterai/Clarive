@@ -65,11 +65,15 @@ public static partial class EntryEndpoints
     }
 
     private const int MaxPageSize = 100;
+    private const int DefaultPageSize = 50;
+    private const int MaxActivityPageSize = 50;
+    private const int DefaultActivityPageSize = 20;
+    private const int MaxTagNameLength = 50;
 
     private static (int page, int pageSize) NormalizePagination(int? page, int? pageSize)
     {
         var p = page is > 0 ? page.Value : 1;
-        var ps = pageSize is > 0 ? Math.Min(pageSize.Value, MaxPageSize) : 50;
+        var ps = pageSize is > 0 ? Math.Min(pageSize.Value, MaxPageSize) : DefaultPageSize;
         return (p, ps);
     }
 
@@ -510,7 +514,7 @@ public static partial class EntryEndpoints
         foreach (var tag in request.Tags)
         {
             var name = tag.Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(name) || name.Length > 50 || !TagValidation.TagNamePattern().IsMatch(name))
+            if (string.IsNullOrWhiteSpace(name) || name.Length > MaxTagNameLength || !TagValidation.TagNamePattern().IsMatch(name))
                 return ctx.ErrorResult(422, "VALIDATION_ERROR", $"Invalid tag name: '{tag}'. Tags can only contain lowercase letters, numbers, hyphens, and spaces.");
             normalized.Add(name);
         }
@@ -602,7 +606,7 @@ public static partial class EntryEndpoints
             return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
 
         var p = page is > 0 ? page.Value : 1;
-        var ps = pageSize is > 0 ? Math.Min(pageSize.Value, 50) : 20;
+        var ps = pageSize is > 0 ? Math.Min(pageSize.Value, MaxActivityPageSize) : DefaultActivityPageSize;
 
         var (entries, total) = await auditRepo.GetByEntityIdAsync(tenantId, entryId, p, ps, ct);
 

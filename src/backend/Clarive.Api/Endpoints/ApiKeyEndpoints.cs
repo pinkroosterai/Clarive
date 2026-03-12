@@ -11,6 +11,8 @@ namespace Clarive.Api.Endpoints;
 
 public static class ApiKeyEndpoints
 {
+    private const int MaxApiKeyNameLength = 100;
+
     public static RouteGroupBuilder MapApiKeyEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/api-keys")
@@ -47,8 +49,8 @@ public static class ApiKeyEndpoints
         if (string.IsNullOrWhiteSpace(request.Name))
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Name is required.");
 
-        if (request.Name.Trim().Length > 100)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Name must be 100 characters or fewer.");
+        if (request.Name.Trim().Length > MaxApiKeyNameLength)
+            return ctx.ErrorResult(422, "VALIDATION_ERROR", $"Name must be {MaxApiKeyNameLength} characters or fewer.");
 
         // Generate the key: cl_ + 32 random hex chars
         var rawKey = $"cl_{Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLower()}";

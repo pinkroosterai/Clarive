@@ -108,8 +108,8 @@ public class AuthService(
         if (string.IsNullOrWhiteSpace(newPassword))
             return Error.Validation("VALIDATION_ERROR", "Password is required.");
 
-        if (newPassword.Length < 8)
-            return Error.Validation("VALIDATION_ERROR", "Password must be at least 8 characters.");
+        if (newPassword.Length < Validator.MinPasswordLength)
+            return Error.Validation("VALIDATION_ERROR", $"Password must be at least {Validator.MinPasswordLength} characters.");
 
         var tokenHash = JwtService.HashRefreshToken(token);
         var reset = await tokenRepo.GetResetByHashAsync(tokenHash, ct);

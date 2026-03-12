@@ -10,6 +10,8 @@ namespace Clarive.Api.Endpoints;
 
 public static class TagEndpoints
 {
+    private const int MaxTagNameLength = 50;
+
     public static RouteGroupBuilder MapTagEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/tags")
@@ -32,8 +34,8 @@ public static class TagEndpoints
     {
         if (string.IsNullOrWhiteSpace(name))
             return "Tag name is required.";
-        if (name.Length > 50)
-            return "Tag name must be 50 characters or fewer.";
+        if (name.Length > MaxTagNameLength)
+            return $"Tag name must be {MaxTagNameLength} characters or fewer.";
         if (!TagValidation.TagNamePattern().IsMatch(name))
             return "Tag name can only contain lowercase letters, numbers, hyphens, and spaces.";
         return null;
