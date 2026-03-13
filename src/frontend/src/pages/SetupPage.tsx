@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Eye, EyeOff, ShieldAlert, Info } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { PasswordStrengthBar } from '@/components/common/PasswordStrengthBar';
@@ -23,7 +23,6 @@ import { authService } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 
 const SetupPage = () => {
-  const navigate = useNavigate();
   const { isAuthenticated, setUser, setWorkspaces } = useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +43,7 @@ const SetupPage = () => {
       setUser(res.user);
       if (res.workspaces) setWorkspaces(res.workspaces);
       toast.success('Admin account created! Your instance is ready.');
-      setTimeout(() => navigate('/'), 150);
+      window.location.href = '/';
     } catch (err: unknown) {
       handleApiError(err, { fallback: 'Setup failed' });
     }

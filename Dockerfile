@@ -51,7 +51,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS production
 
 # Install nginx and supervisord
 RUN apk add --no-cache nginx supervisor && \
-    mkdir -p /var/log/supervisor /run/nginx /usr/share/nginx/html && \
+    mkdir -p /var/log/supervisor /run/nginx /usr/share/nginx/html /etc/nginx/snippets && \
     # Create app user
     addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 --ingroup appgroup appuser && \
@@ -76,6 +76,7 @@ COPY --from=backend-build --chown=appuser:appgroup /app/publish .
 COPY --from=frontend-build --chown=appuser:appgroup /app/dist /usr/share/nginx/html
 
 # Copy unified config files
+COPY --chown=appuser:appgroup deploy/unified/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --chown=appuser:appgroup deploy/unified/nginx.conf /etc/nginx/http.d/default.conf
 COPY --chown=appuser:appgroup deploy/unified/supervisord.conf /etc/supervisor/conf.d/clarive.conf
 COPY --chown=appuser:appgroup deploy/unified/docker-entrypoint.sh /docker-entrypoint.sh
