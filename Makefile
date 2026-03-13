@@ -3,7 +3,7 @@
        build build-frontend build-backend \
        test test-frontend test-backend test-filter test-e2e test-e2e-ui lint clean \
        db-shell db-migrate db-migration-add db-reset \
-       _health-check _require-docker _require-sdk
+       _require-docker _require-sdk
 
 SHELL   := /bin/bash
 ROOT    := $(shell pwd)
@@ -14,8 +14,8 @@ DEPLOY  := $(ROOT)/deploy
 # Dev compose (all Docker, hot reload via volume mounts)
 DEV_COMPOSE = docker compose -p clarive-dev --env-file $(ROOT)/.env -f $(DEPLOY)/docker-compose.yml -f $(DEPLOY)/docker-compose.dev.yml
 
-# Production compose
-PROD_COMPOSE = docker compose -p clarive --env-file $(DEPLOY)/.env -f $(DEPLOY)/docker-compose.yml
+# Production compose (appends local override if present, e.g. for proxy network)
+PROD_COMPOSE = docker compose -p clarive --env-file $(DEPLOY)/.env -f $(DEPLOY)/docker-compose.yml $(if $(wildcard $(DEPLOY)/docker-compose.local.yml),-f $(DEPLOY)/docker-compose.local.yml)
 
 # Colors
 C_RESET  := \033[0m
@@ -135,34 +135,9 @@ status: ## Show running containers and health status
 
 ## —— Deployment (production) —————————————————————————————
 
-deploy: _require-docker ## Build unified image and deploy production stack
-	@if [ ! -f "$(DEPLOY)/.env" ]; then \
-		printf "$(C_RED)Missing: deploy/.env$(C_RESET)\n"; \
-		printf "  Run $(C_GREEN)make setup$(C_RESET) to generate it, then review and deploy.\n"; \
-		exit 1; \
-	fi
-	@TAG=$$(git rev-parse --short HEAD) && \
-	printf "$(C_CYAN)Building unified image (tag: $$TAG)...$(C_RESET)\n" && \
-	docker build --target production -t clarive:$$TAG $(ROOT) && \
-	printf "$(C_GREEN)Image built.$(C_RESET)\n" && \
-	\
-	printf "$(C_CYAN)Deploying...$(C_RESET)\n" && \
-	CLARIVE_TAG=$$TAG $(PROD_COMPOSE) up -d && \
-	\
-	$(MAKE) --no-print-directory _health-check && \
-	\
-	printf "\n$(C_BOLD)$(C_GREEN)Deployed$(C_RESET) (tag: $$TAG)\n" && \
-	printf "  App:  $(C_CYAN)http://localhost:8080$(C_RESET)\n" && \
-	printf "  Stop: $(C_YELLOW)make undeploy$(C_RESET)\n\n"
-
-undeploy: ## Stop and remove production stack
-	@$(PROD_COMPOSE) down
-	@printf "$(C_GREEN)Production stack stopped.$(C_RESET)\n"
-
-build-image: _require-docker ## Build unified production image locally
-	@printf "$(C_CYAN)Building unified production image...$(C_RESET)\n"
-	@docker build --target production -t pinkrooster/clarive:latest $(ROOT)
-	@printf "$(C_GREEN)Image built: pinkrooster/clarive:latest$(C_RESET)\n"
+deploy undeploy build-image: ## → Managed by ClariveDeployServer
+	@printf "$(C_RED)Server deployment has moved to ClariveDeployServer.$(C_RESET)\n"
+	@printf "  $(C_CYAN)cd /home/najgeetsrev/ClariveDeployServer && ./deploy.sh clarive <dev|prod>$(C_RESET)\n"
 
 ## —— Database ———————————————————————————————————————————
 
