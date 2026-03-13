@@ -15,7 +15,7 @@ jobs:
     name: Frontend Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -30,7 +30,7 @@ jobs:
     name: Frontend Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -45,7 +45,7 @@ jobs:
     name: Frontend Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -60,7 +60,7 @@ jobs:
     name: Backend Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
@@ -72,7 +72,7 @@ jobs:
     needs: backend-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
@@ -84,7 +84,7 @@ jobs:
     needs: backend-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
@@ -95,7 +95,7 @@ jobs:
     name: Docker Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build production image
         run: docker build --target production -t clarive:ci-test .
       - name: Build dev-backend image
