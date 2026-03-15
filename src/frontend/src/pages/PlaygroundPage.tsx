@@ -236,7 +236,7 @@ const PlaygroundPage = () => {
       }
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
     }
-  }, [entryId, selectedModel, temperature, maxTokens, fieldValues, templateFields, queryClient]);
+  }, [entryId, selectedModel, temperature, maxTokens, fieldValues, templateFields, queryClient, showReasoning, reasoningEffort]);
 
   const handleAbort = useCallback(() => {
     abortRef.current?.abort();

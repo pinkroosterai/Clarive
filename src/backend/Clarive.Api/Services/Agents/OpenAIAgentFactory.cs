@@ -171,9 +171,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         try
         {
             EnsureConfigured();
-#pragma warning disable OPENAI001 // Responses API is experimental
-            return _openAiClient!.GetResponsesClient(model).AsIChatClient();
-#pragma warning restore OPENAI001
+            return _openAiClient!.GetChatClient(model).AsIChatClient();
         }
         finally { _lock.ExitReadLock(); }
     }
@@ -181,9 +179,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     public IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model)
     {
         var client = CreateOpenAIClient(apiKey, endpointUrl);
-#pragma warning disable OPENAI001 // Responses API is experimental
-        return client.GetResponsesClient(model).AsIChatClient();
-#pragma warning restore OPENAI001
+        return client.GetChatClient(model).AsIChatClient();
     }
 
     public OpenAIClient GetOpenAIClient()
