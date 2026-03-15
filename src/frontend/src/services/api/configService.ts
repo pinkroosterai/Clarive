@@ -55,28 +55,3 @@ export async function resetConfigValue(key: string): Promise<ResetConfigResult> 
   return api.delete<ResetConfigResult>(`/api/super/config/${encodeURIComponent(key)}`);
 }
 
-// ── AI Config ──
-
-export interface ValidateAiRequest {
-  apiKey?: string;
-  endpointUrl?: string;
-}
-
-export interface ValidateAiResponse {
-  valid: boolean;
-  error?: string;
-}
-
-export interface AiModelsResponse {
-  models: string[];
-}
-
-export async function validateAiConfig(req: ValidateAiRequest): Promise<ValidateAiResponse> {
-  return api.post<ValidateAiResponse>('/api/super/config/validate-ai', req);
-}
-
-export async function getAiModels(
-  req: { apiKey?: string; endpointUrl?: string } = {}
-): Promise<AiModelsResponse> {
-  return api.post<AiModelsResponse>('/api/super/config/ai-models', req);
-}

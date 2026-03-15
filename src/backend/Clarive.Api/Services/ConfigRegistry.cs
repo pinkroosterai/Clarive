@@ -63,18 +63,7 @@ public static class ConfigRegistry
             "Default: 7",
             ConfigInputType.Number, SubGroup: "JWT Tokens"),
 
-        // ── AI (OpenAI-compatible) ──
-        new ConfigDefinition("Ai:EndpointUrl", "API Endpoint URL",
-            "Override the default OpenAI endpoint to use a self-hosted or alternative provider (Ollama, LiteLLM, vLLM, Azure OpenAI, etc.). The endpoint must be OpenAI-compatible. Leave empty to use the standard OpenAI API.",
-            ConfigSection.Ai, false, false,
-            "e.g., https://api.openai.com/v1",
-            ConfigInputType.Url),
-
-        new ConfigDefinition("Ai:OpenAiApiKey", "API Key",
-            "API key used to authenticate with the AI provider. Required for all AI features — without it, prompt generation, evaluation, and clarification are disabled. Use the Validate button to test connectivity before saving.",
-            ConfigSection.Ai, true, false,
-            "sk-..."),
-
+        // ── AI ──
         new ConfigDefinition("Ai:DefaultModel", "Default AI Model",
             "Model used for everyday AI tasks: clarifying prompts, evaluating quality, and decomposing complex prompts into sections. Choose a fast, cost-effective model here.",
             ConfigSection.Ai, false, false,

@@ -96,7 +96,7 @@ public class ConfigRegistryTests
     }
 
     [Theory]
-    [InlineData("Ai:OpenAiApiKey")]
+    [InlineData("Ai:DefaultModel")]
     [InlineData("Email:Provider")]
     [InlineData("Jwt:ExpirationMinutes")]
     [InlineData("Google:ClientId")]

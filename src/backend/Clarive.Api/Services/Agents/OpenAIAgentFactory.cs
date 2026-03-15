@@ -1,5 +1,7 @@
 using System.ClientModel;
 using Clarive.Api.Models.Agents;
+using Clarive.Api.Models.Entities;
+using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.OpenAI;
@@ -12,11 +14,14 @@ namespace Clarive.Api.Services.Agents;
 /// <summary>
 /// Creates AIAgent instances backed by OpenAI-compatible models.
 /// Singleton lifetime — holds the OpenAI clients and hot-reloads on config change.
+/// Resolves API credentials from AI providers in the database.
 /// </summary>
 public class OpenAIAgentFactory : IAgentFactory, IDisposable
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<OpenAIAgentFactory> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IEncryptionService _encryption;
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly IDisposable? _changeSubscription;
 
@@ -37,10 +42,16 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
     public event Action? OnReconfigured;
 
-    public OpenAIAgentFactory(IOptionsMonitor<AiSettings> optionsMonitor, ILoggerFactory loggerFactory)
+    public OpenAIAgentFactory(
+        IOptionsMonitor<AiSettings> optionsMonitor,
+        IServiceScopeFactory scopeFactory,
+        IEncryptionService encryption,
+        ILoggerFactory loggerFactory)
     {
         _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<OpenAIAgentFactory>();
+        _scopeFactory = scopeFactory;
+        _encryption = encryption;
 
         ReinitializeClients(optionsMonitor.CurrentValue);
 
@@ -140,29 +151,78 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             (_defaultClient as IDisposable)?.Dispose();
             _premiumClient = null;
             _defaultClient = null;
+            _openAiClient = null;
             _isConfigured = false;
 
-            if (!string.IsNullOrWhiteSpace(settings.OpenAiApiKey))
+            if (string.IsNullOrWhiteSpace(settings.DefaultModel) ||
+                string.IsNullOrWhiteSpace(settings.PremiumModel))
             {
-                _openAiClient = CreateOpenAIClient(settings.OpenAiApiKey, settings.EndpointUrl);
-                _premiumClient = _openAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
-                _defaultClient = _openAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
-                _isConfigured = true;
+                _logger.LogWarning("AI not configured — Default or Premium model not set");
+                return;
+            }
 
-                _logger.LogInformation(
-                    "AI clients initialized (endpoint: {Endpoint}, default: {Default}, premium: {Premium})",
-                    string.IsNullOrWhiteSpace(settings.EndpointUrl) ? "OpenAI default" : settings.EndpointUrl,
-                    settings.DefaultModel,
-                    settings.PremiumModel);
-            }
-            else
+            List<AiProvider> providers;
+            try
             {
-                _logger.LogWarning("AI clients not configured — no API key provided");
+                providers = Task.Run(() => LoadProvidersAsync()).GetAwaiter().GetResult();
             }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load AI providers — AI features unavailable");
+                return;
+            }
+
+            var defaultResolved = ResolveProviderForModel(providers, settings.DefaultModel);
+            var premiumResolved = ResolveProviderForModel(providers, settings.PremiumModel);
+
+            if (defaultResolved is null || premiumResolved is null)
+            {
+                _logger.LogWarning("AI not configured — no active provider found for {Missing} model",
+                    defaultResolved is null ? "default" : "premium");
+                return;
+            }
+
+            var premiumOpenAiClient = CreateOpenAIClient(premiumResolved.ApiKey, premiumResolved.EndpointUrl);
+            var defaultOpenAiClient = premiumResolved == defaultResolved
+                ? premiumOpenAiClient
+                : CreateOpenAIClient(defaultResolved.ApiKey, defaultResolved.EndpointUrl);
+
+            _openAiClient = premiumOpenAiClient;
+            _premiumClient = premiumOpenAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
+            _defaultClient = defaultOpenAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
+            _isConfigured = true;
+
+            _logger.LogInformation(
+                "AI clients initialized (default: {Default} via {DefaultProvider}, premium: {Premium} via {PremiumProvider})",
+                settings.DefaultModel, defaultResolved.ProviderName,
+                settings.PremiumModel, premiumResolved.ProviderName);
         }
         finally { _lock.ExitWriteLock(); }
 
         OnReconfigured?.Invoke();
+    }
+
+    private async Task<List<AiProvider>> LoadProvidersAsync()
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<IAiProviderRepository>();
+        return await repo.GetAllAsync();
+    }
+
+    private record ResolvedProvider(string ApiKey, string? EndpointUrl, string ProviderName);
+
+    private ResolvedProvider? ResolveProviderForModel(List<AiProvider> providers, string modelId)
+    {
+        var match = providers
+            .Where(p => p.IsActive)
+            .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
+            .FirstOrDefault(x => x.Model.IsActive &&
+                x.Model.ModelId.Equals(modelId, StringComparison.OrdinalIgnoreCase));
+
+        if (match is null || !_encryption.IsAvailable) return null;
+
+        var apiKey = _encryption.Decrypt(match.Provider.ApiKeyEncrypted);
+        return new ResolvedProvider(apiKey, match.Provider.EndpointUrl, match.Provider.Name);
     }
 
     public IChatClient CreateChatClient(string model)
@@ -200,7 +260,8 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     private void EnsureConfigured()
     {
         if (!_isConfigured)
-            throw new InvalidOperationException("AI features are not configured. Set the Ai:OpenAiApiKey setting.");
+            throw new InvalidOperationException(
+                "AI features are not configured. Add an AI provider with models and set the Default/Premium model in Super Admin > AI.");
     }
 
     public void Dispose()

@@ -13,8 +13,6 @@ import {
   getAllConfig,
   setConfigValue,
   resetConfigValue,
-  validateAiConfig,
-  getAiModels,
 } from './configService';
 
 import { api } from '@/services/api/apiClient';
@@ -63,37 +61,3 @@ describe('resetConfigValue', () => {
   });
 });
 
-describe('validateAiConfig', () => {
-  it('calls POST /api/super/config/validate-ai with request body', async () => {
-    const response = { valid: true };
-    mockApi.post.mockResolvedValue(response);
-
-    const result = await validateAiConfig({ apiKey: 'sk-123', endpointUrl: 'https://api.openai.com' });
-
-    expect(mockApi.post).toHaveBeenCalledWith('/api/super/config/validate-ai', {
-      apiKey: 'sk-123',
-      endpointUrl: 'https://api.openai.com',
-    });
-    expect(result).toEqual({ valid: true });
-  });
-});
-
-describe('getAiModels', () => {
-  it('calls POST /api/super/config/ai-models', async () => {
-    const response = { models: ['gpt-4', 'gpt-3.5-turbo'] };
-    mockApi.post.mockResolvedValue(response);
-
-    const result = await getAiModels({ apiKey: 'sk-123' });
-
-    expect(mockApi.post).toHaveBeenCalledWith('/api/super/config/ai-models', { apiKey: 'sk-123' });
-    expect(result.models).toEqual(['gpt-4', 'gpt-3.5-turbo']);
-  });
-
-  it('sends empty object when no params provided', async () => {
-    mockApi.post.mockResolvedValue({ models: [] });
-
-    await getAiModels();
-
-    expect(mockApi.post).toHaveBeenCalledWith('/api/super/config/ai-models', {});
-  });
-});

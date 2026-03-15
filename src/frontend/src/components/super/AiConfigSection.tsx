@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import {
   Check,
   ChevronRight,
@@ -10,12 +10,9 @@ import {
   Search,
   Server,
   Database,
-  ShieldCheck,
-  ShieldX,
-  AlertTriangle,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -39,8 +36,6 @@ import { cn } from '@/lib/utils';
 import {
   setConfigValue,
   resetConfigValue,
-  validateAiConfig,
-  getAiModels,
   type ConfigSetting,
 } from '@/services/api/configService';
 import { getProviders } from '@/services/api/aiProviderService';
@@ -50,8 +45,6 @@ interface AiConfigSectionProps {
   onSaved: () => void;
 }
 
-type ValidationState = 'idle' | 'validating' | 'valid' | 'invalid';
-
 function findSetting(settings: ConfigSetting[], key: string): ConfigSetting | undefined {
   return settings.find((s) => s.key === key);
 }
@@ -60,114 +53,32 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   const queryClient = useQueryClient();
   const [dirtyValues, setDirtyValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [validationState, setValidationState] = useState<ValidationState>('idle');
-  const [validationError, setValidationError] = useState<string | null>(null);
 
-  const endpointSetting = findSetting(settings, 'Ai:EndpointUrl');
-  const apiKeySetting = findSetting(settings, 'Ai:OpenAiApiKey');
   const defaultModelSetting = findSetting(settings, 'Ai:DefaultModel');
   const premiumModelSetting = findSetting(settings, 'Ai:PremiumModel');
   const allowedModelsSetting = findSetting(settings, 'Ai:AllowedModels');
   const tavilyApiKeySetting = findSetting(settings, 'Ai:TavilyApiKey');
 
-  const currentEndpoint = dirtyValues['Ai:EndpointUrl'] ?? endpointSetting?.value ?? '';
-  const currentApiKeyDirty = dirtyValues['Ai:OpenAiApiKey'];
   const currentDefaultModel = dirtyValues['Ai:DefaultModel'] ?? defaultModelSetting?.value ?? '';
   const currentPremiumModel = dirtyValues['Ai:PremiumModel'] ?? premiumModelSetting?.value ?? '';
   const currentAllowedModels = dirtyValues['Ai:AllowedModels'] ?? allowedModelsSetting?.value ?? '';
   const currentTavilyKeyDirty = dirtyValues['Ai:TavilyApiKey'];
 
-  const apiKeyIsConfigured = apiKeySetting?.isConfigured ?? false;
-
-  // Fetch models when API key is configured
-  const {
-    data: modelsData,
-    isLoading: modelsLoading,
-    isError: modelsFetchFailed,
-  } = useQuery({
-    queryKey: ['super', 'ai-models'],
-    queryFn: () => getAiModels({}),
-    enabled: apiKeyIsConfigured && validationState !== 'valid',
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
-  // Re-fetch models after successful validation with the new key/endpoint
-  const { data: validatedModelsData, isLoading: validatedModelsLoading } = useQuery({
-    queryKey: ['super', 'ai-models', 'validated', currentApiKeyDirty, currentEndpoint],
-    queryFn: () =>
-      getAiModels({
-        apiKey: currentApiKeyDirty || undefined,
-        endpointUrl: currentEndpoint || undefined,
-      }),
-    enabled: validationState === 'valid',
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
-  // Fetch provider-configured models (preferred over raw API fetch)
-  const { data: providers } = useQuery({
+  // Fetch provider-configured models
+  const { data: providers, isLoading: providersLoading } = useQuery({
     queryKey: ['super', 'ai-providers'],
     queryFn: getProviders,
     staleTime: 5 * 60 * 1000,
   });
 
-  const providerModels = useMemo(() => {
+  const models = useMemo(() => {
     if (!providers) return [];
     return providers
       .filter((p) => p.isActive)
       .flatMap((p) => p.models.filter((m) => m.isActive).map((m) => m.modelId));
   }, [providers]);
 
-  const legacyModels =
-    (validationState === 'valid' ? validatedModelsData?.models : modelsData?.models) ?? [];
-
-  // Use provider models when available, fall back to legacy API fetch
-  const models = providerModels.length > 0 ? providerModels : legacyModels;
-  const isLoadingModels = modelsLoading || validatedModelsLoading;
   const hasModels = models.length > 0;
-  const useCombobox = hasModels && !modelsFetchFailed;
-
-  // Reset validation when key or endpoint changes
-  useEffect(() => {
-    if (currentApiKeyDirty !== undefined || dirtyValues['Ai:EndpointUrl'] !== undefined) {
-      setValidationState('idle');
-      setValidationError(null);
-    }
-  }, [currentApiKeyDirty, dirtyValues]);
-
-  const validateMutation = useMutation({
-    mutationFn: () => {
-      const apiKey = currentApiKeyDirty ?? '';
-      if (!apiKey && !apiKeyIsConfigured) {
-        return Promise.resolve({ valid: false, error: 'Enter an API key first' } as const);
-      }
-      // When no new key is typed but one is already configured, validate using the server-side key
-      return validateAiConfig({
-        apiKey: apiKey || undefined,
-        endpointUrl: currentEndpoint || undefined,
-      });
-    },
-    onMutate: () => {
-      setValidationState('validating');
-      setValidationError(null);
-    },
-    onSuccess: (result) => {
-      if (result.valid) {
-        setValidationState('valid');
-        toast.success('API key is valid');
-      } else {
-        setValidationState('invalid');
-        setValidationError(result.error ?? 'Validation failed');
-        toast.error(result.error ?? 'Validation failed');
-      }
-    },
-    onError: (err) => {
-      setValidationState('invalid');
-      setValidationError('Validation request failed');
-      handleApiError(err, { fallback: 'Failed to validate API key' });
-    },
-  });
 
   const resetMutation = useMutation({
     mutationFn: (key: string) => resetConfigValue(key),
@@ -179,7 +90,6 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
         return next;
       });
       queryClient.invalidateQueries({ queryKey: ['super', 'config'] });
-      queryClient.invalidateQueries({ queryKey: ['super', 'ai-models'] });
     },
     onError: (err) => handleApiError(err, { fallback: 'Failed to reset setting' }),
   });
@@ -206,15 +116,9 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   };
 
   const hasDirty = Object.keys(dirtyValues).length > 0;
-  const apiKeyIsDirty = currentApiKeyDirty !== undefined;
-  const needsValidation = apiKeyIsDirty && validationState !== 'valid';
 
   const handleSave = async () => {
     if (!hasDirty) return;
-    if (needsValidation) {
-      toast.error('Please validate the API key before saving');
-      return;
-    }
 
     setSaving(true);
     try {
@@ -229,9 +133,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
       }
 
       setDirtyValues({});
-      setValidationState('idle');
       queryClient.invalidateQueries({ queryKey: ['super', 'config'] });
-      queryClient.invalidateQueries({ queryKey: ['super', 'ai-models'] });
       toast.success(`${savedCount} setting${savedCount > 1 ? 's' : ''} saved`);
       onSaved();
     } catch (err) {
@@ -243,66 +145,6 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
 
   return (
     <div className="space-y-1">
-      {/* Endpoint URL */}
-      {endpointSetting && (
-        <SettingField
-          setting={endpointSetting}
-          onReset={() => resetMutation.mutate(endpointSetting.key)}
-          isResetting={resetMutation.isPending && resetMutation.variables === endpointSetting.key}
-        >
-          <Input
-            type="text"
-            value={currentEndpoint}
-            onChange={(e) => handleChange('Ai:EndpointUrl', e.target.value)}
-            placeholder={endpointSetting.validationHint ?? ''}
-            className="max-w-md"
-          />
-        </SettingField>
-      )}
-
-      <Separator className="my-4" />
-
-      {/* API Key */}
-      {apiKeySetting && (
-        <SettingField
-          setting={apiKeySetting}
-          onReset={() => resetMutation.mutate(apiKeySetting.key)}
-          isResetting={resetMutation.isPending && resetMutation.variables === apiKeySetting.key}
-        >
-          <div className="flex items-center gap-2 max-w-md w-full">
-            <Input
-              type="password"
-              value={currentApiKeyDirty ?? ''}
-              onChange={(e) => handleChange('Ai:OpenAiApiKey', e.target.value)}
-              placeholder={apiKeySetting.validationHint ?? 'Enter API key...'}
-              className="flex-1"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => validateMutation.mutate()}
-              disabled={validationState === 'validating' || (!apiKeyIsDirty && !apiKeyIsConfigured)}
-            >
-              {validationState === 'validating' ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : validationState === 'valid' ? (
-                <ShieldCheck className="size-4 text-success-text" />
-              ) : validationState === 'invalid' ? (
-                <ShieldX className="size-4 text-destructive" />
-              ) : (
-                <ShieldCheck className="size-4" />
-              )}
-              <span className="ml-1">Validate</span>
-            </Button>
-          </div>
-          {validationState === 'invalid' && validationError && (
-            <p className="text-xs text-destructive mt-1">{validationError}</p>
-          )}
-        </SettingField>
-      )}
-
-      <Separator className="my-4" />
-
       {/* Default Model */}
       {defaultModelSetting && (
         <SettingField
@@ -312,12 +154,12 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
             resetMutation.isPending && resetMutation.variables === defaultModelSetting.key
           }
         >
-          {useCombobox ? (
+          {hasModels ? (
             <ModelCombobox
               models={models}
               value={currentDefaultModel}
               onChange={(value) => handleChange('Ai:DefaultModel', value)}
-              loading={isLoadingModels}
+              loading={providersLoading}
               placeholder="Select default model..."
             />
           ) : (
@@ -329,10 +171,9 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
                 placeholder={defaultModelSetting.validationHint ?? ''}
                 className="max-w-md"
               />
-              {modelsFetchFailed && apiKeyIsConfigured && (
-                <p className="text-xs text-warning-text flex items-center gap-1">
-                  <AlertTriangle className="size-3" />
-                  Could not fetch models — using free text input
+              {!providersLoading && (
+                <p className="text-xs text-foreground-muted">
+                  Add an AI provider with models to enable the model selector.
                 </p>
               )}
             </div>
@@ -351,12 +192,12 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
             resetMutation.isPending && resetMutation.variables === premiumModelSetting.key
           }
         >
-          {useCombobox ? (
+          {hasModels ? (
             <ModelCombobox
               models={models}
               value={currentPremiumModel}
               onChange={(value) => handleChange('Ai:PremiumModel', value)}
-              loading={isLoadingModels}
+              loading={providersLoading}
               placeholder="Select premium model..."
             />
           ) : (
@@ -368,10 +209,9 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
                 placeholder={premiumModelSetting.validationHint ?? ''}
                 className="max-w-md"
               />
-              {modelsFetchFailed && apiKeyIsConfigured && (
-                <p className="text-xs text-warning-text flex items-center gap-1">
-                  <AlertTriangle className="size-3" />
-                  Could not fetch models — using free text input
+              {!providersLoading && (
+                <p className="text-xs text-foreground-muted">
+                  Add an AI provider with models to enable the model selector.
                 </p>
               )}
             </div>
@@ -394,7 +234,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
               allModels={models}
               value={currentAllowedModels}
               onChange={(value) => handleChange('Ai:AllowedModels', value)}
-              loading={isLoadingModels}
+              loading={providersLoading}
             />
           </SettingField>
         </>
@@ -424,13 +264,10 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
 
       {/* Save */}
       <div className="pt-4">
-        <Button onClick={handleSave} disabled={!hasDirty || saving || needsValidation} size="sm">
+        <Button onClick={handleSave} disabled={!hasDirty || saving} size="sm">
           <Save className="size-4 mr-1.5" />
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
-        {needsValidation && hasDirty && (
-          <p className="text-xs text-foreground-muted mt-2">Validate the API key before saving</p>
-        )}
       </div>
     </div>
   );
@@ -494,57 +331,76 @@ function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelC
   const [open, setOpen] = useState(false);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="max-w-md w-full justify-between"
-        >
-          {loading ? (
-            <span className="flex items-center gap-2 text-foreground-muted">
-              <Loader2 className="size-4 animate-spin" />
-              Loading models...
-            </span>
-          ) : value ? (
-            value
-          ) : (
-            <span className="text-foreground-muted">{placeholder}</span>
-          )}
-          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="max-w-md w-full p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search models..." />
-          <CommandList>
-            <CommandEmpty>No models found.</CommandEmpty>
-            <CommandGroup>
-              {models.map((model) => (
-                <CommandItem
-                  key={model}
-                  value={model}
-                  onSelect={(selected) => {
-                    onChange(selected);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn('mr-2 size-4', value === model ? 'opacity-100' : 'opacity-0')}
-                  />
-                  {model}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <div className="flex items-center gap-1.5 max-w-md w-full">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2 text-foreground-muted">
+                <Loader2 className="size-4 animate-spin" />
+                Loading models...
+              </span>
+            ) : value ? (
+              value
+            ) : (
+              <span className="text-foreground-muted">{placeholder}</span>
+            )}
+            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="max-w-md w-full p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Search models..." />
+            <CommandList>
+              <CommandEmpty>No models found.</CommandEmpty>
+              <CommandGroup>
+                {models.map((model) => (
+                  <CommandItem
+                    key={model}
+                    value={model}
+                    onSelect={(selected) => {
+                      onChange(selected);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn('mr-2 size-4', value === model ? 'opacity-100' : 'opacity-0')}
+                    />
+                    {model}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {value && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onChange('')}
+                className="shrink-0"
+              >
+                <X className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Clear selection</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
   );
 }
-
-// ── Source badge ──
 
 // ── Model transfer list ──
 
@@ -573,7 +429,6 @@ function ModelTransferList({ allModels, value, onChange, loading }: ModelTransfe
   }, [allModels, allowedSet, search]);
 
   const allowed = useMemo(() => {
-    // Preserve order from value string, filter to models that still exist
     return value
       ? value.split(',').map((s) => s.trim()).filter(Boolean)
       : [];
@@ -601,7 +456,7 @@ function ModelTransferList({ allModels, value, onChange, loading }: ModelTransfe
   if (allModels.length === 0) {
     return (
       <p className="text-sm text-foreground-muted py-2">
-        Configure and validate an API key first to see available models.
+        Add an AI provider with models to configure allowed playground models.
       </p>
     );
   }

@@ -14,7 +14,7 @@ export function AiNotConfiguredBanner() {
     <div className="flex items-center justify-between gap-2 bg-warning-bg border-b border-warning-border px-4 py-2 text-sm text-warning-text">
       <div className="flex items-center gap-2">
         <AlertTriangle className="size-4 shrink-0" />
-        <span>AI features are disabled — no API key is configured.</span>
+        <span>AI features are not available. Add an AI provider and configure default/premium models in Super Admin &gt; AI.</span>
       </div>
       <button
         onClick={() => setDismissed(true)}
