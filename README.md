@@ -5,7 +5,7 @@
 <h1 align="center">Clarive</h1>
 
 <p align="center">
-  <strong>Stop hardcoding prompts. Start managing them.</strong>
+  <strong>Prompt management for teams that ship.</strong>
 </p>
 
 <p align="center">
@@ -17,8 +17,8 @@
 </p>
 
 <p align="center">
-  The open-source platform for managing, versioning, and AI-enhancing LLM prompts across teams.<br />
-  Version control, AI-powered refinement with quality scoring, team workspaces — all self-hosted in a single container.
+  Version control, AI-powered refinement, quality scoring, and team workspaces for your LLM prompts.<br />
+  Self-hosted. Single container. MIT licensed.
 </p>
 
 <p align="center">
@@ -27,16 +27,13 @@
 
 ---
 
-## Why Clarive?
+## The Problem
 
-Most teams building with LLMs hit the same wall:
+If you're building with LLMs, your prompts are probably scattered across your codebase, a few Notion docs, someone's Slack messages, and a spreadsheet that hasn't been updated since October.
 
-- **Prompts are scattered** across code, Notion pages, spreadsheets, and Slack messages
-- **No version history** — when a prompt change breaks production, you can't roll back
-- **Non-technical teammates are locked out** — editing a prompt requires a code deploy
-- **No quality tracking** — you have no idea if your latest tweak actually improved anything
+When a prompt change breaks production, there's no version to roll back to. When a non-technical teammate wants to tweak wording, they file a ticket and wait for a deploy. And nobody can tell you whether last week's "small improvement" actually made things better or worse.
 
-Clarive gives your prompts the same discipline as your code: version control, quality metrics, team collaboration, and a real editor — without the overhead.
+Clarive treats prompts like code: versioned, scored, collaboratively edited, and retrievable through an API — without requiring your whole team to learn Git.
 
 ---
 
@@ -50,7 +47,7 @@ docker compose up -d
 
 Open **http://localhost:8080** and create your first account.
 
-> This pulls the pre-built image from [Docker Hub](https://hub.docker.com/r/pinkrooster/clarive). To build from source instead, see [Getting Started](#build-from-source).
+> This pulls the pre-built image from [Docker Hub](https://hub.docker.com/r/pinkrooster/clarive). To build from source, see [Getting Started](#build-from-source).
 
 ---
 
@@ -74,22 +71,22 @@ Open **http://localhost:8080** and create your first account.
   <img src="docs/images/wizard.png" alt="Clarive AI wizard — multi-turn prompt refinement" width="700" />
 </p>
 
-Not just one-shot generation — Clarive maintains a multi-turn conversation with AI agents that iteratively improve your prompts.
+This isn't one-shot "generate a prompt" — Clarive runs a multi-turn conversation with AI agents that iterate on your prompts until they're actually good.
 
-- **Generation wizard**: Describe what you need, review AI-generated variations, refine through follow-up questions
-- **Quality scoring with history**: Track how your prompt's score improves across refinement iterations
-- **Web search integration**: Tavily-powered research injects real-time context into prompt generation
-- **System message generation**: Automatically generate system prompts from your content
-- **Chain decomposition**: Break monolithic prompts into multi-step workflows
+- **Generation wizard**: Describe what you need, review AI-generated variations, refine through follow-ups
+- **Quality scoring**: Track how a prompt's score changes across refinement rounds — so you know if your edits helped
+- **Web search integration**: Tavily-powered research pulls real-time context into generation
+- **System message generation**: Auto-generate system prompts from your content
+- **Chain decomposition**: Split monolithic prompts into multi-step workflows
 
 ### Version Control for Prompts
 
-Full lifecycle management: **Draft → Published → Historical** — with the same rigor you'd expect from code versioning.
+Every prompt moves through **Draft → Published → Historical** states. You get the rigor of code versioning without the Git overhead.
 
-- Version comparison with inline diffs (word-by-word, color-coded)
+- Inline diffs — word-by-word, color-coded comparisons between versions
 - Undo/redo with snapshot history
-- Roll back to any previous version instantly
-- Optimistic concurrency protection (no overwriting teammates' changes)
+- Roll back to any previous version in one click
+- Optimistic concurrency protection (two people editing the same prompt won't silently overwrite each other)
 
 ### Rich Editor
 
@@ -97,10 +94,10 @@ Full lifecycle management: **Draft → Published → Historical** — with the s
   <img src="docs/images/editor.png" alt="Clarive editor with template variable highlighting" width="700" />
 </p>
 
-- WYSIWYG Markdown editor powered by Tiptap v3
-- Live template variable highlighting (`{{variable}}` rendered inline)
+- WYSIWYG Markdown editor built on Tiptap v3
+- Template variables (`{{variable}}`) highlighted inline as you type
 - Multi-prompt entries with drag-and-drop reordering
-- System message section with dedicated editing
+- Dedicated system message section
 
 ### Team Collaboration
 
@@ -108,25 +105,25 @@ Full lifecycle management: **Draft → Published → Historical** — with the s
   <img src="docs/images/library.png" alt="Clarive prompt library with folders and tags" width="700" />
 </p>
 
-- Role-based access control: Admin, Editor, Viewer
-- Multi-workspace support with seamless switching
+- Role-based access: Admin, Editor, Viewer
+- Multiple workspaces per account
 - Email invitations with role assignment
-- Full audit log of all changes (who changed what, when)
+- Audit log — who changed what, when
 - Tag-based organization with AND/OR filtering
 
 ### Developer API
 
 - REST API with OpenAPI spec at `/api-docs`
-- API key authentication for programmatic access (`X-Api-Key` header)
+- API key auth via `X-Api-Key` header
 - Import/export in JSON, YAML, and Markdown
 - Rate limiting and structured error codes
 
-### Self-Hosted Simplicity
+### Self-Hosted
 
 - **One container** — nginx + .NET API managed by supervisor, all on port 8080
-- **One command** — `docker compose up -d` and you're running
-- **MIT licensed** — no open-core traps, no enterprise license keys for basic features
-- **Your data stays yours** — PostgreSQL on your infrastructure
+- **One command** — `docker compose up -d`
+- **MIT licensed** — no open-core traps, no enterprise keys for features you need
+- **Your data** — PostgreSQL running on your infrastructure, not ours
 
 ---
 
@@ -146,13 +143,13 @@ Full lifecycle management: **Draft → Published → Historical** — with the s
 | MIT license | Yes | MIT (EE) | — | MIT (EE) |
 | LLM observability / tracing | — | Yes | Yes | Yes |
 
-Clarive focuses on **prompt authoring, refinement, and team management**. If you need LLM observability and tracing, tools like Langfuse complement Clarive well.
+Clarive focuses on **prompt authoring, refinement, and team management**. If you need LLM observability and tracing, tools like Langfuse pair well with it.
 
 ---
 
 ## Architecture
 
-Clarive runs as a single unified container: nginx serves the React frontend and reverse-proxies `/api/` requests to the .NET backend. Supervisor manages both processes.
+Single container: nginx serves the React frontend and proxies `/api/` to the .NET backend. Supervisor manages both processes.
 
 ```
                :8080 (nginx)
@@ -218,15 +215,15 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Open **http://localhost:8080**. All traffic (frontend + API) is served through a single port via nginx reverse proxy.
+Open **http://localhost:8080**. Everything — frontend and API — runs through a single port.
 
-To pin a specific version, set `CLARIVE_VERSION` in `.env` (e.g., `CLARIVE_VERSION=1.0.0`). By default it pulls `latest`.
+Pin a specific version by setting `CLARIVE_VERSION` in `.env` (e.g., `CLARIVE_VERSION=1.0.0`). Default is `latest`.
 
-To configure optional features (AI, Google OAuth, email), see [Configuration](#configuration).
+For AI features, Google OAuth, or email, see [Configuration](#configuration).
 
 ### Build from Source
 
-For contributors or custom deployments, build the image locally:
+For contributors or custom deployments:
 
 ```bash
 git clone https://github.com/pinkroosterai/Clarive.git
@@ -235,7 +232,7 @@ make setup    # generates deploy/.env with random secrets
 make deploy   # builds unified image and starts the stack
 ```
 
-This uses `deploy/docker-compose.yml` which builds from the root `Dockerfile`. Edit `deploy/.env` for full configuration options.
+Uses `deploy/docker-compose.yml` which builds from the root `Dockerfile`. Edit `deploy/.env` for full configuration.
 
 ### Local Development
 
@@ -244,14 +241,14 @@ This uses `deploy/docker-compose.yml` which builds from the root `Dockerfile`. E
 
 **Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2.
 
-Development runs entirely in Docker with hot reload (Vite HMR for frontend, `dotnet watch` for backend).
+Everything runs in Docker — Vite HMR for the frontend, `dotnet watch` for the backend. No local SDKs needed.
 
 ```bash
 make setup    # generates .env with dev defaults
 make dev      # starts postgres, backend, and frontend with hot reload
 ```
 
-Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to the backend internally.
+Open **http://localhost:8080**. The Vite dev server proxies `/api/` to the backend internally.
 
 #### Useful Commands
 
@@ -282,12 +279,12 @@ Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to 
 
 ## Configuration
 
-Configuration is done via environment variables.
+Configuration is via environment variables.
 
 - **Self-hosting** (Docker Hub): `.env` (root) — used by `docker compose up`
 - **Build from source**: `deploy/.env` — used by `make deploy`
 
-`make setup` auto-generates both files with random secrets.
+`make setup` generates both files with random secrets.
 
 <details>
 <summary><strong>Environment variables reference</strong></summary>
@@ -313,24 +310,17 @@ See [docs/configuration.md](docs/configuration.md) for the full reference.
 
 ## Contributing
 
-Contributions are welcome! Whether it's a bug fix, a new feature, or documentation improvements — we'd love your help.
+1. Fork the repo and create a feature branch
+2. Make your changes, add tests
+3. Run `make test && make lint`
+4. Open a pull request
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Make your changes and add tests
-4. Run `make test` and `make lint` to verify
-5. Submit a pull request
-
-Looking for a place to start? Check out issues labeled [**good first issue**](https://github.com/pinkroosterai/Clarive/labels/good%20first%20issue).
-
-For bug reports and feature requests, use [GitHub Issues](https://github.com/pinkroosterai/Clarive/issues).
+Looking for a place to start? Check [good first issues](https://github.com/pinkroosterai/Clarive/labels/good%20first%20issue). Bugs and feature requests go in [GitHub Issues](https://github.com/pinkroosterai/Clarive/issues).
 
 ## Community & Support
 
-- [GitHub Issues](https://github.com/pinkroosterai/Clarive/issues) — bug reports and feature requests
-- [GitHub Discussions](https://github.com/pinkroosterai/Clarive/discussions) — questions, ideas, and community chat
-
-If you find Clarive useful, consider giving it a star — it helps others discover the project.
+- [GitHub Issues](https://github.com/pinkroosterai/Clarive/issues) — bugs and feature requests
+- [GitHub Discussions](https://github.com/pinkroosterai/Clarive/discussions) — questions, ideas, general chat
 
 ## Star History
 
@@ -344,4 +334,4 @@ If you find Clarive useful, consider giving it a star — it helps others discov
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT](LICENSE)

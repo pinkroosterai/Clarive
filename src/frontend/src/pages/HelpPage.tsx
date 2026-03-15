@@ -48,15 +48,10 @@ const sections = [
     title: 'Getting Started',
     content: (
       <div className="space-y-3">
-        <p>
-          Clarive is a prompt management platform that helps you create, version, organize, and
-          share LLM prompts with your team.
-        </p>
         <h4 className="text-sm font-semibold text-foreground">Your Dashboard</h4>
         <p>
-          The dashboard is your home base. It shows key stats like your total entries and published
-          prompts, a list of recently edited entries, and an activity feed of changes across your
-          workspace.
+          The dashboard shows your entry count, published prompts, recently edited entries, and a
+          feed of workspace activity. It&apos;s a good place to pick up where you left off.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Creating Your First Entry</h4>
         <ul className="list-disc list-inside space-y-1">
@@ -64,15 +59,15 @@ const sections = [
             Click <strong>New Entry</strong> in the sidebar to start from scratch.
           </li>
           <li>
-            Or use the <strong>AI Wizard</strong> to generate a prompt from a description — click{' '}
-            <strong>New Entry</strong> and then <strong>Use AI Wizard</strong>.
+            Want AI to draft it for you? Click <strong>New Entry</strong>, then{' '}
+            <strong>Use AI Wizard</strong>.
           </li>
           <li>
-            Give your entry a title, optionally set a system message, and write your prompt in the
-            editor.
+            Add a title, optionally set a system message, and write your prompt in the editor.
           </li>
           <li>
-            Save as a draft or publish when ready. Published entries are versioned automatically.
+            Save as a draft or publish when it&apos;s ready. Publishing creates a versioned
+            snapshot automatically.
           </li>
         </ul>
       </div>
@@ -87,29 +82,29 @@ const sections = [
         <h4 className="text-sm font-semibold text-foreground">Editor Layout</h4>
         <p>
           Each entry has a <strong>title</strong>, an optional <strong>system message</strong>{' '}
-          (instructions for the AI), and one or more <strong>prompt cards</strong> written in the
-          rich-text editor. The action panel on the right provides save, publish, and AI tools.
+          (instructions for the AI), and one or more <strong>prompt cards</strong> in the rich-text
+          editor. Save, publish, and AI tools live in the action panel on the right.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Prompt Chains</h4>
         <p>
-          Entries can contain multiple prompts arranged as a chain. Click{' '}
-          <strong>Add follow-up prompt</strong> to append a new prompt card. Reorder prompts with
-          the up/down arrows, or remove them with the delete button on each card.
+          An entry can hold multiple prompts arranged as a chain. Click{' '}
+          <strong>Add follow-up prompt</strong> to add a new card. Reorder with the up/down arrows
+          or remove with the delete button on each card.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Rich-Text Editing</h4>
         <p>
-          The editor supports markdown-style formatting: bold, italic, headings (H1–H3), bullet and
-          numbered lists, inline code, and code blocks. Select text to reveal the{' '}
-          <strong>bubble menu</strong> with formatting options, or use keyboard shortcuts.
+          The editor supports bold, italic, headings (H1–H3), bullet and numbered lists, inline
+          code, and code blocks. Select text to open the <strong>bubble menu</strong> with
+          formatting options, or use keyboard shortcuts.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Entry States</h4>
         <ul className="list-disc list-inside space-y-1">
           <li>
-            <strong>Draft</strong> — work in progress, only visible to you and your team.
+            <strong>Draft</strong> — work in progress, visible to you and your team.
           </li>
           <li>
-            <strong>Published</strong> — the current active version of the prompt. Editing a
-            published entry creates a new draft without affecting the published version.
+            <strong>Published</strong> — the current active version. Editing a published entry
+            creates a new draft; the published version stays untouched until you publish again.
           </li>
           <li>
             <strong>Historical</strong> — a previous version, kept for reference. You can restore
@@ -118,9 +113,9 @@ const sections = [
         </ul>
         <h4 className="text-sm font-semibold text-foreground">Versioning</h4>
         <p>
-          Every time you publish an entry, a new version is created automatically. Use the version
-          history panel to browse past versions, compare any two versions side-by-side with a diff
-          view, or restore a historical version as a new draft.
+          Every publish creates a new version. Use the version history panel to browse past
+          versions, compare any two side-by-side with a diff view, or restore a historical
+          version as a new draft.
         </p>
         <h4 className="text-sm font-semibold text-foreground">AI Tools</h4>
         <ul className="list-disc list-inside space-y-1">
@@ -128,12 +123,12 @@ const sections = [
             <strong>Enhance with AI</strong> — analyze and improve your current prompt.
           </li>
           <li>
-            <strong>Generate System Message</strong> — automatically generate a system message based
-            on your prompt content (available when no system message is set).
+            <strong>Generate System Message</strong> — create a system message from your prompt
+            content (available when no system message is set).
           </li>
           <li>
-            <strong>Decompose to Chain</strong> — split a single prompt into a multi-step prompt
-            chain (available for single-prompt entries).
+            <strong>Decompose to Chain</strong> — split a single prompt into a multi-step chain
+            (available for single-prompt entries).
           </li>
         </ul>
       </div>
@@ -146,26 +141,25 @@ const sections = [
     content: (
       <div className="space-y-3">
         <p>
-          The AI Wizard helps you generate high-quality prompts from a simple description. It
-          follows a three-step flow:
+          The AI Wizard generates prompts from a description. It works in three steps:
         </p>
         <ol className="list-decimal list-inside space-y-2">
           <li>
-            <strong>Describe</strong> — Tell the wizard what kind of prompt you need. Be as specific
-            as possible about the task, audience, and desired output. You can also configure
-            options:
+            <strong>Describe</strong> — Tell the wizard what you need. The more specific you are
+            about the task, audience, and desired output, the better the result. You can also
+            configure:
             <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
               <li>
                 <strong>System message</strong> — sets the AI&apos;s role and behavior before the
                 main prompt.
               </li>
               <li>
-                <strong>Template variables</strong> — includes {'{{variable}}'} placeholders for
+                <strong>Template variables</strong> — adds {'{{variable}}'} placeholders for
                 dynamic content.
               </li>
               <li>
-                <strong>Prompt chain</strong> — splits into multiple sequential prompts for complex
-                tasks.
+                <strong>Prompt chain</strong> — splits the output into multiple sequential
+                prompts for complex tasks.
               </li>
               <li>
                 <strong>Web research</strong> — searches the web for context to improve accuracy
@@ -174,20 +168,20 @@ const sections = [
             </ul>
           </li>
           <li>
-            <strong>Review</strong> — Review the generated prompt with a quality score across four
-            dimensions: clarity, effectiveness, completeness, and faithfulness (each scored 0–10).
-            The wizard may also present clarification questions to refine the result. You can select
-            enhancement suggestions and iteratively regenerate until satisfied.
+            <strong>Review</strong> — See the generated prompt with quality scores across four
+            dimensions: clarity, effectiveness, completeness, and faithfulness (each 0–10). The
+            wizard may ask clarification questions to sharpen the result. Select enhancement
+            suggestions and regenerate until you&apos;re satisfied.
           </li>
           <li>
-            <strong>Save</strong> — Save the generated prompt as a new entry in your library.
+            <strong>Save</strong> — Save the result as a new entry in your library.
           </li>
         </ol>
         <h4 className="text-sm font-semibold text-foreground">Enhancing Existing Entries</h4>
         <p>
-          You can also enhance an existing entry by opening it in the editor and clicking{' '}
-          <strong>Enhance with AI</strong>. The wizard will analyze your current prompt, show
-          quality scores, and let you refine before saving the improvements back to the entry.
+          Open any entry in the editor and click <strong>Enhance with AI</strong>. The wizard
+          analyzes your current prompt, shows quality scores, and lets you refine before saving
+          the improvements back.
         </p>
       </div>
     ),
@@ -200,9 +194,9 @@ const sections = [
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Template Syntax</h4>
         <p>
-          Use double curly braces to define variables in your prompts. Variables are placeholders
-          that get replaced with actual values when the prompt is used. Clarive automatically
-          detects and highlights them in the editor.
+          Double curly braces define variables in your prompts — placeholders that get replaced
+          with actual values at runtime. Clarive detects and highlights them in the editor
+          automatically.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Variable Types</h4>
         <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
@@ -249,9 +243,9 @@ const sections = [
         </p>
         <h4 className="text-sm font-semibold text-foreground">Template Form</h4>
         <p>
-          When your prompt contains template variables, a collapsible <strong>Template</strong>{' '}
-          section appears below the editor. Fill in values and click <strong>Preview</strong> to see
-          the rendered output with your variables replaced.
+          When your prompt contains variables, a collapsible <strong>Template</strong> section
+          appears below the editor. Fill in values and click <strong>Preview</strong> to see the
+          rendered output.
         </p>
       </div>
     ),
@@ -262,7 +256,7 @@ const sections = [
     title: 'Folders & Organization',
     content: (
       <div className="space-y-3">
-        <p>Organize your entries into folders using the folder tree in the sidebar.</p>
+        <p>Use the folder tree in the sidebar to organize your entries.</p>
         <h4 className="text-sm font-semibold text-foreground">Managing Folders</h4>
         <ul className="list-disc list-inside space-y-1">
           <li>
@@ -270,17 +264,17 @@ const sections = [
             root-level folder.
           </li>
           <li>
-            Hover over a folder and click the <strong>three-dot menu</strong> to create a subfolder,
-            rename, or delete.
+            Hover over a folder and click the <strong>three-dot menu</strong> to add a subfolder,
+            rename, or delete it.
           </li>
-          <li>Folders can be nested to create a hierarchy that suits your workflow.</li>
-          <li>Click a folder in the sidebar to view all entries within it.</li>
+          <li>Nest folders as deep as you need.</li>
+          <li>Click any folder to see its entries.</li>
         </ul>
         <h4 className="text-sm font-semibold text-foreground">Drag and Drop</h4>
         <p>
-          Move entries between folders by dragging them in the library view. You can also drag
-          folders to reorganize your folder structure. Drop an entry or folder onto another folder
-          to move it inside. Folders automatically expand when you hover over them during a drag.
+          Drag entries between folders in the library view. Drag folders to reorganize your
+          structure. Drop onto a folder to move inside it — folders expand automatically when you
+          hover during a drag.
         </p>
       </div>
     ),
@@ -293,43 +287,42 @@ const sections = [
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Personal vs Shared Workspaces</h4>
         <p>
-          Every account starts with a <strong>personal workspace</strong> that only you can access.
-          You may also be invited to <strong>shared workspaces</strong> to collaborate with team
-          members. Each workspace has its own entries, folders, and settings.
+          Every account starts with a <strong>personal workspace</strong> that only you can
+          access. You can also be invited to <strong>shared workspaces</strong> for team
+          collaboration. Each workspace has its own entries, folders, and settings.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Switching Workspaces</h4>
         <p>
-          Use the <strong>workspace switcher</strong> at the top of the sidebar to switch between
-          your workspaces. Your active workspace is indicated with a checkmark.
+          Use the <strong>workspace switcher</strong> at the top of the sidebar. Your active
+          workspace is marked with a checkmark.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Inviting Members</h4>
         <p>
-          Workspace admins can invite new members from <strong>Settings &gt; Users</strong>.
-          Invitations are sent by email and must be accepted before the user can access the
-          workspace. Admins can also resend or revoke pending invitations.
+          Admins can invite members from <strong>Settings &gt; Users</strong>. Invitations go
+          out by email and must be accepted before the user gains access. Admins can resend or
+          revoke pending invitations.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Accepting Invitations</h4>
         <p>
-          When you receive an invitation, a notification badge appears on the bell icon in the
-          sidebar. Click it to view, accept, or decline pending invitations.
+          When you receive an invitation, a badge appears on the bell icon in the sidebar. Click
+          it to accept or decline.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Roles</h4>
         <ul className="list-disc list-inside space-y-1">
           <li>
-            <strong>Admin</strong> — full control over the workspace: manage members, settings, and
-            all entries.
+            <strong>Admin</strong> — full control: manage members, settings, and all entries.
           </li>
           <li>
             <strong>Editor</strong> — create, edit, and publish entries. Cannot manage members.
           </li>
           <li>
-            <strong>Viewer</strong> — read-only access to entries. Cannot create or modify content.
+            <strong>Viewer</strong> — read-only access. Cannot create or modify content.
           </li>
         </ul>
         <h4 className="text-sm font-semibold text-foreground">Leaving a Workspace</h4>
         <p>
-          You can leave any shared workspace from <strong>Settings &gt; Users</strong>. Personal
-          workspaces cannot be left.
+          Leave any shared workspace from <strong>Settings &gt; Users</strong>. Personal
+          workspaces can&apos;t be left.
         </p>
       </div>
     ),
@@ -342,9 +335,9 @@ const sections = [
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">What Are Tool Descriptions?</h4>
         <p>
-          Tool descriptions define external tools or functions that an AI model can use when
-          executing your prompts. They include a name, a tool identifier, and a description of what
-          the tool does.
+          Tool descriptions define external tools or functions that an AI model can call when
+          running your prompts. Each one has a name, a tool identifier, and a description of what
+          it does.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Managing Tools</h4>
         <ul className="list-disc list-inside space-y-1">
@@ -352,19 +345,19 @@ const sections = [
             Go to <strong>Settings → Tools</strong>.
           </li>
           <li>
-            Click <strong>Add Tool</strong> to manually define a new tool description with a display
-            name, tool identifier, and description.
+            Click <strong>Add Tool</strong> to define a tool with a display name, identifier, and
+            description.
           </li>
-          <li>Edit any existing tool by clicking the pencil icon on its card.</li>
-          <li>Delete a tool by clicking the trash icon (with confirmation).</li>
+          <li>Edit a tool by clicking the pencil icon on its card.</li>
+          <li>Delete with the trash icon (you&apos;ll be asked to confirm).</li>
         </ul>
         <h4 className="text-sm font-semibold text-foreground">MCP Import</h4>
         <p>
-          You can also import tool descriptions from an{' '}
+          You can import tool descriptions from an{' '}
           <strong>MCP (Model Context Protocol) server</strong>. Enter the server URL in the MCP
-          Import section on the Tools page to automatically discover and import available tools. If
-          the server requires authentication, you can provide an optional bearer token. Tools that
-          already exist in your workspace are automatically skipped.
+          Import section on the Tools page to discover and import available tools. If the server
+          requires auth, provide a bearer token. Tools that already exist in your workspace are
+          skipped.
         </p>
       </div>
     ),
@@ -376,26 +369,26 @@ const sections = [
     content: (
       <div className="space-y-3">
         <p>
-          API keys allow you to access Clarive programmatically via the REST API. Only workspace
-          admins can create and manage API keys.
+          API keys let you access Clarive programmatically through the REST API. Only workspace
+          admins can create and manage them.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Creating a Key</h4>
         <p>
           Go to <strong>Settings &gt; API Keys</strong> and click <strong>Create API Key</strong>.
-          Give it a descriptive name so you can identify its purpose later. The full key is
-          displayed only once after creation — copy it immediately and store it securely.
+          Give it a name you&apos;ll recognize later. The full key is shown only once — copy it
+          right away and store it somewhere safe.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Using Your Key</h4>
         <p>
-          Include the key in your HTTP requests using the <Code>X-Api-Key</Code> header:
+          Pass the key in the <Code>X-Api-Key</Code> header:
         </p>
         <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle">
           X-Api-Key: your-api-key-here
         </p>
         <h4 className="text-sm font-semibold text-foreground">Revoking Keys</h4>
         <p>
-          You can revoke any API key at any time from the API Keys settings tab. Revoked keys stop
-          working immediately. Keys cannot be regenerated — create a new key if needed.
+          Revoke any key from the API Keys settings tab. It stops working immediately. Keys
+          can&apos;t be regenerated — create a new one instead.
         </p>
       </div>
     ),
@@ -407,13 +400,13 @@ const sections = [
     content: (
       <div className="space-y-3">
         <p>
-          The Public API lets you fetch and render published prompts programmatically. All requests
-          require an API key (see the <strong>API Keys</strong> section above).
+          The Public API lets you fetch and render published prompts programmatically. All
+          requests require an API key (see <strong>API Keys</strong> above).
         </p>
 
         <h4 className="text-sm font-semibold text-foreground">Authentication</h4>
         <p>
-          Include your API key in every request using the <Code>X-Api-Key</Code> header. Keys use
+          Include your API key in every request via the <Code>X-Api-Key</Code> header. Keys use
           the format <Code>cl_...</Code>.
         </p>
 
@@ -541,7 +534,7 @@ const sections = [
               <tr>
                 <td className="p-2 font-mono">404</td>
                 <td className="p-2 font-mono">NOT_FOUND</td>
-                <td className="p-2">Entry does not exist or is trashed</td>
+                <td className="p-2">Entry doesn&apos;t exist or is trashed</td>
               </tr>
               <tr>
                 <td className="p-2 font-mono">404</td>
@@ -575,8 +568,7 @@ const sections = [
     title: 'Keyboard Shortcuts',
     content: (
       <div className="space-y-3">
-        <p>Use keyboard shortcuts to work faster in the entry editor.</p>
-        <h4 className="text-sm font-semibold text-foreground">Editor Shortcuts</h4>
+        <h4 className="text-sm font-semibold text-foreground">Editor</h4>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span>Save draft</span>
@@ -643,19 +635,18 @@ const sections = [
     content: (
       <div className="space-y-3">
         <p>
-          Deleted entries are moved to the trash and kept for <strong>30 days</strong> before
-          permanent removal.
+          Deleted entries go to the trash and stay there for <strong>30 days</strong> before
+          they&apos;re permanently removed.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Restoring Entries</h4>
         <p>
-          Open the <strong>Trash</strong> page from the sidebar to see all deleted entries. Click
-          the restore button on any entry to move it back to its original folder. You can also
-          select multiple entries and restore them in bulk.
+          Open <strong>Trash</strong> from the sidebar to see deleted entries. Click restore on
+          any entry to put it back in its original folder. Bulk restore is available too — select
+          multiple entries and restore them at once.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Permanent Deletion</h4>
         <p>
-          Only workspace admins can permanently delete entries from the trash. This action cannot be
-          undone.
+          Only admins can permanently delete entries from the trash. This can&apos;t be undone.
         </p>
       </div>
     ),
@@ -668,35 +659,34 @@ const sections = [
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Profile</h4>
         <p>
-          Update your display name, email address, and password from the{' '}
-          <strong>Settings &gt; Profile</strong> tab. You can also upload a profile picture. If your
-          account was created via Google sign-in, you can set a password to enable email-based login
-          as well.
+          Update your display name, email, and password from{' '}
+          <strong>Settings &gt; Profile</strong>. You can upload a profile picture here too. If
+          you signed up with Google, you can set a password to enable email-based login as well.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Google Sign-In</h4>
         <p>
-          You can sign in with your Google account from the login or registration page. This links
-          your Google identity to your Clarive account.
+          Sign in with Google from the login or registration page. This links your Google
+          identity to your Clarive account.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Sessions</h4>
         <p>
-          View and manage your active login sessions. If you spot an unfamiliar session, you can
-          revoke it to sign out that device immediately.
+          View your active sessions. See something you don&apos;t recognize? Revoke it to sign
+          out that device immediately.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Import & Export</h4>
         <p>
-          Export all your entries as a backup or import entries from a file. This is useful for
-          migrating data between workspaces or creating backups.
+          Export your entries as a backup or import from a file. Useful for migrating between
+          workspaces or keeping local backups.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Audit Log</h4>
         <p>
-          Workspace admins can view the audit log to track changes made by team members, including
-          entry edits, member invitations, and settings changes.
+          Admins can view the audit log to see who did what — entry edits, member invitations,
+          settings changes.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Account Deletion</h4>
         <p>
-          You can permanently delete your account from the Profile tab. This removes all your data
-          and cannot be undone.
+          Permanently delete your account from the Profile tab. This removes all your data and
+          can&apos;t be undone.
         </p>
       </div>
     ),
@@ -714,7 +704,7 @@ export default function HelpPage() {
         <CircleHelp className="size-7 text-foreground-muted" />
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Help</h1>
-          <p className="text-sm text-foreground-muted">Learn how to get the most out of Clarive.</p>
+          <p className="text-sm text-foreground-muted">Everything you need to know about using Clarive.</p>
         </div>
       </div>
 
