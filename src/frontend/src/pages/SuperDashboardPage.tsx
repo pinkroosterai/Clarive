@@ -1,40 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   Users,
-  UserPlus,
-  BadgeCheck,
-  Compass,
-  Trash2,
-  KeyRound,
-  Building2,
-  UsersRound,
-  UserCheck,
-  Mail,
-  MailCheck,
   FileText,
-  BookOpen,
-  FilePlus,
-  Archive,
   Bot,
-  BotMessageSquare,
-  Key,
   LayoutDashboard,
   AlertTriangle,
   X,
   Settings,
   Cpu,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { StatCard } from '@/components/dashboard/StatCard';
 import AiTab from '@/components/super/AiTab';
+import { CompactMetricStrip, type MetricItem } from '@/components/super/CompactMetricStrip';
+import { HeroStatCard } from '@/components/super/HeroStatCard';
 import SettingsTab from '@/components/super/SettingsTab';
 import UsersTable from '@/components/super/UsersTable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { safeSessionStorageGet } from '@/lib/utils';
 import { getAllConfig, type ConfigSetting } from '@/services/api/configService';
@@ -56,39 +40,6 @@ const TAB_REDIRECTS: Record<string, string> = {
 
 const TAB_STYLE =
   'gap-1.5 min-h-[44px] text-foreground-muted hover:text-foreground-secondary data-[state=active]:bg-surface data-[state=active]:elevation-1 data-[state=active]:rounded-md data-[state=active]:text-foreground';
-
-// ── Stats helpers ──
-
-interface StatItem {
-  icon: LucideIcon;
-  label: string;
-  value: number;
-}
-
-function StatsSection({
-  title,
-  items,
-  loading,
-}: {
-  title: string;
-  items: StatItem[];
-  loading: boolean;
-}) {
-  return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-semibold border-b border-border pb-2">{title}</h2>
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        {loading
-          ? Array.from({ length: items.length }).map((_, i) => (
-              <div key={i} className="h-[88px] animate-pulse rounded-xl bg-muted" />
-            ))
-          : items.map((item) => (
-              <StatCard key={item.label} icon={item.icon} label={item.label} value={item.value} />
-            ))}
-      </div>
-    </div>
-  );
-}
 
 // ── Page ──
 
@@ -161,42 +112,35 @@ const SuperDashboardPage = () => {
     );
   }, [settings]);
 
-  // ── Stat definitions ──
+  // ── Compact metric strip data ──
 
-  const userStats: StatItem[] = [
-    { icon: Users, label: 'Total Users', value: stats?.totalUsers ?? 0 },
-    { icon: UserPlus, label: 'New Users (7d)', value: stats?.newUsers7d ?? 0 },
-    { icon: UserPlus, label: 'New Users (30d)', value: stats?.newUsers30d ?? 0 },
-    { icon: BadgeCheck, label: 'Verified (%)', value: Math.round((stats?.verifiedPct ?? 0) * 100) },
-    { icon: Compass, label: 'Onboarded (%)', value: Math.round((stats?.onboardedPct ?? 0) * 100) },
-    { icon: Trash2, label: 'Pending Deletion', value: stats?.pendingDeletion ?? 0 },
-    { icon: KeyRound, label: 'Google Auth Users', value: stats?.googleAuthUsers ?? 0 },
+  const userAuthMetrics: MetricItem[] = [
+    { label: 'Verified', value: Math.round((stats?.verifiedPct ?? 0) * 100), suffix: '%' },
+    { label: 'Onboarded', value: Math.round((stats?.onboardedPct ?? 0) * 100), suffix: '%' },
+    { label: 'Google Auth', value: stats?.googleAuthUsers ?? 0 },
+    { label: 'Pending Deletion', value: stats?.pendingDeletion ?? 0 },
   ];
 
-  const workspaceStats: StatItem[] = [
-    { icon: Building2, label: 'Total Workspaces', value: stats?.totalWorkspaces ?? 0 },
-    { icon: UsersRound, label: 'Shared Workspaces', value: stats?.sharedWorkspaces ?? 0 },
+  const workspaceMetrics: MetricItem[] = [
+    { label: 'Total', value: stats?.totalWorkspaces ?? 0 },
+    { label: 'Shared', value: stats?.sharedWorkspaces ?? 0 },
     {
-      icon: UserCheck,
-      label: 'Avg Members/Workspace',
+      label: 'Avg Members',
       value: Math.round((stats?.avgMembersPerWorkspace ?? 0) * 10) / 10,
     },
-    { icon: Mail, label: 'Pending Invitations', value: stats?.pendingInvitations ?? 0 },
+    { label: 'Pending Invites', value: stats?.pendingInvitations ?? 0 },
     {
-      icon: MailCheck,
-      label: 'Invite Accept Rate (%)',
+      label: 'Accept Rate',
       value: Math.round((stats?.invitationAcceptRate ?? 0) * 100),
+      suffix: '%',
     },
   ];
 
-  const contentStats: StatItem[] = [
-    { icon: FileText, label: 'Total Entries', value: stats?.totalEntries ?? 0 },
-    { icon: BookOpen, label: 'Published Versions', value: stats?.publishedVersions ?? 0 },
-    { icon: FilePlus, label: 'Entries Created (7d)', value: stats?.entriesCreated7d ?? 0 },
-    { icon: Archive, label: 'Trashed Entries', value: stats?.trashedEntries ?? 0 },
-    { icon: Bot, label: 'Total AI Sessions', value: stats?.totalAiSessions ?? 0 },
-    { icon: BotMessageSquare, label: 'AI Sessions (7d)', value: stats?.aiSessions7d ?? 0 },
-    { icon: Key, label: 'Total API Keys', value: stats?.totalApiKeys ?? 0 },
+  const contentMetrics: MetricItem[] = [
+    { label: 'Published', value: stats?.publishedVersions ?? 0 },
+    { label: 'Drafts', value: (stats?.totalEntries ?? 0) - (stats?.publishedVersions ?? 0) },
+    { label: 'Trashed', value: stats?.trashedEntries ?? 0 },
+    { label: 'API Keys', value: stats?.totalApiKeys ?? 0 },
   ];
 
   return (
@@ -248,11 +192,55 @@ const SuperDashboardPage = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="mt-6 space-y-6">
-          <StatsSection title="Users & Growth" items={userStats} loading={statsLoading} />
-          <StatsSection title="Workspaces" items={workspaceStats} loading={statsLoading} />
-          <StatsSection title="Content" items={contentStats} loading={statsLoading} />
+        {/* Overview Tab — Bento Layout */}
+        <TabsContent value="overview" className="mt-6 space-y-4">
+          {/* Hero Cards */}
+          {statsLoading ? (
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-[140px] animate-pulse rounded-xl bg-muted" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              <HeroStatCard
+                icon={Users}
+                label="Total Users"
+                value={stats?.totalUsers ?? 0}
+                delta={stats?.newUsers7d ?? 0}
+                index={0}
+              />
+              <HeroStatCard
+                icon={FileText}
+                label="Total Entries"
+                value={stats?.totalEntries ?? 0}
+                delta={stats?.entriesCreated7d ?? 0}
+                index={1}
+              />
+              <HeroStatCard
+                icon={Bot}
+                label="AI Sessions"
+                value={stats?.totalAiSessions ?? 0}
+                delta={stats?.aiSessions7d ?? 0}
+                index={2}
+              />
+            </div>
+          )}
+
+          {/* Compact Metric Strips */}
+          {statsLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-[56px] animate-pulse rounded-lg bg-muted" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <CompactMetricStrip title="Users & Auth" items={userAuthMetrics} index={0} />
+              <CompactMetricStrip title="Workspaces" items={workspaceMetrics} index={1} />
+              <CompactMetricStrip title="Content" items={contentMetrics} index={2} />
+            </div>
+          )}
         </TabsContent>
 
         {/* Users Tab */}
