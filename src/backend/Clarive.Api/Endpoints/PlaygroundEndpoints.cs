@@ -24,7 +24,8 @@ public static class PlaygroundEndpoints
         group.MapGet("/ai/models", HandleGetModels)
             .AddEndpointFilter(AiConfiguredFilter);
 
-        group.MapGet("/ai/available-models", HandleGetEnrichedModels);
+        group.MapGet("/ai/available-models", HandleGetEnrichedModels)
+            .AddEndpointFilter(AiConfiguredFilter);
 
         return group;
     }

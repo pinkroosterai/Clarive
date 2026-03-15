@@ -261,7 +261,7 @@ const PlaygroundPage = () => {
     if (run.templateFieldValues) {
       setFieldValues(run.templateFieldValues);
     }
-  }, []);
+  }, [enrichedModels]);
 
   const hasResponses = Object.keys(streamedResponses).length > 0;
   const model = selectedModel?.modelId ?? '';
