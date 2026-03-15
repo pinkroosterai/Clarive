@@ -178,6 +178,8 @@ public static class ConfigEndpoints
         {
             var memoryCache = ctx.RequestServices.GetRequiredService<IMemoryCache>();
             memoryCache.Remove("playground_available_models");
+            memoryCache.Remove("playground_enriched_models");
+            memoryCache.Remove("ai_providers_all");
         }
 
         return Results.Ok(new { key, updated = true, requiresRestart = def.RequiresRestart });
@@ -209,6 +211,8 @@ public static class ConfigEndpoints
         {
             var memoryCache = ctx.RequestServices.GetRequiredService<IMemoryCache>();
             memoryCache.Remove("playground_available_models");
+            memoryCache.Remove("playground_enriched_models");
+            memoryCache.Remove("ai_providers_all");
         }
 
         return Results.Ok(new { key, reset = true });
