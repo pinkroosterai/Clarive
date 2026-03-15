@@ -64,6 +64,52 @@ function safeSessionGet<T>(key: string, fallback: T): T {
   }
 }
 
+// ── Extracted components ──
+
+function ReasoningBlock({ reasoning, defaultOpen }: { reasoning: string; defaultOpen: boolean }) {
+  return (
+    <Collapsible defaultOpen={defaultOpen}>
+      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1">
+        <ChevronDown className="size-3" />
+        Thinking
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 text-xs font-mono whitespace-pre-wrap text-indigo-800 dark:text-indigo-300 max-h-40 overflow-y-auto">
+          {reasoning}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function CopyButton({
+  text,
+  index,
+  copiedIndex,
+  onCopy,
+}: {
+  text: string;
+  index: number;
+  copiedIndex: number | null;
+  onCopy: (text: string, index: number) => Promise<void>;
+}) {
+  return (
+    <button
+      onClick={() => onCopy(text, index)}
+      className="absolute top-2 right-2 p-1.5 rounded-md bg-surface/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+      title="Copy response"
+    >
+      {copiedIndex === index ? (
+        <Check className="size-3.5 text-success-text" />
+      ) : (
+        <Copy className="size-3.5 text-foreground-muted" />
+      )}
+    </button>
+  );
+}
+
+// ── Page ──
+
 const PlaygroundPage = () => {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
@@ -267,6 +313,15 @@ const PlaygroundPage = () => {
   const model = selectedModel?.modelId ?? '';
   const hasValidationErrors = templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
 
+  const modelsByProvider = useMemo(
+    () =>
+      enrichedModels.reduce<Record<string, EnrichedModel[]>>((acc, m) => {
+        (acc[m.providerName] ??= []).push(m);
+        return acc;
+      }, {}),
+    [enrichedModels]
+  );
+
   if (!aiEnabled) return null;
 
   if (isLoading) {
@@ -332,13 +387,7 @@ const PlaygroundPage = () => {
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(
-                      enrichedModels.reduce<Record<string, EnrichedModel[]>>((acc, m) => {
-                        const key = m.providerName;
-                        (acc[key] ??= []).push(m);
-                        return acc;
-                      }, {})
-                    ).map(([provider, models]) => (
+                    {Object.entries(modelsByProvider).map(([provider, models]) => (
                       <SelectGroup key={provider}>
                         <SelectLabel className="text-xs font-semibold text-foreground-muted px-2">
                           {provider}
@@ -636,17 +685,7 @@ const PlaygroundPage = () => {
 
                       {/* Reasoning output */}
                       {streamedReasoning[i] && (
-                        <Collapsible defaultOpen={isStreaming}>
-                          <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1">
-                            <ChevronDown className="size-3" />
-                            Thinking
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 text-xs font-mono whitespace-pre-wrap text-indigo-800 dark:text-indigo-300 max-h-40 overflow-y-auto">
-                              {streamedReasoning[i]}
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
+                        <ReasoningBlock reasoning={streamedReasoning[i]} defaultOpen={isStreaming} />
                       )}
 
                       {/* Response */}
@@ -662,19 +701,8 @@ const PlaygroundPage = () => {
                             <LLMResponseBlock output={response || ''} isStreaming={isActive ?? false} />
                           </div>
 
-                          {/* Copy button */}
                           {!isStreaming && response && (
-                            <button
-                              onClick={() => handleCopy(response, i)}
-                              className="absolute top-2 right-2 p-1.5 rounded-md bg-surface/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Copy response"
-                            >
-                              {copiedIndex === i ? (
-                                <Check className="size-3.5 text-success-text" />
-                              ) : (
-                                <Copy className="size-3.5 text-foreground-muted" />
-                              )}
-                            </button>
+                            <CopyButton text={response} index={i} copiedIndex={copiedIndex} onCopy={handleCopy} />
                           )}
                         </div>
                       )}
@@ -694,39 +722,17 @@ const PlaygroundPage = () => {
 
                 return (
                   <div key={i}>
-                    {/* Reasoning output */}
                     {streamedReasoning[i] && (
-                      <Collapsible defaultOpen={isStreaming}>
-                        <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1">
-                          <ChevronDown className="size-3" />
-                          Thinking
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 text-xs font-mono whitespace-pre-wrap text-indigo-800 dark:text-indigo-300 max-h-40 overflow-y-auto">
-                            {streamedReasoning[i]}
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
+                      <ReasoningBlock reasoning={streamedReasoning[i]} defaultOpen={isStreaming} />
                     )}
 
-                    {/* Response */}
                     <div className="relative group">
                       <div className="rounded-lg border border-border-subtle bg-surface p-4">
                         <LLMResponseBlock output={response || ''} isStreaming={isStreaming} />
                       </div>
 
                       {response && !isStreaming && (
-                        <button
-                          onClick={() => handleCopy(response, i)}
-                          className="absolute top-2 right-2 p-1.5 rounded-md bg-surface/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Copy response"
-                        >
-                          {copiedIndex === i ? (
-                            <Check className="size-3.5 text-success-text" />
-                          ) : (
-                            <Copy className="size-3.5 text-foreground-muted" />
-                          )}
-                        </button>
+                        <CopyButton text={response} index={i} copiedIndex={copiedIndex} onCopy={handleCopy} />
                       )}
                     </div>
                   </div>

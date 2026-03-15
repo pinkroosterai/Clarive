@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useLLMOutput, type LLMOutputFallbackBlock } from '@llm-ui/react';
 import { markdownLookBack } from '@llm-ui/markdown';
 import {
@@ -13,14 +12,20 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { BlockMatch } from '@llm-ui/react';
 
-// ── Shiki highlighter (loaded once, shared) ──
-// loadHighlighter expects a Promise<HighlighterCore> from shiki, not a config object
-const highlighter = loadHighlighter(
-  createHighlighter({
-    langs: ['javascript', 'typescript', 'python', 'bash', 'json', 'html', 'css', 'sql', 'yaml', 'markdown', 'jsx', 'tsx', 'go', 'rust', 'java', 'csharp', 'xml'],
-    themes: ['github-dark', 'github-light'],
-  })
-);
+// ── Shiki highlighter (lazy-loaded on first code block render) ──
+let highlighterInstance: ReturnType<typeof loadHighlighter> | null = null;
+
+function getHighlighter() {
+  if (!highlighterInstance) {
+    highlighterInstance = loadHighlighter(
+      createHighlighter({
+        langs: ['javascript', 'typescript', 'python', 'bash', 'json', 'html', 'css', 'sql', 'yaml', 'markdown', 'jsx', 'tsx', 'go', 'rust', 'java', 'csharp', 'xml'],
+        themes: ['github-dark', 'github-light'],
+      })
+    );
+  }
+  return highlighterInstance;
+}
 
 // ── Markdown block component ──
 function MarkdownBlock({ blockMatch }: { blockMatch: BlockMatch }) {
@@ -37,7 +42,7 @@ function MarkdownBlock({ blockMatch }: { blockMatch: BlockMatch }) {
 function CodeBlockComponent({ blockMatch }: { blockMatch: BlockMatch }) {
   const { html, code } = useCodeBlockToHtml({
     markdownCodeBlock: blockMatch.output,
-    highlighter,
+    highlighter: getHighlighter(),
     codeToHtmlOptions: {
       themes: {
         light: 'github-light',
@@ -83,7 +88,7 @@ interface LLMResponseBlockProps {
 }
 
 export default function LLMResponseBlock({ output, isStreaming }: LLMResponseBlockProps) {
-  const blocks = useMemo(() => [codeBlock], []);
+  const blocks = [codeBlock];
 
   const { blockMatches } = useLLMOutput({
     llmOutput: output,
