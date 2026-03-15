@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Play,
@@ -43,12 +43,12 @@ import { Separator } from '@/components/ui/separator';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
+import { usePlaygroundStreaming, getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
+import { usePlaygroundKeyboardShortcuts } from '@/hooks/usePlaygroundKeyboardShortcuts';
 import { entryService } from '@/services';
 import {
-  testEntry,
   getTestRuns,
   getEnrichedModels,
-  type TestStreamChunk,
   type TestRunResponse,
   type TestRunPromptResponse,
   type EnrichedModel,
@@ -67,7 +67,7 @@ function safeSessionGet<T>(key: string, fallback: T): T {
 
 // ── Extracted components ──
 
-function ReasoningBlock({ reasoning, defaultOpen }: { reasoning: string; defaultOpen: boolean }) {
+function ReasoningBlock({ reasoning, defaultOpen, isStreaming }: { reasoning: string; defaultOpen: boolean; isStreaming?: boolean }) {
   return (
     <Collapsible defaultOpen={defaultOpen}>
       <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1">
@@ -75,7 +75,7 @@ function ReasoningBlock({ reasoning, defaultOpen }: { reasoning: string; default
         Thinking
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 text-xs font-mono whitespace-pre-wrap text-indigo-800 dark:text-indigo-300 max-h-40 overflow-y-auto">
+        <div className={`rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 text-xs font-mono whitespace-pre-wrap text-indigo-800 dark:text-indigo-300 ${isStreaming ? 'max-h-96' : 'max-h-40'} overflow-y-auto`}>
           {reasoning}
         </div>
       </CollapsibleContent>
@@ -114,7 +114,6 @@ function CopyButton({
 const PlaygroundPage = () => {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const aiEnabled = useAiEnabled();
   const storageKey = `playground_${entryId}`;
 
@@ -175,24 +174,25 @@ const PlaygroundPage = () => {
     }
   }, [fieldValues, storageKey]);
 
-  // ── Streaming state ──
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [firstTokenReceived, setFirstTokenReceived] = useState(false);
-  const firstTokenRef = useRef(false);
-  const [streamedResponses, setStreamedResponses] = useState<Record<number, string>>({});
-  const [streamedReasoning, setStreamedReasoning] = useState<Record<number, string>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
-  const rateLimitTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-
-  // ── Elapsed time + tokens ──
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [lastTokens, setLastTokens] = useState<{ input: number | null; output: number | null } | null>(null);
+  // ── Streaming (delegated to hook) ──
+  const {
+    isStreaming, firstTokenReceived, streamedResponses, streamedReasoning,
+    error, wasStopped, rateLimitCountdown, elapsedSeconds, approxOutputTokens,
+    lastTokens, hasResponses, activePromptIndex, responseCount,
+    handleRun, handleAbort, responseAreaRef,
+  } = usePlaygroundStreaming({
+    entryId,
+    model: selectedModel?.modelId ?? '',
+    temperature,
+    maxTokens,
+    templateFields,
+    fieldValues,
+    reasoningEffort,
+    showReasoning,
+    isReasoning: selectedModel?.isReasoning ?? false,
+  });
 
   // ── Response display ──
-  const responseAreaRef = useRef<HTMLDivElement>(null);
   const [expandedStepInputs, setExpandedStepInputs] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -225,111 +225,7 @@ const PlaygroundPage = () => {
     }
   }, [enrichedModels, selectedModel]);
 
-  // ── Auto-scroll to response on first token ──
-  useEffect(() => {
-    if (firstTokenReceived) {
-      responseAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }, [firstTokenReceived]);
-
   // ── Handlers ──
-  const handleRun = useCallback(async () => {
-    if (!entryId) return;
-    setIsStreaming(true);
-    setFirstTokenReceived(false);
-    firstTokenRef.current = false;
-    setStreamedResponses({});
-    setStreamedReasoning({});
-    setError(null);
-    setRateLimitCountdown(0);
-    if (rateLimitTimerRef.current) {
-      clearInterval(rateLimitTimerRef.current);
-      rateLimitTimerRef.current = null;
-    }
-    setLastTokens(null);
-    setElapsedSeconds(0);
-
-    const startTime = Date.now();
-    timerRef.current = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      const result = await testEntry(
-        entryId,
-        {
-          model: selectedModel?.modelId || undefined,
-          temperature,
-          maxTokens,
-          templateFields: templateFields.length > 0 ? fieldValues : undefined,
-          reasoningEffort: selectedModel?.isReasoning && showReasoning ? reasoningEffort : undefined,
-          showReasoning: selectedModel?.isReasoning ? showReasoning : undefined,
-        },
-        (chunk: TestStreamChunk) => {
-          if (!chunk.text) return; // Skip empty chunks from Responses API
-          if (!firstTokenRef.current) {
-            firstTokenRef.current = true;
-            setFirstTokenReceived(true);
-          }
-          if (chunk.type === 'reasoning') {
-            setStreamedReasoning((prev) => ({
-              ...prev,
-              [chunk.promptIndex]: (prev[chunk.promptIndex] || '') + chunk.text,
-            }));
-          } else {
-            setStreamedResponses((prev) => ({
-              ...prev,
-              [chunk.promptIndex]: (prev[chunk.promptIndex] || '') + chunk.text,
-            }));
-          }
-        },
-        controller.signal
-      );
-
-      if (result.inputTokens != null || result.outputTokens != null) {
-        setLastTokens({ input: result.inputTokens, output: result.outputTokens });
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        toast.info('Generation stopped');
-      } else {
-        const rawMessage = err instanceof Error ? err.message : 'Test failed';
-        setError(rawMessage);
-        if (isRateLimitError(rawMessage)) {
-          setRateLimitCountdown(60);
-          if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
-          rateLimitTimerRef.current = setInterval(() => {
-            setRateLimitCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(rateLimitTimerRef.current!);
-                rateLimitTimerRef.current = null;
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-        }
-      }
-    } finally {
-      setIsStreaming(false);
-      abortRef.current = null;
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-    }
-  }, [entryId, selectedModel, temperature, maxTokens, fieldValues, templateFields, queryClient, showReasoning, reasoningEffort]);
-
-  const handleAbort = useCallback(() => {
-    abortRef.current?.abort();
-  }, []);
-
   const handleCopy = useCallback(async (text: string, index: number) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -352,7 +248,6 @@ const PlaygroundPage = () => {
     setPendingRerun(true);
   }, [enrichedModels]);
 
-  const hasResponses = Object.keys(streamedResponses).length > 0;
   const model = selectedModel?.modelId ?? '';
   const hasValidationErrors = templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
 
@@ -360,25 +255,17 @@ const PlaygroundPage = () => {
   useEffect(() => {
     if (pendingRerun) {
       setPendingRerun(false);
-      handleRun();
+      void handleRun();
     }
   }, [pendingRerun, handleRun]);
 
-  // ── Keyboard shortcut: Cmd/Ctrl+Enter to run ──
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        const tag = (e.target as HTMLElement)?.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-        if (!isStreaming && model && !hasValidationErrors) {
-          e.preventDefault();
-          handleRun();
-        }
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [isStreaming, model, hasValidationErrors, handleRun]);
+  // ── Keyboard shortcuts ──
+  usePlaygroundKeyboardShortcuts({
+    isStreaming,
+    canRun: !!model && !hasValidationErrors,
+    onRun: handleRun,
+    onAbort: handleAbort,
+  });
 
   const modelsByProvider = useMemo(
     () =>
@@ -437,6 +324,8 @@ const PlaygroundPage = () => {
 
           {/* Controls */}
           <div className="flex items-center gap-3 flex-wrap">
+            {/* Parameter controls (locked during streaming) */}
+            <div className={`flex items-center gap-3 flex-wrap transition-opacity ${isStreaming ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Model */}
             <div className="flex items-center gap-2">
               <Label className="text-xs text-foreground-muted shrink-0">Model</Label>
@@ -530,6 +419,7 @@ const PlaygroundPage = () => {
                 max={32000}
               />
             </div>
+            </div>
 
             {/* History toggle */}
             <Button
@@ -543,7 +433,7 @@ const PlaygroundPage = () => {
 
             {/* Run / Stop */}
             {isStreaming ? (
-              <Button size="sm" variant="destructive" onClick={handleAbort}>
+              <Button size="sm" variant="destructive" onClick={handleAbort} title="Stop (Esc)">
                 <Square className="size-3 mr-1.5" />
                 Stop
               </Button>
@@ -654,7 +544,10 @@ const PlaygroundPage = () => {
                 {/* Current run responses */}
                 <div className="space-y-3">
                   <div className="text-xs font-medium text-foreground-muted mb-2">
-                    {isStreaming ? 'Current Run (streaming...)' : hasResponses ? 'Current Run' : 'Run a new test to compare'}
+                    <span className="flex items-center gap-1.5">
+                      {isStreaming && <Loader2 className="size-3 animate-spin" />}
+                      {isStreaming ? 'Current Run' : hasResponses ? 'Current Run' : 'Run a new test to compare'}
+                    </span>
                   </div>
                   {prompts.map((_p, i) => {
                     const response = streamedResponses[i];
@@ -675,15 +568,32 @@ const PlaygroundPage = () => {
 
           {/* Streaming indicator (non-comparison mode) */}
           {!pinnedRun && isStreaming && (
-            <div ref={responseAreaRef} className="flex items-center gap-2 text-sm text-foreground-muted mb-4">
+            <div ref={responseAreaRef} className="flex flex-col gap-1 text-sm text-foreground-muted mb-4" aria-live="polite" role="status">
               {firstTokenReceived ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" />
-                  <span>Generating... {elapsedSeconds > 0 && `${elapsedSeconds}s`}</span>
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="size-4 animate-spin" />
+                    <span>
+                      {getStreamingStatusMessage(elapsedSeconds)} {elapsedSeconds > 0 && `${elapsedSeconds}s`}
+                      {approxOutputTokens > 0 && (
+                        <span className="text-foreground-muted/70 ml-1">
+                          · ~{approxOutputTokens.toLocaleString()}{maxTokens ? ` / ${maxTokens.toLocaleString()}` : ''} tokens
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  {maxTokens > 0 && approxOutputTokens > 0 && (
+                    <div className="w-48 h-1 bg-border-subtle rounded-full overflow-hidden ml-6">
+                      <div
+                        className="h-full bg-primary/60 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${Math.min(100, (approxOutputTokens / maxTokens) * 100)}%` }}
+                      />
+                    </div>
+                  )}
                 </>
               ) : (
                 <span className="flex items-center gap-1">
-                  Connecting
+                  Connecting{elapsedSeconds > 0 && ` ${elapsedSeconds}s`}
                   <span className="inline-flex gap-0.5">
                     <span className="size-1 rounded-full bg-foreground-muted animate-pulse" />
                     <span className="size-1 rounded-full bg-foreground-muted animate-pulse [animation-delay:200ms]" />
@@ -697,6 +607,7 @@ const PlaygroundPage = () => {
           {/* Error */}
           {error && (
             <div
+              aria-live="assertive"
               className={`text-sm rounded-lg p-4 mb-4 flex items-center justify-between gap-3 ${
                 isRateLimitError(error)
                   ? 'text-warning-text bg-warning-bg border border-warning-border'
@@ -725,7 +636,7 @@ const PlaygroundPage = () => {
             <div className="space-y-0">
               {prompts.map((prompt, i) => {
                 const response = streamedResponses[i];
-                const isActive = isStreaming && response !== undefined && i === Math.max(...Object.keys(streamedResponses).map(Number));
+                const isActive = isStreaming && response !== undefined && i === activePromptIndex;
                 const isComplete = !isStreaming && response !== undefined;
                 const showInput = expandedStepInputs.has(i);
 
@@ -785,7 +696,7 @@ const PlaygroundPage = () => {
 
                       {/* Reasoning output */}
                       {streamedReasoning[i] && (
-                        <ReasoningBlock reasoning={streamedReasoning[i]} defaultOpen={isStreaming} />
+                        <ReasoningBlock reasoning={streamedReasoning[i]} defaultOpen={isStreaming} isStreaming={isActive} />
                       )}
 
                       {/* Response */}
@@ -805,7 +716,7 @@ const PlaygroundPage = () => {
                             <CopyButton text={response} index={i} copiedIndex={copiedIndex} onCopy={handleCopy} />
                           )}
                         </div>
-                      ) : isStreaming && i === Object.keys(streamedResponses).length ? (
+                      ) : isStreaming && i === responseCount ? (
                         <div className="rounded-lg border border-border-subtle bg-surface/50 p-4">
                           <div className="h-6 w-2/3 rounded bg-foreground-muted/10 animate-pulse" />
                         </div>
@@ -818,7 +729,7 @@ const PlaygroundPage = () => {
           )}
 
           {/* Copy all for chains */}
-          {!pinnedRun && !isStreaming && isChain && Object.keys(streamedResponses).length >= 2 && (
+          {!pinnedRun && !isStreaming && isChain && responseCount >= 2 && (
             <div className="flex justify-end mt-2">
               <Button
                 variant="ghost"
@@ -850,7 +761,7 @@ const PlaygroundPage = () => {
                 return (
                   <div key={i}>
                     {streamedReasoning[i] && (
-                      <ReasoningBlock reasoning={streamedReasoning[i]} defaultOpen={isStreaming} />
+                      <ReasoningBlock reasoning={streamedReasoning[i]} defaultOpen={isStreaming} isStreaming={isStreaming} />
                     )}
 
                     <div className="relative group">
@@ -872,6 +783,14 @@ const PlaygroundPage = () => {
             </div>
           )}
 
+          {/* Generation stopped indicator */}
+          {wasStopped && !isStreaming && hasResponses && (
+            <div className="flex items-center gap-2 text-xs text-foreground-muted mt-2 pt-2 border-t border-dashed border-border-subtle">
+              <Square className="size-3" />
+              <span>Generation stopped</span>
+            </div>
+          )}
+
           {/* Token count + elapsed time */}
           {!isStreaming && hasResponses && (
             <div className="flex items-center gap-4 text-xs text-foreground-muted mt-4">
@@ -886,8 +805,8 @@ const PlaygroundPage = () => {
           )}
 
           {/* Empty state */}
-          {!hasResponses && !isStreaming && !error && (
-            <div className="flex flex-col items-center justify-center py-20 text-foreground-muted">
+          {!hasResponses && !error && (
+            <div className={`flex flex-col items-center justify-center py-20 text-foreground-muted transition-opacity duration-200 ${isStreaming ? 'opacity-0' : 'opacity-100'}`}>
               <Play className="size-10 mb-4 opacity-20" />
               <p className="text-sm">Click Run to test your prompt</p>
               {isChain && (
@@ -908,7 +827,18 @@ const PlaygroundPage = () => {
               <span className="text-xs text-foreground-muted">({testRuns.length})</span>
             </div>
             <ScrollArea className="flex-1">
-              {testRuns.length === 0 ? (
+              {isStreaming && (
+                <div className="px-4 py-3 border-b border-border-subtle bg-primary/5">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Loader2 className="size-3 animate-spin text-primary" />
+                    <span className="font-mono text-foreground-secondary">{selectedModel?.displayName || selectedModel?.modelId || 'Running...'}</span>
+                  </div>
+                  <div className="text-xs text-foreground-muted mt-0.5">
+                    {elapsedSeconds > 0 ? `${elapsedSeconds}s` : 'Starting...'}
+                  </div>
+                </div>
+              )}
+              {testRuns.length === 0 && !isStreaming ? (
                 <p className="text-xs text-foreground-muted p-4 text-center">
                   No test runs yet
                 </p>
