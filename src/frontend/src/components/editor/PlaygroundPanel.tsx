@@ -271,7 +271,12 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
               Stop
             </Button>
           ) : (
-            <Button size="sm" onClick={handleRun} className="ml-auto">
+            <Button
+              size="sm"
+              onClick={handleRun}
+              className="ml-auto"
+              disabled={!model || (templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]))}
+            >
               <Play className="size-3 mr-1.5" />
               Run
             </Button>
@@ -283,42 +288,50 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
           <div className="space-y-2">
             <Label className="text-xs text-foreground-muted">Template Variables</Label>
             <div className="grid grid-cols-2 gap-2">
-              {templateFields.map((field) => (
-                <div key={field.name} className="flex items-center gap-2">
-                  <Label className="text-xs font-mono shrink-0 w-28 truncate" title={field.name}>
-                    {`{{${field.name}}}`}
-                  </Label>
-                  {field.type === 'enum' && field.enumValues.length > 0 ? (
-                    <Select
-                      value={fieldValues[field.name] || ''}
-                      onValueChange={(v) =>
-                        setFieldValues((prev) => ({ ...prev, [field.name]: v }))
-                      }
-                    >
-                      <SelectTrigger className="h-7 text-xs flex-1">
-                        <SelectValue placeholder="Select..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {field.enumValues.map((v) => (
-                          <SelectItem key={v} value={v} className="text-xs">
-                            {v}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      value={fieldValues[field.name] || ''}
-                      onChange={(e) =>
-                        setFieldValues((prev) => ({ ...prev, [field.name]: e.target.value }))
-                      }
-                      placeholder={field.type !== 'string' ? field.type : 'value'}
-                      className="h-7 text-xs flex-1"
-                      type={field.type === 'int' || field.type === 'float' ? 'number' : 'text'}
-                    />
-                  )}
-                </div>
-              ))}
+              {templateFields.map((field) => {
+                const isEmpty = !fieldValues[field.name];
+                return (
+                  <div key={field.name} className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs font-mono shrink-0 w-28 truncate" title={field.name}>
+                        {`{{${field.name}}}`}
+                      </Label>
+                      {field.type === 'enum' && field.enumValues.length > 0 ? (
+                        <Select
+                          value={fieldValues[field.name] || ''}
+                          onValueChange={(v) =>
+                            setFieldValues((prev) => ({ ...prev, [field.name]: v }))
+                          }
+                        >
+                          <SelectTrigger className={`h-7 text-xs flex-1 ${isEmpty ? 'border-destructive' : ''}`}>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.enumValues.map((v) => (
+                              <SelectItem key={v} value={v} className="text-xs">
+                                {v}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={fieldValues[field.name] || ''}
+                          onChange={(e) =>
+                            setFieldValues((prev) => ({ ...prev, [field.name]: e.target.value }))
+                          }
+                          placeholder={field.type !== 'string' ? field.type : 'value'}
+                          className={`h-7 text-xs flex-1 ${isEmpty ? 'border-destructive' : ''}`}
+                          type={field.type === 'int' || field.type === 'float' ? 'number' : 'text'}
+                        />
+                      )}
+                    </div>
+                    {isEmpty && (
+                      <p className="text-xs text-destructive ml-[7.5rem]">Required</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -443,7 +456,7 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
                       )}
                       <span className="font-mono">{run.model}</span>
                       <span className="text-foreground-muted">
-                        t={run.temperature.toFixed(1)}
+                        t={run.temperature.toFixed(1)} max={run.maxTokens}
                       </span>
                       <span className="text-foreground-muted">
                         {new Date(run.createdAt).toLocaleString()}
@@ -462,12 +475,22 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
                   {expandedRunId === run.id && (
                     <div className="mt-2 space-y-2">
                       {run.responses.map((r: TestRunPromptResponse) => (
-                        <pre
-                          key={r.promptIndex}
-                          className="bg-elevated rounded-md p-3 text-xs font-mono whitespace-pre-wrap border border-border-subtle max-h-60 overflow-y-auto"
-                        >
-                          {r.content}
-                        </pre>
+                        <div key={r.promptIndex} className="relative group">
+                          <pre className="bg-elevated rounded-md p-3 text-sm font-mono whitespace-pre-wrap border border-border-subtle max-h-60 overflow-y-auto">
+                            {r.content}
+                          </pre>
+                          <button
+                            onClick={() => handleCopy(r.content, 1000 + r.promptIndex)}
+                            className="absolute top-2 right-2 p-1 rounded bg-elevated/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Copy response"
+                          >
+                            {copiedIndex === 1000 + r.promptIndex ? (
+                              <Check className="size-3.5 text-success-text" />
+                            ) : (
+                              <Copy className="size-3.5 text-foreground-muted" />
+                            )}
+                          </button>
+                        </div>
                       ))}
                     </div>
                   )}
