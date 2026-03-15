@@ -141,7 +141,6 @@ const PlaygroundPage = () => {
   const [lastTokens, setLastTokens] = useState<{ input: number | null; output: number | null } | null>(null);
 
   // ── Response display ──
-  const [expandedPrompts, setExpandedPrompts] = useState<Set<number>>(new Set());
   const [expandedStepInputs, setExpandedStepInputs] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -180,7 +179,6 @@ const PlaygroundPage = () => {
     setError(null);
     setLastTokens(null);
     setElapsedSeconds(0);
-    setExpandedPrompts(new Set());
 
     const startTime = Date.now();
     timerRef.current = setInterval(() => {
@@ -579,9 +577,7 @@ const PlaygroundPage = () => {
                 const response = streamedResponses[i];
                 const isActive = isStreaming && response !== undefined && i === Math.max(...Object.keys(streamedResponses).map(Number));
                 const isComplete = !isStreaming && response !== undefined;
-                const isExpanded = expandedPrompts.has(i);
                 const showInput = expandedStepInputs.has(i);
-                const isLong = (response?.split('\n').length ?? 0) > 20;
 
                 return (
                   <div key={i} className="flex gap-4">
@@ -596,7 +592,13 @@ const PlaygroundPage = () => {
                               : 'bg-elevated text-foreground-muted border border-border-subtle'
                         }`}
                       >
-                        {isComplete ? <Check className="size-4" /> : i + 1}
+                        {isActive ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : isComplete ? (
+                          <Check className="size-4" />
+                        ) : (
+                          i + 1
+                        )}
                       </div>
                       {i < prompts.length - 1 && (
                         <div className="w-0.5 flex-1 bg-border-subtle min-h-6" />
@@ -654,7 +656,7 @@ const PlaygroundPage = () => {
                               isActive
                                 ? 'border-primary/30 bg-primary/5'
                                 : 'border-border-subtle bg-surface'
-                            } ${!isExpanded && isLong ? 'max-h-60 overflow-hidden' : ''}`}
+                            }`}
                           >
                             <LLMResponseBlock output={response || ''} isStreaming={isActive ?? false} />
                           </div>
@@ -673,22 +675,6 @@ const PlaygroundPage = () => {
                               )}
                             </button>
                           )}
-
-                          {/* Expand/collapse */}
-                          {isLong && !isStreaming && (
-                            <button
-                              onClick={() =>
-                                setExpandedPrompts((prev) => {
-                                  const next = new Set(prev);
-                                  next.has(i) ? next.delete(i) : next.add(i);
-                                  return next;
-                                })
-                              }
-                              className="w-full text-center py-1.5 text-xs text-foreground-muted hover:text-foreground transition-colors"
-                            >
-                              {isExpanded ? 'Show less' : 'Show more'}
-                            </button>
-                          )}
                         </div>
                       )}
                     </div>
@@ -704,47 +690,44 @@ const PlaygroundPage = () => {
               {prompts.map((_prompt, i) => {
                 const response = streamedResponses[i];
                 if (response === undefined && !isStreaming) return null;
-                const isExpanded = expandedPrompts.has(i);
-                const isLong = (response?.split('\n').length ?? 0) > 20;
 
                 return (
-                  <div key={i} className="relative group">
-                    <div
-                      className={`rounded-lg border border-border-subtle bg-surface p-4 ${
-                        !isExpanded && isLong ? 'max-h-60 overflow-hidden' : ''
-                      }`}
-                    >
-                      <LLMResponseBlock output={response || ''} isStreaming={isStreaming} />
+                  <div key={i}>
+                    {/* Reasoning output */}
+                    {streamedReasoning[i] && (
+                      <Collapsible defaultOpen={isStreaming}>
+                        <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1">
+                          <ChevronDown className="size-3" />
+                          Thinking
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 text-xs font-mono whitespace-pre-wrap text-indigo-800 dark:text-indigo-300 max-h-40 overflow-y-auto">
+                            {streamedReasoning[i]}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+
+                    {/* Response */}
+                    <div className="relative group">
+                      <div className="rounded-lg border border-border-subtle bg-surface p-4">
+                        <LLMResponseBlock output={response || ''} isStreaming={isStreaming} />
+                      </div>
+
+                      {response && !isStreaming && (
+                        <button
+                          onClick={() => handleCopy(response, i)}
+                          className="absolute top-2 right-2 p-1.5 rounded-md bg-surface/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Copy response"
+                        >
+                          {copiedIndex === i ? (
+                            <Check className="size-3.5 text-success-text" />
+                          ) : (
+                            <Copy className="size-3.5 text-foreground-muted" />
+                          )}
+                        </button>
+                      )}
                     </div>
-
-                    {response && !isStreaming && (
-                      <button
-                        onClick={() => handleCopy(response, i)}
-                        className="absolute top-2 right-2 p-1.5 rounded-md bg-surface/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Copy response"
-                      >
-                        {copiedIndex === i ? (
-                          <Check className="size-3.5 text-success-text" />
-                        ) : (
-                          <Copy className="size-3.5 text-foreground-muted" />
-                        )}
-                      </button>
-                    )}
-
-                    {isLong && !isStreaming && (
-                      <button
-                        onClick={() =>
-                          setExpandedPrompts((prev) => {
-                            const next = new Set(prev);
-                            next.has(i) ? next.delete(i) : next.add(i);
-                            return next;
-                          })
-                        }
-                        className="w-full text-center py-1.5 text-xs text-foreground-muted hover:text-foreground transition-colors"
-                      >
-                        {isExpanded ? 'Show less' : 'Show more'}
-                      </button>
-                    )}
                   </div>
                 );
               })}
