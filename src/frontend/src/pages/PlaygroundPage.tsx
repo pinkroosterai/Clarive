@@ -200,6 +200,7 @@ const PlaygroundPage = () => {
           showReasoning: selectedModel?.isReasoning ? showReasoning : undefined,
         },
         (chunk: TestStreamChunk) => {
+          if (!chunk.text) return; // Skip empty chunks from Responses API
           if (chunk.type === 'reasoning') {
             setStreamedReasoning((prev) => ({
               ...prev,
