@@ -28,6 +28,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { StatCard } from '@/components/dashboard/StatCard';
 import AiConfigSection from '@/components/super/AiConfigSection';
+import AiProvidersSection from '@/components/super/AiProvidersSection';
 import ConfigSectionForm from '@/components/super/ConfigSectionForm';
 import UsersTable from '@/components/super/UsersTable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -47,7 +48,7 @@ const CONFIG_SECTIONS = [
   { key: 'Application', label: 'Application' },
 ] as const;
 
-const VALID_TABS = ['dashboard', 'users', ...CONFIG_SECTIONS.map((s) => s.key.toLowerCase())];
+const VALID_TABS = ['dashboard', 'users', 'ai-providers', ...CONFIG_SECTIONS.map((s) => s.key.toLowerCase())];
 const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
 
 const TAB_STYLE =
@@ -221,6 +222,9 @@ const SuperDashboardPage = () => {
             <Users className="size-4 hidden sm:block" />
             Users
           </TabsTrigger>
+          <TabsTrigger value="ai-providers" className={TAB_STYLE}>
+            AI Providers
+          </TabsTrigger>
           {CONFIG_SECTIONS.map(({ key, label }) => (
             <TabsTrigger key={key} value={key.toLowerCase()} className={TAB_STYLE}>
               {label}
@@ -238,6 +242,11 @@ const SuperDashboardPage = () => {
         {/* Users Tab */}
         <TabsContent value="users" className="mt-6">
           <UsersTable />
+        </TabsContent>
+
+        {/* AI Providers Tab */}
+        <TabsContent value="ai-providers" className="mt-6">
+          <AiProvidersSection />
         </TabsContent>
 
         {/* Config Tabs */}

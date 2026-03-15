@@ -38,6 +38,8 @@ public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EntryTag> EntryTags => Set<EntryTag>();
     public DbSet<EntryFavorite> EntryFavorites => Set<EntryFavorite>();
     public DbSet<PlaygroundRun> PlaygroundRuns => Set<PlaygroundRun>();
+    public DbSet<AiProvider> AiProviders => Set<AiProvider>();
+    public DbSet<AiProviderModel> AiProviderModels => Set<AiProviderModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
