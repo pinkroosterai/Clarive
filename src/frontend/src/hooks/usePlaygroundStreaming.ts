@@ -77,7 +77,7 @@ export function usePlaygroundStreaming({
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isAutoFollowRef = useRef(true);
   const scrollRafRef = useRef<number | null>(null);
 
@@ -92,36 +92,27 @@ export function usePlaygroundStreaming({
 
   // ── Auto-follow scrolling ──
   useEffect(() => {
-    if (!scrollViewportRef.current) {
-      const el = document.querySelector('[data-radix-scroll-area-viewport]');
-      if (el) scrollViewportRef.current = el as HTMLDivElement;
-    }
-    const viewport = scrollViewportRef.current;
-    if (!viewport) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
     const handleScroll = () => {
       if (!isStreaming) return;
-      const { scrollTop, scrollHeight, clientHeight } = viewport;
+      const { scrollTop, scrollHeight, clientHeight } = container;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
       isAutoFollowRef.current = isNearBottom;
     };
 
-    viewport.addEventListener('scroll', handleScroll, { passive: true });
-    return () => viewport.removeEventListener('scroll', handleScroll);
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
   }, [isStreaming]);
 
   useEffect(() => {
     if (!isStreaming || !isAutoFollowRef.current) return;
     if (scrollRafRef.current !== null) return;
 
-    if (!scrollViewportRef.current) {
-      const el = document.querySelector('[data-radix-scroll-area-viewport]');
-      if (el) scrollViewportRef.current = el as HTMLDivElement;
-    }
-
     scrollRafRef.current = requestAnimationFrame(() => {
-      const viewport = scrollViewportRef.current;
-      if (viewport) viewport.scrollTop = viewport.scrollHeight;
+      const container = scrollContainerRef.current;
+      if (container) container.scrollTop = container.scrollHeight;
       scrollRafRef.current = null;
     });
   }, [streamedResponses, streamedReasoning, isStreaming]);
@@ -263,5 +254,6 @@ export function usePlaygroundStreaming({
     handleRun,
     handleAbort,
     responseAreaRef,
+    scrollContainerRef,
   };
 }
