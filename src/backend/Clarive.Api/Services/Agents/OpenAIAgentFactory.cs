@@ -53,12 +53,14 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         _scopeFactory = scopeFactory;
         _encryption = encryption;
 
-        ReinitializeClients(optionsMonitor.CurrentValue);
+        Task.Run(() => ReinitializeClientsAsync(optionsMonitor.CurrentValue)).GetAwaiter().GetResult();
 
-        _changeSubscription = optionsMonitor.OnChange((newSettings, _) =>
+        _changeSubscription = optionsMonitor.OnChange((newSettings, __) =>
         {
             _logger.LogInformation("AI settings changed, reinitializing clients");
-            ReinitializeClients(newSettings);
+            _ = ReinitializeClientsAsync(newSettings).ContinueWith(
+                t => _logger.LogWarning(t.Exception, "Failed to reinitialize AI clients"),
+                TaskContinuationOptions.OnlyOnFaulted);
         });
     }
 
@@ -142,7 +144,68 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         return new OpenAIClient(apiKey);
     }
 
-    private void ReinitializeClients(AiSettings settings)
+    private async Task ReinitializeClientsAsync(AiSettings settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.DefaultModel) ||
+            string.IsNullOrWhiteSpace(settings.PremiumModel))
+        {
+            ResetClients();
+            _logger.LogWarning("AI not configured — Default or Premium model not set");
+            return;
+        }
+
+        // Load providers asynchronously OUTSIDE the lock to avoid deadlocks
+        List<AiProvider> providers;
+        try
+        {
+            providers = await LoadProvidersAsync();
+        }
+        catch (Exception ex)
+        {
+            ResetClients();
+            _logger.LogWarning(ex, "Failed to load AI providers — AI features unavailable");
+            return;
+        }
+
+        var defaultResolved = ResolveProviderForModel(providers, settings.DefaultModel, settings.DefaultModelProviderId);
+        var premiumResolved = ResolveProviderForModel(providers, settings.PremiumModel, settings.PremiumModelProviderId);
+
+        if (defaultResolved is null || premiumResolved is null)
+        {
+            ResetClients();
+            _logger.LogWarning("AI not configured — no active provider found for {Missing} model",
+                defaultResolved is null ? "default" : "premium");
+            return;
+        }
+
+        var premiumOpenAiClient = CreateOpenAIClient(premiumResolved.ApiKey, premiumResolved.EndpointUrl);
+        var defaultOpenAiClient = premiumResolved == defaultResolved
+            ? premiumOpenAiClient
+            : CreateOpenAIClient(defaultResolved.ApiKey, defaultResolved.EndpointUrl);
+
+        // Only hold the write lock for the fast field swap
+        _lock.EnterWriteLock();
+        try
+        {
+            (_premiumClient as IDisposable)?.Dispose();
+            (_defaultClient as IDisposable)?.Dispose();
+
+            _openAiClient = premiumOpenAiClient;
+            _premiumClient = premiumOpenAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
+            _defaultClient = defaultOpenAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
+            _isConfigured = true;
+        }
+        finally { _lock.ExitWriteLock(); }
+
+        _logger.LogInformation(
+            "AI clients initialized (default: {Default} via {DefaultProvider}, premium: {Premium} via {PremiumProvider})",
+            settings.DefaultModel, defaultResolved.ProviderName,
+            settings.PremiumModel, premiumResolved.ProviderName);
+
+        OnReconfigured?.Invoke();
+    }
+
+    private void ResetClients()
     {
         _lock.EnterWriteLock();
         try
@@ -153,53 +216,8 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             _defaultClient = null;
             _openAiClient = null;
             _isConfigured = false;
-
-            if (string.IsNullOrWhiteSpace(settings.DefaultModel) ||
-                string.IsNullOrWhiteSpace(settings.PremiumModel))
-            {
-                _logger.LogWarning("AI not configured — Default or Premium model not set");
-                return;
-            }
-
-            List<AiProvider> providers;
-            try
-            {
-                providers = Task.Run(() => LoadProvidersAsync()).GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to load AI providers — AI features unavailable");
-                return;
-            }
-
-            var defaultResolved = ResolveProviderForModel(providers, settings.DefaultModel, settings.DefaultModelProviderId);
-            var premiumResolved = ResolveProviderForModel(providers, settings.PremiumModel, settings.PremiumModelProviderId);
-
-            if (defaultResolved is null || premiumResolved is null)
-            {
-                _logger.LogWarning("AI not configured — no active provider found for {Missing} model",
-                    defaultResolved is null ? "default" : "premium");
-                return;
-            }
-
-            var premiumOpenAiClient = CreateOpenAIClient(premiumResolved.ApiKey, premiumResolved.EndpointUrl);
-            var defaultOpenAiClient = premiumResolved == defaultResolved
-                ? premiumOpenAiClient
-                : CreateOpenAIClient(defaultResolved.ApiKey, defaultResolved.EndpointUrl);
-
-            _openAiClient = premiumOpenAiClient;
-            _premiumClient = premiumOpenAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
-            _defaultClient = defaultOpenAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
-            _isConfigured = true;
-
-            _logger.LogInformation(
-                "AI clients initialized (default: {Default} via {DefaultProvider}, premium: {Premium} via {PremiumProvider})",
-                settings.DefaultModel, defaultResolved.ProviderName,
-                settings.PremiumModel, premiumResolved.ProviderName);
         }
         finally { _lock.ExitWriteLock(); }
-
-        OnReconfigured?.Invoke();
     }
 
     private async Task<List<AiProvider>> LoadProvidersAsync()
