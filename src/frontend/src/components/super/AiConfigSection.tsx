@@ -62,12 +62,14 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   const apiKeySetting = findSetting(settings, 'Ai:OpenAiApiKey');
   const defaultModelSetting = findSetting(settings, 'Ai:DefaultModel');
   const premiumModelSetting = findSetting(settings, 'Ai:PremiumModel');
+  const allowedModelsSetting = findSetting(settings, 'Ai:AllowedModels');
   const tavilyApiKeySetting = findSetting(settings, 'Ai:TavilyApiKey');
 
   const currentEndpoint = dirtyValues['Ai:EndpointUrl'] ?? endpointSetting?.value ?? '';
   const currentApiKeyDirty = dirtyValues['Ai:OpenAiApiKey'];
   const currentDefaultModel = dirtyValues['Ai:DefaultModel'] ?? defaultModelSetting?.value ?? '';
   const currentPremiumModel = dirtyValues['Ai:PremiumModel'] ?? premiumModelSetting?.value ?? '';
+  const currentAllowedModels = dirtyValues['Ai:AllowedModels'] ?? allowedModelsSetting?.value ?? '';
   const currentTavilyKeyDirty = dirtyValues['Ai:TavilyApiKey'];
 
   const apiKeyIsConfigured = apiKeySetting?.isConfigured ?? false;
@@ -353,6 +355,28 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
             </div>
           )}
         </SettingField>
+      )}
+
+      {/* Allowed Playground Models */}
+      {allowedModelsSetting && (
+        <>
+          <Separator className="my-4" />
+          <SettingField
+            setting={allowedModelsSetting}
+            onReset={() => resetMutation.mutate(allowedModelsSetting.key)}
+            isResetting={
+              resetMutation.isPending && resetMutation.variables === allowedModelsSetting.key
+            }
+          >
+            <Input
+              type="text"
+              value={currentAllowedModels}
+              onChange={(e) => handleChange('Ai:AllowedModels', e.target.value)}
+              placeholder={allowedModelsSetting.validationHint ?? ''}
+              className="max-w-md"
+            />
+          </SettingField>
+        </>
       )}
 
       {/* Tavily API Key */}
