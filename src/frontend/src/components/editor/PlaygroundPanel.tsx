@@ -169,9 +169,9 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
   const hasResponses = Object.keys(streamedResponses).length > 0;
 
   return (
-    <div className="border border-border-subtle rounded-lg bg-surface mt-4">
-      {/* Header / Controls */}
-      <div className="p-4 border-b border-border-subtle space-y-3">
+    <div>
+      {/* Controls */}
+      <div className="space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
           {/* Model selector */}
           <div className="flex items-center gap-2">
@@ -285,7 +285,7 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
 
       {/* Response area */}
       {(hasResponses || error) && (
-        <div className="p-4 space-y-3">
+        <div className="pt-3 space-y-3">
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 rounded p-3">{error}</div>
           )}
@@ -314,7 +314,7 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
       {/* Run History */}
       {testRuns.length > 0 && (
         <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
-          <CollapsibleTrigger className="flex items-center gap-2 px-4 py-2 w-full text-left border-t border-border-subtle hover:bg-elevated/50 transition-colors">
+          <CollapsibleTrigger className="flex items-center gap-2 py-2 w-full text-left border-t border-border-subtle hover:bg-elevated/50 transition-colors rounded-md mt-3">
             {historyOpen ? (
               <ChevronDown className="size-3.5 text-foreground-muted" />
             ) : (
@@ -328,7 +328,7 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
           <CollapsibleContent>
             <div className="border-t border-border-subtle divide-y divide-border-subtle">
               {testRuns.map((run) => (
-                <div key={run.id} className="px-4 py-2">
+                <div key={run.id} className="py-2">
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() =>

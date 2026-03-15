@@ -13,6 +13,7 @@ import { VersionPanel } from '@/components/editor/VersionPanel';
 import { FolderPickerDialog } from '@/components/library/FolderPickerDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -280,6 +281,20 @@ const EntryEditorPage = () => {
         open={diffOpen}
         onOpenChange={setDiffOpen}
       />
+      <Dialog open={playgroundOpen} onOpenChange={setPlaygroundOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Test Prompt</DialogTitle>
+          </DialogHeader>
+          <Suspense fallback={null}>
+            <PlaygroundPanel
+              entryId={entryId!}
+              prompts={localEntry.prompts}
+              systemMessage={localEntry.systemMessage}
+            />
+          </Suspense>
+        </DialogContent>
+      </Dialog>
     </>
   );
 
@@ -299,28 +314,12 @@ const EntryEditorPage = () => {
             <TabsTrigger value="actions" className="flex-1">
               Actions
             </TabsTrigger>
-            {aiEnabled && !isReadOnly && (
-              <TabsTrigger value="test" className="flex-1">
-                Test
-              </TabsTrigger>
-            )}
           </TabsList>
           <TabsContent value="editor">{editorContent}</TabsContent>
           <TabsContent value="versions">{versionPanel}</TabsContent>
           <TabsContent value="actions">
             <EditorActionPanel {...sharedActionProps} />
           </TabsContent>
-          {aiEnabled && !isReadOnly && (
-            <TabsContent value="test">
-              <Suspense fallback={null}>
-                <PlaygroundPanel
-                  entryId={entryId!}
-                  prompts={localEntry.prompts}
-                  systemMessage={localEntry.systemMessage}
-                />
-              </Suspense>
-            </TabsContent>
-          )}
         </Tabs>
         {dialogs}
       </div>
@@ -337,15 +336,6 @@ const EntryEditorPage = () => {
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         >
           {editorContent}
-          {playgroundOpen && (
-            <Suspense fallback={null}>
-              <PlaygroundPanel
-                entryId={entryId!}
-                prompts={localEntry.prompts}
-                systemMessage={localEntry.systemMessage}
-              />
-            </Suspense>
-          )}
         </motion.div>
       </ScrollArea>
 
