@@ -43,6 +43,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { parseTemplateTags } from '@/lib/templateParser';
+import { renderTemplate } from '@/lib/templateRenderer';
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { usePlaygroundStreaming, getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
@@ -684,7 +685,7 @@ const PlaygroundPage = () => {
                       {/* Prompt input (collapsed by default) */}
                       {showInput && (
                         <div className="bg-elevated/50 rounded-md p-3 text-xs font-mono mb-3 border border-border-subtle whitespace-pre-wrap max-h-32 overflow-y-auto">
-                          {prompt.content}
+                          {renderTemplate(prompt.content, fieldValues)}
                         </div>
                       )}
 
