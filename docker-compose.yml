@@ -40,7 +40,6 @@ services:
       Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
       App__FrontendUrl: ${CORS_ORIGINS:-http://localhost:8080}
       AllowedHosts: "*"
-      Ai__OpenAiApiKey: ${OPENAI_API_KEY:-}
       Ai__DefaultModel: ${AI_DEFAULT_MODEL:-gpt-4o-mini}
       Ai__PremiumModel: ${AI_PREMIUM_MODEL:-gpt-4o}
       Google__ClientId: ${GOOGLE_CLIENT_ID:-}
