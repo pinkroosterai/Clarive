@@ -462,7 +462,7 @@ function ModelTransferList({ allModels, value, onChange, loading }: ModelTransfe
   }
 
   return (
-    <div className="flex gap-4 max-w-2xl">
+    <div className="flex gap-4">
       {/* Available models (left) */}
       <div className="flex-1 space-y-2">
         <Label className="text-xs text-foreground-muted">Available Models</Label>
