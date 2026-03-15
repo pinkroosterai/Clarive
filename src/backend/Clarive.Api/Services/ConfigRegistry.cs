@@ -85,6 +85,11 @@ public static class ConfigRegistry
             ConfigSection.Ai, false, false,
             "e.g., gpt-4o"),
 
+        new ConfigDefinition("Ai:AllowedModels", "Allowed Playground Models",
+            "Comma-separated list of model IDs users can select in the playground. Leave empty to allow all models.",
+            ConfigSection.Ai, false, false,
+            "e.g., gpt-4o,gpt-4o-mini,gpt-5.2"),
+
         new ConfigDefinition("Ai:TavilyApiKey", "Tavily API Key",
             "API key for Tavily web search. Enables the generation agent to research best practices and novel concepts during prompt creation.",
             ConfigSection.Ai, true, false,

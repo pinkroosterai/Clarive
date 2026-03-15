@@ -18,6 +18,7 @@ public class PlaygroundService(
     IPlaygroundRunRepository runRepo,
     IAgentFactory agentFactory,
     IOptionsMonitor<AiSettings> aiSettings,
+    IConfiguration configuration,
     IMemoryCache cache,
     ILogger<PlaygroundService> logger)
 {
@@ -207,6 +208,16 @@ public class PlaygroundService(
                 })
                 .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+
+            // Filter to admin-whitelisted models if configured
+            var allowedModels = configuration["Ai:AllowedModels"];
+            if (!string.IsNullOrWhiteSpace(allowedModels))
+            {
+                var whitelist = new HashSet<string>(
+                    allowedModels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                    StringComparer.OrdinalIgnoreCase);
+                models = models.Where(m => whitelist.Contains(m)).ToList();
+            }
 
             cache.Set(cacheKey, models, new MemoryCacheEntryOptions
             {
