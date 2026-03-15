@@ -206,4 +206,33 @@ public class AiProviderTests : IntegrationTestBase
         status.Should().Be(HttpStatusCode.Created);
         json.GetProperty("defaultReasoningEffort").GetString().Should().Be(effort);
     }
+
+    // ── PATCH null-skip behavior: omitting a field preserves existing value ──
+
+    [Fact]
+    public async Task UpdateModel_OmitDefaultTemperature_PreservesExistingValue()
+    {
+        var providerId = await CreateTestProvider();
+
+        // Add model with temperature set
+        var (addStatus, addJson) = await PostModel(providerId, new
+        {
+            modelId = "gpt-4o-preserve-test",
+            defaultTemperature = 0.7f,
+            defaultMaxTokens = 8192
+        });
+        addStatus.Should().Be(HttpStatusCode.Created);
+        var modelId = addJson.GetProperty("id").GetString()!;
+
+        // PATCH only displayName — temperature and maxTokens should be preserved
+        var (updateStatus, updateJson) = await PatchModel(providerId, modelId, new
+        {
+            displayName = "Patched Name"
+        });
+
+        updateStatus.Should().Be(HttpStatusCode.OK);
+        updateJson.GetProperty("displayName").GetString().Should().Be("Patched Name");
+        updateJson.GetProperty("defaultTemperature").GetSingle().Should().BeApproximately(0.7f, 0.01f);
+        updateJson.GetProperty("defaultMaxTokens").GetInt32().Should().Be(8192);
+    }
 }
