@@ -45,6 +45,7 @@ import { Separator } from '@/components/ui/separator';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { renderTemplate } from '@/lib/templateRenderer';
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
+import { PLAYGROUND_DEFAULTS } from '@/lib/constants';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { usePlaygroundStreaming, getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
 import { usePlaygroundKeyboardShortcuts } from '@/hooks/usePlaygroundKeyboardShortcuts';
@@ -149,9 +150,9 @@ const PlaygroundPage = () => {
 
   // ── Model & params ──
   const [selectedModel, setSelectedModel] = useState<EnrichedModel | null>(null);
-  const [temperature, setTemperature] = useState(1.0);
-  const [maxTokens, setMaxTokens] = useState(4096);
-  const [reasoningEffort, setReasoningEffort] = useState('medium');
+  const [temperature, setTemperature] = useState(PLAYGROUND_DEFAULTS.TEMPERATURE);
+  const [maxTokens, setMaxTokens] = useState(PLAYGROUND_DEFAULTS.MAX_TOKENS);
+  const [reasoningEffort, setReasoningEffort] = useState(PLAYGROUND_DEFAULTS.REASONING_EFFORT);
   const [showReasoning, setShowReasoning] = useState(true);
 
   // ── Template fields ──
@@ -226,7 +227,11 @@ const PlaygroundPage = () => {
 
   useEffect(() => {
     if (enrichedModels.length > 0 && !selectedModel) {
-      setSelectedModel(enrichedModels[0]);
+      const first = enrichedModels[0];
+      setSelectedModel(first);
+      setTemperature(first.defaultTemperature ?? PLAYGROUND_DEFAULTS.TEMPERATURE);
+      setMaxTokens(first.defaultMaxTokens ?? PLAYGROUND_DEFAULTS.MAX_TOKENS);
+      setReasoningEffort(first.defaultReasoningEffort ?? PLAYGROUND_DEFAULTS.REASONING_EFFORT);
     }
   }, [enrichedModels, selectedModel]);
 
@@ -341,7 +346,12 @@ const PlaygroundPage = () => {
                   value={model}
                   onValueChange={(v) => {
                     const found = enrichedModels.find((m) => m.modelId === v);
-                    if (found) setSelectedModel(found);
+                    if (found) {
+                      setSelectedModel(found);
+                      setTemperature(found.defaultTemperature ?? PLAYGROUND_DEFAULTS.TEMPERATURE);
+                      setMaxTokens(found.defaultMaxTokens ?? PLAYGROUND_DEFAULTS.MAX_TOKENS);
+                      setReasoningEffort(found.defaultReasoningEffort ?? PLAYGROUND_DEFAULTS.REASONING_EFFORT);
+                    }
                   }}
                 >
                   <SelectTrigger className="w-52 h-8 text-xs">
@@ -418,7 +428,7 @@ const PlaygroundPage = () => {
               <Input
                 type="number"
                 value={maxTokens}
-                onChange={(e) => setMaxTokens(Number(e.target.value) || 4096)}
+                onChange={(e) => setMaxTokens(Number(e.target.value) || PLAYGROUND_DEFAULTS.MAX_TOKENS)}
                 className="w-20 h-8 text-xs"
                 min={1}
                 max={32000}
