@@ -121,6 +121,7 @@ public class PlaygroundService(
             var isTemperatureConfigurable = providerMatch?.Model.IsTemperatureConfigurable ?? true;
             var options = new ChatOptions
             {
+                ModelId = model,
                 Temperature = isTemperatureConfigurable ? request.Temperature : null,
                 MaxOutputTokens = request.MaxTokens
             };
