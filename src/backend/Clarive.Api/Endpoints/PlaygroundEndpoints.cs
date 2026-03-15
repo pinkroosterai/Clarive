@@ -19,13 +19,16 @@ public static class PlaygroundEndpoints
             .RequireRateLimiting("auth")
             .AddEndpointFilter(AiConfiguredFilter);
 
-        group.MapGet("/entries/{entryId:guid}/test-runs", HandleGetTestRuns);
-
         group.MapGet("/ai/models", HandleGetModels)
             .AddEndpointFilter(AiConfiguredFilter);
 
         group.MapGet("/ai/available-models", HandleGetEnrichedModels)
             .AddEndpointFilter(AiConfiguredFilter);
+
+        // Test runs are read-only — allow any authenticated user (including viewers)
+        app.MapGet("/api/entries/{entryId:guid}/test-runs", HandleGetTestRuns)
+            .WithTags("Playground")
+            .RequireAuthorization();
 
         return group;
     }
