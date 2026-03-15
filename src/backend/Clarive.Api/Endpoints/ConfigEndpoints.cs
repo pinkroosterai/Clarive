@@ -7,6 +7,7 @@ using Clarive.Api.Models.Responses;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Agents;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Clarive.Api.Auth;
 using OpenAI;
 
@@ -172,11 +173,19 @@ public static class ConfigEndpoints
 
         await db.SaveChangesAsync(ct);
 
+        // Invalidate playground model cache when AI config changes
+        if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
+        {
+            var memoryCache = ctx.RequestServices.GetRequiredService<IMemoryCache>();
+            memoryCache.Remove("playground_available_models");
+        }
+
         return Results.Ok(new { key, updated = true, requiresRestart = def.RequiresRestart });
     }
 
     private static async Task<IResult> HandleDeleteValue(
         string key,
+        HttpContext ctx,
         ClariveDbContext db,
         CancellationToken ct)
     {
@@ -194,6 +203,13 @@ public static class ConfigEndpoints
 
         db.ServiceConfigs.Remove(existing);
         await db.SaveChangesAsync(ct);
+
+        // Invalidate playground model cache when AI config changes
+        if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
+        {
+            var memoryCache = ctx.RequestServices.GetRequiredService<IMemoryCache>();
+            memoryCache.Remove("playground_available_models");
+        }
 
         return Results.Ok(new { key, reset = true });
     }
