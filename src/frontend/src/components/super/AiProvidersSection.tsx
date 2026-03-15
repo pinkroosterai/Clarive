@@ -2,23 +2,31 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronDown,
   ChevronRight,
+  ChevronsUpDown,
   Loader2,
   Plus,
+  RefreshCw,
   Server,
   ShieldCheck,
-  ShieldX,
   Trash2,
   Pencil,
-  Download,
   X,
   Brain,
   Thermometer,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +36,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { handleApiError } from '@/lib/handleApiError';
 import {
@@ -344,89 +353,162 @@ function ProviderCard({
 
       {/* Expanded content */}
       {isExpanded && (
-        <div className="border-t border-border-subtle px-4 py-3 space-y-4">
-          {/* Fetch models */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onFetchModels}
-              disabled={isFetchingModels}
-            >
-              {isFetchingModels ? (
-                <Loader2 className="size-3.5 animate-spin mr-1.5" />
-              ) : (
-                <Download className="size-3.5 mr-1.5" />
-              )}
-              Fetch Available Models
-            </Button>
-            {fetchedModels && (
-              <span className="text-xs text-foreground-muted">{fetchedModels.length} models found</span>
-            )}
-          </div>
+        <ProviderCardExpanded
+          provider={provider}
+          onFetchModels={onFetchModels}
+          onAddModel={onAddModel}
+          onUpdateModel={onUpdateModel}
+          onDeleteModel={onDeleteModel}
+          isFetchingModels={isFetchingModels}
+          fetchedModels={fetchedModels}
+        />
+      )}
+    </div>
+  );
+}
 
-          {/* Available models to add */}
-          {fetchedModels && fetchedModels.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs text-foreground-muted">Available (click to add)</Label>
-              <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-                {fetchedModels
-                  .filter((m) => !provider.models.some((pm) => pm.modelId === m))
-                  .map((modelId) => (
-                    <button
-                      key={modelId}
-                      onClick={() => onAddModel(modelId)}
-                      className="text-xs font-mono px-2 py-0.5 rounded border border-border-subtle hover:bg-elevated transition-colors"
-                    >
-                      + {modelId}
-                    </button>
-                  ))}
-              </div>
-            </div>
-          )}
+// ── Provider Card Expanded Content ──
 
-          {/* Configured models table */}
-          {provider.models.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs text-foreground-muted">Configured Models ({provider.models.length})</Label>
-              <div className="border border-border-subtle rounded-md overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-elevated">
-                    <tr className="border-b border-border-subtle">
-                      <th className="text-left p-2 font-medium">Model ID</th>
-                      <th className="text-left p-2 font-medium">Display Name</th>
-                      <th className="text-center p-2 font-medium" title="Reasoning Model">
-                        <Brain className="size-3.5 mx-auto" />
-                      </th>
-                      <th className="text-center p-2 font-medium">Context</th>
-                      <th className="text-center p-2 font-medium" title="Temperature Configurable">
-                        <Thermometer className="size-3.5 mx-auto" />
-                      </th>
-                      <th className="text-center p-2 font-medium w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-subtle">
-                    {provider.models.map((model) => (
-                      <ModelRow
-                        key={model.id}
-                        model={model}
-                        providerId={provider.id}
-                        onUpdate={onUpdateModel}
-                        onDelete={() => onDeleteModel(model.id)}
-                      />
+function ProviderCardExpanded({
+  provider,
+  onFetchModels,
+  onAddModel,
+  onUpdateModel,
+  onDeleteModel,
+  isFetchingModels,
+  fetchedModels,
+}: {
+  provider: AiProviderResponse;
+  onFetchModels: () => Promise<string[]>;
+  onAddModel: (modelId: string) => void;
+  onUpdateModel: (modelId: string, data: Record<string, unknown>) => void;
+  onDeleteModel: (modelId: string) => void;
+  isFetchingModels: boolean;
+  fetchedModels: string[] | null;
+}) {
+  const [selectorOpen, setSelectorOpen] = useState(false);
+
+  const availableModels = useMemo(() => {
+    if (!fetchedModels) return [];
+    return fetchedModels.filter((m) => !provider.models.some((pm) => pm.modelId === m));
+  }, [fetchedModels, provider.models]);
+
+  const handleAddModel = (modelId: string) => {
+    onAddModel(modelId);
+    // Keep popover open for multi-add convenience
+  };
+
+  return (
+    <div className="border-t border-border-subtle px-4 py-3 space-y-4">
+      {/* Add Model — searchable dropdown + fetch button */}
+      <div className="space-y-2">
+        <Label className="text-xs text-foreground-muted">Add Model</Label>
+        <div className="flex items-center gap-2">
+          <Popover open={selectorOpen} onOpenChange={setSelectorOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={selectorOpen}
+                className="max-w-sm w-full justify-between text-xs"
+                size="sm"
+                disabled={!fetchedModels}
+              >
+                {isFetchingModels ? (
+                  <span className="flex items-center gap-2 text-foreground-muted">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Loading models...
+                  </span>
+                ) : !fetchedModels ? (
+                  <span className="text-foreground-muted">Fetch models first</span>
+                ) : availableModels.length === 0 ? (
+                  <span className="text-foreground-muted">All models added</span>
+                ) : (
+                  <span className="text-foreground-muted">
+                    Select model to add ({availableModels.length} available)
+                  </span>
+                )}
+                <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="max-w-sm w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search models..." className="text-xs" />
+                <CommandList>
+                  <CommandEmpty>No matching models.</CommandEmpty>
+                  <CommandGroup>
+                    {availableModels.map((modelId) => (
+                      <CommandItem
+                        key={modelId}
+                        value={modelId}
+                        onSelect={() => handleAddModel(modelId)}
+                        className="text-xs font-mono"
+                      >
+                        <Plus className="mr-2 size-3.5 text-foreground-muted" />
+                        {modelId}
+                      </CommandItem>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {provider.models.length === 0 && !fetchedModels && (
-            <p className="text-xs text-foreground-muted text-center py-4">
-              Validate the provider, then fetch models to get started.
-            </p>
-          )}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onFetchModels}
+            disabled={isFetchingModels}
+            title="Fetch available models from provider"
+          >
+            {isFetchingModels ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="size-3.5" />
+            )}
+          </Button>
         </div>
+      </div>
+
+      {/* Configured models table */}
+      {provider.models.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-xs text-foreground-muted">Configured Models ({provider.models.length})</Label>
+          <div className="border border-border-subtle rounded-md overflow-hidden">
+            <table className="w-full text-xs">
+              <thead className="bg-elevated">
+                <tr className="border-b border-border-subtle">
+                  <th className="text-left p-2 font-medium">Model ID</th>
+                  <th className="text-left p-2 font-medium">Display Name</th>
+                  <th className="text-center p-2 font-medium" title="Reasoning Model">
+                    <Brain className="size-3.5 mx-auto" />
+                  </th>
+                  <th className="text-center p-2 font-medium">Context</th>
+                  <th className="text-center p-2 font-medium" title="Temperature Configurable">
+                    <Thermometer className="size-3.5 mx-auto" />
+                  </th>
+                  <th className="text-center p-2 font-medium w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-subtle">
+                {provider.models.map((model) => (
+                  <ModelRow
+                    key={model.id}
+                    model={model}
+                    providerId={provider.id}
+                    onUpdate={onUpdateModel}
+                    onDelete={() => onDeleteModel(model.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {provider.models.length === 0 && !fetchedModels && (
+        <p className="text-xs text-foreground-muted text-center py-4">
+          Validate the provider, then fetch models to get started.
+        </p>
       )}
     </div>
   );
