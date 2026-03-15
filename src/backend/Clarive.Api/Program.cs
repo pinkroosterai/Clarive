@@ -191,6 +191,7 @@ builder.Services.AddScoped<ITagRepository, EfTagRepository>();
 builder.Services.AddScoped<IFavoriteRepository, EfFavoriteRepository>();
 builder.Services.AddScoped<IPlaygroundRunRepository, EfPlaygroundRunRepository>();
 builder.Services.AddScoped<IAiProviderRepository, EfAiProviderRepository>();
+builder.Services.AddScoped<IServiceConfigRepository, EfServiceConfigRepository>();
 
 // ── Services ──
 builder.Services.AddSingleton<MaintenanceModeService>();

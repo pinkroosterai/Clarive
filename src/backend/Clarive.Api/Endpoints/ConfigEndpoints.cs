@@ -1,10 +1,8 @@
-using System.Data.Common;
-using Clarive.Api.Data;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
+using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Clarive.Api.Auth;
 
@@ -25,23 +23,12 @@ public static class ConfigEndpoints
     }
 
     private static async Task<IResult> HandleGetAll(
-        ClariveDbContext db,
+        IServiceConfigRepository configRepo,
         IConfiguration configuration,
         IEncryptionService encryption,
         CancellationToken ct)
     {
-        Dictionary<string, ServiceConfig> overrides;
-        try
-        {
-            overrides = await db.ServiceConfigs
-                .AsNoTracking()
-                .ToDictionaryAsync(c => c.Key, c => c, ct);
-        }
-        catch (DbException)
-        {
-            // Table may not exist yet if migration hasn't been applied
-            overrides = new Dictionary<string, ServiceConfig>();
-        }
+        var overrides = await configRepo.GetAllAsync(ct);
 
         var result = ConfigRegistry.All
             .Select(def => ResolveConfigSetting(def, overrides, configuration))
@@ -100,7 +87,7 @@ public static class ConfigEndpoints
         string key,
         SetConfigValueRequest request,
         HttpContext ctx,
-        ClariveDbContext db,
+        IServiceConfigRepository configRepo,
         IEncryptionService encryption,
         CancellationToken ct)
     {
@@ -142,30 +129,14 @@ public static class ConfigEndpoints
             isEncrypted = false;
         }
 
-        var now = DateTime.UtcNow;
-        var userName = ctx.GetUserName();
-
-        var existing = await db.ServiceConfigs.FindAsync([key], ct);
-        if (existing is not null)
+        await configRepo.CreateOrUpdateAsync(new ServiceConfig
         {
-            existing.EncryptedValue = storedValue;
-            existing.IsEncrypted = isEncrypted;
-            existing.UpdatedAt = now;
-            existing.UpdatedBy = userName;
-        }
-        else
-        {
-            db.ServiceConfigs.Add(new ServiceConfig
-            {
-                Key = key,
-                EncryptedValue = storedValue,
-                IsEncrypted = isEncrypted,
-                UpdatedAt = now,
-                UpdatedBy = userName
-            });
-        }
-
-        await db.SaveChangesAsync(ct);
+            Key = key,
+            EncryptedValue = storedValue,
+            IsEncrypted = isEncrypted,
+            UpdatedAt = DateTime.UtcNow,
+            UpdatedBy = ctx.GetUserName()
+        }, ct);
 
         // Invalidate playground model cache when AI config changes
         if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
@@ -182,7 +153,7 @@ public static class ConfigEndpoints
     private static async Task<IResult> HandleDeleteValue(
         string key,
         HttpContext ctx,
-        ClariveDbContext db,
+        IServiceConfigRepository configRepo,
         CancellationToken ct)
     {
         key = Uri.UnescapeDataString(key);
@@ -193,12 +164,7 @@ public static class ConfigEndpoints
                 error = new { code = "CONFIG_KEY_NOT_FOUND", message = $"Unknown config key: {key}" }
             });
 
-        var existing = await db.ServiceConfigs.FindAsync([key], ct);
-        if (existing is null)
-            return Results.Ok(new { key, reset = true });
-
-        db.ServiceConfigs.Remove(existing);
-        await db.SaveChangesAsync(ct);
+        await configRepo.DeleteByKeyAsync(key, ct);
 
         // Invalidate playground model cache when AI config changes
         if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
