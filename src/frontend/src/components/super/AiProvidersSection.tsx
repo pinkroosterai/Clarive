@@ -14,7 +14,7 @@ import {
   Brain,
   Thermometer,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -486,6 +486,9 @@ function ProviderCardExpanded({
                   <th className="text-center p-2 font-medium" title="Temperature Configurable">
                     <Thermometer className="size-3.5 mx-auto" />
                   </th>
+                  <th className="text-center p-2 font-medium" title="Default Temperature">Temp</th>
+                  <th className="text-center p-2 font-medium" title="Default Max Tokens">Tokens</th>
+                  <th className="text-center p-2 font-medium" title="Default Reasoning Effort">Effort</th>
                   <th className="text-center p-2 font-medium w-10"></th>
                 </tr>
               </thead>
@@ -516,6 +519,40 @@ function ProviderCardExpanded({
 
 // ── Model Row ──
 
+function useDebouncedUpdate(
+  modelId: string,
+  field: string,
+  serverValue: string | number | null | undefined,
+  onUpdate: (modelId: string, data: Record<string, unknown>) => void,
+  transform: (value: string) => unknown,
+  delay = 500,
+) {
+  const [localValue, setLocalValue] = useState(String(serverValue ?? ''));
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const isLocalEdit = useRef(false);
+
+  // Sync from server when not actively editing
+  useEffect(() => {
+    if (!isLocalEdit.current) {
+      setLocalValue(String(serverValue ?? ''));
+    }
+  }, [serverValue]);
+
+  const handleChange = (value: string) => {
+    isLocalEdit.current = true;
+    setLocalValue(value);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      onUpdate(modelId, { [field]: transform(value) });
+      isLocalEdit.current = false;
+    }, delay);
+  };
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  return { localValue, handleChange };
+}
+
 function ModelRow({
   model,
   providerId,
@@ -527,13 +564,18 @@ function ModelRow({
   onUpdate: (modelId: string, data: Record<string, unknown>) => void;
   onDelete: () => void;
 }) {
+  const displayName = useDebouncedUpdate(model.id, 'displayName', model.displayName, onUpdate, (v) => v || null);
+  const contextSize = useDebouncedUpdate(model.id, 'maxContextSize', model.maxContextSize, onUpdate, (v) => Number(v) || 128000);
+  const temperature = useDebouncedUpdate(model.id, 'defaultTemperature', model.defaultTemperature, onUpdate, (v) => v ? Number(v) : null);
+  const maxTokens = useDebouncedUpdate(model.id, 'defaultMaxTokens', model.defaultMaxTokens, onUpdate, (v) => v ? Number(v) : null);
+
   return (
     <tr className="hover:bg-elevated/50">
       <td className="p-2 font-mono">{model.modelId}</td>
       <td className="p-2">
         <Input
-          value={model.displayName || ''}
-          onChange={(e) => onUpdate(model.id, { displayName: e.target.value || null })}
+          value={displayName.localValue}
+          onChange={(e) => displayName.handleChange(e.target.value)}
           className="h-6 text-xs w-32"
           placeholder="Optional"
         />
@@ -548,8 +590,8 @@ function ModelRow({
       <td className="p-2 text-center">
         <Input
           type="number"
-          value={model.maxContextSize}
-          onChange={(e) => onUpdate(model.id, { maxContextSize: Number(e.target.value) || 128000 })}
+          value={contextSize.localValue}
+          onChange={(e) => contextSize.handleChange(e.target.value)}
           className="h-6 text-xs w-20 text-center"
         />
       </td>
@@ -559,6 +601,50 @@ function ModelRow({
           onCheckedChange={(checked) => onUpdate(model.id, { isTemperatureConfigurable: checked })}
           className="scale-75"
         />
+      </td>
+      <td className="p-2 text-center">
+        {model.isTemperatureConfigurable ? (
+          <Input
+            type="number"
+            value={temperature.localValue}
+            onChange={(e) => temperature.handleChange(e.target.value)}
+            className="h-6 text-xs w-16 text-center"
+            placeholder="—"
+            min={0}
+            max={2}
+            step={0.1}
+          />
+        ) : (
+          <span className="text-foreground-muted">—</span>
+        )}
+      </td>
+      <td className="p-2 text-center">
+        <Input
+          type="number"
+          value={maxTokens.localValue}
+          onChange={(e) => maxTokens.handleChange(e.target.value)}
+          className="h-6 text-xs w-20 text-center"
+          placeholder="—"
+          min={1}
+          max={32000}
+        />
+      </td>
+      <td className="p-2 text-center">
+        {model.isReasoning ? (
+          <select
+            value={model.defaultReasoningEffort ?? ''}
+            onChange={(e) => onUpdate(model.id, { defaultReasoningEffort: e.target.value || null })}
+            className="h-6 text-xs border border-border-subtle rounded px-1 bg-background"
+          >
+            <option value="">—</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="extra-high">Extra High</option>
+          </select>
+        ) : (
+          <span className="text-foreground-muted">—</span>
+        )}
       </td>
       <td className="p-2 text-center">
         <button onClick={onDelete} className="text-destructive hover:text-destructive/80">
