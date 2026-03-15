@@ -41,6 +41,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { parseTemplateTags } from '@/lib/templateParser';
+import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { entryService } from '@/services';
 import {
@@ -181,6 +182,8 @@ const PlaygroundPage = () => {
   const [streamedResponses, setStreamedResponses] = useState<Record<number, string>>({});
   const [streamedReasoning, setStreamedReasoning] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  const rateLimitTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // ── Elapsed time + tokens ──
@@ -235,6 +238,11 @@ const PlaygroundPage = () => {
     setStreamedResponses({});
     setStreamedReasoning({});
     setError(null);
+    setRateLimitCountdown(0);
+    if (rateLimitTimerRef.current) {
+      clearInterval(rateLimitTimerRef.current);
+      rateLimitTimerRef.current = null;
+    }
     setLastTokens(null);
     setElapsedSeconds(0);
 
@@ -287,7 +295,22 @@ const PlaygroundPage = () => {
       if (err instanceof DOMException && err.name === 'AbortError') {
         toast.info('Generation stopped');
       } else {
-        setError(err instanceof Error ? err.message : 'Test failed');
+        const rawMessage = err instanceof Error ? err.message : 'Test failed';
+        setError(rawMessage);
+        if (isRateLimitError(rawMessage)) {
+          setRateLimitCountdown(60);
+          if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+          rateLimitTimerRef.current = setInterval(() => {
+            setRateLimitCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(rateLimitTimerRef.current!);
+                rateLimitTimerRef.current = null;
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        }
       }
     } finally {
       setIsStreaming(false);
@@ -644,8 +667,27 @@ const PlaygroundPage = () => {
 
           {/* Error */}
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 rounded-lg p-4 mb-4">
-              {error}
+            <div
+              className={`text-sm rounded-lg p-4 mb-4 flex items-center justify-between gap-3 ${
+                isRateLimitError(error)
+                  ? 'text-warning-text bg-warning-bg border border-warning-border'
+                  : 'text-destructive bg-destructive/10'
+              }`}
+            >
+              <span>
+                {isRateLimitError(error) && rateLimitCountdown > 0
+                  ? `Rate limit reached — you can try again in ${rateLimitCountdown}s`
+                  : mapPlaygroundError(error)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRun}
+                disabled={isStreaming || rateLimitCountdown > 0}
+                className="shrink-0"
+              >
+                {rateLimitCountdown > 0 ? `Retry in ${rateLimitCountdown}s` : 'Retry'}
+              </Button>
             </div>
           )}
 
