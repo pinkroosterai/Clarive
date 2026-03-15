@@ -20,7 +20,6 @@ public class PlaygroundService(
     IAgentFactory agentFactory,
     IEncryptionService encryption,
     IOptionsMonitor<AiSettings> aiSettings,
-    IConfiguration configuration,
     IMemoryCache cache,
     ILogger<PlaygroundService> logger)
 {
@@ -320,7 +319,7 @@ public class PlaygroundService(
                 .ToList();
 
             // Filter to admin-whitelisted models if configured
-            var allowedModels = configuration["Ai:AllowedModels"];
+            var allowedModels = aiSettings.CurrentValue.AllowedModels;
             if (!string.IsNullOrWhiteSpace(allowedModels))
             {
                 var whitelist = new HashSet<string>(

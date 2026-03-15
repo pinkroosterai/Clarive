@@ -6,5 +6,6 @@ public record AiSettings
     public string DefaultModelProviderId { get; init; } = "";
     public string PremiumModel { get; init; } = "gpt-5.2";
     public string PremiumModelProviderId { get; init; } = "";
+    public string AllowedModels { get; init; } = "";
     public string TavilyApiKey { get; init; } = "";
 }

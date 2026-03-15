@@ -34,6 +34,9 @@ public class AiProviderService(
         if (!encryption.IsAvailable)
             return Error.Failure("ENCRYPTION_UNAVAILABLE", "CONFIG_ENCRYPTION_KEY is not configured.");
 
+        if (ValidateEndpointUrl(request.EndpointUrl) is { } urlError)
+            return urlError;
+
         var now = DateTime.UtcNow;
         var provider = new AiProvider
         {
@@ -58,7 +61,12 @@ public class AiProviderService(
             return Error.NotFound("NOT_FOUND", "Provider not found.");
 
         if (request.Name is not null) provider.Name = request.Name;
-        if (request.EndpointUrl is not null) provider.EndpointUrl = request.EndpointUrl;
+        if (request.EndpointUrl is not null)
+        {
+            if (ValidateEndpointUrl(request.EndpointUrl) is { } urlError)
+                return urlError;
+            provider.EndpointUrl = request.EndpointUrl;
+        }
         if (request.ApiKey is not null)
         {
             if (!encryption.IsAvailable)
@@ -188,4 +196,23 @@ public class AiProviderService(
         m.Id, m.ModelId, m.DisplayName, m.IsReasoning,
         m.MaxContextSize, m.IsTemperatureConfigurable, m.IsActive, m.SortOrder
     );
+
+    private static Error? ValidateEndpointUrl(string? endpointUrl)
+    {
+        if (string.IsNullOrWhiteSpace(endpointUrl))
+            return null;
+
+        if (!Uri.TryCreate(endpointUrl, UriKind.Absolute, out var uri))
+            return Error.Validation("INVALID_ENDPOINT", "Endpoint URL is not a valid URL.");
+
+        // Allow HTTPS always, allow HTTP only for localhost (development)
+        if (uri.Scheme == Uri.UriSchemeHttps)
+            return null;
+
+        if (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback)
+            return null;
+
+        return Error.Validation("INSECURE_ENDPOINT",
+            "Endpoint URL must use HTTPS. HTTP is only allowed for localhost.");
+    }
 }
