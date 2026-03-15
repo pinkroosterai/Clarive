@@ -13,9 +13,12 @@ import {
   RotateCcw,
   Loader2,
   History,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,9 +139,10 @@ const PlaygroundPage = () => {
   const [expandedStepInputs, setExpandedStepInputs] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  // ── History ──
+  // ── History + comparison ──
   const [showHistory, setShowHistory] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
+  const [pinnedRun, setPinnedRun] = useState<TestRunResponse | null>(null);
 
   // ── Queries ──
   const { data: models = [], isError: modelsError } = useQuery({
@@ -430,8 +434,63 @@ const PlaygroundPage = () => {
             </Collapsible>
           )}
 
-          {/* Streaming indicator */}
-          {isStreaming && (
+          {/* Comparison layout */}
+          {pinnedRun && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-xs text-foreground-muted">
+                  <Pin className="size-3.5 text-primary" />
+                  <span className="font-medium">Pinned: {pinnedRun.model}</span>
+                  <span>t={pinnedRun.temperature.toFixed(1)}</span>
+                  <span>{new Date(pinnedRun.createdAt).toLocaleString()}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setPinnedRun(null)}
+                >
+                  <PinOff className="size-3 mr-1" />
+                  Unpin
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Pinned run responses */}
+                <div className="space-y-3">
+                  <div className="text-xs font-medium text-foreground-muted mb-2">Pinned Run</div>
+                  {pinnedRun.responses.map((r: TestRunPromptResponse) => (
+                    <div key={r.promptIndex} className="rounded-lg border border-border-subtle bg-surface p-4">
+                      {prompts.length > 1 && (
+                        <div className="text-xs text-foreground-muted mb-2">Prompt {r.promptIndex + 1}</div>
+                      )}
+                      <LLMResponseBlock output={r.content} isStreaming={false} />
+                    </div>
+                  ))}
+                </div>
+                {/* Current run responses */}
+                <div className="space-y-3">
+                  <div className="text-xs font-medium text-foreground-muted mb-2">
+                    {isStreaming ? 'Current Run (streaming...)' : hasResponses ? 'Current Run' : 'Run a new test to compare'}
+                  </div>
+                  {prompts.map((_p, i) => {
+                    const response = streamedResponses[i];
+                    if (response === undefined) return null;
+                    return (
+                      <div key={i} className="rounded-lg border border-border-subtle bg-surface p-4">
+                        {prompts.length > 1 && (
+                          <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                        )}
+                        <LLMResponseBlock output={response} isStreaming={isStreaming} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Streaming indicator (non-comparison mode) */}
+          {!pinnedRun && isStreaming && (
             <div className="flex items-center gap-2 text-sm text-foreground-muted mb-4">
               <Loader2 className="size-4 animate-spin" />
               <span>Generating... {elapsedSeconds > 0 && `${elapsedSeconds}s`}</span>
@@ -445,8 +504,8 @@ const PlaygroundPage = () => {
             </div>
           )}
 
-          {/* ── Chain view (multi-prompt) ── */}
-          {isChain && (hasResponses || isStreaming) && (
+          {/* ── Chain view (multi-prompt) — hidden when comparing ── */}
+          {!pinnedRun && isChain && (hasResponses || isStreaming) && (
             <div className="space-y-0">
               {prompts.map((prompt, i) => {
                 const response = streamedResponses[i];
@@ -514,9 +573,7 @@ const PlaygroundPage = () => {
                                 : 'border-border-subtle bg-surface'
                             } ${!isExpanded && isLong ? 'max-h-60 overflow-hidden' : ''}`}
                           >
-                            <pre className="text-sm font-mono whitespace-pre-wrap">
-                              {response}
-                            </pre>
+                            <LLMResponseBlock output={response || ''} isStreaming={isActive ?? false} />
                           </div>
 
                           {/* Copy button */}
@@ -558,8 +615,8 @@ const PlaygroundPage = () => {
             </div>
           )}
 
-          {/* ── Single prompt view ── */}
-          {!isChain && (hasResponses || isStreaming) && (
+          {/* ── Single prompt view — hidden when comparing ── */}
+          {!pinnedRun && !isChain && (hasResponses || isStreaming) && (
             <div className="space-y-3">
               {prompts.map((_prompt, i) => {
                 const response = streamedResponses[i];
@@ -574,9 +631,7 @@ const PlaygroundPage = () => {
                         !isExpanded && isLong ? 'max-h-60 overflow-hidden' : ''
                       }`}
                     >
-                      <pre className="text-sm font-mono whitespace-pre-wrap">
-                        {response || ''}
-                      </pre>
+                      <LLMResponseBlock output={response || ''} isStreaming={isStreaming} />
                     </div>
 
                     {response && !isStreaming && (
@@ -675,6 +730,19 @@ const PlaygroundPage = () => {
                           size="sm"
                           variant="ghost"
                           className="h-6 px-1.5"
+                          onClick={() => setPinnedRun(pinnedRun?.id === run.id ? null : run)}
+                          title={pinnedRun?.id === run.id ? 'Unpin' : 'Pin for comparison'}
+                        >
+                          {pinnedRun?.id === run.id ? (
+                            <PinOff className="size-3 text-primary" />
+                          ) : (
+                            <Pin className="size-3" />
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1.5"
                           onClick={() => handleRerun(run)}
                           title="Load parameters"
                         >
@@ -693,9 +761,9 @@ const PlaygroundPage = () => {
                         <div className="mt-2 space-y-2">
                           {run.responses.map((r: TestRunPromptResponse) => (
                             <div key={r.promptIndex} className="relative group">
-                              <pre className="bg-elevated rounded-md p-2 text-xs font-mono whitespace-pre-wrap border border-border-subtle max-h-40 overflow-y-auto">
-                                {r.content}
-                              </pre>
+                              <div className="bg-elevated rounded-md p-2 border border-border-subtle max-h-40 overflow-y-auto text-xs">
+                                <LLMResponseBlock output={r.content} isStreaming={false} />
+                              </div>
                               <button
                                 onClick={() => handleCopy(r.content, 1000 + r.promptIndex)}
                                 className="absolute top-1 right-1 p-1 rounded bg-elevated/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
