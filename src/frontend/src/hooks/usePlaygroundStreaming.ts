@@ -127,10 +127,16 @@ export function usePlaygroundStreaming({
   }, [streamedResponses, streamedReasoning, isStreaming]);
 
   // ── Derived values ──
-  const activePromptIndex = useMemo(() => {
-    const indices = Object.keys(streamedResponses).map(Number);
-    return indices.length > 0 ? Math.max(...indices) : -1;
-  }, [streamedResponses]);
+  // Which prompt is currently being processed? Defaults to 0 when streaming
+  // starts (before any content arrives), so the spinner shows immediately.
+  const currentPromptIndex = useMemo(() => {
+    if (!isStreaming) return -1;
+    const indices = new Set([
+      ...Object.keys(streamedResponses).map(Number),
+      ...Object.keys(streamedReasoning).map(Number),
+    ]);
+    return indices.size > 0 ? Math.max(...indices) : 0;
+  }, [streamedResponses, streamedReasoning, isStreaming]);
   const responseCount = useMemo(() => Object.keys(streamedResponses).length, [streamedResponses]);
   const hasResponses = responseCount > 0;
 
@@ -252,7 +258,7 @@ export function usePlaygroundStreaming({
     approxOutputTokens,
     lastTokens,
     hasResponses,
-    activePromptIndex,
+    currentPromptIndex,
     responseCount,
     handleRun,
     handleAbort,

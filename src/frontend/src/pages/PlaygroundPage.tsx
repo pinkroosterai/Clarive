@@ -182,7 +182,7 @@ const PlaygroundPage = () => {
   const {
     isStreaming, firstTokenReceived, streamedResponses, streamedReasoning,
     error, wasStopped, rateLimitCountdown, elapsedSeconds, approxOutputTokens,
-    lastTokens, hasResponses, activePromptIndex, responseCount,
+    lastTokens, hasResponses, currentPromptIndex, responseCount,
     handleRun, handleAbort, responseAreaRef,
   } = usePlaygroundStreaming({
     entryId,
@@ -630,8 +630,8 @@ const PlaygroundPage = () => {
             <div className="space-y-0">
               {prompts.map((prompt, i) => {
                 const response = streamedResponses[i];
-                const isActive = isStreaming && response !== undefined && i === activePromptIndex;
-                const isComplete = !isStreaming && response !== undefined;
+                const isActive = isStreaming && i === currentPromptIndex;
+                const isComplete = response !== undefined && (!isStreaming || i < currentPromptIndex);
                 const showInput = expandedStepInputs.has(i);
 
                 return (
