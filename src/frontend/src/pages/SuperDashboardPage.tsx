@@ -21,15 +21,16 @@ import {
   LayoutDashboard,
   AlertTriangle,
   X,
+  Settings,
+  Cpu,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { StatCard } from '@/components/dashboard/StatCard';
-import AiConfigSection from '@/components/super/AiConfigSection';
-import AiProvidersSection from '@/components/super/AiProvidersSection';
-import ConfigSectionForm from '@/components/super/ConfigSectionForm';
+import AiTab from '@/components/super/AiTab';
+import SettingsTab from '@/components/super/SettingsTab';
 import UsersTable from '@/components/super/UsersTable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -39,17 +40,19 @@ import { safeSessionStorageGet } from '@/lib/utils';
 import { getAllConfig, type ConfigSetting } from '@/services/api/configService';
 import { getSuperStats } from '@/services/api/superService';
 
-// ── Config sections ──
+// ── Tab configuration ──
 
-const CONFIG_SECTIONS = [
-  { key: 'Authentication', label: 'Authentication' },
-  { key: 'Ai', label: 'AI' },
-  { key: 'Email', label: 'Email' },
-  { key: 'Application', label: 'Application' },
-] as const;
-
-const VALID_TABS = ['dashboard', 'users', 'ai-providers', ...CONFIG_SECTIONS.map((s) => s.key.toLowerCase())];
+const VALID_TABS = ['overview', 'users', 'ai', 'settings'];
 const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
+
+// Map old tab param values to new ones for backwards compatibility
+const TAB_REDIRECTS: Record<string, string> = {
+  dashboard: 'overview',
+  'ai-providers': 'ai',
+  authentication: 'settings',
+  email: 'settings',
+  application: 'settings',
+};
 
 const TAB_STYLE =
   'gap-1.5 min-h-[44px] text-foreground-muted hover:text-foreground-secondary data-[state=active]:bg-surface data-[state=active]:elevation-1 data-[state=active]:rounded-md data-[state=active]:text-foreground';
@@ -92,7 +95,20 @@ function StatsSection({
 const SuperDashboardPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
-  const activeTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'dashboard';
+
+  // Handle redirects from old tab values
+  useEffect(() => {
+    if (tabFromUrl && TAB_REDIRECTS[tabFromUrl]) {
+      setSearchParams({ tab: TAB_REDIRECTS[tabFromUrl] }, { replace: true });
+    }
+  }, [tabFromUrl, setSearchParams]);
+
+  const activeTab =
+    tabFromUrl && VALID_TABS.includes(tabFromUrl)
+      ? tabFromUrl
+      : tabFromUrl && TAB_REDIRECTS[tabFromUrl]
+        ? TAB_REDIRECTS[tabFromUrl]
+        : 'overview';
 
   const [restartKeys, setRestartKeys] = useState<string[]>([]);
 
@@ -213,27 +229,27 @@ const SuperDashboardPage = () => {
         onValueChange={(tab) => setSearchParams({ tab }, { replace: true })}
         className="w-full"
       >
-        <TabsList className="w-full h-auto justify-start flex-wrap bg-elevated rounded-lg p-1">
-          <TabsTrigger value="dashboard" className={TAB_STYLE}>
+        <TabsList className="w-full h-auto justify-start bg-elevated rounded-lg p-1">
+          <TabsTrigger value="overview" className={TAB_STYLE}>
             <LayoutDashboard className="size-4 hidden sm:block" />
-            Dashboard
+            Overview
           </TabsTrigger>
           <TabsTrigger value="users" className={TAB_STYLE}>
             <Users className="size-4 hidden sm:block" />
             Users
           </TabsTrigger>
-          <TabsTrigger value="ai-providers" className={TAB_STYLE}>
-            AI Providers
+          <TabsTrigger value="ai" className={TAB_STYLE}>
+            <Cpu className="size-4 hidden sm:block" />
+            AI
           </TabsTrigger>
-          {CONFIG_SECTIONS.map(({ key, label }) => (
-            <TabsTrigger key={key} value={key.toLowerCase()} className={TAB_STYLE}>
-              {label}
-            </TabsTrigger>
-          ))}
+          <TabsTrigger value="settings" className={TAB_STYLE}>
+            <Settings className="size-4 hidden sm:block" />
+            Settings
+          </TabsTrigger>
         </TabsList>
 
-        {/* Dashboard Tab */}
-        <TabsContent value="dashboard" className="mt-6 space-y-6">
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="mt-6 space-y-6">
           <StatsSection title="Users & Growth" items={userStats} loading={statsLoading} />
           <StatsSection title="Workspaces" items={workspaceStats} loading={statsLoading} />
           <StatsSection title="Content" items={contentStats} loading={statsLoading} />
@@ -244,41 +260,25 @@ const SuperDashboardPage = () => {
           <UsersTable />
         </TabsContent>
 
-        {/* AI Providers Tab */}
-        <TabsContent value="ai-providers" className="mt-6">
-          <AiProvidersSection />
+        {/* AI Tab (merged AI Providers + AI Config) */}
+        <TabsContent value="ai" className="mt-6">
+          <AiTab
+            aiSettings={settingsBySection['ai'] ?? []}
+            configLoading={configLoading}
+            configError={configError}
+            onSaved={refreshRestartKeys}
+          />
         </TabsContent>
 
-        {/* Config Tabs */}
-        {CONFIG_SECTIONS.map(({ key }) => {
-          const sectionSettings = settingsBySection[key.toLowerCase()] ?? [];
-          return (
-            <TabsContent key={key} value={key.toLowerCase()} className="mt-6">
-              {configLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-64 w-full" />
-                </div>
-              ) : configError ? (
-                <Alert variant="destructive">
-                  <AlertTriangle className="size-4" />
-                  <AlertDescription>
-                    Failed to load configuration settings. Check that the backend is running and the
-                    database migration has been applied.
-                  </AlertDescription>
-                </Alert>
-              ) : sectionSettings.length > 0 ? (
-                key === 'Ai' ? (
-                  <AiConfigSection settings={sectionSettings} onSaved={refreshRestartKeys} />
-                ) : (
-                  <ConfigSectionForm settings={sectionSettings} onSaved={refreshRestartKeys} />
-                )
-              ) : (
-                <p className="text-sm text-foreground-muted">No settings in this section.</p>
-              )}
-            </TabsContent>
-          );
-        })}
+        {/* Settings Tab (merged Authentication + Email + Application) */}
+        <TabsContent value="settings" className="mt-6">
+          <SettingsTab
+            settingsBySection={settingsBySection}
+            configLoading={configLoading}
+            configError={configError}
+            onSaved={refreshRestartKeys}
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );
