@@ -7,6 +7,8 @@ public record TestRunResponse(
     int MaxTokens,
     Dictionary<string, string>? TemplateFieldValues,
     List<TestRunPromptResponse> Responses,
+    long? InputTokens,
+    long? OutputTokens,
     DateTime CreatedAt
 );
 
@@ -22,5 +24,7 @@ public record TestStreamChunk(
 
 public record TestStreamResult(
     Guid RunId,
-    List<TestRunPromptResponse> Responses
+    List<TestRunPromptResponse> Responses,
+    long? InputTokens,
+    long? OutputTokens
 );

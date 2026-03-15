@@ -13,6 +13,8 @@ export interface TestRunPromptResponse {
 export interface TestStreamResult {
   runId: string;
   responses: TestRunPromptResponse[];
+  inputTokens: number | null;
+  outputTokens: number | null;
 }
 
 export interface TestRunResponse {
@@ -22,6 +24,8 @@ export interface TestRunResponse {
   maxTokens: number;
   templateFieldValues: Record<string, string> | null;
   responses: TestRunPromptResponse[];
+  inputTokens: number | null;
+  outputTokens: number | null;
   createdAt: string;
 }
 

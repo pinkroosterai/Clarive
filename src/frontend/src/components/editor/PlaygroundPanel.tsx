@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Play, Square, ChevronDown, ChevronRight, Clock, RotateCcw } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Clock, Copy, Check, RotateCcw, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,6 +87,15 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Elapsed time + tokens
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [lastTokens, setLastTokens] = useState<{ input: number | null; output: number | null } | null>(null);
+
+  // Response display
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<number>>(new Set());
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
   // History
   const [historyOpen, setHistoryOpen] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
@@ -115,12 +125,21 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
     setIsStreaming(true);
     setStreamedResponses({});
     setError(null);
+    setLastTokens(null);
+    setElapsedSeconds(0);
+    setExpandedPrompts(new Set());
+
+    // Start elapsed time counter
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
-      await testEntry(
+      const result = await testEntry(
         entryId,
         {
           model: model || undefined,
@@ -137,6 +156,11 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
         controller.signal
       );
 
+      // Capture token counts from result
+      if (result.inputTokens != null || result.outputTokens != null) {
+        setLastTokens({ input: result.inputTokens, output: result.outputTokens });
+      }
+
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -147,11 +171,28 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
     } finally {
       setIsStreaming(false);
       abortRef.current = null;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      // Final elapsed update
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
     }
   }, [entryId, model, temperature, maxTokens, fieldValues, templateFields, queryClient]);
 
   const handleAbort = useCallback(() => {
     abortRef.current?.abort();
+  }, []);
+
+  const handleCopy = useCallback(async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      toast.success('Copied to clipboard');
+      setTimeout(() => setCopiedIndex(null), 1500);
+    } catch {
+      toast.error('Failed to copy');
+    }
   }, []);
 
   const handleRerun = useCallback(
@@ -284,14 +325,26 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
       </div>
 
       {/* Response area */}
-      {(hasResponses || error) && (
+      {(hasResponses || error || isStreaming) && (
         <div className="pt-3 space-y-3">
+          {/* Streaming indicator */}
+          {isStreaming && (
+            <div className="flex items-center gap-2 text-xs text-foreground-muted">
+              <Loader2 className="size-3.5 animate-spin" />
+              <span>Generating... {elapsedSeconds > 0 && `${elapsedSeconds}s`}</span>
+            </div>
+          )}
+
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 rounded p-3">{error}</div>
           )}
-          {prompts.map((prompt, i) => {
+
+          {prompts.map((_prompt, i) => {
             const response = streamedResponses[i];
             if (response === undefined && !isStreaming) return null;
+            const isExpanded = expandedPrompts.has(i);
+            const isLong = (response?.split('\n').length ?? 0) > 20;
+
             return (
               <div key={i} className="space-y-1">
                 {prompts.length > 1 && (
@@ -299,15 +352,62 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
                     Prompt {i + 1} response
                   </div>
                 )}
-                <pre className="bg-elevated rounded-md p-3 text-sm font-mono whitespace-pre-wrap border border-border-subtle overflow-x-auto max-h-96 overflow-y-auto">
-                  {response || ''}
-                  {isStreaming && response !== undefined && (
-                    <span className="animate-pulse">|</span>
+                <div className="relative group">
+                  <pre
+                    className={`bg-elevated rounded-md p-3 text-sm font-mono whitespace-pre-wrap border border-border-subtle overflow-x-auto ${
+                      !isExpanded && isLong ? 'max-h-60 overflow-hidden' : ''
+                    }`}
+                  >
+                    {response || ''}
+                  </pre>
+
+                  {/* Copy button */}
+                  {response && !isStreaming && (
+                    <button
+                      onClick={() => handleCopy(response, i)}
+                      className="absolute top-2 right-2 p-1 rounded bg-elevated/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Copy response"
+                    >
+                      {copiedIndex === i ? (
+                        <Check className="size-3.5 text-success-text" />
+                      ) : (
+                        <Copy className="size-3.5 text-foreground-muted" />
+                      )}
+                    </button>
                   )}
-                </pre>
+
+                  {/* Expand/collapse for long responses */}
+                  {isLong && !isStreaming && (
+                    <button
+                      onClick={() =>
+                        setExpandedPrompts((prev) => {
+                          const next = new Set(prev);
+                          next.has(i) ? next.delete(i) : next.add(i);
+                          return next;
+                        })
+                      }
+                      className="w-full text-center py-1 text-xs text-foreground-muted hover:text-foreground transition-colors"
+                    >
+                      {isExpanded ? 'Show less' : 'Show more'}
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
+
+          {/* Token count + elapsed time */}
+          {!isStreaming && hasResponses && (
+            <div className="flex items-center gap-4 text-xs text-foreground-muted">
+              {elapsedSeconds > 0 && <span>{elapsedSeconds}s</span>}
+              {lastTokens && (
+                <>
+                  {lastTokens.input != null && <span>{lastTokens.input} input tokens</span>}
+                  {lastTokens.output != null && <span>{lastTokens.output} output tokens</span>}
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
 

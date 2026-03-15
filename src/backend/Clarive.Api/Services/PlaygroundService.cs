@@ -82,6 +82,8 @@ public class PlaygroundService(
         }
 
         var responses = new List<TestRunPromptResponse>();
+        long? totalInputTokens = null;
+        long? totalOutputTokens = null;
 
         try
         {
@@ -124,6 +126,14 @@ public class PlaygroundService(
                         if (onChunk is not null)
                             await onChunk(new TestStreamChunk(i, update.Text));
                     }
+
+                    // Collect token usage from the final streaming update (sent as UsageContent in Contents)
+                    var usageContent = update.Contents.OfType<UsageContent>().FirstOrDefault();
+                    if (usageContent is not null)
+                    {
+                        totalInputTokens = (totalInputTokens ?? 0) + (usageContent.Details.InputTokenCount ?? 0);
+                        totalOutputTokens = (totalOutputTokens ?? 0) + (usageContent.Details.OutputTokenCount ?? 0);
+                    }
                 }
 
                 var fullResponse = responseText.ToString();
@@ -157,7 +167,7 @@ public class PlaygroundService(
         await runRepo.AddAsync(run, ct);
         await runRepo.DeleteOldestByEntryIdAsync(entryId, MaxRunsPerEntry, ct);
 
-        return new TestStreamResult(run.Id, responses);
+        return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens);
     }
 
     public async Task<List<TestRunResponse>> GetTestRunsAsync(
@@ -174,6 +184,7 @@ public class PlaygroundService(
                 ? JsonSerializer.Deserialize<Dictionary<string, string>>(r.TemplateFieldValues, JsonOptions)
                 : null,
             JsonSerializer.Deserialize<List<TestRunPromptResponse>>(r.Responses, JsonOptions) ?? [],
+            null, null, // Token counts not stored in historical runs
             r.CreatedAt
         )).ToList();
     }
