@@ -7,24 +7,20 @@ import {
   findPartialCodeBlock,
   useCodeBlockToHtml,
   loadHighlighter,
-  type LLMUIHighlighter,
 } from '@llm-ui/code';
+import { createHighlighter } from 'shiki';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { BlockMatch } from '@llm-ui/react';
 
 // ── Shiki highlighter (loaded once, shared) ──
-let highlighterPromise: Promise<LLMUIHighlighter> | null = null;
-
-function getHighlighter(): Promise<LLMUIHighlighter> {
-  if (!highlighterPromise) {
-    highlighterPromise = loadHighlighter({
-      langs: ['javascript', 'typescript', 'python', 'bash', 'json', 'html', 'css', 'sql', 'yaml', 'markdown', 'jsx', 'tsx', 'go', 'rust', 'java', 'csharp', 'xml'],
-      themes: ['github-dark', 'github-light'],
-    });
-  }
-  return highlighterPromise;
-}
+// loadHighlighter expects a Promise<HighlighterCore> from shiki, not a config object
+const highlighter = loadHighlighter(
+  createHighlighter({
+    langs: ['javascript', 'typescript', 'python', 'bash', 'json', 'html', 'css', 'sql', 'yaml', 'markdown', 'jsx', 'tsx', 'go', 'rust', 'java', 'csharp', 'xml'],
+    themes: ['github-dark', 'github-light'],
+  })
+);
 
 // ── Markdown block component ──
 function MarkdownBlock({ blockMatch }: { blockMatch: BlockMatch }) {
@@ -41,7 +37,7 @@ function MarkdownBlock({ blockMatch }: { blockMatch: BlockMatch }) {
 function CodeBlockComponent({ blockMatch }: { blockMatch: BlockMatch }) {
   const { html, code } = useCodeBlockToHtml({
     markdownCodeBlock: blockMatch.output,
-    highlighter: getHighlighter(),
+    highlighter,
     codeToHtmlOptions: {
       themes: {
         light: 'github-light',
