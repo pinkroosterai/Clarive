@@ -82,7 +82,7 @@ make dev-reset                        # Stop, wipe database, and restart fresh
 
 Development uses hardcoded defaults in `deploy/docker-compose.dev.yml` — no `.env` configuration is needed for basic development.
 
-For AI features, set `OPENAI_API_KEY` in `.env` (or export it in your shell). For OpenAI-compatible providers (Ollama, LiteLLM, etc.), also set `AI_ENDPOINT_URL`. For AI web search during generation, set `TAVILY_API_KEY`.
+For AI features, add an AI provider (with API key, endpoint, and models) via **Super Admin > AI > Providers**, then select Default and Premium models in **AI > Settings**. For AI web search during generation, set `TAVILY_API_KEY` in the dashboard or `.env`.
 
 ## Testing
 

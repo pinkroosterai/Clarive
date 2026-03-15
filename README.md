@@ -297,8 +297,6 @@ Configuration is via environment variables.
 | `CORS_ORIGINS` | Allowed CORS origins | No | `http://localhost:8080` |
 | `CLARIVE_PORT` | Host port to expose | No | `8080` |
 | `CLARIVE_VERSION` | Docker Hub image tag (self-host only) | No | `latest` |
-| `OPENAI_API_KEY` | OpenAI-compatible API key (AI features disabled if blank) | No | — |
-| `AI_ENDPOINT_URL` | Custom endpoint for OpenAI-compatible providers | No | — |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | No | — |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | No | — |
 | `ALLOW_REGISTRATION` | Allow new user registration | No | `true` |

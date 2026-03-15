@@ -26,13 +26,15 @@ All configuration is done via environment variables. Run `make setup` to generat
 
 ## AI
 
+AI providers (API keys, endpoints, models) are configured via the **Super Admin > AI** dashboard, not environment variables. The following env vars set default model preferences:
+
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `OPENAI_API_KEY` | API key for OpenAI-compatible provider | (optional, disables AI if blank) |
-| `AI_ENDPOINT_URL` | Custom endpoint URL for OpenAI-compatible providers (Ollama, LiteLLM, vLLM, etc.) | (optional, uses OpenAI default) |
-| `AI_DEFAULT_MODEL` | Default model for AI features | `gpt-4o-mini` |
-| `AI_PREMIUM_MODEL` | Premium model | `gpt-4o` |
+| `AI_DEFAULT_MODEL` | Default model for everyday AI tasks (evaluation, clarification) | `gpt-4o-mini` |
+| `AI_PREMIUM_MODEL` | Premium model for prompt generation (AI Wizard) | `gpt-4o` |
 | `TAVILY_API_KEY` | API key for [Tavily](https://tavily.com) web search (enables research-backed generation) | (optional) |
+
+**Setup flow:** Add an AI provider in Super Admin > AI > Providers, configure models, then select which models to use as Default and Premium in AI > Settings.
 
 ## Application
 
