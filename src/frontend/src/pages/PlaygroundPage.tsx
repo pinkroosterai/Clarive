@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
@@ -75,8 +77,10 @@ function ReasoningBlock({ reasoning, defaultOpen, isStreaming }: { reasoning: st
         Thinking
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className={`rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 text-xs font-mono whitespace-pre-wrap text-indigo-800 dark:text-indigo-300 ${isStreaming ? 'max-h-96' : 'max-h-40'} overflow-y-auto`}>
-          {reasoning}
+        <div className={`rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 ${isStreaming ? 'max-h-96' : 'max-h-40'} overflow-y-auto`}>
+          <div className="prose prose-xs dark:prose-invert max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:bg-indigo-100 dark:prose-pre:bg-indigo-900/30 prose-pre:text-xs prose-code:text-xs text-indigo-800 dark:text-indigo-300">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+          </div>
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -568,28 +572,18 @@ const PlaygroundPage = () => {
 
           {/* Streaming indicator (non-comparison mode) */}
           {!pinnedRun && isStreaming && (
-            <div ref={responseAreaRef} className="flex flex-col gap-1 text-sm text-foreground-muted mb-4" aria-live="polite" role="status">
+            <div ref={responseAreaRef} className="flex items-center gap-2 text-sm text-foreground-muted mb-4" aria-live="polite" role="status">
               {firstTokenReceived ? (
                 <>
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" />
-                    <span>
-                      {getStreamingStatusMessage(elapsedSeconds)} {elapsedSeconds > 0 && `${elapsedSeconds}s`}
-                      {approxOutputTokens > 0 && (
-                        <span className="text-foreground-muted/70 ml-1">
-                          · ~{approxOutputTokens.toLocaleString()}{maxTokens ? ` / ${maxTokens.toLocaleString()}` : ''} tokens
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  {maxTokens > 0 && approxOutputTokens > 0 && (
-                    <div className="w-48 h-1 bg-border-subtle rounded-full overflow-hidden ml-6">
-                      <div
-                        className="h-full bg-primary/60 rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${Math.min(100, (approxOutputTokens / maxTokens) * 100)}%` }}
-                      />
-                    </div>
-                  )}
+                  <Loader2 className="size-4 animate-spin" />
+                  <span>
+                    {getStreamingStatusMessage(elapsedSeconds)} {elapsedSeconds > 0 && `${elapsedSeconds}s`}
+                    {approxOutputTokens > 0 && (
+                      <span className="text-foreground-muted/70 ml-1">
+                        · ~{approxOutputTokens.toLocaleString()} tokens
+                      </span>
+                    )}
+                  </span>
                 </>
               ) : (
                 <span className="flex items-center gap-1">

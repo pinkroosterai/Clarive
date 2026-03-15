@@ -92,11 +92,10 @@ export function usePlaygroundStreaming({
 
   // ── Auto-follow scrolling ──
   useEffect(() => {
-    const el = document.querySelector('[data-radix-scroll-area-viewport]');
-    if (el) scrollViewportRef.current = el as HTMLDivElement;
-  }, []);
-
-  useEffect(() => {
+    if (!scrollViewportRef.current) {
+      const el = document.querySelector('[data-radix-scroll-area-viewport]');
+      if (el) scrollViewportRef.current = el as HTMLDivElement;
+    }
     const viewport = scrollViewportRef.current;
     if (!viewport) return;
 
@@ -114,6 +113,11 @@ export function usePlaygroundStreaming({
   useEffect(() => {
     if (!isStreaming || !isAutoFollowRef.current) return;
     if (scrollRafRef.current !== null) return;
+
+    if (!scrollViewportRef.current) {
+      const el = document.querySelector('[data-radix-scroll-area-viewport]');
+      if (el) scrollViewportRef.current = el as HTMLDivElement;
+    }
 
     scrollRafRef.current = requestAnimationFrame(() => {
       const viewport = scrollViewportRef.current;
@@ -173,6 +177,7 @@ export function usePlaygroundStreaming({
         },
         (chunk: TestStreamChunk) => {
           if (!chunk.text) return;
+          // Trigger spinner on first chunk of any type (text or reasoning)
           if (!firstTokenRef.current) {
             firstTokenRef.current = true;
             setFirstTokenReceived(true);
