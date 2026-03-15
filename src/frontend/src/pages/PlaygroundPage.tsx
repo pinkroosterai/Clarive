@@ -97,7 +97,7 @@ function CopyButton({
   return (
     <button
       onClick={() => onCopy(text, index)}
-      className="absolute top-2 right-2 p-1.5 rounded-md bg-surface/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+      className="absolute top-2 right-2 p-2 rounded-md bg-surface/80 border border-border-subtle opacity-40 hover:opacity-100 focus:opacity-100 transition-opacity"
       title="Copy response"
     >
       {copiedIndex === index ? (
@@ -195,6 +195,9 @@ const PlaygroundPage = () => {
   const responseAreaRef = useRef<HTMLDivElement>(null);
   const [expandedStepInputs, setExpandedStepInputs] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // ── Rerun ──
+  const [pendingRerun, setPendingRerun] = useState(false);
 
   // ── History + comparison ──
   const [showHistory, setShowHistory] = useState(false);
@@ -346,11 +349,36 @@ const PlaygroundPage = () => {
     if (run.templateFieldValues) {
       setFieldValues(run.templateFieldValues);
     }
+    setPendingRerun(true);
   }, [enrichedModels]);
 
   const hasResponses = Object.keys(streamedResponses).length > 0;
   const model = selectedModel?.modelId ?? '';
   const hasValidationErrors = templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
+
+  // ── Auto-execute rerun ──
+  useEffect(() => {
+    if (pendingRerun) {
+      setPendingRerun(false);
+      handleRun();
+    }
+  }, [pendingRerun, handleRun]);
+
+  // ── Keyboard shortcut: Cmd/Ctrl+Enter to run ──
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if (!isStreaming && model && !hasValidationErrors) {
+          e.preventDefault();
+          handleRun();
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isStreaming, model, hasValidationErrors, handleRun]);
 
   const modelsByProvider = useMemo(
     () =>
@@ -524,6 +552,7 @@ const PlaygroundPage = () => {
                 size="sm"
                 onClick={handleRun}
                 disabled={!model || hasValidationErrors}
+                title="Run (⌘+Enter)"
               >
                 <Play className="size-3 mr-1.5" />
                 Run
@@ -788,6 +817,29 @@ const PlaygroundPage = () => {
             </div>
           )}
 
+          {/* Copy all for chains */}
+          {!pinnedRun && !isStreaming && isChain && Object.keys(streamedResponses).length >= 2 && (
+            <div className="flex justify-end mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const allText = prompts
+                    .map((_, i) => {
+                      const r = streamedResponses[i];
+                      return r ? `## Prompt ${i + 1}\n${r}` : null;
+                    })
+                    .filter(Boolean)
+                    .join('\n\n');
+                  handleCopy(allText, -1);
+                }}
+                className="gap-1.5 text-xs"
+              >
+                <Copy className="size-3.5" /> Copy all
+              </Button>
+            </div>
+          )}
+
           {/* ── Single prompt view — hidden when comparing ── */}
           {!pinnedRun && !isChain && (hasResponses || isStreaming) && (
             <div className="space-y-3">
@@ -826,8 +878,8 @@ const PlaygroundPage = () => {
               {elapsedSeconds > 0 && <span>{elapsedSeconds}s</span>}
               {lastTokens && (
                 <>
-                  {lastTokens.input != null && <span>{lastTokens.input} input tokens</span>}
-                  {lastTokens.output != null && <span>{lastTokens.output} output tokens</span>}
+                  {lastTokens.input != null && <span>{lastTokens.input.toLocaleString()} input tokens</span>}
+                  {lastTokens.output != null && <span>{lastTokens.output.toLocaleString()} output tokens</span>}
                 </>
               )}
             </div>
