@@ -38,15 +38,39 @@ import {
   resetConfigValue,
   type ConfigSetting,
 } from '@/services/api/configService';
-import { getProviders } from '@/services/api/aiProviderService';
+import { getProviders, type AiProviderResponse } from '@/services/api/aiProviderService';
 
 interface AiConfigSectionProps {
   settings: ConfigSetting[];
   onSaved: () => void;
 }
 
+interface ProviderModel {
+  providerId: string;
+  providerName: string;
+  modelId: string;
+}
+
 function findSetting(settings: ConfigSetting[], key: string): ConfigSetting | undefined {
   return settings.find((s) => s.key === key);
+}
+
+function buildProviderModels(providers: AiProviderResponse[] | undefined): ProviderModel[] {
+  if (!providers) return [];
+  return providers
+    .filter((p) => p.isActive)
+    .flatMap((p) =>
+      p.models
+        .filter((m) => m.isActive)
+        .map((m) => ({ providerId: p.id, providerName: p.name, modelId: m.modelId }))
+    );
+}
+
+function groupByProvider(models: ProviderModel[]): Record<string, ProviderModel[]> {
+  return models.reduce<Record<string, ProviderModel[]>>((acc, m) => {
+    (acc[m.providerName] ??= []).push(m);
+    return acc;
+  }, {});
 }
 
 export default function AiConfigSection({ settings, onSaved }: AiConfigSectionProps) {
@@ -55,12 +79,16 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   const [saving, setSaving] = useState(false);
 
   const defaultModelSetting = findSetting(settings, 'Ai:DefaultModel');
+  const defaultProviderIdSetting = findSetting(settings, 'Ai:DefaultModelProviderId');
   const premiumModelSetting = findSetting(settings, 'Ai:PremiumModel');
+  const premiumProviderIdSetting = findSetting(settings, 'Ai:PremiumModelProviderId');
   const allowedModelsSetting = findSetting(settings, 'Ai:AllowedModels');
   const tavilyApiKeySetting = findSetting(settings, 'Ai:TavilyApiKey');
 
   const currentDefaultModel = dirtyValues['Ai:DefaultModel'] ?? defaultModelSetting?.value ?? '';
+  const currentDefaultProviderId = dirtyValues['Ai:DefaultModelProviderId'] ?? defaultProviderIdSetting?.value ?? '';
   const currentPremiumModel = dirtyValues['Ai:PremiumModel'] ?? premiumModelSetting?.value ?? '';
+  const currentPremiumProviderId = dirtyValues['Ai:PremiumModelProviderId'] ?? premiumProviderIdSetting?.value ?? '';
   const currentAllowedModels = dirtyValues['Ai:AllowedModels'] ?? allowedModelsSetting?.value ?? '';
   const currentTavilyKeyDirty = dirtyValues['Ai:TavilyApiKey'];
 
@@ -71,14 +99,9 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
     staleTime: 5 * 60 * 1000,
   });
 
-  const models = useMemo(() => {
-    if (!providers) return [];
-    return providers
-      .filter((p) => p.isActive)
-      .flatMap((p) => p.models.filter((m) => m.isActive).map((m) => m.modelId));
-  }, [providers]);
-
-  const hasModels = models.length > 0;
+  const providerModels = useMemo(() => buildProviderModels(providers), [providers]);
+  const flatModels = useMemo(() => providerModels.map((m) => m.modelId), [providerModels]);
+  const hasModels = providerModels.length > 0;
 
   const resetMutation = useMutation({
     mutationFn: (key: string) => resetConfigValue(key),
@@ -113,6 +136,30 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
     } else {
       setDirtyValues((prev) => ({ ...prev, [key]: newValue }));
     }
+  };
+
+  const handleModelSelect = (modelKey: string, providerIdKey: string, model: ProviderModel) => {
+    setDirtyValues((prev) => ({
+      ...prev,
+      [modelKey]: model.modelId,
+      [providerIdKey]: model.providerId,
+    }));
+  };
+
+  const handleModelClear = (modelKey: string, providerIdKey: string) => {
+    setDirtyValues((prev) => ({
+      ...prev,
+      [modelKey]: '',
+      [providerIdKey]: '',
+    }));
+  };
+
+  // Find the provider name for a currently selected model+providerId
+  const findProviderName = (modelId: string, providerId: string): string | undefined => {
+    if (!providerId || !modelId) return undefined;
+    return providerModels.find(
+      (m) => m.modelId === modelId && m.providerId === providerId
+    )?.providerName;
   };
 
   const hasDirty = Object.keys(dirtyValues).length > 0;
@@ -155,10 +202,13 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
           }
         >
           {hasModels ? (
-            <ModelCombobox
-              models={models}
+            <ProviderModelCombobox
+              providerModels={providerModels}
               value={currentDefaultModel}
-              onChange={(value) => handleChange('Ai:DefaultModel', value)}
+              providerId={currentDefaultProviderId}
+              providerName={findProviderName(currentDefaultModel, currentDefaultProviderId)}
+              onSelect={(m) => handleModelSelect('Ai:DefaultModel', 'Ai:DefaultModelProviderId', m)}
+              onClear={() => handleModelClear('Ai:DefaultModel', 'Ai:DefaultModelProviderId')}
               loading={providersLoading}
               placeholder="Select default model..."
             />
@@ -193,10 +243,13 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
           }
         >
           {hasModels ? (
-            <ModelCombobox
-              models={models}
+            <ProviderModelCombobox
+              providerModels={providerModels}
               value={currentPremiumModel}
-              onChange={(value) => handleChange('Ai:PremiumModel', value)}
+              providerId={currentPremiumProviderId}
+              providerName={findProviderName(currentPremiumModel, currentPremiumProviderId)}
+              onSelect={(m) => handleModelSelect('Ai:PremiumModel', 'Ai:PremiumModelProviderId', m)}
+              onClear={() => handleModelClear('Ai:PremiumModel', 'Ai:PremiumModelProviderId')}
               loading={providersLoading}
               placeholder="Select premium model..."
             />
@@ -231,7 +284,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
             }
           >
             <ModelTransferList
-              allModels={models}
+              allModels={flatModels}
               value={currentAllowedModels}
               onChange={(value) => handleChange('Ai:AllowedModels', value)}
               loading={providersLoading}
@@ -317,18 +370,32 @@ function SettingField({ setting, onReset, isResetting, children }: SettingFieldP
   );
 }
 
-// ── Model combobox ──
+// ── Provider-grouped model combobox ──
 
-interface ModelComboboxProps {
-  models: string[];
+interface ProviderModelComboboxProps {
+  providerModels: ProviderModel[];
   value: string;
-  onChange: (value: string) => void;
+  providerId: string;
+  providerName?: string;
+  onSelect: (model: ProviderModel) => void;
+  onClear: () => void;
   loading?: boolean;
   placeholder?: string;
 }
 
-function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelComboboxProps) {
+function ProviderModelCombobox({
+  providerModels,
+  value,
+  providerId,
+  providerName,
+  onSelect,
+  onClear,
+  loading,
+  placeholder,
+}: ProviderModelComboboxProps) {
   const [open, setOpen] = useState(false);
+
+  const grouped = useMemo(() => groupByProvider(providerModels), [providerModels]);
 
   return (
     <div className="flex items-center gap-1.5 max-w-md w-full">
@@ -346,7 +413,12 @@ function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelC
                 Loading models...
               </span>
             ) : value ? (
-              value
+              <span className="flex items-center gap-1.5 truncate">
+                <span>{value}</span>
+                {providerName && (
+                  <span className="text-foreground-muted text-xs">via {providerName}</span>
+                )}
+              </span>
             ) : (
               <span className="text-foreground-muted">{placeholder}</span>
             )}
@@ -358,23 +430,28 @@ function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelC
             <CommandInput placeholder="Search models..." />
             <CommandList>
               <CommandEmpty>No models found.</CommandEmpty>
-              <CommandGroup>
-                {models.map((model) => (
-                  <CommandItem
-                    key={model}
-                    value={model}
-                    onSelect={(selected) => {
-                      onChange(selected);
-                      setOpen(false);
-                    }}
-                  >
-                    <Check
-                      className={cn('mr-2 size-4', value === model ? 'opacity-100' : 'opacity-0')}
-                    />
-                    {model}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+              {Object.entries(grouped).map(([groupName, models]) => (
+                <CommandGroup key={groupName} heading={groupName}>
+                  {models.map((m) => {
+                    const isSelected = m.modelId === value && m.providerId === providerId;
+                    return (
+                      <CommandItem
+                        key={`${m.providerId}:${m.modelId}`}
+                        value={`${m.providerName} ${m.modelId}`}
+                        onSelect={() => {
+                          onSelect(m);
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn('mr-2 size-4', isSelected ? 'opacity-100' : 'opacity-0')}
+                        />
+                        {m.modelId}
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              ))}
             </CommandList>
           </Command>
         </PopoverContent>
@@ -386,7 +463,7 @@ function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelC
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onChange('')}
+                onClick={onClear}
                 className="shrink-0"
               >
                 <X className="size-4" />

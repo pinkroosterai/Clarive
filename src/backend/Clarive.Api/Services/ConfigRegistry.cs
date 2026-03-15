@@ -69,10 +69,18 @@ public static class ConfigRegistry
             ConfigSection.Ai, false, false,
             "e.g., gpt-4o-mini"),
 
+        new ConfigDefinition("Ai:DefaultModelProviderId", "Default Model Provider",
+            "Provider ID for the default model. Set automatically when selecting a model from a provider.",
+            ConfigSection.Ai, false, false),
+
         new ConfigDefinition("Ai:PremiumModel", "Premium AI Model",
             "Model used for the primary prompt generation workflow — the AI Wizard. This task benefits from a more capable model since it produces the actual prompt content users will work with.",
             ConfigSection.Ai, false, false,
             "e.g., gpt-4o"),
+
+        new ConfigDefinition("Ai:PremiumModelProviderId", "Premium Model Provider",
+            "Provider ID for the premium model. Set automatically when selecting a model from a provider.",
+            ConfigSection.Ai, false, false),
 
         new ConfigDefinition("Ai:AllowedModels", "Allowed Playground Models",
             "Restrict which models users can select in the AI Playground. When empty, all models from configured providers are available. Use this to control costs or limit access to specific models.",

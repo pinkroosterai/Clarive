@@ -172,8 +172,8 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                 return;
             }
 
-            var defaultResolved = ResolveProviderForModel(providers, settings.DefaultModel);
-            var premiumResolved = ResolveProviderForModel(providers, settings.PremiumModel);
+            var defaultResolved = ResolveProviderForModel(providers, settings.DefaultModel, settings.DefaultModelProviderId);
+            var premiumResolved = ResolveProviderForModel(providers, settings.PremiumModel, settings.PremiumModelProviderId);
 
             if (defaultResolved is null || premiumResolved is null)
             {
@@ -211,10 +211,15 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
     private record ResolvedProvider(string ApiKey, string? EndpointUrl, string ProviderName);
 
-    private ResolvedProvider? ResolveProviderForModel(List<AiProvider> providers, string modelId)
+    private ResolvedProvider? ResolveProviderForModel(List<AiProvider> providers, string modelId, string? providerId = null)
     {
-        var match = providers
-            .Where(p => p.IsActive)
+        var activeProviders = providers.Where(p => p.IsActive);
+
+        // When a provider ID is specified, filter to that provider first
+        if (!string.IsNullOrWhiteSpace(providerId) && Guid.TryParse(providerId, out var pid))
+            activeProviders = activeProviders.Where(p => p.Id == pid);
+
+        var match = activeProviders
             .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
             .FirstOrDefault(x => x.Model.IsActive &&
                 x.Model.ModelId.Equals(modelId, StringComparison.OrdinalIgnoreCase));
