@@ -14,6 +14,8 @@ public class AiProviderService(
     IEncryptionService encryption,
     ILogger<AiProviderService> logger)
 {
+    private static readonly HashSet<string> ValidReasoningEfforts = new(StringComparer.OrdinalIgnoreCase)
+        { "low", "medium", "high", "extra-high" };
 
     public async Task<List<AiProviderResponse>> GetAllAsync(CancellationToken ct)
     {
@@ -138,6 +140,9 @@ public class AiProviderService(
     public async Task<ErrorOr<AiProviderModelResponse>> AddModelAsync(
         Guid providerId, AddAiProviderModelRequest request, CancellationToken ct)
     {
+        if (ValidateReasoningEffort(request.DefaultReasoningEffort) is { } effortErr)
+            return effortErr;
+
         var provider = await repo.GetByIdAsync(providerId, ct);
         if (provider is null)
             return Error.NotFound("NOT_FOUND", "Provider not found.");
@@ -151,6 +156,9 @@ public class AiProviderService(
             IsReasoning = request.IsReasoning,
             MaxContextSize = request.MaxContextSize,
             IsTemperatureConfigurable = request.IsTemperatureConfigurable,
+            DefaultTemperature = request.DefaultTemperature,
+            DefaultMaxTokens = request.DefaultMaxTokens,
+            DefaultReasoningEffort = request.DefaultReasoningEffort,
             IsActive = true,
             SortOrder = provider.Models.Count
         };
@@ -162,6 +170,9 @@ public class AiProviderService(
     public async Task<ErrorOr<AiProviderModelResponse>> UpdateModelAsync(
         Guid modelId, UpdateAiProviderModelRequest request, CancellationToken ct)
     {
+        if (ValidateReasoningEffort(request.DefaultReasoningEffort) is { } effortErr)
+            return effortErr;
+
         var model = await repo.GetModelByIdAsync(modelId, ct);
         if (model is null)
             return Error.NotFound("NOT_FOUND", "Model not found.");
@@ -172,6 +183,9 @@ public class AiProviderService(
         if (request.IsTemperatureConfigurable.HasValue) model.IsTemperatureConfigurable = request.IsTemperatureConfigurable.Value;
         if (request.IsActive.HasValue) model.IsActive = request.IsActive.Value;
         if (request.SortOrder.HasValue) model.SortOrder = request.SortOrder.Value;
+        if (request.DefaultTemperature.HasValue) model.DefaultTemperature = request.DefaultTemperature.Value;
+        if (request.DefaultMaxTokens.HasValue) model.DefaultMaxTokens = request.DefaultMaxTokens.Value;
+        if (request.DefaultReasoningEffort is not null) model.DefaultReasoningEffort = request.DefaultReasoningEffort;
 
         await repo.UpdateModelAsync(model, ct);
         return ToModelResponse(model);
@@ -194,8 +208,22 @@ public class AiProviderService(
 
     private static AiProviderModelResponse ToModelResponse(AiProviderModel m) => new(
         m.Id, m.ModelId, m.DisplayName, m.IsReasoning,
-        m.MaxContextSize, m.IsTemperatureConfigurable, m.IsActive, m.SortOrder
+        m.MaxContextSize, m.IsTemperatureConfigurable,
+        m.DefaultTemperature, m.DefaultMaxTokens, m.DefaultReasoningEffort,
+        m.IsActive, m.SortOrder
     );
+
+    private static Error? ValidateReasoningEffort(string? effort)
+    {
+        if (effort is null)
+            return null;
+
+        if (!ValidReasoningEfforts.Contains(effort))
+            return Error.Validation("INVALID_REASONING_EFFORT",
+                "DefaultReasoningEffort must be one of: low, medium, high, extra-high.");
+
+        return null;
+    }
 
     private static Error? ValidateEndpointUrl(string? endpointUrl)
     {
