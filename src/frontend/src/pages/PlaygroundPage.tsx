@@ -183,7 +183,7 @@ const PlaygroundPage = () => {
     isStreaming, firstTokenReceived, streamedResponses, streamedReasoning,
     error, wasStopped, rateLimitCountdown, elapsedSeconds, approxOutputTokens,
     lastTokens, hasResponses, currentPromptIndex, responseCount,
-    handleRun, handleAbort, responseAreaRef, scrollContainerRef,
+    handleRun, handleAbort, responseAreaRef,
   } = usePlaygroundStreaming({
     entryId,
     model: selectedModel?.modelId ?? '',
@@ -459,7 +459,7 @@ const PlaygroundPage = () => {
       {/* ── Main content ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* Response area */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 p-6">
           {/* Template variables (collapsible) */}
           {templateFields.length > 0 && (
             <Collapsible defaultOpen className="mb-6">

@@ -77,7 +77,6 @@ export function usePlaygroundStreaming({
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isAutoFollowRef = useRef(true);
   const scrollRafRef = useRef<number | null>(null);
 
@@ -91,19 +90,19 @@ export function usePlaygroundStreaming({
   }, []);
 
   // ── Auto-follow scrolling ──
+  // The playground page content scrolls within the document/window because the
+  // AppShell layout uses min-h-svh with no max constraint. We scroll the
+  // document itself rather than trying to find a constrained scroll container.
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
     const handleScroll = () => {
       if (!isStreaming) return;
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
       isAutoFollowRef.current = isNearBottom;
     };
 
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [isStreaming]);
 
   useEffect(() => {
@@ -111,8 +110,7 @@ export function usePlaygroundStreaming({
     if (scrollRafRef.current !== null) return;
 
     scrollRafRef.current = requestAnimationFrame(() => {
-      const container = scrollContainerRef.current;
-      if (container) container.scrollTop = container.scrollHeight;
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
       scrollRafRef.current = null;
     });
   }, [streamedResponses, streamedReasoning, isStreaming]);
@@ -254,6 +252,5 @@ export function usePlaygroundStreaming({
     handleRun,
     handleAbort,
     responseAreaRef,
-    scrollContainerRef,
   };
 }
