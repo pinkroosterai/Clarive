@@ -26,7 +26,9 @@ import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -44,10 +46,11 @@ import { entryService } from '@/services';
 import {
   testEntry,
   getTestRuns,
-  getAvailableModels,
+  getEnrichedModels,
   type TestStreamChunk,
   type TestRunResponse,
   type TestRunPromptResponse,
+  type EnrichedModel,
 } from '@/services/api/playgroundService';
 
 import type { TemplateField } from '@/types';
@@ -94,7 +97,7 @@ const PlaygroundPage = () => {
   const isChain = prompts.length > 1;
 
   // ── Model & params ──
-  const [model, setModel] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<EnrichedModel | null>(null);
   const [temperature, setTemperature] = useState(1.0);
   const [maxTokens, setMaxTokens] = useState(4096);
 
@@ -145,9 +148,9 @@ const PlaygroundPage = () => {
   const [pinnedRun, setPinnedRun] = useState<TestRunResponse | null>(null);
 
   // ── Queries ──
-  const { data: models = [], isError: modelsError } = useQuery({
-    queryKey: ['playground', 'models'],
-    queryFn: getAvailableModels,
+  const { data: enrichedModels = [], isError: modelsError } = useQuery({
+    queryKey: ['playground', 'enriched-models'],
+    queryFn: getEnrichedModels,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -160,10 +163,10 @@ const PlaygroundPage = () => {
   });
 
   useEffect(() => {
-    if (models.length > 0 && !model) {
-      setModel(models[0]);
+    if (enrichedModels.length > 0 && !selectedModel) {
+      setSelectedModel(enrichedModels[0]);
     }
-  }, [models, model]);
+  }, [enrichedModels, selectedModel]);
 
   // ── Handlers ──
   const handleRun = useCallback(async () => {
@@ -187,7 +190,7 @@ const PlaygroundPage = () => {
       const result = await testEntry(
         entryId,
         {
-          model: model || undefined,
+          model: selectedModel?.modelId || undefined,
           temperature,
           maxTokens,
           templateFields: templateFields.length > 0 ? fieldValues : undefined,
@@ -221,7 +224,7 @@ const PlaygroundPage = () => {
       }
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
     }
-  }, [entryId, model, temperature, maxTokens, fieldValues, templateFields, queryClient]);
+  }, [entryId, selectedModel, temperature, maxTokens, fieldValues, templateFields, queryClient]);
 
   const handleAbort = useCallback(() => {
     abortRef.current?.abort();
@@ -239,7 +242,8 @@ const PlaygroundPage = () => {
   }, []);
 
   const handleRerun = useCallback((run: TestRunResponse) => {
-    setModel(run.model);
+    const matchingModel = enrichedModels.find((m) => m.modelId === run.model);
+    if (matchingModel) setSelectedModel(matchingModel);
     setTemperature(run.temperature);
     setMaxTokens(run.maxTokens);
     if (run.templateFieldValues) {
@@ -248,6 +252,7 @@ const PlaygroundPage = () => {
   }, []);
 
   const hasResponses = Object.keys(streamedResponses).length > 0;
+  const model = selectedModel?.modelId ?? '';
   const hasValidationErrors = templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
 
   if (!aiEnabled) return null;
@@ -304,15 +309,34 @@ const PlaygroundPage = () => {
               {modelsError ? (
                 <span className="text-xs text-destructive">Failed to load models</span>
               ) : (
-                <Select value={model} onValueChange={setModel}>
-                  <SelectTrigger className="w-44 h-8 text-xs">
+                <Select
+                  value={model}
+                  onValueChange={(v) => {
+                    const found = enrichedModels.find((m) => m.modelId === v);
+                    if (found) setSelectedModel(found);
+                  }}
+                >
+                  <SelectTrigger className="w-52 h-8 text-xs">
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {models.map((m) => (
-                      <SelectItem key={m} value={m} className="text-xs">
-                        {m}
-                      </SelectItem>
+                    {Object.entries(
+                      enrichedModels.reduce<Record<string, EnrichedModel[]>>((acc, m) => {
+                        const key = m.providerName;
+                        (acc[key] ??= []).push(m);
+                        return acc;
+                      }, {})
+                    ).map(([provider, models]) => (
+                      <SelectGroup key={provider}>
+                        <SelectLabel className="text-xs font-semibold text-foreground-muted px-2">
+                          {provider}
+                        </SelectLabel>
+                        {models.map((m) => (
+                          <SelectItem key={m.modelId} value={m.modelId} className="text-xs">
+                            {m.displayName || m.modelId}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     ))}
                   </SelectContent>
                 </Select>

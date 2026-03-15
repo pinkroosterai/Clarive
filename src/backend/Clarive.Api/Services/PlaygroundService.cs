@@ -16,7 +16,9 @@ namespace Clarive.Api.Services;
 public class PlaygroundService(
     IEntryRepository entryRepo,
     IPlaygroundRunRepository runRepo,
+    IAiProviderRepository providerRepo,
     IAgentFactory agentFactory,
+    IEncryptionService encryption,
     IOptionsMonitor<AiSettings> aiSettings,
     IConfiguration configuration,
     IMemoryCache cache,
@@ -87,7 +89,27 @@ public class PlaygroundService(
 
         try
         {
-            using var chatClient = agentFactory.CreateChatClient(model);
+            // Resolve provider for this model
+            var providers = await providerRepo.GetAllAsync(ct);
+            var providerMatch = providers
+                .Where(p => p.IsActive)
+                .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
+                .FirstOrDefault(x => x.Model.IsActive &&
+                    x.Model.ModelId.Equals(model, StringComparison.OrdinalIgnoreCase));
+
+            IChatClient chatClient;
+            if (providerMatch is not null && encryption.IsAvailable)
+            {
+                var apiKey = encryption.Decrypt(providerMatch.Provider.ApiKeyEncrypted);
+                chatClient = agentFactory.CreateChatClientForProvider(
+                    apiKey, providerMatch.Provider.EndpointUrl, model);
+            }
+            else
+            {
+                chatClient = agentFactory.CreateChatClient(model);
+            }
+
+            using var client = chatClient;
 
             var options = new ChatOptions
             {
@@ -117,7 +139,7 @@ public class PlaygroundService(
                 conversationMessages.Add(new ChatMessage(ChatRole.User, content));
 
                 var responseText = new StringBuilder();
-                await foreach (var update in chatClient.GetStreamingResponseAsync(
+                await foreach (var update in client.GetStreamingResponseAsync(
                     conversationMessages, options, ct))
                 {
                     if (update.Text is not null)
@@ -187,6 +209,56 @@ public class PlaygroundService(
             null, null, // Token counts not stored in historical runs
             r.CreatedAt
         )).ToList();
+    }
+
+    public async Task<ErrorOr<List<EnrichedModelResponse>>> GetEnrichedModelsAsync(CancellationToken ct)
+    {
+        const string cacheKey = "playground_enriched_models";
+
+        if (cache.TryGetValue(cacheKey, out List<EnrichedModelResponse>? cached) && cached is not null)
+            return cached;
+
+        var providers = await providerRepo.GetAllAsync(ct);
+        var activeProviders = providers.Where(p => p.IsActive).ToList();
+
+        if (activeProviders.Count == 0)
+        {
+            // Fall back to legacy model list (as simple enriched models with no provider metadata)
+            var legacyResult = await GetAvailableModelsAsync(ct);
+            if (legacyResult.IsError) return legacyResult.Errors;
+
+            var legacyModels = legacyResult.Value.Select(m => new EnrichedModelResponse(
+                m, null, Guid.Empty, "Default", false, 128000, true
+            )).ToList();
+
+            cache.Set(cacheKey, legacyModels, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                Size = 1
+            });
+            return legacyModels;
+        }
+
+        var enriched = activeProviders
+            .SelectMany(p => p.Models
+                .Where(m => m.IsActive)
+                .Select(m => new EnrichedModelResponse(
+                    m.ModelId,
+                    m.DisplayName,
+                    p.Id,
+                    p.Name,
+                    m.IsReasoning,
+                    m.MaxContextSize,
+                    m.IsTemperatureConfigurable
+                )))
+            .ToList();
+
+        cache.Set(cacheKey, enriched, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+            Size = 1
+        });
+        return enriched;
     }
 
     public async Task<ErrorOr<List<string>>> GetAvailableModelsAsync(CancellationToken ct)

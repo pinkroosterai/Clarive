@@ -24,3 +24,15 @@ public record AiProviderModelResponse(
 );
 
 public record FetchedModelsResponse(List<string> Models);
+
+public record EnrichedModelResponse(
+    string ModelId,
+    string? DisplayName,
+    Guid ProviderId,
+    string ProviderName,
+    bool IsReasoning,
+    int MaxContextSize,
+    bool IsTemperatureConfigurable
+);
+
+public record EnrichedModelsListResponse(List<EnrichedModelResponse> Models);

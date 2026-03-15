@@ -16,6 +16,7 @@ public interface IAgentFactory
     AIAgent CreateSystemMessageAgent();
     AIAgent CreateDecomposeAgent();
     IChatClient CreateChatClient(string model);
+    IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model);
     OpenAI.OpenAIClient GetOpenAIClient();
     bool IsConfigured { get; }
     event Action? OnReconfigured;

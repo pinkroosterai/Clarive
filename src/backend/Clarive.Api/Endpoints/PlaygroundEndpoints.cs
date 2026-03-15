@@ -24,6 +24,8 @@ public static class PlaygroundEndpoints
         group.MapGet("/ai/models", HandleGetModels)
             .AddEndpointFilter(AiConfiguredFilter);
 
+        group.MapGet("/ai/available-models", HandleGetEnrichedModels);
+
         return group;
     }
 
@@ -108,7 +110,22 @@ public static class PlaygroundEndpoints
         return Results.Ok(runs);
     }
 
-    // ── Get Available Models ──
+    // ── Get Enriched Models (with provider metadata) ──
+
+    private static async Task<IResult> HandleGetEnrichedModels(
+        HttpContext ctx,
+        PlaygroundService playground,
+        CancellationToken ct)
+    {
+        var result = await playground.GetEnrichedModelsAsync(ct);
+
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
+
+        return Results.Ok(new EnrichedModelsListResponse(result.Value));
+    }
+
+    // ── Get Available Models (legacy) ──
 
     private static async Task<IResult> HandleGetModels(
         HttpContext ctx,

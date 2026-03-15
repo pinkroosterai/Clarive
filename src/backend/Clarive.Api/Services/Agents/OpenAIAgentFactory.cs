@@ -176,6 +176,12 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         finally { _lock.ExitReadLock(); }
     }
 
+    public IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model)
+    {
+        var client = CreateOpenAIClient(apiKey, endpointUrl);
+        return client.GetChatClient(model).AsIChatClient();
+    }
+
     public OpenAIClient GetOpenAIClient()
     {
         _lock.EnterReadLock();

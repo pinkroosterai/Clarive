@@ -75,3 +75,18 @@ export async function getAvailableModels(): Promise<string[]> {
   const res = await api.get<{ models: string[] }>('/api/ai/models');
   return res.models;
 }
+
+export interface EnrichedModel {
+  modelId: string;
+  displayName: string | null;
+  providerId: string;
+  providerName: string;
+  isReasoning: boolean;
+  maxContextSize: number;
+  isTemperatureConfigurable: boolean;
+}
+
+export async function getEnrichedModels(): Promise<EnrichedModel[]> {
+  const res = await api.get<{ models: EnrichedModel[] }>('/api/ai/available-models');
+  return res.models;
+}
