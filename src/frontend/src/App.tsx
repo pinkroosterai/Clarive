@@ -23,6 +23,7 @@ const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
 const NewEntryPage = lazy(() => import('@/pages/NewEntryPage'));
 const WizardPage = lazy(() => import('@/pages/WizardPage'));
 const EnhanceWizardPage = lazy(() => import('@/pages/EnhanceWizardPage'));
+const PlaygroundPage = lazy(() => import('@/pages/PlaygroundPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const TrashPage = lazy(() => import('@/pages/TrashPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -136,6 +137,7 @@ const App = () => (
                       <Route path="/entry/new" element={<NewEntryPage />} />
                       <Route path="/entry/new/wizard" element={<WizardPage />} />
                       <Route path="/entry/:entryId/enhance" element={<EnhanceWizardPage />} />
+                      <Route path="/entry/:entryId/test" element={<PlaygroundPage />} />
                       <Route path="/entry/:entryId" element={<EntryEditorPage />} />
                       <Route
                         path="/entry/:entryId/version/:version"

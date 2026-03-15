@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
-import { useState, useCallback, lazy, Suspense } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -13,7 +13,6 @@ import { VersionPanel } from '@/components/editor/VersionPanel';
 import { FolderPickerDialog } from '@/components/library/FolderPickerDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -26,8 +25,6 @@ import { findFolderName } from '@/lib/folderUtils';
 import { entryService, folderService } from '@/services';
 import * as favoriteService from '@/services/api/favoriteService';
 import { useAuthStore } from '@/store/authStore';
-
-const PlaygroundPanel = lazy(() => import('@/components/editor/PlaygroundPanel'));
 
 const EntryEditorPage = () => {
   const { entryId, version } = useParams<{ entryId: string; version?: string }>();
@@ -126,7 +123,6 @@ const EntryEditorPage = () => {
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);
   const [folderPickerOpen, setFolderPickerOpen] = useState(false);
-  const [playgroundOpen, setPlaygroundOpen] = useState(false);
   const aiEnabled = useAiEnabled();
 
   const folderName = editor.localEntry
@@ -260,7 +256,7 @@ const EntryEditorPage = () => {
     isDecomposing: mutations.isDecomposing,
     showGenerateSystemMessage: !localEntry.systemMessage,
     showDecomposeToChain: localEntry.prompts.length === 1,
-    onTest: aiEnabled && !isReadOnly ? () => setPlaygroundOpen((p) => !p) : undefined,
+    onTest: aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/test`) : undefined,
     versions,
   } as const;
 
@@ -281,20 +277,6 @@ const EntryEditorPage = () => {
         open={diffOpen}
         onOpenChange={setDiffOpen}
       />
-      <Dialog open={playgroundOpen} onOpenChange={setPlaygroundOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Test Prompt</DialogTitle>
-          </DialogHeader>
-          <Suspense fallback={null}>
-            <PlaygroundPanel
-              entryId={entryId!}
-              prompts={localEntry.prompts}
-              systemMessage={localEntry.systemMessage}
-            />
-          </Suspense>
-        </DialogContent>
-      </Dialog>
     </>
   );
 
