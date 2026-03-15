@@ -174,6 +174,10 @@ export default {
           '50%': { backgroundPosition: '100% 50%' },
           '100%': { backgroundPosition: '0% 50%' },
         },
+        'cursor-blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -186,6 +190,7 @@ export default {
         'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
         'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'gradient-shift': 'gradient-shift 15s ease infinite',
+        'cursor-blink': 'cursor-blink 1s steps(2) infinite',
       },
     },
   },

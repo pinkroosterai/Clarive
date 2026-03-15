@@ -105,6 +105,9 @@ export default function LLMResponseBlock({ output, isStreaming }: LLMResponseBlo
         const Component = match.block.component;
         return <Component key={i} blockMatch={match} />;
       })}
+      {isStreaming && (
+        <span className="inline-block w-[3px] h-[1.1em] bg-foreground align-text-bottom ml-0.5 animate-cursor-blink" />
+      )}
     </div>
   );
 }

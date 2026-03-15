@@ -176,6 +176,8 @@ const PlaygroundPage = () => {
 
   // ── Streaming state ──
   const [isStreaming, setIsStreaming] = useState(false);
+  const [firstTokenReceived, setFirstTokenReceived] = useState(false);
+  const firstTokenRef = useRef(false);
   const [streamedResponses, setStreamedResponses] = useState<Record<number, string>>({});
   const [streamedReasoning, setStreamedReasoning] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +189,7 @@ const PlaygroundPage = () => {
   const [lastTokens, setLastTokens] = useState<{ input: number | null; output: number | null } | null>(null);
 
   // ── Response display ──
+  const responseAreaRef = useRef<HTMLDivElement>(null);
   const [expandedStepInputs, setExpandedStepInputs] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -216,10 +219,19 @@ const PlaygroundPage = () => {
     }
   }, [enrichedModels, selectedModel]);
 
+  // ── Auto-scroll to response on first token ──
+  useEffect(() => {
+    if (firstTokenReceived) {
+      responseAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [firstTokenReceived]);
+
   // ── Handlers ──
   const handleRun = useCallback(async () => {
     if (!entryId) return;
     setIsStreaming(true);
+    setFirstTokenReceived(false);
+    firstTokenRef.current = false;
     setStreamedResponses({});
     setStreamedReasoning({});
     setError(null);
@@ -247,6 +259,10 @@ const PlaygroundPage = () => {
         },
         (chunk: TestStreamChunk) => {
           if (!chunk.text) return; // Skip empty chunks from Responses API
+          if (!firstTokenRef.current) {
+            firstTokenRef.current = true;
+            setFirstTokenReceived(true);
+          }
           if (chunk.type === 'reasoning') {
             setStreamedReasoning((prev) => ({
               ...prev,
@@ -269,7 +285,7 @@ const PlaygroundPage = () => {
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
-        // User cancelled
+        toast.info('Generation stopped');
       } else {
         setError(err instanceof Error ? err.message : 'Test failed');
       }
@@ -607,9 +623,22 @@ const PlaygroundPage = () => {
 
           {/* Streaming indicator (non-comparison mode) */}
           {!pinnedRun && isStreaming && (
-            <div className="flex items-center gap-2 text-sm text-foreground-muted mb-4">
-              <Loader2 className="size-4 animate-spin" />
-              <span>Generating... {elapsedSeconds > 0 && `${elapsedSeconds}s`}</span>
+            <div ref={responseAreaRef} className="flex items-center gap-2 text-sm text-foreground-muted mb-4">
+              {firstTokenReceived ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  <span>Generating... {elapsedSeconds > 0 && `${elapsedSeconds}s`}</span>
+                </>
+              ) : (
+                <span className="flex items-center gap-1">
+                  Connecting
+                  <span className="inline-flex gap-0.5">
+                    <span className="size-1 rounded-full bg-foreground-muted animate-pulse" />
+                    <span className="size-1 rounded-full bg-foreground-muted animate-pulse [animation-delay:200ms]" />
+                    <span className="size-1 rounded-full bg-foreground-muted animate-pulse [animation-delay:400ms]" />
+                  </span>
+                </span>
+              )}
             </div>
           )}
 
@@ -689,7 +718,7 @@ const PlaygroundPage = () => {
                       )}
 
                       {/* Response */}
-                      {response !== undefined && (
+                      {response !== undefined ? (
                         <div className="relative group">
                           <div
                             className={`rounded-lg border p-4 ${
@@ -705,7 +734,11 @@ const PlaygroundPage = () => {
                             <CopyButton text={response} index={i} copiedIndex={copiedIndex} onCopy={handleCopy} />
                           )}
                         </div>
-                      )}
+                      ) : isStreaming && i === Object.keys(streamedResponses).length ? (
+                        <div className="rounded-lg border border-border-subtle bg-surface/50 p-4">
+                          <div className="h-6 w-2/3 rounded bg-foreground-muted/10 animate-pulse" />
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 );
@@ -728,7 +761,11 @@ const PlaygroundPage = () => {
 
                     <div className="relative group">
                       <div className="rounded-lg border border-border-subtle bg-surface p-4">
-                        <LLMResponseBlock output={response || ''} isStreaming={isStreaming} />
+                        {response !== undefined ? (
+                          <LLMResponseBlock output={response || ''} isStreaming={isStreaming} />
+                        ) : (
+                          <div className="h-6 w-2/3 rounded bg-foreground-muted/10 animate-pulse" />
+                        )}
                       </div>
 
                       {response && !isStreaming && (
