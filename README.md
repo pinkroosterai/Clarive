@@ -79,6 +79,22 @@ This isn't one-shot "generate a prompt" — Clarive runs a multi-turn conversati
 - **System message generation**: Auto-generate system prompts from your content
 - **Chain decomposition**: Split monolithic prompts into multi-step workflows
 
+### Prompt Playground
+
+<p align="center">
+  <img src="docs/images/playground.png" alt="Clarive playground — test prompts with streaming output and chain visualization" width="700" />
+</p>
+
+Test prompts against any configured model without leaving Clarive.
+
+- **Real-time streaming** — responses stream token-by-token as they generate
+- **Multi-provider model selection** — pick from any OpenAI-compatible provider configured by your admin
+- **Reasoning output** — inspect chain-of-thought for models that support it (o1, o3, etc.)
+- **Template variable input** — fill in `{{variables}}` and run immediately
+- **Chain visualization** — step-by-step execution view for multi-prompt entries
+- **Run history** — compare up to 20 recent runs side-by-side with pin-and-compare mode
+- **Configurable parameters** — temperature, max tokens, reasoning effort per run
+
 ### Version Control for Prompts
 
 Every prompt moves through **Draft → Published → Historical** states. You get the rigor of code versioning without the Git overhead.
@@ -137,6 +153,7 @@ Every prompt moves through **Draft → Published → Historical** states. You ge
 | Web search-backed generation | Yes | — | — | — |
 | Rich WYSIWYG editor | Yes | — | Yes | — |
 | Chain decomposition | Yes | — | — | — |
+| Interactive playground | Yes | Yes | Yes | Yes |
 | Self-hosted (single container) | Yes | Yes (complex) | — | Yes |
 | Team RBAC & audit logs | Yes | Paid | Paid | Paid |
 | Public REST API | Yes | Yes | Yes | Yes |
@@ -173,7 +190,7 @@ Single container: nginx serves the React frontend and proxies `/api/` to the .NE
 | Backend | C# ASP.NET Core 10 Minimal APIs |
 | Database | PostgreSQL 16 via EF Core 10 (Npgsql) |
 | Auth | JWT (15-min) + rotating refresh tokens (7-day), Google OIDC, API keys |
-| AI | OpenAI via Microsoft.Extensions.AI |
+| AI | Multi-provider (OpenAI-compatible) via Microsoft.Extensions.AI |
 | Testing | xUnit + Testcontainers, Vitest, Playwright |
 | Infra | Docker Compose, Makefile |
 
