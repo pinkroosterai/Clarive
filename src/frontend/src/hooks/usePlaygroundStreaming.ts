@@ -176,12 +176,12 @@ export function usePlaygroundStreaming({
           showReasoning: isReasoning ? showReasoning : undefined,
         },
         (chunk: TestStreamChunk) => {
-          if (!chunk.text) return;
           // Trigger spinner on first chunk of any type (text or reasoning)
-          if (!firstTokenRef.current) {
+          if (!firstTokenRef.current && chunk.text !== undefined) {
             firstTokenRef.current = true;
             setFirstTokenReceived(true);
           }
+          if (!chunk.text) return;
           if (chunk.type === 'reasoning') {
             setStreamedReasoning((prev) => ({
               ...prev,
