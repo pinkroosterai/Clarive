@@ -43,6 +43,7 @@ import {
   getAiModels,
   type ConfigSetting,
 } from '@/services/api/configService';
+import { getProviders } from '@/services/api/aiProviderService';
 
 interface AiConfigSectionProps {
   settings: ConfigSetting[];
@@ -104,8 +105,25 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
     retry: false,
   });
 
-  const models =
+  // Fetch provider-configured models (preferred over raw API fetch)
+  const { data: providers } = useQuery({
+    queryKey: ['super', 'ai-providers'],
+    queryFn: getProviders,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const providerModels = useMemo(() => {
+    if (!providers) return [];
+    return providers
+      .filter((p) => p.isActive)
+      .flatMap((p) => p.models.filter((m) => m.isActive).map((m) => m.modelId));
+  }, [providers]);
+
+  const legacyModels =
     (validationState === 'valid' ? validatedModelsData?.models : modelsData?.models) ?? [];
+
+  // Use provider models when available, fall back to legacy API fetch
+  const models = providerModels.length > 0 ? providerModels : legacyModels;
   const isLoadingModels = modelsLoading || validatedModelsLoading;
   const hasModels = models.length > 0;
   const useCombobox = hasModels && !modelsFetchFailed;
