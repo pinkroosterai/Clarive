@@ -128,17 +128,9 @@ public class PlaygroundService(
             // Configure reasoning if requested
             if (request.ShowReasoning == true)
             {
-                var effortStr = request.ReasoningEffort?.ToLowerInvariant();
-                var effort = effortStr switch
-                {
-                    "low" => ReasoningEffort.Low,
-                    "high" => ReasoningEffort.High,
-                    "extra-high" or "extrahigh" => ReasoningEffort.ExtraHigh,
-                    _ => ReasoningEffort.Medium,
-                };
                 options.Reasoning = new ReasoningOptions
                 {
-                    Effort = effort,
+                    Effort = OpenAIAgentFactory.ParseReasoningEffort(request.ReasoningEffort ?? "medium"),
                     Output = ReasoningOutput.Full,
                 };
             }
@@ -264,7 +256,8 @@ public class PlaygroundService(
             if (legacyResult.IsError) return legacyResult.Errors;
 
             var legacyModels = legacyResult.Value.Select(m => new EnrichedModelResponse(
-                m, null, Guid.Empty, "Default", false, 128000, true
+                m, null, Guid.Empty, "Default", false, 128000, true,
+                null, null, null
             )).ToList();
 
             cache.Set(cacheKey, legacyModels, new MemoryCacheEntryOptions
@@ -285,7 +278,10 @@ public class PlaygroundService(
                     p.Name,
                     m.IsReasoning,
                     m.MaxContextSize,
-                    m.IsTemperatureConfigurable
+                    m.IsTemperatureConfigurable,
+                    m.DefaultTemperature,
+                    m.DefaultMaxTokens,
+                    m.DefaultReasoningEffort
                 )))
             .ToList();
 
