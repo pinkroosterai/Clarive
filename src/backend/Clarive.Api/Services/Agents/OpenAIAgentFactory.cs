@@ -20,6 +20,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly IDisposable? _changeSubscription;
 
+    private OpenAIClient? _openAiClient;
     private IChatClient? _premiumClient;
     private IChatClient? _defaultClient;
     private bool _isConfigured;
@@ -143,9 +144,9 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
             if (!string.IsNullOrWhiteSpace(settings.OpenAiApiKey))
             {
-                var openAiClient = CreateOpenAIClient(settings.OpenAiApiKey, settings.EndpointUrl);
-                _premiumClient = openAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
-                _defaultClient = openAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
+                _openAiClient = CreateOpenAIClient(settings.OpenAiApiKey, settings.EndpointUrl);
+                _premiumClient = _openAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
+                _defaultClient = _openAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
                 _isConfigured = true;
 
                 _logger.LogInformation(
@@ -162,6 +163,28 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         finally { _lock.ExitWriteLock(); }
 
         OnReconfigured?.Invoke();
+    }
+
+    public IChatClient CreateChatClient(string model)
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            EnsureConfigured();
+            return _openAiClient!.GetChatClient(model).AsIChatClient();
+        }
+        finally { _lock.ExitReadLock(); }
+    }
+
+    public OpenAIClient GetOpenAIClient()
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            EnsureConfigured();
+            return _openAiClient!;
+        }
+        finally { _lock.ExitReadLock(); }
     }
 
     private void EnsureConfigured()

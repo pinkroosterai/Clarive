@@ -102,7 +102,7 @@ public static class PublicApiEndpoints
 
         // Validate fields
         var fields = request.Fields ?? new Dictionary<string, string>();
-        var errors = ValidateFields(allFields, fields);
+        var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
         if (errors.Count > 0)
             return Results.Json(
                 new ErrorResponse(new("VALIDATION_ERROR", "Template field validation failed.", errors)),
@@ -130,58 +130,4 @@ public static class PublicApiEndpoints
             systemMessage, rendered));
     }
 
-    private static Dictionary<string, string> ValidateFields(
-        List<TemplateField> definitions,
-        Dictionary<string, string> values)
-    {
-        var errors = new Dictionary<string, string>();
-
-        foreach (var field in definitions)
-        {
-            if (!values.TryGetValue(field.Name, out var value) || string.IsNullOrEmpty(value))
-            {
-                errors[field.Name] = $"Field '{field.Name}' is required.";
-                continue;
-            }
-
-            var error = field.Type switch
-            {
-                TemplateFieldType.Int => ValidateNumericField<int>(field, value, int.TryParse),
-                TemplateFieldType.Float => ValidateNumericField<double>(field, value, double.TryParse),
-                TemplateFieldType.Enum => ValidateEnumField(field, value),
-                _ => null
-            };
-
-            if (error is not null)
-                errors[field.Name] = error;
-        }
-
-        return errors;
-    }
-
-    private delegate bool TryParseDelegate<T>(string input, out T result);
-
-    private static string? ValidateNumericField<T>(TemplateField field, string value, TryParseDelegate<T> tryParse)
-        where T : IComparable<T>
-    {
-        if (!tryParse(value, out var parsed))
-            return $"Field '{field.Name}' must be {(typeof(T) == typeof(int) ? "an integer" : "a number")}.";
-
-        var numericVal = Convert.ToDouble(parsed);
-        if (field.Min.HasValue && numericVal < field.Min.Value)
-            return $"Field '{field.Name}' must be >= {field.Min.Value}.";
-        if (field.Max.HasValue && numericVal > field.Max.Value)
-            return $"Field '{field.Name}' must be <= {field.Max.Value}.";
-
-        return null;
-    }
-
-    private static string? ValidateEnumField(TemplateField field, string value)
-    {
-        if (field.EnumValues is { Count: > 0 } &&
-            !field.EnumValues.Contains(value, StringComparer.OrdinalIgnoreCase))
-            return $"Field '{field.Name}' must be one of: {string.Join(", ", field.EnumValues)}.";
-
-        return null;
-    }
 }

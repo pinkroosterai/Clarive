@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEditorKeyboardShortcuts } from '@/hooks/useEditorKeyboardShortcuts';
 import { useEditorMutations } from '@/hooks/useEditorMutations';
@@ -24,6 +25,8 @@ import { findFolderName } from '@/lib/folderUtils';
 import { entryService, folderService } from '@/services';
 import * as favoriteService from '@/services/api/favoriteService';
 import { useAuthStore } from '@/store/authStore';
+
+const PlaygroundPanel = lazy(() => import('@/components/editor/PlaygroundPanel'));
 
 const EntryEditorPage = () => {
   const { entryId, version } = useParams<{ entryId: string; version?: string }>();
@@ -122,6 +125,8 @@ const EntryEditorPage = () => {
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);
   const [folderPickerOpen, setFolderPickerOpen] = useState(false);
+  const [playgroundOpen, setPlaygroundOpen] = useState(false);
+  const aiEnabled = useAiEnabled();
 
   const folderName = editor.localEntry
     ? findFolderName(folders, editor.localEntry.folderId)
@@ -254,6 +259,7 @@ const EntryEditorPage = () => {
     isDecomposing: mutations.isDecomposing,
     showGenerateSystemMessage: !localEntry.systemMessage,
     showDecomposeToChain: localEntry.prompts.length === 1,
+    onTest: aiEnabled && !isReadOnly ? () => setPlaygroundOpen((p) => !p) : undefined,
     versions,
   } as const;
 
@@ -293,12 +299,28 @@ const EntryEditorPage = () => {
             <TabsTrigger value="actions" className="flex-1">
               Actions
             </TabsTrigger>
+            {aiEnabled && !isReadOnly && (
+              <TabsTrigger value="test" className="flex-1">
+                Test
+              </TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="editor">{editorContent}</TabsContent>
           <TabsContent value="versions">{versionPanel}</TabsContent>
           <TabsContent value="actions">
             <EditorActionPanel {...sharedActionProps} />
           </TabsContent>
+          {aiEnabled && !isReadOnly && (
+            <TabsContent value="test">
+              <Suspense fallback={null}>
+                <PlaygroundPanel
+                  entryId={entryId!}
+                  prompts={localEntry.prompts}
+                  systemMessage={localEntry.systemMessage}
+                />
+              </Suspense>
+            </TabsContent>
+          )}
         </Tabs>
         {dialogs}
       </div>
@@ -315,6 +337,15 @@ const EntryEditorPage = () => {
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         >
           {editorContent}
+          {playgroundOpen && (
+            <Suspense fallback={null}>
+              <PlaygroundPanel
+                entryId={entryId!}
+                prompts={localEntry.prompts}
+                systemMessage={localEntry.systemMessage}
+              />
+            </Suspense>
+          )}
         </motion.div>
       </ScrollArea>
 

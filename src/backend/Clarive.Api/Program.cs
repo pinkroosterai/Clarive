@@ -189,6 +189,7 @@ builder.Services.AddScoped<IInvitationRepository, EfInvitationRepository>();
 builder.Services.AddScoped<ITenantMembershipRepository, EfTenantMembershipRepository>();
 builder.Services.AddScoped<ITagRepository, EfTagRepository>();
 builder.Services.AddScoped<IFavoriteRepository, EfFavoriteRepository>();
+builder.Services.AddScoped<IPlaygroundRunRepository, EfPlaygroundRunRepository>();
 
 // ── Services ──
 builder.Services.AddSingleton<MaintenanceModeService>();
@@ -206,6 +207,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IImportExportService, ImportExportService>();
 builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
+builder.Services.AddScoped<PlaygroundService>();
 builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));
 builder.Services.AddScoped<IAvatarService, AvatarService>();
 // ── Email (all providers registered, resolved dynamically per-request) ──
@@ -438,6 +440,7 @@ app.MapDashboardEndpoints();
 app.MapTagEndpoints();
 app.MapSuperEndpoints();
 app.MapConfigEndpoints();
+app.MapPlaygroundEndpoints();
 
 app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode, IAgentFactory agentFactory, ITavilyClientService tavilyClient) =>
     Results.Ok(new { maintenance = maintenanceMode.IsEnabled, aiConfigured = agentFactory.IsConfigured, webSearchAvailable = tavilyClient.IsConfigured }))

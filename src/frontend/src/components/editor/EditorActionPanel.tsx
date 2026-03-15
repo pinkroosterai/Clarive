@@ -15,6 +15,7 @@ import {
   Copy,
   Check,
   History,
+  Play,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useRef } from 'react';
@@ -62,6 +63,7 @@ export interface EditorActionPanelProps {
   isDecomposing: boolean;
   showGenerateSystemMessage: boolean;
   showDecomposeToChain: boolean;
+  onTest?: () => void;
   versions: VersionInfo[];
   versionPanel?: ReactNode;
 }
@@ -99,6 +101,7 @@ export function EditorActionPanel({
   isDecomposing,
   showGenerateSystemMessage,
   showDecomposeToChain,
+  onTest,
   versions,
   versionPanel,
 }: EditorActionPanelProps) {
@@ -345,6 +348,27 @@ export function EditorActionPanel({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                )}
+
+                {onTest && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="outline"
+                          className="w-full gap-2 hover:border-primary/30 transition-all"
+                          onClick={onTest}
+                          disabled={!aiEnabled}
+                        >
+                          <Play className="size-4" />
+                          Test Prompt
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!aiEnabled && (
+                      <TooltipContent side="left">AI features are not configured</TooltipContent>
+                    )}
+                  </Tooltip>
                 )}
               </ActionGroup>
             </>

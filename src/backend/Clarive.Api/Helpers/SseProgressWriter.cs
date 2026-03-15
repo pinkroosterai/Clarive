@@ -40,6 +40,12 @@ public sealed class SseProgressWriter
         await WriteEventAsync("done", json, ct);
     }
 
+    public async Task WriteChunkAsync<T>(T chunk, CancellationToken ct = default)
+    {
+        var json = JsonSerializer.Serialize(chunk, JsonOptions);
+        await WriteEventAsync("progress", json, ct);
+    }
+
     public async Task WriteErrorAsync(string code, string message, CancellationToken ct = default)
     {
         var json = JsonSerializer.Serialize(new { code, message }, JsonOptions);

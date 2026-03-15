@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Clarive.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Clarive.Api.Migrations
 {
     [DbContext(typeof(ClariveDbContext))]
-    partial class ClariveDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260315095454_AddPlaygroundRuns")]
+    partial class AddPlaygroundRuns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

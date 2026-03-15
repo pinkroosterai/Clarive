@@ -37,6 +37,7 @@ public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<ServiceConfig> ServiceConfigs => Set<ServiceConfig>();
     public DbSet<EntryTag> EntryTags => Set<EntryTag>();
     public DbSet<EntryFavorite> EntryFavorites => Set<EntryFavorite>();
+    public DbSet<PlaygroundRun> PlaygroundRuns => Set<PlaygroundRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -4,15 +4,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Clarive.Api.Services.Background;
 
 /// <summary>
-/// Periodically deletes expired AI sessions from the database.
-/// Runs every hour, removes sessions older than 24 hours.
+/// Periodically deletes expired AI sessions and old playground runs from the database.
+/// Runs every hour: removes AI sessions older than 24 hours and playground runs older than 30 days.
 /// </summary>
 public class AiSessionCleanupService(
     IServiceScopeFactory scopeFactory,
     ILogger<AiSessionCleanupService> logger) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
-    private static readonly TimeSpan MaxAge = TimeSpan.FromHours(24);
+    private static readonly TimeSpan AiSessionMaxAge = TimeSpan.FromHours(24);
+    private static readonly TimeSpan PlaygroundRunMaxAge = TimeSpan.FromDays(30);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -29,18 +30,26 @@ public class AiSessionCleanupService(
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-            var cutoff = DateTime.UtcNow - MaxAge;
 
-            var deleted = await db.AiSessions
-                .Where(s => s.CreatedAt < cutoff)
+            var aiCutoff = DateTime.UtcNow - AiSessionMaxAge;
+            var deletedSessions = await db.AiSessions
+                .Where(s => s.CreatedAt < aiCutoff)
                 .ExecuteDeleteAsync(ct);
 
-            if (deleted > 0)
-                logger.LogInformation("Cleaned up {Count} expired AI sessions", deleted);
+            if (deletedSessions > 0)
+                logger.LogInformation("Cleaned up {Count} expired AI sessions", deletedSessions);
+
+            var runCutoff = DateTime.UtcNow - PlaygroundRunMaxAge;
+            var deletedRuns = await db.PlaygroundRuns
+                .Where(r => r.CreatedAt < runCutoff)
+                .ExecuteDeleteAsync(ct);
+
+            if (deletedRuns > 0)
+                logger.LogInformation("Cleaned up {Count} expired playground runs", deletedRuns);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            logger.LogError(ex, "Failed to clean up expired AI sessions");
+            logger.LogError(ex, "Failed to clean up expired sessions/runs");
         }
     }
 }
