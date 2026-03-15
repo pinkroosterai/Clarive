@@ -91,10 +91,11 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
 
   // Queries
-  const { data: models = [] } = useQuery({
+  const { data: models = [], isError: modelsError } = useQuery({
     queryKey: ['playground', 'models'],
     queryFn: getAvailableModels,
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const { data: testRuns = [] } = useQuery({
@@ -175,18 +176,22 @@ export default function PlaygroundPanel({ entryId, prompts, systemMessage }: Pla
           {/* Model selector */}
           <div className="flex items-center gap-2">
             <Label className="text-xs text-foreground-muted shrink-0">Model</Label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger className="w-48 h-8 text-xs">
-                <SelectValue placeholder="Select model" />
-              </SelectTrigger>
-              <SelectContent>
-                {models.map((m) => (
-                  <SelectItem key={m} value={m} className="text-xs">
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {modelsError ? (
+              <span className="text-xs text-destructive">Failed to load models</span>
+            ) : (
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger className="w-48 h-8 text-xs">
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((m) => (
+                    <SelectItem key={m} value={m} className="text-xs">
+                      {m}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Temperature */}

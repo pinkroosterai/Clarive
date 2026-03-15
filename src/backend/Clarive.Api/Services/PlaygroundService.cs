@@ -208,7 +208,11 @@ public class PlaygroundService(
                 .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            cache.Set(cacheKey, models, TimeSpan.FromMinutes(5));
+            cache.Set(cacheKey, models, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                Size = 1
+            });
             return models;
         }
         catch (OperationCanceledException)
