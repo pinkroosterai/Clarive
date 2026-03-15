@@ -1,18 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
+  ChevronRight,
   ChevronsUpDown,
   Loader2,
   Minus,
   RotateCcw,
   Save,
+  Search,
   Server,
   Database,
   ShieldCheck,
   ShieldX,
   AlertTriangle,
+  X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +30,7 @@ import {
 } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -368,12 +372,11 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
               resetMutation.isPending && resetMutation.variables === allowedModelsSetting.key
             }
           >
-            <Input
-              type="text"
+            <ModelTransferList
+              allModels={models}
               value={currentAllowedModels}
-              onChange={(e) => handleChange('Ai:AllowedModels', e.target.value)}
-              placeholder={allowedModelsSetting.validationHint ?? ''}
-              className="max-w-md"
+              onChange={(value) => handleChange('Ai:AllowedModels', value)}
+              loading={isLoadingModels}
             />
           </SettingField>
         </>
@@ -520,6 +523,138 @@ function ModelCombobox({ models, value, onChange, loading, placeholder }: ModelC
         </Command>
       </PopoverContent>
     </Popover>
+  );
+}
+
+// ── Source badge ──
+
+// ── Model transfer list ──
+
+interface ModelTransferListProps {
+  allModels: string[];
+  value: string;
+  onChange: (value: string) => void;
+  loading?: boolean;
+}
+
+function ModelTransferList({ allModels, value, onChange, loading }: ModelTransferListProps) {
+  const [search, setSearch] = useState('');
+
+  const allowedSet = useMemo(() => {
+    if (!value) return new Set<string>();
+    return new Set(
+      value.split(',').map((s) => s.trim()).filter(Boolean)
+    );
+  }, [value]);
+
+  const available = useMemo(() => {
+    const filtered = allModels.filter((m) => !allowedSet.has(m));
+    if (!search) return filtered;
+    const q = search.toLowerCase();
+    return filtered.filter((m) => m.toLowerCase().includes(q));
+  }, [allModels, allowedSet, search]);
+
+  const allowed = useMemo(() => {
+    // Preserve order from value string, filter to models that still exist
+    return value
+      ? value.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+  }, [value]);
+
+  const addModel = (model: string) => {
+    const next = [...allowed, model];
+    onChange(next.join(','));
+  };
+
+  const removeModel = (model: string) => {
+    const next = allowed.filter((m) => m !== model);
+    onChange(next.join(','));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-foreground-muted py-4">
+        <Loader2 className="size-4 animate-spin" />
+        Loading models...
+      </div>
+    );
+  }
+
+  if (allModels.length === 0) {
+    return (
+      <p className="text-sm text-foreground-muted py-2">
+        Configure and validate an API key first to see available models.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex gap-4 max-w-2xl">
+      {/* Available models (left) */}
+      <div className="flex-1 space-y-2">
+        <Label className="text-xs text-foreground-muted">Available Models</Label>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 size-3.5 text-foreground-muted" />
+          <Input
+            placeholder="Filter models..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 h-8 text-xs"
+          />
+        </div>
+        <ScrollArea className="h-48 border border-border-subtle rounded-md">
+          <div className="p-1">
+            {available.length === 0 ? (
+              <p className="text-xs text-foreground-muted p-2 text-center">
+                {search ? 'No matching models' : 'All models selected'}
+              </p>
+            ) : (
+              available.map((model) => (
+                <button
+                  key={model}
+                  onClick={() => addModel(model)}
+                  className="flex items-center justify-between w-full px-2 py-1 text-xs rounded hover:bg-elevated transition-colors group"
+                >
+                  <span className="font-mono truncate">{model}</span>
+                  <ChevronRight className="size-3 opacity-0 group-hover:opacity-100 text-foreground-muted shrink-0" />
+                </button>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Allowed models (right) */}
+      <div className="flex-1 space-y-2">
+        <Label className="text-xs text-foreground-muted">
+          Allowed Models ({allowed.length})
+        </Label>
+        <ScrollArea className="h-[calc(2rem+12rem+2px)] border border-border-subtle rounded-md">
+          <div className="p-1">
+            {allowed.length === 0 ? (
+              <p className="text-xs text-foreground-muted p-2 text-center">
+                All models allowed
+              </p>
+            ) : (
+              allowed.map((model) => (
+                <div
+                  key={model}
+                  className="flex items-center justify-between px-2 py-1 text-xs rounded hover:bg-elevated transition-colors group"
+                >
+                  <span className="font-mono truncate">{model}</span>
+                  <button
+                    onClick={() => removeModel(model)}
+                    className="opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive shrink-0"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    </div>
   );
 }
 
