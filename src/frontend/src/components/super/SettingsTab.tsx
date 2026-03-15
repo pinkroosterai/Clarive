@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import type { ConfigSetting } from '@/services/api/configService';
 
-import AiConfigSection from './AiConfigSection';
 import ConfigSectionForm from './ConfigSectionForm';
 
 interface SettingsTabProps {
@@ -82,11 +81,7 @@ export default function SettingsTab({
               <div className="flex-1 border-b border-border" />
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-4">
-              {key === 'ai' ? (
-                <AiConfigSection settings={sectionSettings} onSaved={onSaved} />
-              ) : (
-                <ConfigSectionForm settings={sectionSettings} onSaved={onSaved} />
-              )}
+              <ConfigSectionForm settings={sectionSettings} onSaved={onSaved} />
             </CollapsibleContent>
           </Collapsible>
         );
