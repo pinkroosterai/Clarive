@@ -19,12 +19,14 @@ public record TestRunPromptResponse(
 
 public record TestStreamChunk(
     int PromptIndex,
-    string Text
+    string Text,
+    string Type = "text"
 );
 
 public record TestStreamResult(
     Guid RunId,
     List<TestRunPromptResponse> Responses,
     long? InputTokens,
-    long? OutputTokens
+    long? OutputTokens,
+    string? Reasoning
 );

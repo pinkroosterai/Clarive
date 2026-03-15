@@ -84,6 +84,7 @@ public class PlaygroundService(
         }
 
         var responses = new List<TestRunPromptResponse>();
+        var reasoningText = new StringBuilder();
         long? totalInputTokens = null;
         long? totalOutputTokens = null;
 
@@ -117,6 +118,24 @@ public class PlaygroundService(
                 MaxOutputTokens = request.MaxTokens
             };
 
+            // Configure reasoning if requested
+            if (request.ShowReasoning == true)
+            {
+                var effortStr = request.ReasoningEffort?.ToLowerInvariant();
+                var effort = effortStr switch
+                {
+                    "low" => ReasoningEffort.Low,
+                    "high" => ReasoningEffort.High,
+                    "extra-high" or "extrahigh" => ReasoningEffort.ExtraHigh,
+                    _ => ReasoningEffort.Medium,
+                };
+                options.Reasoning = new ReasoningOptions
+                {
+                    Effort = effort,
+                    Output = ReasoningOutput.Full,
+                };
+            }
+
             var conversationMessages = new List<ChatMessage>();
 
             // Add system message if present
@@ -146,10 +165,19 @@ public class PlaygroundService(
                     {
                         responseText.Append(update.Text);
                         if (onChunk is not null)
-                            await onChunk(new TestStreamChunk(i, update.Text));
+                            await onChunk(new TestStreamChunk(i, update.Text, "text"));
                     }
 
-                    // Collect token usage from the final streaming update (sent as UsageContent in Contents)
+                    // Extract reasoning content (TextReasoningContent in Contents)
+                    var reasoningContent = update.Contents.OfType<TextReasoningContent>().FirstOrDefault();
+                    if (reasoningContent?.Text is not null)
+                    {
+                        reasoningText.Append(reasoningContent.Text);
+                        if (onChunk is not null)
+                            await onChunk(new TestStreamChunk(i, reasoningContent.Text, "reasoning"));
+                    }
+
+                    // Collect token usage from the final streaming update
                     var usageContent = update.Contents.OfType<UsageContent>().FirstOrDefault();
                     if (usageContent is not null)
                     {
@@ -189,7 +217,8 @@ public class PlaygroundService(
         await runRepo.AddAsync(run, ct);
         await runRepo.DeleteOldestByEntryIdAsync(entryId, MaxRunsPerEntry, ct);
 
-        return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens);
+        var fullReasoning = reasoningText.Length > 0 ? reasoningText.ToString() : null;
+        return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens, fullReasoning);
     }
 
     public async Task<List<TestRunResponse>> GetTestRunsAsync(

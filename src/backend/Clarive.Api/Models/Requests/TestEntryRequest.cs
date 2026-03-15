@@ -9,5 +9,8 @@ public record TestEntryRequest(
     float Temperature = 1.0f,
     [property: Range(1, 32000)]
     int MaxTokens = 4096,
-    Dictionary<string, string>? TemplateFields = null
+    Dictionary<string, string>? TemplateFields = null,
+    [property: StringLength(20)]
+    string? ReasoningEffort = null,
+    bool? ShowReasoning = null
 );

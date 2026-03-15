@@ -100,6 +100,8 @@ const PlaygroundPage = () => {
   const [selectedModel, setSelectedModel] = useState<EnrichedModel | null>(null);
   const [temperature, setTemperature] = useState(1.0);
   const [maxTokens, setMaxTokens] = useState(4096);
+  const [reasoningEffort, setReasoningEffort] = useState('medium');
+  const [showReasoning, setShowReasoning] = useState(true);
 
   // ── Template fields ──
   const templateFields = useMemo(() => {
@@ -129,6 +131,7 @@ const PlaygroundPage = () => {
   // ── Streaming state ──
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedResponses, setStreamedResponses] = useState<Record<number, string>>({});
+  const [streamedReasoning, setStreamedReasoning] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -173,6 +176,7 @@ const PlaygroundPage = () => {
     if (!entryId) return;
     setIsStreaming(true);
     setStreamedResponses({});
+    setStreamedReasoning({});
     setError(null);
     setLastTokens(null);
     setElapsedSeconds(0);
@@ -194,12 +198,21 @@ const PlaygroundPage = () => {
           temperature,
           maxTokens,
           templateFields: templateFields.length > 0 ? fieldValues : undefined,
+          reasoningEffort: selectedModel?.isReasoning && showReasoning ? reasoningEffort : undefined,
+          showReasoning: selectedModel?.isReasoning ? showReasoning : undefined,
         },
         (chunk: TestStreamChunk) => {
-          setStreamedResponses((prev) => ({
-            ...prev,
-            [chunk.promptIndex]: (prev[chunk.promptIndex] || '') + chunk.text,
-          }));
+          if (chunk.type === 'reasoning') {
+            setStreamedReasoning((prev) => ({
+              ...prev,
+              [chunk.promptIndex]: (prev[chunk.promptIndex] || '') + chunk.text,
+            }));
+          } else {
+            setStreamedResponses((prev) => ({
+              ...prev,
+              [chunk.promptIndex]: (prev[chunk.promptIndex] || '') + chunk.text,
+            }));
+          }
         },
         controller.signal
       );
@@ -343,21 +356,52 @@ const PlaygroundPage = () => {
               )}
             </div>
 
-            {/* Temperature */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs text-foreground-muted shrink-0">Temp</Label>
-              <Slider
-                value={[temperature]}
-                onValueChange={([v]) => setTemperature(v)}
-                min={0}
-                max={2}
-                step={0.1}
-                className="w-20"
-              />
-              <span className="text-xs text-foreground-muted w-7 tabular-nums">
-                {temperature.toFixed(1)}
-              </span>
-            </div>
+            {/* Temperature (hidden for non-configurable models) */}
+            {selectedModel?.isTemperatureConfigurable !== false && (
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-foreground-muted shrink-0">Temp</Label>
+                <Slider
+                  value={[temperature]}
+                  onValueChange={([v]) => setTemperature(v)}
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  className="w-20"
+                />
+                <span className="text-xs text-foreground-muted w-7 tabular-nums">
+                  {temperature.toFixed(1)}
+                </span>
+              </div>
+            )}
+
+            {/* Reasoning controls (shown for reasoning models) */}
+            {selectedModel?.isReasoning && (
+              <>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-foreground-muted shrink-0">Reasoning</Label>
+                  <Select value={reasoningEffort} onValueChange={setReasoningEffort}>
+                    <SelectTrigger className="w-28 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low" className="text-xs">Low</SelectItem>
+                      <SelectItem value="medium" className="text-xs">Medium</SelectItem>
+                      <SelectItem value="high" className="text-xs">High</SelectItem>
+                      <SelectItem value="extra-high" className="text-xs">Extra High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-xs text-foreground-muted">Show thinking</Label>
+                  <input
+                    type="checkbox"
+                    checked={showReasoning}
+                    onChange={(e) => setShowReasoning(e.target.checked)}
+                    className="size-3.5 rounded"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Max tokens */}
             <div className="flex items-center gap-2">
@@ -585,6 +629,21 @@ const PlaygroundPage = () => {
                         <div className="bg-elevated/50 rounded-md p-3 text-xs font-mono mb-3 border border-border-subtle whitespace-pre-wrap max-h-32 overflow-y-auto">
                           {prompt.content}
                         </div>
+                      )}
+
+                      {/* Reasoning output */}
+                      {streamedReasoning[i] && (
+                        <Collapsible defaultOpen={isStreaming}>
+                          <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1">
+                            <ChevronDown className="size-3" />
+                            Thinking
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 text-xs font-mono whitespace-pre-wrap text-indigo-800 dark:text-indigo-300 max-h-40 overflow-y-auto">
+                              {streamedReasoning[i]}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       )}
 
                       {/* Response */}

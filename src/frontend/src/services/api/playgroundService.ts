@@ -3,6 +3,7 @@ import { api } from './apiClient';
 export interface TestStreamChunk {
   promptIndex: number;
   text: string;
+  type?: 'text' | 'reasoning';
 }
 
 export interface TestRunPromptResponse {
@@ -15,6 +16,7 @@ export interface TestStreamResult {
   responses: TestRunPromptResponse[];
   inputTokens: number | null;
   outputTokens: number | null;
+  reasoning: string | null;
 }
 
 export interface TestRunResponse {
@@ -34,6 +36,8 @@ export interface TestEntryParams {
   temperature?: number;
   maxTokens?: number;
   templateFields?: Record<string, string>;
+  reasoningEffort?: string;
+  showReasoning?: boolean;
 }
 
 export async function testEntry(
@@ -47,6 +51,8 @@ export async function testEntry(
     temperature: params.temperature ?? 1.0,
     maxTokens: params.maxTokens ?? 4096,
     templateFields: params.templateFields,
+    reasoningEffort: params.reasoningEffort,
+    showReasoning: params.showReasoning,
   };
 
   if (onChunk) {
