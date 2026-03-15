@@ -214,8 +214,6 @@ public static class ConfigEndpoints
         return Results.Ok(new { key, reset = true });
     }
 
-    private static readonly string[] OpenAiChatPrefixes = ["gpt-", "o1-", "o3-", "o4-", "chatgpt-"];
-
     private static async Task<IResult> HandleValidateAi(
         ValidateAiConfigRequest request,
         IConfiguration configuration,
@@ -282,17 +280,8 @@ public static class ConfigEndpoints
             var modelClient = client.GetOpenAIModelClient();
             var response = await modelClient.GetModelsAsync(cts.Token);
 
-            var isOpenAi = string.IsNullOrWhiteSpace(endpointUrl)
-                || endpointUrl.Contains("api.openai.com", StringComparison.OrdinalIgnoreCase);
-
             var models = response.Value
                 .Select(m => m.Id)
-                .Where(id =>
-                {
-                    if (!isOpenAi) return true;
-                    return OpenAiChatPrefixes.Any(prefix =>
-                        id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-                })
                 .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 

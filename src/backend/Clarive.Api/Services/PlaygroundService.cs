@@ -27,7 +27,7 @@ public class PlaygroundService(
     private const int MaxRunsPerEntry = 20;
     private const int DefaultHistoryLimit = 10;
 
-    private static readonly string[] OpenAiChatPrefixes = ["gpt-", "o1-", "o3-", "o4-", "chatgpt-"];
+    private const string ProvidersCacheKey = "ai_providers_all";
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -90,8 +90,13 @@ public class PlaygroundService(
 
         try
         {
-            // Resolve provider for this model
-            var providers = await providerRepo.GetAllAsync(ct);
+            // Resolve provider for this model (cached)
+            var providers = await cache.GetOrCreateAsync(ProvidersCacheKey, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+                entry.Size = 1;
+                return await providerRepo.GetAllAsync(ct);
+            }) ?? [];
             var providerMatch = providers
                 .Where(p => p.IsActive)
                 .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
@@ -112,9 +117,11 @@ public class PlaygroundService(
 
             using var client = chatClient;
 
+            // Skip temperature for models that don't support it (e.g. reasoning models)
+            var isTemperatureConfigurable = providerMatch?.Model.IsTemperatureConfigurable ?? true;
             var options = new ChatOptions
             {
-                Temperature = request.Temperature,
+                Temperature = isTemperatureConfigurable ? request.Temperature : null,
                 MaxOutputTokens = request.MaxTokens
             };
 
@@ -306,18 +313,8 @@ public class PlaygroundService(
             var modelClient = client.GetOpenAIModelClient();
             var response = await modelClient.GetModelsAsync(cts.Token);
 
-            var settings = aiSettings.CurrentValue;
-            var isOpenAi = string.IsNullOrWhiteSpace(settings.EndpointUrl)
-                || settings.EndpointUrl.Contains("api.openai.com", StringComparison.OrdinalIgnoreCase);
-
             var models = response.Value
                 .Select(m => m.Id)
-                .Where(id =>
-                {
-                    if (!isOpenAi) return true;
-                    return OpenAiChatPrefixes.Any(prefix =>
-                        id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-                })
                 .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 

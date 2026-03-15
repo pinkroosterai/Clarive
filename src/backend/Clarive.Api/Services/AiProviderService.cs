@@ -14,7 +14,6 @@ public class AiProviderService(
     IEncryptionService encryption,
     ILogger<AiProviderService> logger)
 {
-    private static readonly string[] OpenAiChatPrefixes = ["gpt-", "o1-", "o3-", "o4-", "chatgpt-"];
 
     public async Task<List<AiProviderResponse>> GetAllAsync(CancellationToken ct)
     {
@@ -98,17 +97,8 @@ public class AiProviderService(
             var modelClient = client.GetOpenAIModelClient();
             var response = await modelClient.GetModelsAsync(cts.Token);
 
-            var isOpenAi = string.IsNullOrWhiteSpace(provider.EndpointUrl)
-                || provider.EndpointUrl.Contains("api.openai.com", StringComparison.OrdinalIgnoreCase);
-
             var models = response.Value
                 .Select(m => m.Id)
-                .Where(id =>
-                {
-                    if (!isOpenAi) return true;
-                    return OpenAiChatPrefixes.Any(prefix =>
-                        id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-                })
                 .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
