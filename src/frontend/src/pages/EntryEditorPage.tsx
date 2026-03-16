@@ -2,11 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
 import { useState, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
+import { EditorAiOverlay } from '@/components/editor/EditorAiOverlay';
 import { PromptEditor } from '@/components/editor/PromptEditor';
 import { VersionDiffDialog } from '@/components/editor/VersionDiffDialog';
 import { VersionPanel } from '@/components/editor/VersionPanel';
@@ -123,6 +124,15 @@ const EntryEditorPage = () => {
     onUndo: editor.handleUndo,
     onRedo: editor.handleRedo,
   });
+
+  // Warn before closing/refreshing during AI operations
+  const isAiRunningEarly = mutations.isGeneratingSystemMessage || mutations.isDecomposing;
+  useEffect(() => {
+    if (!isAiRunningEarly) return;
+    const handler = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isAiRunningEarly]);
 
   // ── Favorite toggle ──
   const isFavorited = entryData?.isFavorited ?? false;
@@ -334,8 +344,37 @@ const EntryEditorPage = () => {
     isDeletingDraft: deleteDraftMutation.isPending,
   } as const;
 
+  const isAiRunning = mutations.isGeneratingSystemMessage || mutations.isDecomposing;
+  const aiLabel = mutations.isGeneratingSystemMessage
+    ? 'Generating system message\u2026'
+    : 'Decomposing prompt\u2026';
+
+  // Block in-app navigation while AI operation is running
+  const blocker = useBlocker(() => isAiRunning);
+
   const dialogs = (
     <>
+      {blocker.state === 'blocked' && (
+        <AlertDialog open onOpenChange={(open) => !open && blocker.reset()}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Leave during AI operation?</AlertDialogTitle>
+              <AlertDialogDescription>
+                An AI operation is still running. Leaving will cancel it and discard the result.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => blocker.reset()}>Stay</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => blocker.proceed()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Leave
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
       <FolderPickerDialog
         open={folderPickerOpen}
         onOpenChange={setFolderPickerOpen}
@@ -358,6 +397,7 @@ const EntryEditorPage = () => {
   if (isMobile) {
     return (
       <div className="p-4">
+        <EditorAiOverlay isVisible={isAiRunning} label={aiLabel} />
         {readOnlyBanner && <div className="mb-4">{readOnlyBanner}</div>}
         <Tabs defaultValue="editor">
           <TabsList className="w-full">
@@ -385,6 +425,7 @@ const EntryEditorPage = () => {
   // ── Desktop layout ──
   return (
     <div className="grid h-full grid-cols-[minmax(0,1fr)_300px] gap-0">
+      <EditorAiOverlay isVisible={isAiRunning} label={aiLabel} />
       <ScrollArea className="p-6">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
