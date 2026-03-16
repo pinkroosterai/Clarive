@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAiUsageLogs } from '@/hooks/useAiUsage';
+import { useAiUsageFilters, useAiUsageLogs } from '@/hooks/useAiUsage';
 import type { AiUsageFilterParams, AiUsageLogEntry } from '@/services/api/aiUsageService';
 
 interface AiUsageLogGridProps {
@@ -38,6 +38,34 @@ const formatDuration = (ms: number): string => {
   return `${(ms / 1000).toFixed(1)}s`;
 };
 
+// ── Custom Select Filter Component ──
+
+interface SelectFilterParams {
+  options: { value: string; label: string }[];
+}
+
+function SelectFilterComponent(props: { model: string | null; onModelChange: (model: string | null) => void; params: SelectFilterParams }) {
+  const { model, onModelChange, params } = props;
+  const options = params.options ?? [];
+
+  return (
+    <div className="p-2 min-w-[160px]">
+      <select
+        className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+        value={model ?? ''}
+        onChange={(e) => onModelChange(e.target.value || null)}
+      >
+        <option value="">All</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   const gridRef = useRef<AgGridReact<AiUsageLogEntry>>(null);
 
@@ -50,6 +78,9 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   // Server-side column filters
   const [filterModel, setFilterModel] = useState<string | undefined>();
   const [filterActionType, setFilterActionType] = useState<string | undefined>();
+
+  // Fetch available filter options from backend
+  const { data: filterOptions } = useAiUsageFilters(filters.dateFrom, filters.dateTo);
 
   // Merge parent filters with column filters
   const mergedFilters = useMemo<AiUsageFilterParams>(
@@ -66,6 +97,16 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   const logs = data?.items ?? [];
   const totalCount = data?.totalCount ?? 0;
   const totalPages = Math.ceil(totalCount / pageSize);
+
+  // Build select options from filter API response
+  const modelOptions = useMemo(
+    () => (filterOptions?.models ?? []).map((m) => ({ value: m.id, label: m.displayName })),
+    [filterOptions],
+  );
+  const actionTypeOptions = useMemo(
+    () => (filterOptions?.actionTypes ?? []).map((a) => ({ value: a, label: a })),
+    [filterOptions],
+  );
 
   const columnDefs = useMemo<ColDef<AiUsageLogEntry>[]>(
     () => [
@@ -98,14 +139,16 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         headerName: 'Model',
         sortable: true,
         width: 200,
-        filter: 'agTextColumnFilter',
+        filter: SelectFilterComponent,
+        filterParams: { options: modelOptions } as SelectFilterParams,
       },
       {
         field: 'actionType',
         headerName: 'Action',
         sortable: true,
         width: 130,
-        filter: 'agTextColumnFilter',
+        filter: SelectFilterComponent,
+        filterParams: { options: actionTypeOptions } as SelectFilterParams,
       },
       {
         field: 'inputTokens',
@@ -114,6 +157,10 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         width: 110,
         type: 'rightAligned',
         filter: 'agNumberColumnFilter',
+        filterParams: {
+          filterOptions: ['inRange', 'greaterThan', 'lessThan', 'equals'],
+          defaultOption: 'inRange',
+        },
         valueFormatter: (p) => formatNumber(p.value),
       },
       {
@@ -123,6 +170,10 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         width: 110,
         type: 'rightAligned',
         filter: 'agNumberColumnFilter',
+        filterParams: {
+          filterOptions: ['inRange', 'greaterThan', 'lessThan', 'equals'],
+          defaultOption: 'inRange',
+        },
         valueFormatter: (p) => formatNumber(p.value),
       },
       {
@@ -157,10 +208,14 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         width: 100,
         type: 'rightAligned',
         filter: 'agNumberColumnFilter',
+        filterParams: {
+          filterOptions: ['inRange', 'greaterThan', 'lessThan', 'equals'],
+          defaultOption: 'inRange',
+        },
         valueFormatter: (p) => formatDuration(p.value),
       },
     ],
-    [],
+    [modelOptions, actionTypeOptions],
   );
 
   const onSortChanged = useCallback((event: SortChangedEvent<AiUsageLogEntry>) => {
@@ -188,9 +243,9 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   const onFilterChanged = useCallback((event: FilterChangedEvent<AiUsageLogEntry>) => {
     const model = event.api.getFilterModel();
 
-    // Server-side filters: Model and Action Type
-    const modelVal = model['displayModel']?.filter as string | undefined;
-    const actionVal = model['actionType']?.filter as string | undefined;
+    // Server-side filters: Model and Action Type (from custom SelectFilter)
+    const modelVal = model['displayModel'] as string | undefined;
+    const actionVal = model['actionType'] as string | undefined;
     setFilterModel(modelVal || undefined);
     setFilterActionType(actionVal || undefined);
 

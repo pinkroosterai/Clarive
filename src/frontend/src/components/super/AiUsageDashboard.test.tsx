@@ -14,6 +14,7 @@ beforeAll(() => {
 vi.mock('@/hooks/useAiUsage', () => ({
   useAiUsageStats: vi.fn(),
   useAiUsageLogs: vi.fn().mockReturnValue({ data: { items: [], totalCount: 0 }, isLoading: false }),
+  useAiUsageFilters: vi.fn().mockReturnValue({ data: { models: [], actionTypes: [], tenants: [] }, isLoading: false }),
 }));
 
 // Mock framer-motion to avoid animation issues in tests
