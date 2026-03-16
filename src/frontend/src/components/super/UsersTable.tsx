@@ -1,14 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
 import {
-  type ColumnDef,
-  type SortingState,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+  AllCommunityModule,
+  type ColDef,
+  type ICellRendererParams,
+  type SortChangedEvent,
+  themeQuartz,
+} from 'ag-grid-community';
+import { AgGridReact } from 'ag-grid-react';
+import { format } from 'date-fns';
 import {
-  ArrowUpDown,
   Check,
+  Download,
   KeyRound,
   MoreHorizontal,
   Search,
@@ -16,7 +17,9 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+
+import { useQuery } from '@tanstack/react-query';
 
 import { DeleteUserDialog } from '@/components/super/DeleteUserDialog';
 import { ResetPasswordDialog } from '@/components/super/ResetPasswordDialog';
@@ -37,14 +40,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatDate } from '@/lib/formatters';
@@ -60,22 +55,138 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+// ── Cell Renderers ──
+
+interface GridContext {
+  currentUserId: string | undefined;
+  setResetTarget: (user: SuperUser) => void;
+  setDeleteTarget: (user: SuperUser) => void;
+}
+
+function UserCell({ data }: ICellRendererParams<SuperUser>) {
+  if (!data) return null;
+  return (
+    <div className="flex items-center gap-3">
+      <Avatar className="size-8">
+        {data.avatarUrl && <AvatarImage src={data.avatarUrl} alt={data.name} />}
+        <AvatarFallback className="text-xs">{getInitials(data.name)}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium truncate">{data.name}</span>
+          {data.isSuperUser && (
+            <Badge variant="outline" className="text-xs px-1 py-0 gap-0.5">
+              <Shield className="size-3" />
+              Super
+            </Badge>
+          )}
+        </div>
+        <div className="text-xs text-foreground-muted truncate">{data.email}</div>
+      </div>
+    </div>
+  );
+}
+
+function RoleCell({ data }: ICellRendererParams<SuperUser>) {
+  if (!data) return null;
+  return (
+    <Badge variant="outline" className="capitalize">
+      {data.role}
+    </Badge>
+  );
+}
+
+function AuthCell({ data }: ICellRendererParams<SuperUser>) {
+  if (!data) return null;
+  return (
+    <Badge variant="outline" className="text-xs">
+      {data.isGoogleAccount ? 'Google' : 'Password'}
+    </Badge>
+  );
+}
+
+function VerifiedCell({ data }: ICellRendererParams<SuperUser>) {
+  if (!data) return null;
+  return data.emailVerified ? (
+    <Check className="size-4 text-success-text" />
+  ) : (
+    <X className="size-4 text-foreground-muted" />
+  );
+}
+
+function WorkspacesCell({ data }: ICellRendererParams<SuperUser>) {
+  if (!data) return null;
+  const ws = data.workspaces;
+  if (ws.length === 0) return <span className="text-xs text-foreground-muted">None</span>;
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant="secondary" className="cursor-default">
+            {ws.length}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <ul className="text-xs space-y-0.5">
+            {ws.map((w) => (
+              <li key={w.id}>
+                {w.name} ({w.role})
+              </li>
+            ))}
+          </ul>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function ActionsCell({ data, context }: ICellRendererParams<SuperUser, unknown, GridContext>) {
+  if (!data) return null;
+  const { currentUserId, setResetTarget, setDeleteTarget } = context;
+  if (data.id === currentUserId) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="size-8">
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {!data.isGoogleAccount && (
+          <DropdownMenuItem onClick={() => setResetTarget(data)}>
+            <KeyRound className="size-4 mr-2" />
+            Reset Password
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onClick={() => setDeleteTarget(data)}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="size-4 mr-2" />
+          Delete User
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ── Main Component ──
+
 export default function UsersTable() {
   const currentUserId = useAuthStore((s) => s.currentUser?.id);
+  const gridRef = useRef<AgGridReact<SuperUser>>(null);
 
   // ── Table state ──
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
+  const [sortBy, setSortBy] = useState<string | undefined>('createdAt');
+  const [sortDesc, setSortDesc] = useState(true);
 
   // ── Dialog state ──
   const [deleteTarget, setDeleteTarget] = useState<SuperUser | null>(null);
   const [resetTarget, setResetTarget] = useState<SuperUser | null>(null);
-
-  const sortBy = sorting[0]?.id;
-  const sortDesc = sorting[0]?.desc ?? true;
 
   // ── Data fetching ──
   const { data, isLoading } = useQuery({
@@ -88,183 +199,105 @@ export default function UsersTable() {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / pageSize);
 
-  // ── Columns ──
-  const columns = useMemo<ColumnDef<SuperUser>[]>(
+  // ── Column definitions ──
+  const columnDefs = useMemo<ColDef<SuperUser>[]>(
     () => [
       {
-        accessorKey: 'name',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            User
-            <ArrowUpDown className="ml-1 size-3" />
-          </Button>
-        ),
-        cell: ({ row }) => {
-          const user = row.original;
-          return (
-            <div className="flex items-center gap-3">
-              <Avatar className="size-8">
-                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
-                <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-medium truncate">{user.name}</span>
-                  {user.isSuperUser && (
-                    <Badge variant="outline" className="text-xs px-1 py-0 gap-0.5">
-                      <Shield className="size-3" />
-                      Super
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-xs text-foreground-muted truncate">{user.email}</div>
-              </div>
-            </div>
-          );
-        },
+        field: 'name',
+        headerName: 'User',
+        sortable: true,
+        width: 280,
+        cellRenderer: UserCell,
+        autoHeight: true,
       },
       {
-        accessorKey: 'role',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Role
-            <ArrowUpDown className="ml-1 size-3" />
-          </Button>
-        ),
-        cell: ({ row }) => (
-          <Badge variant="outline" className="capitalize">
-            {row.original.role}
-          </Badge>
-        ),
+        field: 'role',
+        headerName: 'Role',
+        sortable: true,
+        width: 110,
+        cellRenderer: RoleCell,
       },
       {
-        id: 'auth',
-        header: 'Auth',
-        cell: ({ row }) => (
-          <Badge variant="outline" className="text-xs">
-            {row.original.isGoogleAccount ? 'Google' : 'Password'}
-          </Badge>
-        ),
+        headerName: 'Auth',
+        sortable: false,
+        width: 110,
+        cellRenderer: AuthCell,
       },
       {
-        id: 'verified',
-        header: 'Verified',
-        cell: ({ row }) =>
-          row.original.emailVerified ? (
-            <Check className="size-4 text-success-text" />
-          ) : (
-            <X className="size-4 text-foreground-muted" />
-          ),
+        headerName: 'Verified',
+        sortable: false,
+        width: 100,
+        cellRenderer: VerifiedCell,
       },
       {
-        id: 'workspaces',
-        header: 'Workspaces',
-        cell: ({ row }) => {
-          const ws = row.original.workspaces;
-          if (ws.length === 0) return <span className="text-xs text-foreground-muted">None</span>;
-          return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="secondary" className="cursor-default">
-                    {ws.length}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <ul className="text-xs space-y-0.5">
-                    {ws.map((w) => (
-                      <li key={w.id}>
-                        {w.name} ({w.role})
-                      </li>
-                    ))}
-                  </ul>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-        },
+        headerName: 'Workspaces',
+        sortable: false,
+        width: 120,
+        cellRenderer: WorkspacesCell,
       },
       {
-        accessorKey: 'createdAt',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Created
-            <ArrowUpDown className="ml-1 size-3" />
-          </Button>
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-foreground-muted whitespace-nowrap">
-            {formatDate(row.original.createdAt)}
-          </span>
-        ),
+        field: 'createdAt',
+        headerName: 'Created',
+        sortable: true,
+        sort: 'desc',
+        width: 150,
+        valueFormatter: (p) => (p.value ? formatDate(p.value) : ''),
       },
       {
-        id: 'actions',
-        cell: ({ row }) => {
-          const user = row.original;
-          const isSelf = user.id === currentUserId;
-          if (isSelf) return null;
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8">
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {!user.isGoogleAccount && (
-                  <DropdownMenuItem onClick={() => setResetTarget(user)}>
-                    <KeyRound className="size-4 mr-2" />
-                    Reset Password
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  onClick={() => setDeleteTarget(user)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="size-4 mr-2" />
-                  Delete User
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
+        headerName: '',
+        sortable: false,
+        width: 60,
+        cellRenderer: ActionsCell,
+        suppressHeaderMenuButton: true,
       },
     ],
-    [currentUserId]
+    [],
   );
 
-  const table = useReactTable({
-    data: users,
-    columns,
-    state: { sorting },
-    onSortingChange: (updater) => {
-      setSorting(updater);
-      setPage(1);
-    },
-    getCoreRowModel: getCoreRowModel(),
-    manualSorting: true,
-    manualPagination: true,
-    pageCount: totalPages,
-  });
+  // ── Sort handler ──
+  const onSortChanged = useCallback((event: SortChangedEvent<SuperUser>) => {
+    const sortModel = event.api.getColumnState().find((c) => c.sort != null);
+    if (sortModel) {
+      const fieldMap: Record<string, string> = {
+        name: 'name',
+        role: 'role',
+        createdAt: 'createdAt',
+      };
+      setSortBy(fieldMap[sortModel.colId] ?? 'createdAt');
+      setSortDesc(sortModel.sort === 'desc');
+    } else {
+      setSortBy('createdAt');
+      setSortDesc(true);
+    }
+    setPage(1);
+  }, []);
+
+  // ── CSV export ──
+  const handleExportCsv = useCallback(() => {
+    gridRef.current?.api.exportDataAsCsv({
+      fileName: `users-${format(new Date(), 'yyyy-MM-dd')}.csv`,
+    });
+  }, []);
+
+  // ── Grid context (passed to cell renderers) ──
+  const gridContext = useMemo<GridContext>(
+    () => ({ currentUserId, setResetTarget, setDeleteTarget }),
+    [currentUserId],
+  );
 
   return (
     <div className="space-y-6">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-foreground-muted">
+          {total.toLocaleString()} user{total !== 1 ? 's' : ''} total
+        </div>
+        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={users.length === 0}>
+          <Download className="size-3.5 mr-1.5" />
+          Export CSV
+        </Button>
+      </div>
+
       {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-foreground-muted" />
@@ -279,58 +312,29 @@ export default function UsersTable() {
         />
       </div>
 
-      {/* Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {columns.map((_, ci) => (
-                    <TableCell key={ci}>
-                      <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  {debouncedSearch ? 'No users found matching your search.' : 'No users found.'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      {/* Grid */}
+      <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
+        <AgGridReact<SuperUser>
+          ref={gridRef}
+          theme={themeQuartz}
+          modules={[AllCommunityModule]}
+          rowData={users}
+          columnDefs={columnDefs}
+          loading={isLoading}
+          context={gridContext}
+          suppressMovableColumns
+          suppressCellFocus
+          animateRows={false}
+          onSortChanged={onSortChanged}
+          rowSelection="single"
+        />
       </div>
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-foreground-muted">
-          {total} user{total !== 1 ? 's' : ''} total
+          Showing {users.length > 0 ? (page - 1) * pageSize + 1 : 0}–
+          {Math.min(page * pageSize, total)} of {total.toLocaleString()}
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -346,7 +350,7 @@ export default function UsersTable() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[10, 20, 50, 100].map((size) => (
+                {[10, 25, 50, 100].map((size) => (
                   <SelectItem key={size} value={String(size)}>
                     {size}
                   </SelectItem>
