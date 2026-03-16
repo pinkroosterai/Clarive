@@ -30,10 +30,15 @@ public static class AiUsageEndpoints
         string? actionType,
         DateTime? dateFrom,
         DateTime? dateTo,
+        string? sortBy,
+        bool sortDesc = true,
         int page = 1,
         int pageSize = DefaultPageSize,
         CancellationToken ct = default)
     {
+        if (dateFrom.HasValue && dateTo.HasValue && dateFrom > dateTo)
+            return Results.BadRequest(new { error = new { code = "INVALID_DATE_RANGE", message = "dateFrom must be before dateTo" } });
+
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = DefaultPageSize;
         if (pageSize > MaxPageSize) pageSize = MaxPageSize;
@@ -41,7 +46,7 @@ public static class AiUsageEndpoints
         var filter = new AiUsageFilterRequest(
             ParseGuids(tenantId), userId, ParseStrings(model),
             ParseActionTypes(actionType), dateFrom, dateTo);
-        var result = await repo.GetFilteredAsync(filter, page, pageSize, ct);
+        var result = await repo.GetFilteredAsync(filter, page, pageSize, sortBy, sortDesc, ct);
         return Results.Ok(result);
     }
 
@@ -65,6 +70,9 @@ public static class AiUsageEndpoints
         DateTime? dateTo,
         CancellationToken ct = default)
     {
+        if (dateFrom.HasValue && dateTo.HasValue && dateFrom > dateTo)
+            return Results.BadRequest(new { error = new { code = "INVALID_DATE_RANGE", message = "dateFrom must be before dateTo" } });
+
         var filter = new AiUsageFilterRequest(
             ParseGuids(tenantId), userId, ParseStrings(model),
             ParseActionTypes(actionType), dateFrom, dateTo);

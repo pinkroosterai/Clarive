@@ -14,10 +14,16 @@ export function useAiUsageStats(filters: AiUsageFilterParams) {
   });
 }
 
-export function useAiUsageLogs(filters: AiUsageFilterParams, page = 1, pageSize = 50) {
+export function useAiUsageLogs(
+  filters: AiUsageFilterParams,
+  page = 1,
+  pageSize = 50,
+  sortBy?: string,
+  sortDesc?: boolean,
+) {
   return useQuery({
-    queryKey: ['super', 'ai-usage', 'logs', filters, page, pageSize],
-    queryFn: () => getAiUsageLogs(filters, page, pageSize),
+    queryKey: ['super', 'ai-usage', 'logs', filters, page, pageSize, sortBy, sortDesc],
+    queryFn: () => getAiUsageLogs(filters, page, pageSize, sortBy, sortDesc),
     staleTime: 30_000,
   });
 }

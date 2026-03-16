@@ -17,23 +17,26 @@ public class EfAiUsageLogRepository(ClariveDbContext db) : IAiUsageLogRepository
     }
 
     public async Task<AiUsagePagedResponse> GetFilteredAsync(
-        AiUsageFilterRequest filter, int page, int pageSize, CancellationToken ct = default)
+        AiUsageFilterRequest filter, int page, int pageSize, string? sortBy = null, bool sortDesc = true, CancellationToken ct = default)
     {
         var query = ApplyFilters(db.AiUsageLogs.AsQueryable(), filter);
 
         var totalCount = await query.LongCountAsync(ct);
 
-        var items = await query
-            .OrderByDescending(l => l.CreatedAt)
+        var orderedQuery = ApplySorting(query, sortBy, sortDesc);
+
+        var items = await orderedQuery
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(l => new AiUsageLogResponse(
-                l.Id, l.TenantId, l.UserId,
-                l.ActionType.ToString(), l.Model, l.Provider,
-                l.Provider != "" ? l.Provider + ":" + l.Model : l.Model,
-                l.InputTokens, l.OutputTokens, l.InputTokens + l.OutputTokens,
-                l.EstimatedInputCostUsd, l.EstimatedOutputCostUsd,
-                l.DurationMs, l.EntryId, l.CreatedAt))
+            .Join(db.Tenants, l => l.TenantId, t => t.Id, (l, t) => new { l, TenantName = t.Name })
+            .Join(db.Users.IgnoreQueryFilters(), x => x.l.UserId, u => u.Id, (x, u) => new { x.l, x.TenantName, UserEmail = u.Email })
+            .Select(x => new AiUsageLogResponse(
+                x.l.Id, x.l.TenantId, x.TenantName, x.l.UserId, x.UserEmail,
+                x.l.ActionType.ToString(), x.l.Model, x.l.Provider,
+                x.l.Provider != "" ? x.l.Provider + ":" + x.l.Model : x.l.Model,
+                x.l.InputTokens, x.l.OutputTokens, x.l.InputTokens + x.l.OutputTokens,
+                x.l.EstimatedInputCostUsd, x.l.EstimatedOutputCostUsd,
+                x.l.DurationMs, x.l.EntryId, x.l.CreatedAt))
             .ToListAsync(ct);
 
         return new AiUsagePagedResponse(items, page, pageSize, totalCount);
@@ -167,6 +170,21 @@ public class EfAiUsageLogRepository(ClariveDbContext db) : IAiUsageLogRepository
         return await db.AiUsageLogs
             .Where(l => l.CreatedAt < cutoff)
             .ExecuteDeleteAsync(ct);
+    }
+
+    private static IOrderedQueryable<AiUsageLog> ApplySorting(IQueryable<AiUsageLog> query, string? sortBy, bool sortDesc)
+    {
+        return sortBy switch
+        {
+            "model" => sortDesc ? query.OrderByDescending(l => l.Model) : query.OrderBy(l => l.Model),
+            "actionType" => sortDesc ? query.OrderByDescending(l => l.ActionType) : query.OrderBy(l => l.ActionType),
+            "inputTokens" => sortDesc ? query.OrderByDescending(l => l.InputTokens) : query.OrderBy(l => l.InputTokens),
+            "outputTokens" => sortDesc ? query.OrderByDescending(l => l.OutputTokens) : query.OrderBy(l => l.OutputTokens),
+            "durationMs" => sortDesc ? query.OrderByDescending(l => l.DurationMs) : query.OrderBy(l => l.DurationMs),
+            "estimatedInputCostUsd" => sortDesc ? query.OrderByDescending(l => l.EstimatedInputCostUsd) : query.OrderBy(l => l.EstimatedInputCostUsd),
+            "estimatedOutputCostUsd" => sortDesc ? query.OrderByDescending(l => l.EstimatedOutputCostUsd) : query.OrderBy(l => l.EstimatedOutputCostUsd),
+            _ => sortDesc ? query.OrderByDescending(l => l.CreatedAt) : query.OrderBy(l => l.CreatedAt),
+        };
     }
 
     private static IQueryable<AiUsageLog> ApplyFilters(IQueryable<AiUsageLog> query, AiUsageFilterRequest filter)

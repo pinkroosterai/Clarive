@@ -357,6 +357,49 @@
   }
 }
 
+/* ── AG Grid Theme (Quartz base + Clarive overrides) ── */
+.ag-theme-quartz {
+  --ag-background-color: hsl(var(--background-surface));
+  --ag-foreground-color: hsl(var(--foreground));
+  --ag-header-background-color: hsl(var(--background-elevated));
+  --ag-header-foreground-color: hsl(var(--foreground));
+  --ag-border-color: hsl(var(--border-subtle));
+  --ag-row-hover-color: hsl(var(--background-elevated));
+  --ag-selected-row-background-color: hsl(var(--primary) / 0.1);
+  --ag-range-selection-background-color: hsl(var(--primary) / 0.08);
+  --ag-font-family: 'DM Sans', sans-serif;
+  --ag-font-size: 13px;
+  --ag-row-height: 40px;
+  --ag-header-height: 42px;
+  --ag-cell-horizontal-padding: 12px;
+  --ag-row-border-color: hsl(var(--border-subtle));
+  --ag-secondary-foreground-color: hsl(var(--foreground-muted));
+  --ag-input-border-color: hsl(var(--border));
+  --ag-input-focus-border-color: hsl(var(--primary));
+  --ag-checkbox-checked-color: hsl(var(--primary));
+  --ag-card-radius: var(--radius);
+  --ag-wrapper-border-radius: var(--radius);
+  --ag-borders: none;
+  --ag-header-column-separator-display: none;
+}
+
+.dark .ag-theme-quartz {
+  --ag-background-color: hsl(var(--background-surface));
+  --ag-foreground-color: hsl(var(--foreground));
+  --ag-header-background-color: hsl(var(--background-elevated));
+  --ag-header-foreground-color: hsl(var(--foreground));
+  --ag-border-color: hsl(var(--border-subtle));
+  --ag-row-hover-color: hsl(var(--background-elevated));
+  --ag-selected-row-background-color: hsl(var(--primary) / 0.12);
+  --ag-range-selection-background-color: hsl(var(--primary) / 0.1);
+  --ag-row-border-color: hsl(var(--border-subtle));
+  --ag-secondary-foreground-color: hsl(var(--foreground-muted));
+  --ag-input-border-color: hsl(var(--border));
+  --ag-input-focus-border-color: hsl(var(--primary));
+  --ag-checkbox-checked-color: hsl(var(--primary));
+  --ag-odd-row-background-color: hsl(var(--background-surface));
+}
+
 /* ── Theme Transition (applied transiently during toggle) ── */
 html.theme-transitioning,
 html.theme-transitioning *,

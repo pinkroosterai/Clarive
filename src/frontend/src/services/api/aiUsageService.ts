@@ -5,10 +5,13 @@ import { api } from './apiClient';
 export interface AiUsageLogEntry {
   id: string;
   tenantId: string;
+  tenantName: string | null;
   userId: string;
+  userEmail: string | null;
   actionType: string;
   model: string;
   provider: string;
+  displayModel: string;
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
@@ -80,7 +83,7 @@ export interface AiUsageFilterOptionsResponse {
 
 // ── API Functions ──
 
-function buildQueryString(params: AiUsageFilterParams & { page?: number; pageSize?: number }): string {
+function buildQueryString(params: AiUsageFilterParams & { page?: number; pageSize?: number; sortBy?: string; sortDesc?: boolean }): string {
   const query = new URLSearchParams();
   if (params.tenantIds?.length) query.set('tenantId', params.tenantIds.join(','));
   if (params.userId) query.set('userId', params.userId);
@@ -90,6 +93,8 @@ function buildQueryString(params: AiUsageFilterParams & { page?: number; pageSiz
   if (params.dateTo) query.set('dateTo', params.dateTo);
   if (params.page) query.set('page', String(params.page));
   if (params.pageSize) query.set('pageSize', String(params.pageSize));
+  if (params.sortBy) query.set('sortBy', params.sortBy);
+  if (params.sortDesc !== undefined) query.set('sortDesc', String(params.sortDesc));
   const qs = query.toString();
   return qs ? `?${qs}` : '';
 }
@@ -98,9 +103,11 @@ export async function getAiUsageLogs(
   filters: AiUsageFilterParams,
   page = 1,
   pageSize = 50,
+  sortBy?: string,
+  sortDesc?: boolean,
 ): Promise<AiUsagePagedResponse> {
   return api.get<AiUsagePagedResponse>(
-    `/api/super/ai-usage${buildQueryString({ ...filters, page, pageSize })}`,
+    `/api/super/ai-usage${buildQueryString({ ...filters, page, pageSize, sortBy, sortDesc })}`,
   );
 }
 

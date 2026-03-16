@@ -7,7 +7,7 @@ import AiUsageDateFilter, { getDateRange, type DatePreset } from './AiUsageDateF
 import { AiUsageFilterPanel, type MultiFilters } from './AiUsageFilterPanel';
 import AiUsageSummaryCards from './AiUsageSummaryCards';
 import AiUsageChart from './AiUsageChart';
-import AiUsageBreakdownTables from './AiUsageBreakdownTables';
+import AiUsageLogGrid from './AiUsageLogGrid';
 
 const emptyMultiFilters: MultiFilters = { models: [], actionTypes: [], tenantIds: [] };
 
@@ -77,7 +77,7 @@ export default function AiUsageDashboard() {
       </div>
       <AiUsageSummaryCards stats={stats} />
       <AiUsageChart byModel={stats.byModel} />
-      <AiUsageBreakdownTables stats={stats} />
+      <AiUsageLogGrid filters={filters} />
     </div>
   );
 }

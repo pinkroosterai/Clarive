@@ -5,7 +5,9 @@ namespace Clarive.Api.Models.Responses;
 public record AiUsageLogResponse(
     Guid Id,
     Guid TenantId,
+    string? TenantName,
     Guid UserId,
+    string? UserEmail,
     string ActionType,
     string Model,
     string Provider,
