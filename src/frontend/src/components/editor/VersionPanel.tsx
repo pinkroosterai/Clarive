@@ -1,25 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { GitCompareArrows } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { entryService } from '@/services';
 import type { VersionInfo } from '@/types';
 
 const versionBadgeVariant: Record<string, 'draft' | 'published' | 'historical'> = {
@@ -44,22 +30,6 @@ export function VersionPanel({
   onCompare,
 }: VersionPanelProps) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const promoteMutation = useMutation({
-    mutationFn: () => entryService.promoteVersion(entryId, currentVersion!),
-    onSuccess: (promoted) => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
-      toast.success('Version restored as new draft');
-      navigate(`/entry/${promoted.id}`);
-    },
-    onError: () => toast.error('Failed to promote version'),
-  });
-
-  const viewedVersionState = currentVersion
-    ? versions.find((v) => v.version === currentVersion)?.versionState
-    : undefined;
 
   if (isLoading) {
     return (
@@ -162,46 +132,6 @@ export function VersionPanel({
           Compare versions
         </Button>
       )}
-
-      {currentVersion &&
-        viewedVersionState === 'historical' &&
-        (() => {
-          const hasDraft = versions.some((v) => v.versionState === 'draft');
-          const draftVersion = versions.find((v) => v.versionState === 'draft')?.version;
-
-          return (
-            <div className="pt-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    disabled={promoteMutation.isPending}
-                  >
-                    {promoteMutation.isPending ? 'Restoring…' : 'Restore as draft'}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Restore this version?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {hasDraft
-                        ? `This will replace your current draft (v${draftVersion}) with the content from v${currentVersion}. Continue?`
-                        : `This will create a new draft based on v${currentVersion}. You can edit it before publishing.`}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => promoteMutation.mutate()}>
-                      Restore
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          );
-        })()}
     </div>
   );
 }

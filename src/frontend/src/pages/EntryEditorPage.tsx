@@ -11,6 +11,17 @@ import { PromptEditor } from '@/components/editor/PromptEditor';
 import { VersionDiffDialog } from '@/components/editor/VersionDiffDialog';
 import { VersionPanel } from '@/components/editor/VersionPanel';
 import { FolderPickerDialog } from '@/components/library/FolderPickerDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -75,6 +86,21 @@ const EntryEditorPage = () => {
   });
 
   const hasDraft = versions.some((v) => v.versionState === 'draft');
+  const draftVersion = versions.find((v) => v.versionState === 'draft')?.version;
+
+  // ── Shared query client ──
+  const queryClient = useQueryClient();
+
+  const promoteMutation = useMutation({
+    mutationFn: () => entryService.promoteVersion(entryId!, versionNum!),
+    onSuccess: (promoted) => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
+      toast.success('Version restored as new draft');
+      navigate(`/entry/${promoted.id}`);
+    },
+    onError: () => toast.error('Failed to restore version'),
+  });
 
   useEditorKeyboardShortcuts({
     isReadOnly,
@@ -87,7 +113,6 @@ const EntryEditorPage = () => {
   });
 
   // ── Favorite toggle ──
-  const queryClient = useQueryClient();
   const isFavorited = entryData?.isFavorited ?? false;
 
   const favoriteMutation = useMutation({
@@ -152,10 +177,42 @@ const EntryEditorPage = () => {
   const localEntry = editor.localEntry;
 
   // ── Shared elements ──
+  const canRestore = !!version && currentUser?.role !== 'viewer';
+
   const readOnlyBanner = isReadOnly && version && (
     <div className="flex items-center gap-3 rounded-md border border-warning-border bg-warning-bg px-4 py-2.5 text-sm">
       <AlertTriangle className="size-4 text-warning-text shrink-0" />
-      <span className="text-warning-text">Viewing v{version} (historical, read-only)</span>
+      <span className="flex-1 text-warning-text">Viewing v{version} (read-only)</span>
+      {canRestore && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={promoteMutation.isPending}
+            >
+              {promoteMutation.isPending ? 'Restoring\u2026' : 'Restore as draft'}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Restore this version?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {hasDraft
+                  ? `This will replace your current draft (v${draftVersion}) with the content from v${version}. Continue?`
+                  : `This will create a new draft based on v${version}. You can edit it before publishing.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => promoteMutation.mutate()}>
+                Restore
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 
