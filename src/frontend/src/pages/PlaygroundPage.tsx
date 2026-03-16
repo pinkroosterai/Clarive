@@ -1,5 +1,3 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -16,15 +14,19 @@ import {
   Pin,
   PinOff,
 } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -34,21 +36,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
+import { useAiEnabled } from '@/hooks/useAiEnabled';
+import { usePlaygroundKeyboardShortcuts } from '@/hooks/usePlaygroundKeyboardShortcuts';
+import { usePlaygroundStreaming, getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
+import { PLAYGROUND_DEFAULTS } from '@/lib/constants';
+import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { renderTemplate } from '@/lib/templateRenderer';
-import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
-import { PLAYGROUND_DEFAULTS } from '@/lib/constants';
-import { useAiEnabled } from '@/hooks/useAiEnabled';
-import { usePlaygroundStreaming, getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
-import { usePlaygroundKeyboardShortcuts } from '@/hooks/usePlaygroundKeyboardShortcuts';
 import { entryService } from '@/services';
 import {
   getTestRuns,
@@ -57,7 +53,6 @@ import {
   type TestRunPromptResponse,
   type EnrichedModel,
 } from '@/services/api/playgroundService';
-
 import type { TemplateField } from '@/types';
 
 function safeSessionGet<T>(key: string, fallback: T): T {
@@ -71,7 +66,15 @@ function safeSessionGet<T>(key: string, fallback: T): T {
 
 // ── Extracted components ──
 
-function ReasoningBlock({ reasoning, defaultOpen, isStreaming }: { reasoning: string; defaultOpen: boolean; isStreaming?: boolean }) {
+function ReasoningBlock({
+  reasoning,
+  defaultOpen,
+  isStreaming,
+}: {
+  reasoning: string;
+  defaultOpen: boolean;
+  isStreaming?: boolean;
+}) {
   return (
     <Collapsible defaultOpen={defaultOpen}>
       <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1">
@@ -79,7 +82,9 @@ function ReasoningBlock({ reasoning, defaultOpen, isStreaming }: { reasoning: st
         Thinking
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className={`rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 ${isStreaming ? 'max-h-96' : 'max-h-40'} overflow-y-auto`}>
+        <div
+          className={`rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-3 mb-3 ${isStreaming ? 'max-h-96' : 'max-h-40'} overflow-y-auto`}
+        >
           <div className="prose prose-xs dark:prose-invert max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:bg-indigo-100 dark:prose-pre:bg-indigo-900/30 prose-pre:text-xs prose-code:text-xs text-indigo-800 dark:text-indigo-300">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
           </div>
@@ -182,10 +187,22 @@ const PlaygroundPage = () => {
 
   // ── Streaming (delegated to hook) ──
   const {
-    isStreaming, firstTokenReceived, streamedResponses, streamedReasoning,
-    error, wasStopped, rateLimitCountdown, elapsedSeconds, approxOutputTokens,
-    lastTokens, hasResponses, currentPromptIndex, responseCount,
-    handleRun, handleAbort, responseAreaRef,
+    isStreaming,
+    firstTokenReceived,
+    streamedResponses,
+    streamedReasoning,
+    error,
+    wasStopped,
+    rateLimitCountdown,
+    elapsedSeconds,
+    approxOutputTokens,
+    lastTokens,
+    hasResponses,
+    currentPromptIndex,
+    responseCount,
+    handleRun,
+    handleAbort,
+    responseAreaRef,
   } = usePlaygroundStreaming({
     entryId,
     model: selectedModel?.modelId ?? '',
@@ -247,19 +264,23 @@ const PlaygroundPage = () => {
     }
   }, []);
 
-  const handleRerun = useCallback((run: TestRunResponse) => {
-    const matchingModel = enrichedModels.find((m) => m.modelId === run.model);
-    if (matchingModel) setSelectedModel(matchingModel);
-    setTemperature(run.temperature);
-    setMaxTokens(run.maxTokens);
-    if (run.templateFieldValues) {
-      setFieldValues(run.templateFieldValues);
-    }
-    setPendingRerun(true);
-  }, [enrichedModels]);
+  const handleRerun = useCallback(
+    (run: TestRunResponse) => {
+      const matchingModel = enrichedModels.find((m) => m.modelId === run.model);
+      if (matchingModel) setSelectedModel(matchingModel);
+      setTemperature(run.temperature);
+      setMaxTokens(run.maxTokens);
+      if (run.templateFieldValues) {
+        setFieldValues(run.templateFieldValues);
+      }
+      setPendingRerun(true);
+    },
+    [enrichedModels]
+  );
 
   const model = selectedModel?.modelId ?? '';
-  const hasValidationErrors = templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
+  const hasValidationErrors =
+    templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
 
   // ── Auto-execute rerun ──
   useEffect(() => {
@@ -325,9 +346,7 @@ const PlaygroundPage = () => {
           <Separator orientation="vertical" className="h-5" />
           <span className="text-sm font-medium truncate max-w-xs">{entry.title}</span>
           {isChain && (
-            <span className="text-xs text-foreground-muted">
-              {prompts.length} prompts
-            </span>
+            <span className="text-xs text-foreground-muted">{prompts.length} prompts</span>
           )}
 
           <div className="flex-1" />
@@ -335,105 +354,119 @@ const PlaygroundPage = () => {
           {/* Controls */}
           <div className="flex items-center gap-3 flex-wrap">
             {/* Parameter controls (locked during streaming) */}
-            <div className={`flex items-center gap-3 flex-wrap transition-opacity ${isStreaming ? 'opacity-50 pointer-events-none' : ''}`}>
-            {/* Model */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs text-foreground-muted shrink-0">Model</Label>
-              {modelsError ? (
-                <span className="text-xs text-destructive">Failed to load models</span>
-              ) : (
-                <Select
-                  value={model}
-                  onValueChange={(v) => {
-                    const found = enrichedModels.find((m) => m.modelId === v);
-                    if (found) {
-                      setSelectedModel(found);
-                      setTemperature(found.defaultTemperature ?? PLAYGROUND_DEFAULTS.TEMPERATURE);
-                      setMaxTokens(found.defaultMaxTokens ?? PLAYGROUND_DEFAULTS.MAX_TOKENS);
-                      setReasoningEffort(found.defaultReasoningEffort ?? PLAYGROUND_DEFAULTS.REASONING_EFFORT);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-52 h-8 text-xs">
-                    <SelectValue placeholder="Select model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(modelsByProvider).map(([provider, models]) => (
-                      <SelectGroup key={provider}>
-                        <SelectLabel className="text-xs font-semibold text-foreground-muted px-2">
-                          {provider}
-                        </SelectLabel>
-                        {models.map((m) => (
-                          <SelectItem key={m.modelId} value={m.modelId} className="text-xs">
-                            {m.displayName || m.modelId}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            {/* Temperature (hidden for non-configurable models) */}
-            {selectedModel?.isTemperatureConfigurable !== false && (
+            <div
+              className={`flex items-center gap-3 flex-wrap transition-opacity ${isStreaming ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+              {/* Model */}
               <div className="flex items-center gap-2">
-                <Label className="text-xs text-foreground-muted shrink-0">Temp</Label>
-                <Slider
-                  value={[temperature]}
-                  onValueChange={([v]) => setTemperature(v)}
-                  min={0}
-                  max={2}
-                  step={0.1}
-                  className="w-20"
-                />
-                <span className="text-xs text-foreground-muted w-7 tabular-nums">
-                  {temperature.toFixed(1)}
-                </span>
-              </div>
-            )}
-
-            {/* Reasoning controls (shown for reasoning models) */}
-            {selectedModel?.isReasoning && (
-              <>
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-foreground-muted shrink-0">Reasoning</Label>
-                  <Select value={reasoningEffort} onValueChange={setReasoningEffort}>
-                    <SelectTrigger className="w-28 h-8 text-xs">
-                      <SelectValue />
+                <Label className="text-xs text-foreground-muted shrink-0">Model</Label>
+                {modelsError ? (
+                  <span className="text-xs text-destructive">Failed to load models</span>
+                ) : (
+                  <Select
+                    value={model}
+                    onValueChange={(v) => {
+                      const found = enrichedModels.find((m) => m.modelId === v);
+                      if (found) {
+                        setSelectedModel(found);
+                        setTemperature(found.defaultTemperature ?? PLAYGROUND_DEFAULTS.TEMPERATURE);
+                        setMaxTokens(found.defaultMaxTokens ?? PLAYGROUND_DEFAULTS.MAX_TOKENS);
+                        setReasoningEffort(
+                          found.defaultReasoningEffort ?? PLAYGROUND_DEFAULTS.REASONING_EFFORT
+                        );
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-52 h-8 text-xs">
+                      <SelectValue placeholder="Select model" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low" className="text-xs">Low</SelectItem>
-                      <SelectItem value="medium" className="text-xs">Medium</SelectItem>
-                      <SelectItem value="high" className="text-xs">High</SelectItem>
-                      <SelectItem value="extra-high" className="text-xs">Extra High</SelectItem>
+                      {Object.entries(modelsByProvider).map(([provider, models]) => (
+                        <SelectGroup key={provider}>
+                          <SelectLabel className="text-xs font-semibold text-foreground-muted px-2">
+                            {provider}
+                          </SelectLabel>
+                          {models.map((m) => (
+                            <SelectItem key={m.modelId} value={m.modelId} className="text-xs">
+                              {m.displayName || m.modelId}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-foreground-muted">Show thinking</Label>
-                  <input
-                    type="checkbox"
-                    checked={showReasoning}
-                    onChange={(e) => setShowReasoning(e.target.checked)}
-                    className="size-3.5 rounded"
-                  />
-                </div>
-              </>
-            )}
+                )}
+              </div>
 
-            {/* Max tokens */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs text-foreground-muted shrink-0">Tokens</Label>
-              <Input
-                type="number"
-                value={maxTokens}
-                onChange={(e) => setMaxTokens(Number(e.target.value) || PLAYGROUND_DEFAULTS.MAX_TOKENS)}
-                className="w-20 h-8 text-xs"
-                min={1}
-                max={32000}
-              />
-            </div>
+              {/* Temperature (hidden for non-configurable models) */}
+              {selectedModel?.isTemperatureConfigurable !== false && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-foreground-muted shrink-0">Temp</Label>
+                  <Slider
+                    value={[temperature]}
+                    onValueChange={([v]) => setTemperature(v)}
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    className="w-20"
+                  />
+                  <span className="text-xs text-foreground-muted w-7 tabular-nums">
+                    {temperature.toFixed(1)}
+                  </span>
+                </div>
+              )}
+
+              {/* Reasoning controls (shown for reasoning models) */}
+              {selectedModel?.isReasoning && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-foreground-muted shrink-0">Reasoning</Label>
+                    <Select value={reasoningEffort} onValueChange={setReasoningEffort}>
+                      <SelectTrigger className="w-28 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low" className="text-xs">
+                          Low
+                        </SelectItem>
+                        <SelectItem value="medium" className="text-xs">
+                          Medium
+                        </SelectItem>
+                        <SelectItem value="high" className="text-xs">
+                          High
+                        </SelectItem>
+                        <SelectItem value="extra-high" className="text-xs">
+                          Extra High
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Label className="text-xs text-foreground-muted">Show thinking</Label>
+                    <input
+                      type="checkbox"
+                      checked={showReasoning}
+                      onChange={(e) => setShowReasoning(e.target.checked)}
+                      className="size-3.5 rounded"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Max tokens */}
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-foreground-muted shrink-0">Tokens</Label>
+                <Input
+                  type="number"
+                  value={maxTokens}
+                  onChange={(e) =>
+                    setMaxTokens(Number(e.target.value) || PLAYGROUND_DEFAULTS.MAX_TOKENS)
+                  }
+                  className="w-20 h-8 text-xs"
+                  min={1}
+                  max={32000}
+                />
+              </div>
             </div>
 
             {/* History toggle */}
@@ -492,7 +525,9 @@ const PlaygroundPage = () => {
                               setFieldValues((prev) => ({ ...prev, [field.name]: v }))
                             }
                           >
-                            <SelectTrigger className={`h-8 text-xs ${isEmpty ? 'border-destructive' : ''}`}>
+                            <SelectTrigger
+                              className={`h-8 text-xs ${isEmpty ? 'border-destructive' : ''}`}
+                            >
                               <SelectValue placeholder="Select..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -511,7 +546,9 @@ const PlaygroundPage = () => {
                             }
                             placeholder={field.type !== 'string' ? field.type : 'value'}
                             className={`h-8 text-xs ${isEmpty ? 'border-destructive' : ''}`}
-                            type={field.type === 'int' || field.type === 'float' ? 'number' : 'text'}
+                            type={
+                              field.type === 'int' || field.type === 'float' ? 'number' : 'text'
+                            }
                           />
                         )}
                         {isEmpty && <p className="text-xs text-destructive">Required</p>}
@@ -548,9 +585,14 @@ const PlaygroundPage = () => {
                 <div className="space-y-3">
                   <div className="text-xs font-medium text-foreground-muted mb-2">Pinned Run</div>
                   {pinnedRun.responses.map((r: TestRunPromptResponse) => (
-                    <div key={r.promptIndex} className="rounded-lg border border-border-subtle bg-surface p-4">
+                    <div
+                      key={r.promptIndex}
+                      className="rounded-lg border border-border-subtle bg-surface p-4"
+                    >
                       {prompts.length > 1 && (
-                        <div className="text-xs text-foreground-muted mb-2">Prompt {r.promptIndex + 1}</div>
+                        <div className="text-xs text-foreground-muted mb-2">
+                          Prompt {r.promptIndex + 1}
+                        </div>
                       )}
                       <LLMResponseBlock output={r.content} isStreaming={false} />
                     </div>
@@ -561,14 +603,21 @@ const PlaygroundPage = () => {
                   <div className="text-xs font-medium text-foreground-muted mb-2">
                     <span className="flex items-center gap-1.5">
                       {isStreaming && <Loader2 className="size-3 animate-spin" />}
-                      {isStreaming ? 'Current Run' : hasResponses ? 'Current Run' : 'Run a new test to compare'}
+                      {isStreaming
+                        ? 'Current Run'
+                        : hasResponses
+                          ? 'Current Run'
+                          : 'Run a new test to compare'}
                     </span>
                   </div>
                   {prompts.map((_p, i) => {
                     const response = streamedResponses[i];
                     if (response === undefined) return null;
                     return (
-                      <div key={i} className="rounded-lg border border-border-subtle bg-surface p-4">
+                      <div
+                        key={i}
+                        className="rounded-lg border border-border-subtle bg-surface p-4"
+                      >
                         {prompts.length > 1 && (
                           <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                         )}
@@ -583,12 +632,18 @@ const PlaygroundPage = () => {
 
           {/* Streaming indicator (non-comparison mode) */}
           {!pinnedRun && isStreaming && (
-            <div ref={responseAreaRef} className="flex items-center gap-2 text-sm text-foreground-muted mb-4" aria-live="polite" role="status">
+            <div
+              ref={responseAreaRef}
+              className="flex items-center gap-2 text-sm text-foreground-muted mb-4"
+              aria-live="polite"
+              role="status"
+            >
               {firstTokenReceived ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
                   <span>
-                    {getStreamingStatusMessage(elapsedSeconds)} {elapsedSeconds > 0 && `${elapsedSeconds}s`}
+                    {getStreamingStatusMessage(elapsedSeconds)}{' '}
+                    {elapsedSeconds > 0 && `${elapsedSeconds}s`}
                     {approxOutputTokens > 0 && (
                       <span className="text-foreground-muted/70 ml-1">
                         · ~{approxOutputTokens.toLocaleString()} tokens
@@ -642,7 +697,8 @@ const PlaygroundPage = () => {
               {prompts.map((prompt, i) => {
                 const response = streamedResponses[i];
                 const isActive = isStreaming && i === currentPromptIndex;
-                const isComplete = response !== undefined && (!isStreaming || i < currentPromptIndex);
+                const isComplete =
+                  response !== undefined && (!isStreaming || i < currentPromptIndex);
                 const showInput = expandedStepInputs.has(i);
 
                 return (
@@ -682,7 +738,8 @@ const PlaygroundPage = () => {
                           onClick={() =>
                             setExpandedStepInputs((prev) => {
                               const next = new Set(prev);
-                              next.has(i) ? next.delete(i) : next.add(i);
+                              if (next.has(i)) next.delete(i);
+                              else next.add(i);
                               return next;
                             })
                           }
@@ -701,7 +758,11 @@ const PlaygroundPage = () => {
 
                       {/* Reasoning output */}
                       {streamedReasoning[i] && (
-                        <ReasoningBlock reasoning={streamedReasoning[i]} defaultOpen={isStreaming} isStreaming={isActive} />
+                        <ReasoningBlock
+                          reasoning={streamedReasoning[i]}
+                          defaultOpen={isStreaming}
+                          isStreaming={isActive}
+                        />
                       )}
 
                       {/* Response */}
@@ -714,11 +775,19 @@ const PlaygroundPage = () => {
                                 : 'border-border-subtle bg-surface'
                             }`}
                           >
-                            <LLMResponseBlock output={response || ''} isStreaming={isActive ?? false} />
+                            <LLMResponseBlock
+                              output={response || ''}
+                              isStreaming={isActive ?? false}
+                            />
                           </div>
 
                           {!isStreaming && response && (
-                            <CopyButton text={response} index={i} copiedIndex={copiedIndex} onCopy={handleCopy} />
+                            <CopyButton
+                              text={response}
+                              index={i}
+                              copiedIndex={copiedIndex}
+                              onCopy={handleCopy}
+                            />
                           )}
                         </div>
                       ) : isStreaming && i === responseCount ? (
@@ -766,7 +835,11 @@ const PlaygroundPage = () => {
                 return (
                   <div key={i}>
                     {streamedReasoning[i] && (
-                      <ReasoningBlock reasoning={streamedReasoning[i]} defaultOpen={isStreaming} isStreaming={isStreaming} />
+                      <ReasoningBlock
+                        reasoning={streamedReasoning[i]}
+                        defaultOpen={isStreaming}
+                        isStreaming={isStreaming}
+                      />
                     )}
 
                     <div className="relative group">
@@ -779,7 +852,12 @@ const PlaygroundPage = () => {
                       </div>
 
                       {response && !isStreaming && (
-                        <CopyButton text={response} index={i} copiedIndex={copiedIndex} onCopy={handleCopy} />
+                        <CopyButton
+                          text={response}
+                          index={i}
+                          copiedIndex={copiedIndex}
+                          onCopy={handleCopy}
+                        />
                       )}
                     </div>
                   </div>
@@ -802,8 +880,12 @@ const PlaygroundPage = () => {
               {elapsedSeconds > 0 && <span>{elapsedSeconds}s</span>}
               {lastTokens && (
                 <>
-                  {lastTokens.input != null && <span>{lastTokens.input.toLocaleString()} input tokens</span>}
-                  {lastTokens.output != null && <span>{lastTokens.output.toLocaleString()} output tokens</span>}
+                  {lastTokens.input != null && (
+                    <span>{lastTokens.input.toLocaleString()} input tokens</span>
+                  )}
+                  {lastTokens.output != null && (
+                    <span>{lastTokens.output.toLocaleString()} output tokens</span>
+                  )}
                 </>
               )}
             </div>
@@ -811,13 +893,13 @@ const PlaygroundPage = () => {
 
           {/* Empty state */}
           {!hasResponses && !error && (
-            <div className={`flex flex-col items-center justify-center py-20 text-foreground-muted transition-opacity duration-200 ${isStreaming ? 'opacity-0' : 'opacity-100'}`}>
+            <div
+              className={`flex flex-col items-center justify-center py-20 text-foreground-muted transition-opacity duration-200 ${isStreaming ? 'opacity-0' : 'opacity-100'}`}
+            >
               <Play className="size-10 mb-4 opacity-20" />
               <p className="text-sm">Click Run to test your prompt</p>
               {isChain && (
-                <p className="text-xs mt-1">
-                  {prompts.length} prompts will execute sequentially
-                </p>
+                <p className="text-xs mt-1">{prompts.length} prompts will execute sequentially</p>
               )}
             </div>
           )}
@@ -836,7 +918,9 @@ const PlaygroundPage = () => {
                 <div className="px-4 py-3 border-b border-border-subtle bg-primary/5">
                   <div className="flex items-center gap-1.5 text-xs">
                     <Loader2 className="size-3 animate-spin text-primary" />
-                    <span className="font-mono text-foreground-secondary">{selectedModel?.displayName || selectedModel?.modelId || 'Running...'}</span>
+                    <span className="font-mono text-foreground-secondary">
+                      {selectedModel?.displayName || selectedModel?.modelId || 'Running...'}
+                    </span>
                   </div>
                   <div className="text-xs text-foreground-muted mt-0.5">
                     {elapsedSeconds > 0 ? `${elapsedSeconds}s` : 'Starting...'}
@@ -844,18 +928,14 @@ const PlaygroundPage = () => {
                 </div>
               )}
               {testRuns.length === 0 && !isStreaming ? (
-                <p className="text-xs text-foreground-muted p-4 text-center">
-                  No test runs yet
-                </p>
+                <p className="text-xs text-foreground-muted p-4 text-center">No test runs yet</p>
               ) : (
                 <div className="divide-y divide-border-subtle">
                   {testRuns.map((run) => (
                     <div key={run.id} className="px-4 py-3">
                       <div className="flex items-center justify-between mb-1">
                         <button
-                          onClick={() =>
-                            setExpandedRunId(expandedRunId === run.id ? null : run.id)
-                          }
+                          onClick={() => setExpandedRunId(expandedRunId === run.id ? null : run.id)}
                           className="flex items-center gap-1.5 text-xs text-foreground-secondary hover:text-foreground transition-colors"
                         >
                           {expandedRunId === run.id ? (

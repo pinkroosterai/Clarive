@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/components/editor/MarkdownEditor', () => ({
   MarkdownEditor: ({ content, placeholder }: { content: string; placeholder?: string }) => (
@@ -13,13 +13,12 @@ vi.mock('sonner', () => ({
 
 vi.mock('@/lib/utils', () => ({
   copyToClipboard: vi.fn().mockResolvedValue(undefined),
-  cn: (...args: any[]) => args.filter(Boolean).join(' '),
+  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
-
-import { TooltipProvider } from '@/components/ui/tooltip';
 
 import { PromptCard } from './PromptCard';
 
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { createPrompt } from '@/test/factories';
 
 function renderCard(props: Parameters<typeof PromptCard>[0]) {

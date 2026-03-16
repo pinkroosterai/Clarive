@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/components/editor/ActivityTimeline', () => ({
   ActivityTimeline: () => <div data-testid="activity-timeline" />,
@@ -19,13 +19,12 @@ vi.mock('sonner', () => ({
 
 vi.mock('@/lib/utils', () => ({
   copyToClipboard: vi.fn().mockResolvedValue(undefined),
-  cn: (...args: any[]) => args.filter(Boolean).join(' '),
+  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
-
-import { TooltipProvider } from '@/components/ui/tooltip';
 
 import { EditorActionPanel } from './EditorActionPanel';
 
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { createDraftEntry, createVersionInfo } from '@/test/factories';
 
 function renderPanel(props: Partial<Parameters<typeof EditorActionPanel>[0]> = {}) {

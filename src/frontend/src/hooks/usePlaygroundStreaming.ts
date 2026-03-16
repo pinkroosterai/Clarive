@@ -1,13 +1,9 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
-import {
-  testEntry,
-  type TestStreamChunk,
-} from '@/services/api/playgroundService';
-
+import { testEntry, type TestStreamChunk } from '@/services/api/playgroundService';
 import type { TemplateField } from '@/types';
 
 // ── Streaming status thresholds ──
@@ -73,7 +69,10 @@ export function usePlaygroundStreaming({
   const [approxOutputTokens, setApproxOutputTokens] = useState(0);
   const streamedTextLengthRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [lastTokens, setLastTokens] = useState<{ input: number | null; output: number | null } | null>(null);
+  const [lastTokens, setLastTokens] = useState<{
+    input: number | null;
+    output: number | null;
+  } | null>(null);
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
@@ -229,7 +228,18 @@ export function usePlaygroundStreaming({
       }
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
     }
-  }, [entryId, model, temperature, maxTokens, fieldValues, templateFields, queryClient, showReasoning, reasoningEffort, isReasoning]);
+  }, [
+    entryId,
+    model,
+    temperature,
+    maxTokens,
+    fieldValues,
+    templateFields,
+    queryClient,
+    showReasoning,
+    reasoningEffort,
+    isReasoning,
+  ]);
 
   const handleAbort = useCallback(() => {
     abortRef.current?.abort();

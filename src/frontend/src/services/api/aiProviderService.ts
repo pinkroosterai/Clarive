@@ -73,7 +73,10 @@ export async function createProvider(req: CreateAiProviderRequest): Promise<AiPr
   return api.post<AiProviderResponse>(BASE, req);
 }
 
-export async function updateProvider(id: string, req: UpdateAiProviderRequest): Promise<AiProviderResponse> {
+export async function updateProvider(
+  id: string,
+  req: UpdateAiProviderRequest
+): Promise<AiProviderResponse> {
   return api.patch<AiProviderResponse>(`${BASE}/${id}`, req);
 }
 
@@ -89,7 +92,10 @@ export async function validateProvider(id: string): Promise<{ valid: boolean }> 
   return api.post<{ valid: boolean }>(`${BASE}/${id}/validate`, {});
 }
 
-export async function addModel(providerId: string, req: AddModelRequest): Promise<AiProviderModelResponse> {
+export async function addModel(
+  providerId: string,
+  req: AddModelRequest
+): Promise<AiProviderModelResponse> {
   return api.post<AiProviderModelResponse>(`${BASE}/${providerId}/models`, req);
 }
 

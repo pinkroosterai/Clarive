@@ -1,13 +1,13 @@
 import { ChevronDown } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 
+import ConfigSectionForm from './ConfigSectionForm';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
 import type { ConfigSetting } from '@/services/api/configService';
-
-import ConfigSectionForm from './ConfigSectionForm';
 
 interface SettingsTabProps {
   settingsBySection: Record<string, ConfigSetting[]>;
@@ -64,11 +64,7 @@ export default function SettingsTab({
         if (sectionSettings.length === 0) return null;
 
         return (
-          <Collapsible
-            key={key}
-            open={openSections[key]}
-            onOpenChange={() => toggleSection(key)}
-          >
+          <Collapsible key={key} open={openSections[key]} onOpenChange={() => toggleSection(key)}>
             <CollapsibleTrigger className="flex items-center gap-2 w-full group cursor-pointer">
               <ChevronDown
                 className={`size-4 text-foreground-muted transition-transform ${

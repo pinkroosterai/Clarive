@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
@@ -23,9 +23,9 @@ vi.mock('@/lib/deepEqual', () => ({
 import { useEditorState } from './useEditorState';
 
 import { toast } from 'sonner';
-import type { PromptEntry } from '@/types';
 
 import { createPublishedEntry, createDraftEntry } from '@/test/factories';
+import type { PromptEntry } from '@/types';
 
 const mockToastSuccess = vi.mocked(toast.success);
 

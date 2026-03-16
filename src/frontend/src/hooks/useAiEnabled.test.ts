@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/store/authStore', () => ({
   useAuthStore: (selector: (s: { aiConfigured: boolean }) => boolean) =>

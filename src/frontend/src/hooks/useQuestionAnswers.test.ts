@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 
 import { useQuestionAnswers } from './useQuestionAnswers';
 
@@ -64,10 +64,9 @@ describe('useQuestionAnswers', () => {
   });
 
   it('resets state when questions prop changes', () => {
-    const { result, rerender } = renderHook(
-      ({ q, e }) => useQuestionAnswers(q, e),
-      { initialProps: { q: q2, e: enh } }
-    );
+    const { result, rerender } = renderHook(({ q, e }) => useQuestionAnswers(q, e), {
+      initialProps: { q: q2, e: enh },
+    });
 
     // Modify state
     act(() => {

@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, act } from '@testing-library/react';
 import React from 'react';
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/services', () => ({
   entryService: {
@@ -42,7 +41,7 @@ beforeEach(() => {
 
 describe('useDndMutations', () => {
   it('moveEntry calls entryService.moveEntry', async () => {
-    mockMoveEntry.mockResolvedValue({} as any);
+    mockMoveEntry.mockResolvedValue({} as unknown);
 
     const { result } = renderHook(() => useDndMutations(), { wrapper: createWrapper() });
 
@@ -54,7 +53,7 @@ describe('useDndMutations', () => {
   });
 
   it('moveEntry supports null folderId (move to root)', async () => {
-    mockMoveEntry.mockResolvedValue({} as any);
+    mockMoveEntry.mockResolvedValue({} as unknown);
 
     const { result } = renderHook(() => useDndMutations(), { wrapper: createWrapper() });
 
@@ -66,7 +65,7 @@ describe('useDndMutations', () => {
   });
 
   it('moveFolder calls folderService.moveFolder', async () => {
-    mockMoveFolder.mockResolvedValue({} as any);
+    mockMoveFolder.mockResolvedValue({} as unknown);
 
     const { result } = renderHook(() => useDndMutations(), { wrapper: createWrapper() });
 

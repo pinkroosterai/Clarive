@@ -37,7 +37,7 @@ describe('createTool', () => {
     const created = { id: 't-1', ...data };
     mockApi.post.mockResolvedValue(created);
 
-    const result = await createTool(data as any);
+    const result = await createTool(data as unknown);
 
     expect(mockApi.post).toHaveBeenCalledWith('/api/tools', data);
     expect(result.id).toBe('t-1');
@@ -49,7 +49,7 @@ describe('updateTool', () => {
     const updates = { name: 'Updated Search' };
     mockApi.patch.mockResolvedValue({ id: 't-1', name: 'Updated Search' });
 
-    const result = await updateTool('t-1', updates as any);
+    const result = await updateTool('t-1', updates as unknown);
 
     expect(mockApi.patch).toHaveBeenCalledWith('/api/tools/t-1', updates);
     expect(result.name).toBe('Updated Search');

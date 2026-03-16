@@ -66,8 +66,8 @@ const sections = [
             Add a title, optionally set a system message, and write your prompt in the editor.
           </li>
           <li>
-            Save as a draft or publish when it&apos;s ready. Publishing creates a versioned
-            snapshot automatically.
+            Save as a draft or publish when it&apos;s ready. Publishing creates a versioned snapshot
+            automatically.
           </li>
         </ul>
       </div>
@@ -114,8 +114,8 @@ const sections = [
         <h4 className="text-sm font-semibold text-foreground">Versioning</h4>
         <p>
           Every publish creates a new version. Use the version history panel to browse past
-          versions, compare any two side-by-side with a diff view, or restore a historical
-          version as a new draft.
+          versions, compare any two side-by-side with a diff view, or restore a historical version
+          as a new draft.
         </p>
         <h4 className="text-sm font-semibold text-foreground">AI Tools</h4>
         <ul className="list-disc list-inside space-y-1">
@@ -140,9 +140,7 @@ const sections = [
     title: 'AI Wizard',
     content: (
       <div className="space-y-3">
-        <p>
-          The AI Wizard generates prompts from a description. It works in three steps:
-        </p>
+        <p>The AI Wizard generates prompts from a description. It works in three steps:</p>
         <ol className="list-decimal list-inside space-y-2">
           <li>
             <strong>Describe</strong> — Tell the wizard what you need. The more specific you are
@@ -154,12 +152,12 @@ const sections = [
                 main prompt.
               </li>
               <li>
-                <strong>Template variables</strong> — adds {'{{variable}}'} placeholders for
-                dynamic content.
+                <strong>Template variables</strong> — adds {'{{variable}}'} placeholders for dynamic
+                content.
               </li>
               <li>
-                <strong>Prompt chain</strong> — splits the output into multiple sequential
-                prompts for complex tasks.
+                <strong>Prompt chain</strong> — splits the output into multiple sequential prompts
+                for complex tasks.
               </li>
               <li>
                 <strong>Web research</strong> — searches the web for context to improve accuracy
@@ -180,8 +178,8 @@ const sections = [
         <h4 className="text-sm font-semibold text-foreground">Enhancing Existing Entries</h4>
         <p>
           Open any entry in the editor and click <strong>Enhance with AI</strong>. The wizard
-          analyzes your current prompt, shows quality scores, and lets you refine before saving
-          the improvements back.
+          analyzes your current prompt, shows quality scores, and lets you refine before saving the
+          improvements back.
         </p>
       </div>
     ),
@@ -194,9 +192,8 @@ const sections = [
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Template Syntax</h4>
         <p>
-          Double curly braces define variables in your prompts — placeholders that get replaced
-          with actual values at runtime. Clarive detects and highlights them in the editor
-          automatically.
+          Double curly braces define variables in your prompts — placeholders that get replaced with
+          actual values at runtime. Clarive detects and highlights them in the editor automatically.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Variable Types</h4>
         <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
@@ -287,9 +284,9 @@ const sections = [
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Personal vs Shared Workspaces</h4>
         <p>
-          Every account starts with a <strong>personal workspace</strong> that only you can
-          access. You can also be invited to <strong>shared workspaces</strong> for team
-          collaboration. Each workspace has its own entries, folders, and settings.
+          Every account starts with a <strong>personal workspace</strong> that only you can access.
+          You can also be invited to <strong>shared workspaces</strong> for team collaboration. Each
+          workspace has its own entries, folders, and settings.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Switching Workspaces</h4>
         <p>
@@ -298,14 +295,14 @@ const sections = [
         </p>
         <h4 className="text-sm font-semibold text-foreground">Inviting Members</h4>
         <p>
-          Admins can invite members from <strong>Settings &gt; Users</strong>. Invitations go
-          out by email and must be accepted before the user gains access. Admins can resend or
-          revoke pending invitations.
+          Admins can invite members from <strong>Settings &gt; Users</strong>. Invitations go out by
+          email and must be accepted before the user gains access. Admins can resend or revoke
+          pending invitations.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Accepting Invitations</h4>
         <p>
-          When you receive an invitation, a badge appears on the bell icon in the sidebar. Click
-          it to accept or decline.
+          When you receive an invitation, a badge appears on the bell icon in the sidebar. Click it
+          to accept or decline.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Roles</h4>
         <ul className="list-disc list-inside space-y-1">
@@ -321,8 +318,8 @@ const sections = [
         </ul>
         <h4 className="text-sm font-semibold text-foreground">Leaving a Workspace</h4>
         <p>
-          Leave any shared workspace from <strong>Settings &gt; Users</strong>. Personal
-          workspaces can&apos;t be left.
+          Leave any shared workspace from <strong>Settings &gt; Users</strong>. Personal workspaces
+          can&apos;t be left.
         </p>
       </div>
     ),
@@ -336,8 +333,8 @@ const sections = [
         <h4 className="text-sm font-semibold text-foreground">What Are Tool Descriptions?</h4>
         <p>
           Tool descriptions define external tools or functions that an AI model can call when
-          running your prompts. Each one has a name, a tool identifier, and a description of what
-          it does.
+          running your prompts. Each one has a name, a tool identifier, and a description of what it
+          does.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Managing Tools</h4>
         <ul className="list-disc list-inside space-y-1">
@@ -400,14 +397,14 @@ const sections = [
     content: (
       <div className="space-y-3">
         <p>
-          The Public API lets you fetch and render published prompts programmatically. All
-          requests require an API key (see <strong>API Keys</strong> above).
+          The Public API lets you fetch and render published prompts programmatically. All requests
+          require an API key (see <strong>API Keys</strong> above).
         </p>
 
         <h4 className="text-sm font-semibold text-foreground">Authentication</h4>
         <p>
-          Include your API key in every request via the <Code>X-Api-Key</Code> header. Keys use
-          the format <Code>cl_...</Code>.
+          Include your API key in every request via the <Code>X-Api-Key</Code> header. Keys use the
+          format <Code>cl_...</Code>.
         </p>
 
         <h4 className="text-sm font-semibold text-foreground">Base URL</h4>
@@ -640,14 +637,12 @@ const sections = [
         </p>
         <h4 className="text-sm font-semibold text-foreground">Restoring Entries</h4>
         <p>
-          Open <strong>Trash</strong> from the sidebar to see deleted entries. Click restore on
-          any entry to put it back in its original folder. Bulk restore is available too — select
+          Open <strong>Trash</strong> from the sidebar to see deleted entries. Click restore on any
+          entry to put it back in its original folder. Bulk restore is available too — select
           multiple entries and restore them at once.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Permanent Deletion</h4>
-        <p>
-          Only admins can permanently delete entries from the trash. This can&apos;t be undone.
-        </p>
+        <p>Only admins can permanently delete entries from the trash. This can&apos;t be undone.</p>
       </div>
     ),
   },
@@ -659,19 +654,19 @@ const sections = [
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Profile</h4>
         <p>
-          Update your display name, email, and password from{' '}
-          <strong>Settings &gt; Profile</strong>. You can upload a profile picture here too. If
-          you signed up with Google, you can set a password to enable email-based login as well.
+          Update your display name, email, and password from <strong>Settings &gt; Profile</strong>.
+          You can upload a profile picture here too. If you signed up with Google, you can set a
+          password to enable email-based login as well.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Google Sign-In</h4>
         <p>
-          Sign in with Google from the login or registration page. This links your Google
-          identity to your Clarive account.
+          Sign in with Google from the login or registration page. This links your Google identity
+          to your Clarive account.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Sessions</h4>
         <p>
-          View your active sessions. See something you don&apos;t recognize? Revoke it to sign
-          out that device immediately.
+          View your active sessions. See something you don&apos;t recognize? Revoke it to sign out
+          that device immediately.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Import & Export</h4>
         <p>
@@ -704,7 +699,9 @@ export default function HelpPage() {
         <CircleHelp className="size-7 text-foreground-muted" />
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Help</h1>
-          <p className="text-sm text-foreground-muted">Everything you need to know about using Clarive.</p>
+          <p className="text-sm text-foreground-muted">
+            Everything you need to know about using Clarive.
+          </p>
         </div>
       </div>
 

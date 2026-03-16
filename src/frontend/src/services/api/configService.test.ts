@@ -9,11 +9,7 @@ vi.mock('@/services/api/apiClient', () => ({
   },
 }));
 
-import {
-  getAllConfig,
-  setConfigValue,
-  resetConfigValue,
-} from './configService';
+import { getAllConfig, setConfigValue, resetConfigValue } from './configService';
 
 import { api } from '@/services/api/apiClient';
 
@@ -60,4 +56,3 @@ describe('resetConfigValue', () => {
     expect(result).toEqual(response);
   });
 });
-

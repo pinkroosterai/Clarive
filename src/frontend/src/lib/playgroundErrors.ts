@@ -1,8 +1,7 @@
 const errorMappings: Array<{ pattern: RegExp; message: string }> = [
   {
     pattern: /connection refused|econnrefused/i,
-    message:
-      'The AI provider is not responding. Check your API key and provider settings.',
+    message: 'The AI provider is not responding. Check your API key and provider settings.',
   },
   {
     pattern: /timeout|timed out/i,
@@ -11,13 +10,11 @@ const errorMappings: Array<{ pattern: RegExp; message: string }> = [
   },
   {
     pattern: /401|unauthorized|invalid.*key|invalid.*api/i,
-    message:
-      'Authentication failed with the AI provider. Your API key may be invalid or expired.',
+    message: 'Authentication failed with the AI provider. Your API key may be invalid or expired.',
   },
   {
     pattern: /model.*not found|MODEL_NOT_FOUND/i,
-    message:
-      'This model is no longer available. Select a different model.',
+    message: 'This model is no longer available. Select a different model.',
   },
 ];
 

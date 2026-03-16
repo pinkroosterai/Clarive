@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/components/editor/MarkdownEditor', () => ({
   MarkdownEditor: ({ content, placeholder }: { content: string; placeholder?: string }) => (
@@ -44,9 +44,7 @@ describe('SystemMessageSection', () => {
 
   it('shows remove button when not read-only and message exists', () => {
     const onChange = vi.fn();
-    render(
-      <SystemMessageSection systemMessage="Test" onChange={onChange} isReadOnly={false} />
-    );
+    render(<SystemMessageSection systemMessage="Test" onChange={onChange} isReadOnly={false} />);
 
     // The X button to remove the system message
     const removeBtn = screen.getByRole('button', { name: '' });
@@ -55,9 +53,7 @@ describe('SystemMessageSection', () => {
   });
 
   it('hides remove button in read-only mode', () => {
-    render(
-      <SystemMessageSection systemMessage="Test" onChange={vi.fn()} isReadOnly={true} />
-    );
+    render(<SystemMessageSection systemMessage="Test" onChange={vi.fn()} isReadOnly={true} />);
 
     // The collapsible trigger exists, but the X (remove) button should not
     const buttons = screen.queryAllByRole('button');

@@ -9,6 +9,7 @@ vi.mock('@/services/api/apiClient', () => ({
 }));
 
 import { testEntry, getTestRuns, getAvailableModels } from './playgroundService';
+
 import { api } from '@/services/api/apiClient';
 
 const mockApi = vi.mocked(api);

@@ -1,5 +1,3 @@
-import { useLLMOutput, type LLMOutputFallbackBlock } from '@llm-ui/react';
-import { markdownLookBack } from '@llm-ui/markdown';
 import {
   codeBlockLookBack,
   findCompleteCodeBlock,
@@ -7,10 +5,12 @@ import {
   useCodeBlockToHtml,
   loadHighlighter,
 } from '@llm-ui/code';
-import { createHighlighter } from 'shiki';
+import { markdownLookBack } from '@llm-ui/markdown';
+import { useLLMOutput, type LLMOutputFallbackBlock } from '@llm-ui/react';
+import type { BlockMatch } from '@llm-ui/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { BlockMatch } from '@llm-ui/react';
+import { createHighlighter } from 'shiki';
 
 // ── Shiki highlighter (lazy-loaded on first code block render) ──
 let highlighterInstance: ReturnType<typeof loadHighlighter> | null = null;
@@ -19,7 +19,25 @@ function getHighlighter() {
   if (!highlighterInstance) {
     highlighterInstance = loadHighlighter(
       createHighlighter({
-        langs: ['javascript', 'typescript', 'python', 'bash', 'json', 'html', 'css', 'sql', 'yaml', 'markdown', 'jsx', 'tsx', 'go', 'rust', 'java', 'csharp', 'xml'],
+        langs: [
+          'javascript',
+          'typescript',
+          'python',
+          'bash',
+          'json',
+          'html',
+          'css',
+          'sql',
+          'yaml',
+          'markdown',
+          'jsx',
+          'tsx',
+          'go',
+          'rust',
+          'java',
+          'csharp',
+          'xml',
+        ],
         themes: ['github-dark', 'github-light'],
       })
     );
@@ -31,9 +49,7 @@ function getHighlighter() {
 function MarkdownBlock({ blockMatch }: { blockMatch: BlockMatch }) {
   return (
     <div className="prose prose-sm dark:prose-invert max-w-none prose-pre:bg-elevated prose-pre:border prose-pre:border-border-subtle prose-code:text-xs prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {blockMatch.output}
-      </ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{blockMatch.output}</ReactMarkdown>
     </div>
   );
 }

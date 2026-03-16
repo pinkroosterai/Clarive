@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, act } from '@testing-library/react';
 import React from 'react';
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/services', () => ({
   entryService: {
@@ -27,7 +26,6 @@ vi.mock('@/lib/handleApiError', () => ({
 import { useEditorMutations } from './useEditorMutations';
 
 import { entryService, wizardService } from '@/services';
-
 import { createDraftEntry } from '@/test/factories';
 
 const mockUpdateEntry = vi.mocked(entryService.updateEntry);
@@ -63,7 +61,7 @@ beforeEach(() => {
 describe('useEditorMutations', () => {
   it('handleSave calls updateEntry with local entry', async () => {
     const opts = makeOptions();
-    mockUpdateEntry.mockResolvedValue({} as any);
+    mockUpdateEntry.mockResolvedValue({} as unknown);
 
     const { result } = renderHook(() => useEditorMutations(opts), {
       wrapper: createWrapper(),
@@ -73,13 +71,16 @@ describe('useEditorMutations', () => {
       result.current.handleSave();
     });
 
-    expect(mockUpdateEntry).toHaveBeenCalledWith(opts.localEntryRef.current!.id, opts.localEntryRef.current);
+    expect(mockUpdateEntry).toHaveBeenCalledWith(
+      opts.localEntryRef.current!.id,
+      opts.localEntryRef.current
+    );
     expect(opts.onSaveSuccess).toHaveBeenCalled();
   });
 
   it('handlePublish calls publishEntry', async () => {
     const opts = makeOptions();
-    mockPublishEntry.mockResolvedValue({} as any);
+    mockPublishEntry.mockResolvedValue({} as unknown);
 
     const { result } = renderHook(() => useEditorMutations(opts), {
       wrapper: createWrapper(),
@@ -95,7 +96,7 @@ describe('useEditorMutations', () => {
 
   it('moveMutation calls moveEntry', async () => {
     const opts = makeOptions();
-    mockMoveEntry.mockResolvedValue({} as any);
+    mockMoveEntry.mockResolvedValue({} as unknown);
 
     const { result } = renderHook(() => useEditorMutations(opts), {
       wrapper: createWrapper(),
@@ -130,7 +131,7 @@ describe('useEditorMutations', () => {
   it('handleDecomposeToChain updates prompts via handleChange', async () => {
     const decomposed = [{ content: 'Step 1' }, { content: 'Step 2' }];
     const opts = makeOptions();
-    mockDecomposeToChain.mockResolvedValue(decomposed as any);
+    mockDecomposeToChain.mockResolvedValue(decomposed as unknown);
 
     const { result } = renderHook(() => useEditorMutations(opts), {
       wrapper: createWrapper(),

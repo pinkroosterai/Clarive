@@ -70,7 +70,12 @@ export default function AiProvidersSection() {
 
   // ── Mutations ──
   const createMutation = useMutation({
-    mutationFn: () => createProvider({ name: formName, endpointUrl: formEndpoint || undefined, apiKey: formApiKey }),
+    mutationFn: () =>
+      createProvider({
+        name: formName,
+        endpointUrl: formEndpoint || undefined,
+        apiKey: formApiKey,
+      }),
     onSuccess: () => {
       toast.success('Provider created');
       queryClient.invalidateQueries({ queryKey: ['super', 'ai-providers'] });
@@ -80,11 +85,12 @@ export default function AiProvidersSection() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (id: string) => updateProvider(id, {
-      name: formName || undefined,
-      endpointUrl: formEndpoint,
-      apiKey: formApiKey || undefined,
-    }),
+    mutationFn: (id: string) =>
+      updateProvider(id, {
+        name: formName || undefined,
+        endpointUrl: formEndpoint,
+        apiKey: formApiKey || undefined,
+      }),
     onSuccess: () => {
       toast.success('Provider updated');
       queryClient.invalidateQueries({ queryKey: ['super', 'ai-providers'] });
@@ -122,8 +128,15 @@ export default function AiProvidersSection() {
   });
 
   const updateModelMutation = useMutation({
-    mutationFn: ({ providerId, modelId, data }: { providerId: string; modelId: string; data: Record<string, unknown> }) =>
-      updateModel(providerId, modelId, data),
+    mutationFn: ({
+      providerId,
+      modelId,
+      data,
+    }: {
+      providerId: string;
+      modelId: string;
+      data: Record<string, unknown>;
+    }) => updateModel(providerId, modelId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['super', 'ai-providers'] });
     },
@@ -217,14 +230,22 @@ export default function AiProvidersSection() {
               onDelete={() => deleteMutation.mutate(provider.id)}
               onValidate={() => validateMutation.mutate(provider.id)}
               onFetchModels={() => handleFetchAndShow(provider.id)}
-              onAddModel={(modelId) => addModelMutation.mutate({ providerId: provider.id, modelId })}
-              onUpdateModel={(modelId, data) => updateModelMutation.mutate({ providerId: provider.id, modelId, data })}
-              onDeleteModel={(modelId) => deleteModelMutation.mutate({ providerId: provider.id, modelId })}
-              isValidating={validateMutation.isPending && validateMutation.variables === provider.id}
+              onAddModel={(modelId) =>
+                addModelMutation.mutate({ providerId: provider.id, modelId })
+              }
+              onUpdateModel={(modelId, data) =>
+                updateModelMutation.mutate({ providerId: provider.id, modelId, data })
+              }
+              onDeleteModel={(modelId) =>
+                deleteModelMutation.mutate({ providerId: provider.id, modelId })
+              }
+              isValidating={
+                validateMutation.isPending && validateMutation.variables === provider.id
+              }
               isFetchingModels={fetchModelsMutation.isPending}
               fetchedModels={
                 fetchModelsMutation.isSuccess && fetchModelsMutation.variables === provider.id
-                  ? fetchModelsMutation.data?.models ?? []
+                  ? (fetchModelsMutation.data?.models ?? [])
                   : null
               }
             />
@@ -254,7 +275,9 @@ export default function AiProvidersSection() {
                 onChange={(e) => setFormEndpoint(e.target.value)}
                 placeholder="Leave empty for default OpenAI endpoint"
               />
-              <p className="text-xs text-foreground-muted">For custom providers: https://your-endpoint.com/v1</p>
+              <p className="text-xs text-foreground-muted">
+                For custom providers: https://your-endpoint.com/v1
+              </p>
             </div>
             <div className="space-y-2">
               <Label>API Key</Label>
@@ -267,10 +290,17 @@ export default function AiProvidersSection() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+            <Button variant="outline" onClick={closeDialog}>
+              Cancel
+            </Button>
             <Button
               onClick={handleSave}
-              disabled={!formName || (!editingProvider && !formApiKey) || createMutation.isPending || updateMutation.isPending}
+              disabled={
+                !formName ||
+                (!editingProvider && !formApiKey) ||
+                createMutation.isPending ||
+                updateMutation.isPending
+              }
             >
               {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save'}
             </Button>
@@ -328,24 +358,45 @@ function ProviderCard({
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">{provider.name}</span>
             {provider.isActive ? (
-              <Badge variant="outline" className="text-xs text-success-text border-success-border">Active</Badge>
+              <Badge variant="outline" className="text-xs text-success-text border-success-border">
+                Active
+              </Badge>
             ) : (
-              <Badge variant="outline" className="text-xs text-foreground-muted">Inactive</Badge>
+              <Badge variant="outline" className="text-xs text-foreground-muted">
+                Inactive
+              </Badge>
             )}
-            <Badge variant="outline" className="text-xs">{activeModels.length} models</Badge>
+            <Badge variant="outline" className="text-xs">
+              {activeModels.length} models
+            </Badge>
           </div>
           {provider.endpointUrl && (
             <p className="text-xs text-foreground-muted truncate">{provider.endpointUrl}</p>
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onValidate} disabled={isValidating}>
-            {isValidating ? <Loader2 className="size-3.5 animate-spin" /> : <ShieldCheck className="size-3.5" />}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2"
+            onClick={onValidate}
+            disabled={isValidating}
+          >
+            {isValidating ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <ShieldCheck className="size-3.5" />
+            )}
           </Button>
           <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onEdit}>
             <Pencil className="size-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-destructive" onClick={onDelete}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-destructive"
+            onClick={onDelete}
+          >
             <Trash2 className="size-3.5" />
           </Button>
         </div>
@@ -472,7 +523,9 @@ function ProviderCardExpanded({
       {/* Configured models table */}
       {provider.models.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs text-foreground-muted">Configured Models ({provider.models.length})</Label>
+          <Label className="text-xs text-foreground-muted">
+            Configured Models ({provider.models.length})
+          </Label>
           <div className="border border-border-subtle rounded-md overflow-hidden">
             <table className="w-full text-xs">
               <thead className="bg-elevated">
@@ -486,9 +539,15 @@ function ProviderCardExpanded({
                   <th className="text-center p-2 font-medium" title="Temperature Configurable">
                     <Thermometer className="size-3.5 mx-auto" />
                   </th>
-                  <th className="text-center p-2 font-medium" title="Default Temperature">Temp</th>
-                  <th className="text-center p-2 font-medium" title="Default Max Tokens">Tokens</th>
-                  <th className="text-center p-2 font-medium" title="Default Reasoning Effort">Effort</th>
+                  <th className="text-center p-2 font-medium" title="Default Temperature">
+                    Temp
+                  </th>
+                  <th className="text-center p-2 font-medium" title="Default Max Tokens">
+                    Tokens
+                  </th>
+                  <th className="text-center p-2 font-medium" title="Default Reasoning Effort">
+                    Effort
+                  </th>
                   <th className="text-center p-2 font-medium w-10"></th>
                 </tr>
               </thead>
@@ -525,7 +584,7 @@ function useDebouncedUpdate(
   serverValue: string | number | null | undefined,
   onUpdate: (modelId: string, data: Record<string, unknown>) => void,
   transform: (value: string) => unknown,
-  delay = 500,
+  delay = 500
 ) {
   const [localValue, setLocalValue] = useState(String(serverValue ?? ''));
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -564,10 +623,34 @@ function ModelRow({
   onUpdate: (modelId: string, data: Record<string, unknown>) => void;
   onDelete: () => void;
 }) {
-  const displayName = useDebouncedUpdate(model.id, 'displayName', model.displayName, onUpdate, (v) => v || null);
-  const contextSize = useDebouncedUpdate(model.id, 'maxContextSize', model.maxContextSize, onUpdate, (v) => Number(v) || 128000);
-  const temperature = useDebouncedUpdate(model.id, 'defaultTemperature', model.defaultTemperature, onUpdate, (v) => v ? Number(v) : null);
-  const maxTokens = useDebouncedUpdate(model.id, 'defaultMaxTokens', model.defaultMaxTokens, onUpdate, (v) => v ? Number(v) : null);
+  const displayName = useDebouncedUpdate(
+    model.id,
+    'displayName',
+    model.displayName,
+    onUpdate,
+    (v) => v || null
+  );
+  const contextSize = useDebouncedUpdate(
+    model.id,
+    'maxContextSize',
+    model.maxContextSize,
+    onUpdate,
+    (v) => Number(v) || 128000
+  );
+  const temperature = useDebouncedUpdate(
+    model.id,
+    'defaultTemperature',
+    model.defaultTemperature,
+    onUpdate,
+    (v) => (v ? Number(v) : null)
+  );
+  const maxTokens = useDebouncedUpdate(
+    model.id,
+    'defaultMaxTokens',
+    model.defaultMaxTokens,
+    onUpdate,
+    (v) => (v ? Number(v) : null)
+  );
 
   return (
     <tr className="hover:bg-elevated/50">

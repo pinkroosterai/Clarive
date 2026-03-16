@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 
 import { ScoreRing } from './ScoreRing';
 
@@ -11,10 +11,7 @@ describe('ScoreRing', () => {
 
   it('renders aria-label with score and max', () => {
     render(<ScoreRing score={7.5} maxScore={10} />);
-    expect(screen.getByRole('img')).toHaveAttribute(
-      'aria-label',
-      'Quality score: 7.5 out of 10'
-    );
+    expect(screen.getByRole('img')).toHaveAttribute('aria-label', 'Quality score: 7.5 out of 10');
   });
 
   it('renders an SVG element', () => {

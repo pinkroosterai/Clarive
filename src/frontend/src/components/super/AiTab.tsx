@@ -1,11 +1,12 @@
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
-import type { ConfigSetting } from '@/services/api/configService';
 
 import AiConfigSection from './AiConfigSection';
 import AiProvidersSection from './AiProvidersSection';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { ConfigSetting } from '@/services/api/configService';
 
 interface AiTabProps {
   aiSettings: ConfigSetting[];

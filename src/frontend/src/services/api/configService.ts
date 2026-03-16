@@ -54,4 +54,3 @@ export async function setConfigValue(key: string, value: string): Promise<SetCon
 export async function resetConfigValue(key: string): Promise<ResetConfigResult> {
   return api.delete<ResetConfigResult>(`/api/super/config/${encodeURIComponent(key)}`);
 }
-

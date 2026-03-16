@@ -27,10 +27,7 @@ export function findFolder(tree: Folder[], id: string): Folder | null {
  * Validate whether a drop is allowed.
  * Returns true if the drop should trigger a move API call.
  */
-export function isValidDrop(
-  dragData: DragData,
-  targetFolderId: string | null
-): boolean {
+export function isValidDrop(dragData: DragData, targetFolderId: string | null): boolean {
   if (dragData.type === 'entry') {
     // Same folder → no-op
     return dragData.entry.folderId !== targetFolderId;

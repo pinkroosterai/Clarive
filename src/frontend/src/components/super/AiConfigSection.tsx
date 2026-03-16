@@ -27,18 +27,14 @@ import {
 } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { handleApiError } from '@/lib/handleApiError';
 import { cn } from '@/lib/utils';
-import {
-  setConfigValue,
-  resetConfigValue,
-  type ConfigSetting,
-} from '@/services/api/configService';
 import { getProviders, type AiProviderResponse } from '@/services/api/aiProviderService';
+import { setConfigValue, resetConfigValue, type ConfigSetting } from '@/services/api/configService';
 
 interface AiConfigSectionProps {
   settings: ConfigSetting[];
@@ -86,9 +82,11 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   const tavilyApiKeySetting = findSetting(settings, 'Ai:TavilyApiKey');
 
   const currentDefaultModel = dirtyValues['Ai:DefaultModel'] ?? defaultModelSetting?.value ?? '';
-  const currentDefaultProviderId = dirtyValues['Ai:DefaultModelProviderId'] ?? defaultProviderIdSetting?.value ?? '';
+  const currentDefaultProviderId =
+    dirtyValues['Ai:DefaultModelProviderId'] ?? defaultProviderIdSetting?.value ?? '';
   const currentPremiumModel = dirtyValues['Ai:PremiumModel'] ?? premiumModelSetting?.value ?? '';
-  const currentPremiumProviderId = dirtyValues['Ai:PremiumModelProviderId'] ?? premiumProviderIdSetting?.value ?? '';
+  const currentPremiumProviderId =
+    dirtyValues['Ai:PremiumModelProviderId'] ?? premiumProviderIdSetting?.value ?? '';
   const currentAllowedModels = dirtyValues['Ai:AllowedModels'] ?? allowedModelsSetting?.value ?? '';
   const currentTavilyKeyDirty = dirtyValues['Ai:TavilyApiKey'];
 
@@ -157,9 +155,8 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   // Find the provider name for a currently selected model+providerId
   const findProviderName = (modelId: string, providerId: string): string | undefined => {
     if (!providerId || !modelId) return undefined;
-    return providerModels.find(
-      (m) => m.modelId === modelId && m.providerId === providerId
-    )?.providerName;
+    return providerModels.find((m) => m.modelId === modelId && m.providerId === providerId)
+      ?.providerName;
   };
 
   const hasDirty = Object.keys(dirtyValues).length > 0;
@@ -460,12 +457,7 @@ function ProviderModelCombobox({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClear}
-                className="shrink-0"
-              >
+              <Button variant="ghost" size="icon" onClick={onClear} className="shrink-0">
                 <X className="size-4" />
               </Button>
             </TooltipTrigger>
@@ -494,7 +486,10 @@ function ModelTransferList({ allModels, value, onChange, loading }: ModelTransfe
   const allowedSet = useMemo(() => {
     if (!value) return new Set<string>();
     return new Set(
-      value.split(',').map((s) => s.trim()).filter(Boolean)
+      value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
     );
   }, [value]);
 
@@ -507,7 +502,10 @@ function ModelTransferList({ allModels, value, onChange, loading }: ModelTransfe
 
   const allowed = useMemo(() => {
     return value
-      ? value.split(',').map((s) => s.trim()).filter(Boolean)
+      ? value
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
       : [];
   }, [value]);
 
@@ -576,15 +574,11 @@ function ModelTransferList({ allModels, value, onChange, loading }: ModelTransfe
 
       {/* Allowed models (right) */}
       <div className="flex-1 space-y-2">
-        <Label className="text-xs text-foreground-muted">
-          Allowed Models ({allowed.length})
-        </Label>
+        <Label className="text-xs text-foreground-muted">Allowed Models ({allowed.length})</Label>
         <ScrollArea className="h-[calc(2rem+12rem+2px)] border border-border-subtle rounded-md">
           <div className="p-1">
             {allowed.length === 0 ? (
-              <p className="text-xs text-foreground-muted p-2 text-center">
-                All models allowed
-              </p>
+              <p className="text-xs text-foreground-muted p-2 text-center">All models allowed</p>
             ) : (
               allowed.map((model) => (
                 <div
