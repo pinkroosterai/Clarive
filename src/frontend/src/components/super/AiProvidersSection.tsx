@@ -14,7 +14,7 @@ import {
   Brain,
   Thermometer,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -558,7 +558,7 @@ function ProviderCardExpanded({
                     model={model}
                     providerId={provider.id}
                     onUpdate={onUpdateModel}
-                    onDelete={() => onDeleteModel(model.id)}
+                    onDelete={onDeleteModel}
                   />
                 ))}
               </tbody>
@@ -612,7 +612,7 @@ function useDebouncedUpdate(
   return { localValue, handleChange };
 }
 
-function ModelRow({
+const ModelRow = React.memo(function ModelRow({
   model,
   providerId,
   onUpdate,
@@ -621,7 +621,7 @@ function ModelRow({
   model: AiProviderModelResponse;
   providerId: string;
   onUpdate: (modelId: string, data: Record<string, unknown>) => void;
-  onDelete: () => void;
+  onDelete: (modelId: string) => void;
 }) {
   const displayName = useDebouncedUpdate(
     model.id,
@@ -730,10 +730,10 @@ function ModelRow({
         )}
       </td>
       <td className="p-2 text-center">
-        <button onClick={onDelete} className="text-destructive hover:text-destructive/80">
+        <button onClick={() => onDelete(model.id)} className="text-destructive hover:text-destructive/80">
           <X className="size-3.5" />
         </button>
       </td>
     </tr>
   );
-}
+});
