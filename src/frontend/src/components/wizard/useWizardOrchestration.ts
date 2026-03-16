@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -20,6 +20,129 @@ import type {
 
 type BootstrapState = 'loading' | 'ready' | 'error';
 
+// ── Reducer state & actions ──
+
+interface WizardState {
+  step: number;
+  sessionId: string | null;
+  draft: PromptEntry | null;
+  questions: ClarificationQuestion[];
+  enhancements: string[];
+  evaluation: Evaluation | undefined;
+  scoreHistory: IterationScore[] | undefined;
+  isGenerating: boolean;
+  generatingOperation: GeneratingOperation | null;
+  currentStage: ProgressEvent | null;
+  progressLog: ProgressLogEntry[];
+  confirmDiscardOpen: boolean;
+  bootstrapState: BootstrapState;
+}
+
+type WizardAction =
+  | {
+      type: 'APPLY_RESULT';
+      payload: {
+        sessionId: string;
+        draft: PromptEntry;
+        questions: ClarificationQuestion[];
+        enhancements: string[];
+        evaluation?: Evaluation;
+        scoreHistory?: IterationScore[];
+      };
+    }
+  | { type: 'SET_STEP'; step: number }
+  | { type: 'START_GENERATING'; operation: GeneratingOperation }
+  | { type: 'STOP_GENERATING' }
+  | { type: 'RESET_PROGRESS' }
+  | { type: 'PROGRESS_STAGE'; event: ProgressEvent }
+  | { type: 'PROGRESS_TOOL_START'; event: ProgressEvent }
+  | { type: 'PROGRESS_TOOL_END'; event: ProgressEvent }
+  | { type: 'SET_BOOTSTRAP'; state: BootstrapState }
+  | { type: 'SET_CONFIRM_DISCARD'; open: boolean };
+
+function wizardReducer(state: WizardState, action: WizardAction): WizardState {
+  switch (action.type) {
+    case 'APPLY_RESULT':
+      return {
+        ...state,
+        sessionId: action.payload.sessionId,
+        draft: action.payload.draft,
+        questions: action.payload.questions,
+        enhancements: action.payload.enhancements,
+        evaluation: action.payload.evaluation,
+        scoreHistory: action.payload.scoreHistory,
+      };
+    case 'SET_STEP':
+      return { ...state, step: action.step };
+    case 'START_GENERATING':
+      return {
+        ...state,
+        isGenerating: true,
+        generatingOperation: action.operation,
+        currentStage: null,
+        progressLog: [],
+      };
+    case 'STOP_GENERATING':
+      return {
+        ...state,
+        isGenerating: false,
+        generatingOperation: null,
+        currentStage: null,
+        progressLog: [],
+      };
+    case 'RESET_PROGRESS':
+      return { ...state, currentStage: null, progressLog: [] };
+    case 'PROGRESS_STAGE':
+      return {
+        ...state,
+        currentStage: action.event,
+        progressLog: [
+          ...state.progressLog,
+          {
+            id: action.event.id,
+            icon: action.event.icon ?? '',
+            message: action.event.message ?? '',
+            detail: action.event.detail,
+            completed: true,
+            isStage: true,
+            timestamp: Date.now(),
+          },
+        ],
+      };
+    case 'PROGRESS_TOOL_START':
+      return {
+        ...state,
+        progressLog: [
+          ...state.progressLog,
+          {
+            id: action.event.id,
+            icon: action.event.icon ?? '',
+            message: action.event.message ?? '',
+            detail: action.event.detail,
+            completed: false,
+            isStage: false,
+            timestamp: Date.now(),
+          },
+        ],
+      };
+    case 'PROGRESS_TOOL_END':
+      return {
+        ...state,
+        progressLog: state.progressLog.map((entry) =>
+          entry.id === action.event.id ? { ...entry, completed: true } : entry
+        ),
+      };
+    case 'SET_BOOTSTRAP':
+      return { ...state, bootstrapState: action.state };
+    case 'SET_CONFIRM_DISCARD':
+      return { ...state, confirmDiscardOpen: action.open };
+    default:
+      return state;
+  }
+}
+
+// ── Helper ──
+
 function handleWizardError(err: unknown, fallbackTitle: string) {
   if (err instanceof ApiError && err.status === 403) {
     toast.error('Please verify your email to use AI features.');
@@ -29,6 +152,8 @@ function handleWizardError(err: unknown, fallbackTitle: string) {
     return 'handled' as const;
   }
 }
+
+// ── Hook ──
 
 export function useWizardOrchestration(
   mode: 'new' | 'enhance',
@@ -41,113 +166,57 @@ export function useWizardOrchestration(
   const startStep = mode === 'enhance' ? 2 : 1;
   const totalSteps = mode === 'enhance' ? 2 : 3;
 
-  const [step, setStep] = useState(startStep);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<PromptEntry | null>(
-    mode === 'enhance' && existingEntry ? structuredClone(existingEntry) : null
-  );
-  const [questions, setQuestions] = useState<ClarificationQuestion[]>([]);
-  const [enhancements, setEnhancements] = useState<string[]>([]);
-  const [evaluation, setEvaluation] = useState<Evaluation | undefined>();
-  const [scoreHistory, setScoreHistory] = useState<IterationScore[] | undefined>();
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatingOperation, setGeneratingOperation] = useState<GeneratingOperation | null>(null);
-  const [currentStage, setCurrentStage] = useState<ProgressEvent | null>(null);
-  const [progressLog, setProgressLog] = useState<ProgressLogEntry[]>([]);
-  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [bootstrapState, setBootstrapState] = useState<BootstrapState>(
-    mode === 'enhance' ? 'loading' : 'ready'
-  );
+  const [state, dispatch] = useReducer(wizardReducer, {
+    step: startStep,
+    sessionId: null,
+    draft: mode === 'enhance' && existingEntry ? structuredClone(existingEntry) : null,
+    questions: [],
+    enhancements: [],
+    evaluation: undefined,
+    scoreHistory: undefined,
+    isGenerating: false,
+    generatingOperation: null,
+    currentStage: null,
+    progressLog: [],
+    confirmDiscardOpen: false,
+    bootstrapState: mode === 'enhance' ? 'loading' : 'ready',
+  });
 
   // --- Progress event handler ---
   const handleProgress = useCallback((event: ProgressEvent) => {
     if (event.type === 'stage') {
-      setCurrentStage(event);
-      setProgressLog((prev) => [
-        ...prev,
-        {
-          id: event.id,
-          icon: event.icon ?? '',
-          message: event.message ?? '',
-          detail: event.detail,
-          completed: true,
-          isStage: true,
-          timestamp: Date.now(),
-        },
-      ]);
+      dispatch({ type: 'PROGRESS_STAGE', event });
     } else if (event.type === 'tool_start') {
-      setProgressLog((prev) => [
-        ...prev,
-        {
-          id: event.id,
-          icon: event.icon ?? '',
-          message: event.message ?? '',
-          detail: event.detail,
-          completed: false,
-          isStage: false,
-          timestamp: Date.now(),
-        },
-      ]);
+      dispatch({ type: 'PROGRESS_TOOL_START', event });
     } else if (event.type === 'tool_end') {
-      setProgressLog((prev) =>
-        prev.map((entry) => (entry.id === event.id ? { ...entry, completed: true } : entry))
-      );
+      dispatch({ type: 'PROGRESS_TOOL_END', event });
     }
   }, []);
-
-  const resetProgress = useCallback(() => {
-    setCurrentStage(null);
-    setProgressLog([]);
-  }, []);
-
-  // --- Apply result helper ---
-  const applyResult = useCallback(
-    (result: {
-      sessionId: string;
-      draft: PromptEntry;
-      questions: ClarificationQuestion[];
-      enhancements: string[];
-      evaluation?: Evaluation;
-      scoreHistory?: IterationScore[];
-    }) => {
-      setSessionId(result.sessionId);
-      setDraft(result.draft);
-      setQuestions(result.questions);
-      setEnhancements(result.enhancements);
-      setEvaluation(result.evaluation);
-      setScoreHistory(result.scoreHistory);
-    },
-    []
-  );
 
   // --- Bootstrap enhance mode ---
   const existingEntryId = existingEntry?.id;
   const runBootstrap = useCallback(() => {
     if (!existingEntryId) return;
-    setBootstrapState('loading');
-    setIsGenerating(true);
-    setGeneratingOperation('enhance');
-    resetProgress();
+    dispatch({ type: 'SET_BOOTSTRAP', state: 'loading' });
+    dispatch({ type: 'START_GENERATING', operation: 'enhance' });
     wizardService
       .enhanceEntry(existingEntryId, handleProgress)
       .then((result) => {
-        applyResult(result);
-        setBootstrapState('ready');
+        dispatch({ type: 'APPLY_RESULT', payload: result });
+        dispatch({ type: 'SET_BOOTSTRAP', state: 'ready' });
       })
       .catch((err) => {
         if (err instanceof ApiError && err.status === 403) {
           toast.error('Please verify your email to use AI features.');
         } else {
           handleApiError(err, { silent: true });
-          setBootstrapState('error');
+          dispatch({ type: 'SET_BOOTSTRAP', state: 'error' });
         }
       })
       .finally(() => {
-        setIsGenerating(false);
-        setGeneratingOperation(null);
-        resetProgress();
+        dispatch({ type: 'STOP_GENERATING' });
       });
-  }, [existingEntryId, applyResult, handleProgress, resetProgress]);
+  }, [existingEntryId, handleProgress]);
 
   useEffect(() => {
     if (mode !== 'enhance' || !existingEntryId) return;
@@ -157,20 +226,18 @@ export function useWizardOrchestration(
   // --- Warn before closing tab with draft ---
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (draft) {
+      if (state.draft) {
         e.preventDefault();
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [draft]);
+  }, [state.draft]);
 
   // --- Step 1: Describe -> generate directly ---
   const handleDescribe = useCallback(
     async (description: string, options: GenerateOptions) => {
-      setIsGenerating(true);
-      setGeneratingOperation('generate');
-      resetProgress();
+      dispatch({ type: 'START_GENERATING', operation: 'generate' });
       try {
         const result = await wizardService.generatePrompt(
           description,
@@ -183,41 +250,37 @@ export function useWizardOrchestration(
           },
           handleProgress
         );
-        applyResult(result);
-        setStep(2);
+        dispatch({ type: 'APPLY_RESULT', payload: result });
+        dispatch({ type: 'SET_STEP', step: 2 });
       } catch (err) {
         handleWizardError(err, 'Generation failed');
       } finally {
-        setIsGenerating(false);
-        setGeneratingOperation(null);
-        resetProgress();
+        dispatch({ type: 'STOP_GENERATING' });
       }
     },
-    [applyResult, handleProgress, resetProgress]
+    [handleProgress]
   );
 
   // --- Step 2: Refine ---
   const handleRefine = useCallback(
     async (answers: string[], selectedEnhancementNames: string[]) => {
-      if (!draft || !sessionId) return;
-      setIsGenerating(true);
-      setGeneratingOperation('refine');
-      resetProgress();
+      if (!state.draft || !state.sessionId) return;
+      dispatch({ type: 'START_GENERATING', operation: 'refine' });
       try {
         const structuredAnswers = answers.map((answer, i) => ({
           questionIndex: i,
           answer,
         }));
         const enhancementIndices = selectedEnhancementNames
-          .map((name) => enhancements.indexOf(name))
+          .map((name) => state.enhancements.indexOf(name))
           .filter((i) => i >= 0);
         const result = await wizardService.refinePrompt(
-          sessionId,
+          state.sessionId,
           structuredAnswers,
           enhancementIndices,
           handleProgress
         );
-        applyResult(result);
+        dispatch({ type: 'APPLY_RESULT', payload: result });
       } catch (err) {
         if (err instanceof ApiError && err.status === 410) {
           toast.error('Session expired. Please start a new generation.');
@@ -225,25 +288,23 @@ export function useWizardOrchestration(
           handleWizardError(err, 'Refinement failed');
         }
       } finally {
-        setIsGenerating(false);
-        setGeneratingOperation(null);
-        resetProgress();
+        dispatch({ type: 'STOP_GENERATING' });
       }
     },
-    [draft, sessionId, enhancements, applyResult, handleProgress, resetProgress]
+    [state.draft, state.sessionId, state.enhancements, handleProgress]
   );
 
   // --- Save ---
   const saveMutation = useMutation({
     mutationFn: async (folderId: string | null) => {
-      if (!draft) throw new Error('No draft');
+      if (!state.draft) throw new Error('No draft');
       if (mode === 'new') {
-        return entryService.createEntry({ ...draft, folderId });
+        return entryService.createEntry({ ...state.draft, folderId });
       } else {
         return entryService.updateEntry(existingEntry!.id, {
-          title: draft.title,
-          systemMessage: draft.systemMessage,
-          prompts: draft.prompts,
+          title: state.draft.title,
+          systemMessage: state.draft.systemMessage,
+          prompts: state.draft.prompts,
         });
       }
     },
@@ -265,20 +326,20 @@ export function useWizardOrchestration(
 
   // --- Close handling ---
   const requestClose = useCallback(() => {
-    if (draft || isGenerating || sessionId) {
-      setConfirmDiscardOpen(true);
+    if (state.draft || state.isGenerating || state.sessionId) {
+      dispatch({ type: 'SET_CONFIRM_DISCARD', open: true });
     } else {
       onClose();
     }
-  }, [draft, isGenerating, sessionId, onClose]);
+  }, [state.draft, state.isGenerating, state.sessionId, onClose]);
 
   const confirmDiscard = useCallback(() => {
-    setConfirmDiscardOpen(false);
+    dispatch({ type: 'SET_CONFIRM_DISCARD', open: false });
     onClose();
   }, [onClose]);
 
   // --- Step progress ---
-  const displayStep = mode === 'enhance' ? step - 1 : step;
+  const displayStep = mode === 'enhance' ? state.step - 1 : state.step;
   const stepLabels = mode === 'new' ? ['Describe', 'Review', 'Save'] : ['Review', 'Save'];
   const prevStepRef = useRef(displayStep);
   const direction = displayStep >= prevStepRef.current ? 'forward' : 'backward';
@@ -287,7 +348,7 @@ export function useWizardOrchestration(
   }, [displayStep]);
 
   const stepHint = (() => {
-    switch (step) {
+    switch (state.step) {
       case 1:
         return 'Describe what you want to generate';
       case 2:
@@ -301,8 +362,8 @@ export function useWizardOrchestration(
 
   return {
     // Step navigation
-    step,
-    setStep,
+    step: state.step,
+    setStep: (step: number) => dispatch({ type: 'SET_STEP', step }),
     startStep,
     totalSteps,
     displayStep,
@@ -311,20 +372,20 @@ export function useWizardOrchestration(
     stepHint,
 
     // State
-    draft,
-    questions,
-    enhancements,
-    evaluation,
-    scoreHistory,
-    isGenerating,
-    generatingOperation,
-    currentStage,
-    progressLog,
-    bootstrapState,
+    draft: state.draft,
+    questions: state.questions,
+    enhancements: state.enhancements,
+    evaluation: state.evaluation,
+    scoreHistory: state.scoreHistory,
+    isGenerating: state.isGenerating,
+    generatingOperation: state.generatingOperation,
+    currentStage: state.currentStage,
+    progressLog: state.progressLog,
+    bootstrapState: state.bootstrapState,
 
     // Dialogs
-    confirmDiscardOpen,
-    setConfirmDiscardOpen,
+    confirmDiscardOpen: state.confirmDiscardOpen,
+    setConfirmDiscardOpen: (open: boolean) => dispatch({ type: 'SET_CONFIRM_DISCARD', open }),
 
     // Handlers
     handleDescribe,
