@@ -15,6 +15,7 @@ import {
   Search,
   Shield,
   Trash2,
+  Users,
   X,
 } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -312,26 +313,45 @@ export default function UsersTable() {
         />
       </div>
 
+      {/* Empty state — no users at all */}
+      {!isLoading && total === 0 && !debouncedSearch && (
+        <div className="rounded-xl border border-border-subtle bg-surface elevation-1 p-12 flex flex-col items-center gap-3 text-center">
+          <Users className="size-10 text-foreground-muted" />
+          <p className="text-sm text-foreground-muted">No users found.</p>
+        </div>
+      )}
+
+      {/* Zero-results state — search returned nothing */}
+      {!isLoading && total === 0 && debouncedSearch && (
+        <div className="rounded-xl border border-border-subtle bg-surface elevation-1 p-8 flex flex-col items-center gap-2 text-center">
+          <Search className="size-8 text-foreground-muted" />
+          <p className="text-sm text-foreground-muted">No matching users</p>
+          <p className="text-xs text-foreground-muted">Try adjusting your search term</p>
+        </div>
+      )}
+
       {/* Grid */}
-      <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
-        <AgGridReact<SuperUser>
-          ref={gridRef}
-          theme={themeQuartz}
-          modules={[AllCommunityModule]}
-          rowData={users}
-          columnDefs={columnDefs}
-          loading={isLoading}
-          context={gridContext}
-          suppressMovableColumns
-          suppressCellFocus
-          animateRows={false}
-          onSortChanged={onSortChanged}
-          rowSelection="single"
-        />
-      </div>
+      {(isLoading || total > 0) && (
+        <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
+          <AgGridReact<SuperUser>
+            ref={gridRef}
+            theme={themeQuartz}
+            modules={[AllCommunityModule]}
+            rowData={users}
+            columnDefs={columnDefs}
+            loading={isLoading}
+            context={gridContext}
+            suppressMovableColumns
+            suppressCellFocus
+            animateRows={false}
+            onSortChanged={onSortChanged}
+            rowSelection="single"
+          />
+        </div>
+      )}
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
+      {total > 0 && <div className="flex items-center justify-between">
         <div className="text-sm text-foreground-muted">
           Showing {users.length > 0 ? (page - 1) * pageSize + 1 : 0}–
           {Math.min(page * pageSize, total)} of {total.toLocaleString()}
@@ -380,7 +400,7 @@ export default function UsersTable() {
             </Button>
           </div>
         </div>
-      </div>
+      </div>}
 
       <DeleteUserDialog user={deleteTarget} onClose={() => setDeleteTarget(null)} />
       <ResetPasswordDialog user={resetTarget} onClose={() => setResetTarget(null)} />

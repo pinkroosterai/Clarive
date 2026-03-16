@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Server } from 'lucide-react';
+import { Plus, Server } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { handleApiError } from '@/lib/handleApiError';
 import {
   getProviders,
@@ -182,9 +183,10 @@ export default function AiProvidersSection() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-foreground-muted">
-        <Loader2 className="size-4 animate-spin" />
-        Loading providers...
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-14 rounded-lg" />
+        ))}
       </div>
     );
   }
@@ -202,10 +204,10 @@ export default function AiProvidersSection() {
       </div>
 
       {providers.length === 0 ? (
-        <div className="text-center py-12 text-foreground-muted">
-          <Server className="size-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm">No providers configured</p>
-          <p className="text-xs mt-1">Add an OpenAI-compatible provider to get started</p>
+        <div className="rounded-xl border border-border-subtle bg-surface elevation-1 p-12 flex flex-col items-center gap-3 text-center">
+          <Server className="size-10 text-foreground-muted" />
+          <p className="text-sm text-foreground-muted">No providers configured</p>
+          <p className="text-xs text-foreground-muted">Add an OpenAI-compatible provider to get started</p>
         </div>
       ) : (
         <div className="space-y-3">

@@ -14,6 +14,7 @@ beforeAll(() => {
 vi.mock('@/hooks/useAiUsage', () => ({
   useAiUsageStats: vi.fn(),
   useAiUsageFilters: vi.fn().mockReturnValue({ data: { models: [], actionTypes: [], tenants: [] }, isLoading: false }),
+  useAiUsageLogs: vi.fn().mockReturnValue({ data: { items: [], totalCount: 0 }, isLoading: false }),
 }));
 
 // Mock framer-motion to avoid animation issues in tests
@@ -26,6 +27,11 @@ vi.mock('framer-motion', () => ({
   },
   useSpring: () => ({ set: vi.fn() }),
   useTransform: (_: unknown, fn: (v: number) => string) => fn(0),
+}));
+
+// Mock ag-grid-react to avoid DOM measurement issues in jsdom
+vi.mock('ag-grid-react', () => ({
+  AgGridReact: () => <div data-testid="ag-grid-mock" />,
 }));
 
 import AiUsageDashboard from './AiUsageDashboard';
@@ -82,19 +88,13 @@ describe('AiUsageDashboard', () => {
     expect(screen.getByText('No AI usage data yet for this period.')).toBeInTheDocument();
   });
 
-  it('renders summary cards and breakdown tables when data exists', () => {
+  it('renders summary cards and log grid when data exists', () => {
     mockUseAiUsageStats.mockReturnValue({
       data: mockStats,
       isLoading: false,
     } as ReturnType<typeof useAiUsageStats>);
 
     render(<AiUsageDashboard />);
-
-    // Breakdown tabs
-    expect(screen.getByText('By Model')).toBeInTheDocument();
-    expect(screen.getByText('By Tenant')).toBeInTheDocument();
-    expect(screen.getByText('By User')).toBeInTheDocument();
-    expect(screen.getByText('By Action Type')).toBeInTheDocument();
 
     // Date filter buttons
     expect(screen.getByText('24h')).toBeInTheDocument();
@@ -105,8 +105,7 @@ describe('AiUsageDashboard', () => {
     // Chart heading
     expect(screen.getByText('Token Usage by Model')).toBeInTheDocument();
 
-    // Breakdown heading
-    expect(screen.getByText('Usage Breakdown')).toBeInTheDocument();
+    // AG Grid log grid is rendered (mocked)
+    expect(screen.getByTestId('ag-grid-mock')).toBeInTheDocument();
   });
-
 });
