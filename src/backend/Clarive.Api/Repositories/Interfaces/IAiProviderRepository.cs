@@ -13,4 +13,5 @@ public interface IAiProviderRepository
     Task UpdateModelAsync(AiProviderModel model, CancellationToken ct = default);
     Task<bool> DeleteModelAsync(Guid modelId, CancellationToken ct = default);
     Task<AiProviderModel?> GetModelByIdAsync(Guid modelId, CancellationToken ct = default);
+    Task<(decimal? InputCostPerMillion, decimal? OutputCostPerMillion)?> GetModelCostAsync(string providerName, string modelId, CancellationToken ct = default);
 }

@@ -71,4 +71,16 @@ public class EfAiProviderRepository(ClariveDbContext db) : IAiProviderRepository
         return await db.AiProviderModels
             .FirstOrDefaultAsync(m => m.Id == modelId, ct);
     }
+
+    public async Task<(decimal? InputCostPerMillion, decimal? OutputCostPerMillion)?> GetModelCostAsync(
+        string providerName, string modelId, CancellationToken ct = default)
+    {
+        var cost = await db.AiProviderModels
+            .Where(m => m.Provider.Name == providerName && m.ModelId == modelId)
+            .Select(m => new { m.InputCostPerMillion, m.OutputCostPerMillion })
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ct);
+
+        return cost is null ? null : (cost.InputCostPerMillion, cost.OutputCostPerMillion);
+    }
 }

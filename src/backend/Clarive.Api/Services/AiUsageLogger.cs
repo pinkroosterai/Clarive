@@ -62,14 +62,7 @@ public class AiUsageLogger(
     {
         try
         {
-            var providers = await providerRepo.GetAllAsync(ct);
-            var match = providers
-                .Where(p => p.Name.Equals(provider, StringComparison.OrdinalIgnoreCase))
-                .SelectMany(p => p.Models)
-                .FirstOrDefault(m => m.ModelId.Equals(model, StringComparison.OrdinalIgnoreCase));
-
-            if (match is null) return null;
-            return (match.InputCostPerMillion, match.OutputCostPerMillion);
+            return await providerRepo.GetModelCostAsync(provider, model, ct);
         }
         catch
         {
