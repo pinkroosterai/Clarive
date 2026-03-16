@@ -19,6 +19,9 @@ public record AiProviderModelResponse(
     bool IsReasoning,
     int MaxContextSize,
     bool IsTemperatureConfigurable,
+    float? DefaultTemperature,
+    int? DefaultMaxTokens,
+    string? DefaultReasoningEffort,
     bool IsActive,
     int SortOrder
 );
@@ -32,7 +35,10 @@ public record EnrichedModelResponse(
     string ProviderName,
     bool IsReasoning,
     int MaxContextSize,
-    bool IsTemperatureConfigurable
+    bool IsTemperatureConfigurable,
+    float? DefaultTemperature,
+    int? DefaultMaxTokens,
+    string? DefaultReasoningEffort
 );
 
 public record EnrichedModelsListResponse(List<EnrichedModelResponse> Models);

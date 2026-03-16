@@ -90,6 +90,9 @@ export interface EnrichedModel {
   isReasoning: boolean;
   maxContextSize: number;
   isTemperatureConfigurable: boolean;
+  defaultTemperature: number | null;
+  defaultMaxTokens: number | null;
+  defaultReasoningEffort: string | null;
 }
 
 export async function getEnrichedModels(): Promise<EnrichedModel[]> {

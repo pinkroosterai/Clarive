@@ -117,7 +117,8 @@ internal class ClariveApiFactory : WebApplicationFactory<Program>
                 ["RateLimiting:StrictPermitLimit"] = "10000",
                 ["ConnectionStrings:DefaultConnection"] = _connectionString,
                 ["Jwt:Secret"] = "integration-test-secret-key-minimum-32-characters-long-for-hmac-sha256",
-                ["Avatar:StoragePath"] = Path.Combine(Path.GetTempPath(), "clarive-test-avatars")
+                ["Avatar:StoragePath"] = Path.Combine(Path.GetTempPath(), "clarive-test-avatars"),
+                ["CONFIG_ENCRYPTION_KEY"] = "ChR4vnM1Gafgxlak06xIsYYQ8J+oPVmtuhcWQa7PUNQ="  // 32-byte test key
             });
         });
     }

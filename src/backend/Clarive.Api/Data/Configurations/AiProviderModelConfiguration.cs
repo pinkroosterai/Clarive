@@ -18,6 +18,9 @@ public class AiProviderModelConfiguration : IEntityTypeConfiguration<AiProviderM
         builder.Property(m => m.IsReasoning).HasColumnName("is_reasoning").IsRequired();
         builder.Property(m => m.MaxContextSize).HasColumnName("max_context_size").IsRequired();
         builder.Property(m => m.IsTemperatureConfigurable).HasColumnName("is_temperature_configurable").IsRequired();
+        builder.Property(m => m.DefaultTemperature).HasColumnName("default_temperature");
+        builder.Property(m => m.DefaultMaxTokens).HasColumnName("default_max_tokens");
+        builder.Property(m => m.DefaultReasoningEffort).HasColumnName("default_reasoning_effort").HasMaxLength(20);
         builder.Property(m => m.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(m => m.SortOrder).HasColumnName("sort_order").IsRequired();
 

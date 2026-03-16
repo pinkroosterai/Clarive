@@ -7,6 +7,9 @@ export interface AiProviderModelResponse {
   isReasoning: boolean;
   maxContextSize: number;
   isTemperatureConfigurable: boolean;
+  defaultTemperature: number | null;
+  defaultMaxTokens: number | null;
+  defaultReasoningEffort: string | null;
   isActive: boolean;
   sortOrder: number;
 }
@@ -43,6 +46,9 @@ export interface AddModelRequest {
   isReasoning?: boolean;
   maxContextSize?: number;
   isTemperatureConfigurable?: boolean;
+  defaultTemperature?: number | null;
+  defaultMaxTokens?: number | null;
+  defaultReasoningEffort?: string | null;
 }
 
 export interface UpdateModelRequest {
@@ -52,6 +58,9 @@ export interface UpdateModelRequest {
   isTemperatureConfigurable?: boolean;
   isActive?: boolean;
   sortOrder?: number;
+  defaultTemperature?: number | null;
+  defaultMaxTokens?: number | null;
+  defaultReasoningEffort?: string | null;
 }
 
 const BASE = '/api/super/ai-providers';

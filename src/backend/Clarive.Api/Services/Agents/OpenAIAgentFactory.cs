@@ -191,8 +191,13 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             (_defaultClient as IDisposable)?.Dispose();
 
             _openAiClient = premiumOpenAiClient;
-            _premiumClient = premiumOpenAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
-            _defaultClient = defaultOpenAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
+
+            var premiumBase = premiumOpenAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
+            var defaultBase = defaultOpenAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
+
+            // Wrap clients with ConfigureOptions to apply model-specific defaults
+            _premiumClient = WrapWithModelDefaults(premiumBase, premiumResolved.Model);
+            _defaultClient = WrapWithModelDefaults(defaultBase, defaultResolved.Model);
             _isConfigured = true;
         }
         finally { _lock.ExitWriteLock(); }
@@ -227,7 +232,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         return await repo.GetAllAsync();
     }
 
-    private record ResolvedProvider(string ApiKey, string? EndpointUrl, string ProviderName);
+    private record ResolvedProvider(string ApiKey, string? EndpointUrl, string ProviderName, AiProviderModel Model);
 
     private ResolvedProvider? ResolveProviderForModel(List<AiProvider> providers, string modelId, string? providerId = null)
     {
@@ -245,7 +250,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         if (match is null || !_encryption.IsAvailable) return null;
 
         var apiKey = _encryption.Decrypt(match.Provider.ApiKeyEncrypted);
-        return new ResolvedProvider(apiKey, match.Provider.EndpointUrl, match.Provider.Name);
+        return new ResolvedProvider(apiKey, match.Provider.EndpointUrl, match.Provider.Name, match.Model);
     }
 
     public IChatClient CreateChatClient(string model)
@@ -279,6 +284,62 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         }
         finally { _lock.ExitReadLock(); }
     }
+
+    private static IChatClient WrapWithModelDefaults(IChatClient client, AiProviderModel? model)
+    {
+        var defaults = BuildChatOptions(model);
+        if (defaults is null)
+            return client;
+
+        return new ChatClientBuilder(client)
+            .ConfigureOptions(options =>
+            {
+                options.Temperature ??= defaults.Temperature;
+                options.MaxOutputTokens ??= defaults.MaxOutputTokens;
+                options.Reasoning ??= defaults.Reasoning;
+            })
+            .Build();
+    }
+
+    internal static ChatOptions? BuildChatOptions(AiProviderModel? model)
+    {
+        if (model is null)
+            return null;
+
+        var hasTemp = model.IsTemperatureConfigurable && model.DefaultTemperature.HasValue;
+        var hasTokens = model.DefaultMaxTokens.HasValue;
+        var hasReasoning = model.IsReasoning && !string.IsNullOrWhiteSpace(model.DefaultReasoningEffort);
+
+        if (!hasTemp && !hasTokens && !hasReasoning)
+            return null;
+
+        var options = new ChatOptions();
+
+        if (hasTemp)
+            options.Temperature = model.DefaultTemperature!.Value;
+
+        if (hasTokens)
+            options.MaxOutputTokens = model.DefaultMaxTokens!.Value;
+
+        if (hasReasoning)
+        {
+            options.Reasoning = new ReasoningOptions
+            {
+                Effort = ParseReasoningEffort(model.DefaultReasoningEffort!)
+            };
+        }
+
+        return options;
+    }
+
+    internal static ReasoningEffort ParseReasoningEffort(string effort) =>
+        effort.ToLowerInvariant() switch
+        {
+            "low" => ReasoningEffort.Low,
+            "high" => ReasoningEffort.High,
+            "extra-high" or "extrahigh" => ReasoningEffort.ExtraHigh,
+            _ => ReasoningEffort.Medium,
+        };
 
     private void EnsureConfigured()
     {
