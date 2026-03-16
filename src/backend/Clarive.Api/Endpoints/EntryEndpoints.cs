@@ -124,7 +124,8 @@ public static partial class EntryEndpoints
         }
 
         var (p, ps) = NormalizePagination(page, pageSize);
-        var (entries, totalCount) = await entryRepo.GetByFolderAsync(tenantId, parsedFolderId, includeAll, p, ps, ct, filteredEntryIds, search, status, sortBy);
+        var (entries, totalCount) = await entryRepo.GetByFolderAsync(tenantId, parsedFolderId, includeAll,
+            new EntryQueryOptions(Page: p, PageSize: ps, Search: search, Status: status, SortBy: sortBy, FilteredEntryIds: filteredEntryIds), ct);
         var summaries = await BuildSummariesBatchAsync(entries, entryRepo, tagRepo, favoriteRepo, tenantId, userId, ct);
         return Results.Ok(new PaginatedResponse<PromptEntrySummary>(summaries, totalCount, p, ps));
     }

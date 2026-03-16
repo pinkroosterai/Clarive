@@ -138,7 +138,7 @@ public class FolderServiceTests : IDisposable
             .Returns(folder);
         _folderRepo.GetChildrenAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
             .Returns(new List<Folder>());
-        _entryRepo.GetByFolderAsync(TenantId, folder.Id, includeAll: false, pageSize: 1, ct: Arg.Any<CancellationToken>())
+        _entryRepo.GetByFolderAsync(TenantId, folder.Id, false, Arg.Any<EntryQueryOptions>(), Arg.Any<CancellationToken>())
             .Returns((new List<PromptEntry>(), 0));
 
         var result = await _sut.DeleteAsync(TenantId, folder.Id, default);
@@ -182,7 +182,7 @@ public class FolderServiceTests : IDisposable
             .Returns(folder);
         _folderRepo.GetChildrenAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
             .Returns(new List<Folder>());
-        _entryRepo.GetByFolderAsync(TenantId, folder.Id, includeAll: false, pageSize: 1, ct: Arg.Any<CancellationToken>())
+        _entryRepo.GetByFolderAsync(TenantId, folder.Id, false, Arg.Any<EntryQueryOptions>(), Arg.Any<CancellationToken>())
             .Returns((new List<PromptEntry>(), 1));
 
         var result = await _sut.DeleteAsync(TenantId, folder.Id, default);

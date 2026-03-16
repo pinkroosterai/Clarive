@@ -69,7 +69,7 @@ public class FolderService(
         if (children.Count > 0)
             return Error.Conflict("FOLDER_NOT_EMPTY", "Cannot delete a folder that contains subfolders.");
 
-        var (_, entryCount) = await entryRepo.GetByFolderAsync(tenantId, folderId, includeAll: false, pageSize: 1, ct: ct);
+        var (_, entryCount) = await entryRepo.GetByFolderAsync(tenantId, folderId, includeAll: false, new EntryQueryOptions(PageSize: 1), ct);
         if (entryCount > 0)
             return Error.Conflict("FOLDER_NOT_EMPTY", "Cannot delete a folder that contains entries.");
 

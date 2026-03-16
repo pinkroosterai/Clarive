@@ -138,13 +138,13 @@ public class ImportExportService(
 
             foreach (var fid in allFolderIds)
             {
-                var (folderEntries, _) = await entryRepo.GetByFolderAsync(tenantId, fid, includeAll: false, pageSize: int.MaxValue, ct: ct);
+                var (folderEntries, _) = await entryRepo.GetByFolderAsync(tenantId, fid, includeAll: false, new EntryQueryOptions(PageSize: int.MaxValue), ct);
                 entries.AddRange(folderEntries);
             }
         }
         else
         {
-            var (all, _) = await entryRepo.GetByFolderAsync(tenantId, null, includeAll: true, pageSize: int.MaxValue, ct: ct);
+            var (all, _) = await entryRepo.GetByFolderAsync(tenantId, null, includeAll: true, new EntryQueryOptions(PageSize: int.MaxValue), ct);
             entries.AddRange(all.Where(e => !e.IsTrashed));
         }
 

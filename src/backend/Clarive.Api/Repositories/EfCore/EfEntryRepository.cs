@@ -9,23 +9,25 @@ namespace Clarive.Api.Repositories.EfCore;
 
 public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
 {
-    public async Task<(List<PromptEntry> Items, int TotalCount)> GetByFolderAsync(Guid tenantId, Guid? folderId, bool includeAll, int page = 1, int pageSize = 50, CancellationToken ct = default, IQueryable<Guid>? filteredEntryIds = null, string? search = null, string? status = null, string? sortBy = null)
+    public async Task<(List<PromptEntry> Items, int TotalCount)> GetByFolderAsync(Guid tenantId, Guid? folderId, bool includeAll, EntryQueryOptions? options = null, CancellationToken ct = default)
     {
+        options ??= new EntryQueryOptions();
+
         var query = db.PromptEntries.AsNoTracking().Where(e => e.TenantId == tenantId && !e.IsTrashed);
         if (!includeAll)
             query = query.Where(e => e.FolderId == folderId);
-        if (filteredEntryIds is not null)
-            query = query.Where(e => filteredEntryIds.Contains(e.Id));
-        if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(e => EF.Functions.ILike(e.Title, $"%{search}%"));
-        if (string.Equals(status, "draft", StringComparison.OrdinalIgnoreCase))
+        if (options.FilteredEntryIds is not null)
+            query = query.Where(e => options.FilteredEntryIds.Contains(e.Id));
+        if (!string.IsNullOrWhiteSpace(options.Search))
+            query = query.Where(e => EF.Functions.ILike(e.Title, $"%{options.Search}%"));
+        if (string.Equals(options.Status, "draft", StringComparison.OrdinalIgnoreCase))
         {
             var publishedEntryIds = db.PromptEntryVersions.AsNoTracking()
                 .Where(v => v.VersionState == VersionState.Published)
                 .Select(v => v.EntryId).Distinct();
             query = query.Where(e => !publishedEntryIds.Contains(e.Id));
         }
-        else if (string.Equals(status, "published", StringComparison.OrdinalIgnoreCase))
+        else if (string.Equals(options.Status, "published", StringComparison.OrdinalIgnoreCase))
         {
             var publishedEntryIds = db.PromptEntryVersions.AsNoTracking()
                 .Where(v => v.VersionState == VersionState.Published)
@@ -33,7 +35,7 @@ public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
             query = query.Where(e => publishedEntryIds.Contains(e.Id));
         }
 
-        IOrderedQueryable<PromptEntry> ordered = sortBy switch
+        IOrderedQueryable<PromptEntry> ordered = options.SortBy switch
         {
             "alphabetical" => query.OrderBy(e => e.Title),
             "oldest" => query.OrderBy(e => e.UpdatedAt),
@@ -41,7 +43,7 @@ public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
         };
 
         var totalCount = await ordered.CountAsync(ct);
-        var items = await ordered.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        var items = await ordered.Skip((options.Page - 1) * options.PageSize).Take(options.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
