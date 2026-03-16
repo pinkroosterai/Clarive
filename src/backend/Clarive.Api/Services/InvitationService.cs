@@ -1,4 +1,5 @@
 using Clarive.Api.Auth;
+using Clarive.Api.Data;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Options;
 namespace Clarive.Api.Services;
 
 public class InvitationService(
+    ClariveDbContext db,
     IInvitationRepository invitationRepo,
     IUserRepository userRepo,
     ITenantRepository tenantRepo,
@@ -124,6 +126,8 @@ public class InvitationService(
             return Error.Conflict("ALREADY_MEMBER", "You are already a member of this workspace.");
         }
 
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+
         var membership = await membershipRepo.CreateAsync(new TenantMembership
         {
             Id = Guid.NewGuid(),
@@ -135,6 +139,8 @@ public class InvitationService(
         }, ct);
 
         await invitationRepo.DeleteCrossTenantsAsync(invitationId, ct);
+
+        await tx.CommitAsync(ct);
 
         var tenant = await tenantRepo.GetByIdAsync(invitation.TenantId, ct);
         var memberCount = (await membershipRepo.GetByTenantIdAsync(invitation.TenantId, ct)).Count;
