@@ -99,7 +99,3 @@ export const workspaceNameSchema = z
   .string()
   .min(1, 'Name is required')
   .max(255, 'Name must be 255 characters or fewer');
-
-export type InviteUserFormData = z.infer<typeof inviteUserSchema>;
-export type ApiKeyNameFormData = z.infer<typeof apiKeyNameSchema>;
-export type WorkspaceNameFormData = z.infer<typeof workspaceNameSchema>;
