@@ -29,6 +29,7 @@ public static class AccountEndpoints
         ITenantRepository tenantRepo,
         IRefreshTokenRepository refreshTokenRepo,
         IEmailService emailService,
+        ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
         if (request.Confirmation != "DELETE")
@@ -77,11 +78,10 @@ public static class AccountEndpoints
         await refreshTokenRepo.RevokeAllForUserAsync(userId, ct);
 
         // Send notification email
+        var emailLogger = loggerFactory.CreateLogger("AccountEndpoints");
         _ = emailService.SendAccountDeletionScheduledAsync(
             user.Email, user.Name, deleteAt, CancellationToken.None)
-            .ContinueWith(t => ctx.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("AccountEndpoints")
-                .LogWarning(t.Exception, "Failed to send deletion-scheduled email to {Email}", user.Email),
+            .ContinueWith(t => emailLogger.LogWarning(t.Exception, "Failed to send deletion-scheduled email to {Email}", user.Email),
                 TaskContinuationOptions.OnlyOnFaulted);
 
         return Results.Ok(new

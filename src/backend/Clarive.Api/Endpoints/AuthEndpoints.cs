@@ -118,6 +118,7 @@ public static class AuthEndpoints
         IEmailService emailService,
         IOptions<AppSettings> appSettings,
         IConfiguration configuration,
+        ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
         if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
@@ -136,10 +137,9 @@ public static class AuthEndpoints
         if (result.RawVerificationToken is not null)
         {
             var verifyUrl = $"{appSettings.Value.FrontendUrl}/verify-email?token={result.RawVerificationToken}";
+            var emailLogger = loggerFactory.CreateLogger("AuthEndpoints");
             _ = emailService.SendVerificationEmailAsync(result.User.Email, result.User.Name, verifyUrl, CancellationToken.None)
-                .ContinueWith(t => ctx.RequestServices.GetRequiredService<ILoggerFactory>()
-                    .CreateLogger("AuthEndpoints")
-                    .LogWarning(t.Exception, "Failed to send verification email to {Email}", result.User.Email),
+                .ContinueWith(t => emailLogger.LogWarning(t.Exception, "Failed to send verification email to {Email}", result.User.Email),
                     TaskContinuationOptions.OnlyOnFaulted);
         }
 
