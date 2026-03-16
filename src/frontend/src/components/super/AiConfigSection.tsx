@@ -174,6 +174,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
                 onChange={(e) => handleChange('Ai:DefaultModel', e.target.value)}
                 placeholder={defaultModelSetting.validationHint ?? ''}
                 className="max-w-md"
+                autoComplete="off"
               />
               {!providersLoading && (
                 <p className="text-xs text-foreground-muted">
@@ -232,6 +233,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
                 onChange={(e) => handleChange('Ai:PremiumModel', e.target.value)}
                 placeholder={premiumModelSetting.validationHint ?? ''}
                 className="max-w-md"
+                autoComplete="off"
               />
               {!providersLoading && (
                 <p className="text-xs text-foreground-muted">
@@ -298,6 +300,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
               onChange={(e) => handleChange('Ai:TavilyApiKey', e.target.value)}
               placeholder={tavilyApiKeySetting.validationHint ?? 'Enter Tavily API key...'}
               className="max-w-md"
+              autoComplete="new-password"
             />
           </SettingField>
         </>

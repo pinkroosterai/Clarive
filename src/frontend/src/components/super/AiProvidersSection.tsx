@@ -257,6 +257,7 @@ export default function AiProvidersSection() {
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="e.g., OpenAI, Azure OpenAI, Ollama"
+                autoComplete="off"
               />
             </div>
             <div className="space-y-2">
@@ -265,6 +266,7 @@ export default function AiProvidersSection() {
                 value={formEndpoint}
                 onChange={(e) => setFormEndpoint(e.target.value)}
                 placeholder="Leave empty for default OpenAI endpoint"
+                autoComplete="off"
               />
               <p className="text-xs text-foreground-muted">
                 For custom providers: https://your-endpoint.com/v1
@@ -277,6 +279,7 @@ export default function AiProvidersSection() {
                 value={formApiKey}
                 onChange={(e) => setFormApiKey(e.target.value)}
                 placeholder={editingProvider ? 'Leave empty to keep current key' : 'sk-...'}
+                autoComplete="new-password"
               />
             </div>
           </div>

@@ -308,6 +308,7 @@ function ConfigInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={setting.validationHint ?? 'Enter new value...'}
         className="max-w-md"
+        autoComplete="new-password"
       />
     );
   }
@@ -347,6 +348,7 @@ function ConfigInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={setting.validationHint ?? ''}
       className="max-w-md"
+      autoComplete="off"
     />
   );
 }
