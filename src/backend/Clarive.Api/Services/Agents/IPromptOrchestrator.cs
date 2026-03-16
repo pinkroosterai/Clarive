@@ -59,7 +59,9 @@ public record GenerateOrchestratorResult(
     PromptSet Prompts,
     PromptEvaluation? Evaluation,
     ClarificationResult? Clarification,
-    UsageDetails? Usage = null);
+    UsageDetails? Usage = null,
+    UsageDetails? EvaluationUsage = null,
+    UsageDetails? ClarificationUsage = null);
 
 public record AgentResult<T>(T Value, UsageDetails? Usage = null);
 
@@ -68,4 +70,6 @@ public record EnhanceOrchestratorResult(
     PromptSet Prompts,
     PromptEvaluation? Evaluation,
     ClarificationResult? Clarification,
-    UsageDetails? Usage = null);
+    UsageDetails? Usage = null,
+    UsageDetails? EvaluationUsage = null,
+    UsageDetails? ClarificationUsage = null);

@@ -82,9 +82,9 @@ public class PromptOrchestrator : IPromptOrchestrator
             if (onProgress is not null) await onProgress(ProgressEvent.Evaluating());
 
             // Run evaluation + clarification in parallel
-            (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, prompts, ct, onProgress);
+            (PromptEvaluation? evaluation, ClarificationResult? clarification, UsageDetails? evalUsage, UsageDetails? clarifyUsage) = await RunParallelFeedback(config, prompts, ct, onProgress);
 
-            return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification, genUsage);
+            return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification, genUsage, evalUsage, clarifyUsage);
         }
         catch
         {
@@ -136,9 +136,9 @@ public class PromptOrchestrator : IPromptOrchestrator
         if (onProgress is not null) await onProgress(ProgressEvent.Evaluating());
 
         // Run evaluation + clarification in parallel
-        (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, prompts, ct, onProgress);
+        (PromptEvaluation? evaluation, ClarificationResult? clarification, UsageDetails? evalUsage, UsageDetails? clarifyUsage) = await RunParallelFeedback(config, prompts, ct, onProgress);
 
-        return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification, revUsage);
+        return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification, revUsage, evalUsage, clarifyUsage);
     }
 
     public async Task<EnhanceOrchestratorResult> EnhanceAsync(
@@ -188,9 +188,9 @@ public class PromptOrchestrator : IPromptOrchestrator
             if (onProgress is not null) await onProgress(ProgressEvent.Evaluating());
 
             // Run evaluation + clarification in parallel on existing prompts
-            (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, bootstrapPromptSet, ct, onProgress);
+            (PromptEvaluation? evaluation, ClarificationResult? clarification, UsageDetails? evalUsage, UsageDetails? clarifyUsage) = await RunParallelFeedback(config, bootstrapPromptSet, ct, onProgress);
 
-            return new EnhanceOrchestratorResult(agentSessionId, bootstrapPromptSet, evaluation, clarification, bootstrapUsage);
+            return new EnhanceOrchestratorResult(agentSessionId, bootstrapPromptSet, evaluation, clarification, bootstrapUsage, evalUsage, clarifyUsage);
         }
         catch
         {
@@ -232,7 +232,7 @@ public class PromptOrchestrator : IPromptOrchestrator
 
     // ── Private helpers ──
 
-    private async Task<(PromptEvaluation?, ClarificationResult?)> RunParallelFeedback(
+    private async Task<(PromptEvaluation?, ClarificationResult?, UsageDetails?, UsageDetails?)> RunParallelFeedback(
         GenerationConfig config, PromptSet prompts, CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null)
     {
@@ -241,10 +241,13 @@ public class PromptOrchestrator : IPromptOrchestrator
 
         await Task.WhenAll(evalTask, clarifyTask);
 
-        return (evalTask.Result, clarifyTask.Result);
+        var (evaluation, evalUsage) = evalTask.Result;
+        var (clarification, clarifyUsage) = clarifyTask.Result;
+
+        return (evaluation, clarification, evalUsage, clarifyUsage);
     }
 
-    private async Task<PromptEvaluation?> RunEvaluation(
+    private async Task<(PromptEvaluation?, UsageDetails?)> RunEvaluation(
         GenerationConfig config, PromptSet prompts, CancellationToken ct)
     {
         try
@@ -252,16 +255,16 @@ public class PromptOrchestrator : IPromptOrchestrator
             var agent = _factory.CreateEvaluationAgent(config);
             var task = TaskBuilder.BuildEvaluationTask(config, prompts);
             var response = await agent.RunAsync<PromptEvaluation>(task, cancellationToken: ct);
-            return EvaluationNormalizer.Normalize(response.Result);
+            return (EvaluationNormalizer.Normalize(response.Result), response.Usage);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(ex, "Evaluation agent failed, returning null evaluation");
-            return null;
+            return (null, null);
         }
     }
 
-    private async Task<ClarificationResult?> RunClarification(
+    private async Task<(ClarificationResult?, UsageDetails?)> RunClarification(
         GenerationConfig config, PromptSet prompts, CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null)
     {
@@ -272,12 +275,12 @@ public class PromptOrchestrator : IPromptOrchestrator
             var agent = _factory.CreateClarificationAgent();
             var task = TaskBuilder.BuildClarificationTask(config, prompts);
             var response = await agent.RunAsync<ClarificationResult>(task, cancellationToken: ct);
-            return response.Result;
+            return (response.Result, response.Usage);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(ex, "Clarification agent failed, returning null clarification");
-            return null;
+            return (null, null);
         }
     }
 

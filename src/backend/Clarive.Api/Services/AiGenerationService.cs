@@ -36,6 +36,8 @@ public class AiGenerationService(
         sw.Stop();
 
         await LogUsageAsync(tenantId, userId, AiActionType.Generation, sw.ElapsedMilliseconds, result.Usage, ct);
+        await LogUsageAsync(tenantId, userId, AiActionType.Evaluation, sw.ElapsedMilliseconds, result.EvaluationUsage, ct);
+        await LogUsageAsync(tenantId, userId, AiActionType.Clarification, sw.ElapsedMilliseconds, result.ClarificationUsage, ct);
 
         var scoreHistory = BuildInitialScoreHistory(result.Evaluation);
         var draft = MapPromptSetToDraft(result.Prompts);
@@ -98,6 +100,8 @@ public class AiGenerationService(
         sw.Stop();
 
         await LogUsageAsync(tenantId, userId, AiActionType.Generation, sw.ElapsedMilliseconds, result.Usage, ct);
+        await LogUsageAsync(tenantId, userId, AiActionType.Evaluation, sw.ElapsedMilliseconds, result.EvaluationUsage, ct);
+        await LogUsageAsync(tenantId, userId, AiActionType.Clarification, sw.ElapsedMilliseconds, result.ClarificationUsage, ct);
 
         var newScoreHistory = new List<IterationScore>(session.ScoreHistory);
         if (result.Evaluation is not null)
@@ -153,6 +157,8 @@ public class AiGenerationService(
         sw.Stop();
 
         await LogUsageAsync(tenantId, userId, AiActionType.Generation, sw.ElapsedMilliseconds, result.Usage, entryId, ct);
+        await LogUsageAsync(tenantId, userId, AiActionType.Evaluation, sw.ElapsedMilliseconds, result.EvaluationUsage, entryId, ct);
+        await LogUsageAsync(tenantId, userId, AiActionType.Clarification, sw.ElapsedMilliseconds, result.ClarificationUsage, entryId, ct);
 
         var scoreHistory = BuildInitialScoreHistory(result.Evaluation);
         var draft = MapPromptSetToDraft(result.Prompts);
@@ -238,6 +244,10 @@ public class AiGenerationService(
         Guid tenantId, Guid userId, AiActionType actionType,
         long durationMs, UsageDetails? usage, Guid? entryId, CancellationToken ct)
     {
+        // Skip logging if no usage data (e.g. agent failed and returned null)
+        if (usage is null)
+            return Task.CompletedTask;
+
         // Generation agent uses Premium model; all others use Default model
         var (modelId, providerName) = actionType == AiActionType.Generation
             ? (agentFactory.PremiumModelId, agentFactory.PremiumProviderName)
@@ -246,7 +256,7 @@ public class AiGenerationService(
         return usageLogger.LogAsync(
             tenantId, userId, actionType,
             modelId ?? "unknown", providerName ?? "unknown",
-            usage?.InputTokenCount ?? 0, usage?.OutputTokenCount ?? 0,
+            usage.InputTokenCount ?? 0, usage.OutputTokenCount ?? 0,
             durationMs, entryId, ct);
     }
 
