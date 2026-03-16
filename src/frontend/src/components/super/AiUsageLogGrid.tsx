@@ -199,7 +199,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
           getRowClass={(params) =>
             params.data?.id === selectedRow?.id ? 'ag-row-selected' : undefined
           }
-          rowSelection="single"
         />
       </div>
 

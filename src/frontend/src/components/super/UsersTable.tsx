@@ -207,7 +207,8 @@ export default function UsersTable() {
         field: 'name',
         headerName: 'User',
         sortable: true,
-        width: 280,
+        flex: 3,
+        minWidth: 160,
         cellRenderer: UserCell,
         autoHeight: true,
       },
@@ -215,25 +216,29 @@ export default function UsersTable() {
         field: 'role',
         headerName: 'Role',
         sortable: true,
-        width: 110,
+        flex: 1,
+        minWidth: 70,
         cellRenderer: RoleCell,
       },
       {
         headerName: 'Auth',
         sortable: false,
-        width: 110,
+        flex: 1,
+        minWidth: 70,
         cellRenderer: AuthCell,
       },
       {
         headerName: 'Verified',
         sortable: false,
-        width: 100,
+        flex: 1,
+        minWidth: 70,
         cellRenderer: VerifiedCell,
       },
       {
         headerName: 'Workspaces',
         sortable: false,
-        width: 120,
+        flex: 1,
+        minWidth: 80,
         cellRenderer: WorkspacesCell,
       },
       {
@@ -241,13 +246,14 @@ export default function UsersTable() {
         headerName: 'Created',
         sortable: true,
         sort: 'desc',
-        width: 150,
+        flex: 1,
+        minWidth: 90,
         valueFormatter: (p) => (p.value ? formatDate(p.value) : ''),
       },
       {
         headerName: '',
         sortable: false,
-        width: 60,
+        width: 50,
         cellRenderer: ActionsCell,
         suppressHeaderMenuButton: true,
       },
@@ -345,7 +351,6 @@ export default function UsersTable() {
             suppressCellFocus
             animateRows={false}
             onSortChanged={onSortChanged}
-            rowSelection="single"
           />
         </div>
       )}
