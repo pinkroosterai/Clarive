@@ -195,9 +195,17 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             var premiumBase = premiumOpenAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
             var defaultBase = defaultOpenAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
 
-            // Wrap clients with ConfigureOptions to apply model-specific defaults
-            _premiumClient = WrapWithModelDefaults(premiumBase, premiumResolved.Model);
-            _defaultClient = WrapWithModelDefaults(defaultBase, defaultResolved.Model);
+            // Wrap clients with ConfigureOptions to apply model-specific defaults + role overrides
+            _premiumClient = WrapWithRoleOverrides(
+                WrapWithModelDefaults(premiumBase, premiumResolved.Model),
+                settings.PremiumModelTemperature,
+                settings.PremiumModelMaxTokens,
+                settings.PremiumModelReasoningEffort);
+            _defaultClient = WrapWithRoleOverrides(
+                WrapWithModelDefaults(defaultBase, defaultResolved.Model),
+                settings.DefaultModelTemperature,
+                settings.DefaultModelMaxTokens,
+                settings.DefaultModelReasoningEffort);
             _isConfigured = true;
         }
         finally { _lock.ExitWriteLock(); }
@@ -309,12 +317,35 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             .Build();
     }
 
+    internal static IChatClient WrapWithRoleOverrides(
+        IChatClient client, float? temperature, int? maxTokens, string? reasoningEffort)
+    {
+        if (temperature is null && maxTokens is null && string.IsNullOrWhiteSpace(reasoningEffort))
+            return client;
+
+        return new ChatClientBuilder(client)
+            .ConfigureOptions(options =>
+            {
+                // Role overrides replace (not fallback) — they take priority over model defaults
+                if (temperature.HasValue)
+                    options.Temperature = temperature.Value;
+                if (maxTokens.HasValue)
+                    options.MaxOutputTokens = maxTokens.Value;
+                if (!string.IsNullOrWhiteSpace(reasoningEffort))
+                    options.Reasoning = new ReasoningOptions
+                    {
+                        Effort = ParseReasoningEffort(reasoningEffort)
+                    };
+            })
+            .Build();
+    }
+
     internal static ChatOptions? BuildChatOptions(AiProviderModel? model)
     {
         if (model is null)
             return null;
 
-        var hasTemp = model.IsTemperatureConfigurable && model.DefaultTemperature.HasValue;
+        var hasTemp = !model.IsReasoning && model.DefaultTemperature.HasValue;
         var hasTokens = model.DefaultMaxTokens.HasValue;
         var hasReasoning = model.IsReasoning && !string.IsNullOrWhiteSpace(model.DefaultReasoningEffort);
 

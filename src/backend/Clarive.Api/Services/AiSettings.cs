@@ -8,4 +8,12 @@ public record AiSettings
     public string PremiumModelProviderId { get; init; } = "";
     public string AllowedModels { get; init; } = "";
     public string TavilyApiKey { get; init; } = "";
+
+    // Role-specific parameter overrides (null = use model default)
+    public float? DefaultModelTemperature { get; init; }
+    public int? DefaultModelMaxTokens { get; init; }
+    public string? DefaultModelReasoningEffort { get; init; }
+    public float? PremiumModelTemperature { get; init; }
+    public int? PremiumModelMaxTokens { get; init; }
+    public string? PremiumModelReasoningEffort { get; init; }
 }

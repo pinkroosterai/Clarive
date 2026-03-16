@@ -82,6 +82,44 @@ public static class ConfigRegistry
             "Provider ID for the premium model. Set automatically when selecting a model from a provider.",
             ConfigSection.Ai, false, false),
 
+        // ── AI › Default Model Overrides ──
+        new ConfigDefinition("Ai:DefaultModelTemperature", "Default Model Temperature",
+            "Override the temperature for Default model tasks (evaluation, clarification, decomposition). Leave empty to use the model's configured default.",
+            ConfigSection.Ai, false, false,
+            "e.g., 0.7",
+            ConfigInputType.Number, SubGroup: "Default Model Overrides"),
+
+        new ConfigDefinition("Ai:DefaultModelMaxTokens", "Default Model Max Tokens",
+            "Override the max output tokens for Default model tasks. Leave empty to use the model's configured default.",
+            ConfigSection.Ai, false, false,
+            "e.g., 4096",
+            ConfigInputType.Number, SubGroup: "Default Model Overrides"),
+
+        new ConfigDefinition("Ai:DefaultModelReasoningEffort", "Default Model Reasoning Effort",
+            "Override the reasoning effort for Default model tasks (only applies to reasoning models). Leave empty to use the model's configured default.",
+            ConfigSection.Ai, false, false,
+            SubGroup: "Default Model Overrides",
+            InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
+
+        // ── AI › Premium Model Overrides ──
+        new ConfigDefinition("Ai:PremiumModelTemperature", "Premium Model Temperature",
+            "Override the temperature for the Premium model generation workflow (AI Wizard). Leave empty to use the model's configured default.",
+            ConfigSection.Ai, false, false,
+            "e.g., 0.9",
+            ConfigInputType.Number, SubGroup: "Premium Model Overrides"),
+
+        new ConfigDefinition("Ai:PremiumModelMaxTokens", "Premium Model Max Tokens",
+            "Override the max output tokens for the Premium model generation workflow. Leave empty to use the model's configured default.",
+            ConfigSection.Ai, false, false,
+            "e.g., 8192",
+            ConfigInputType.Number, SubGroup: "Premium Model Overrides"),
+
+        new ConfigDefinition("Ai:PremiumModelReasoningEffort", "Premium Model Reasoning Effort",
+            "Override the reasoning effort for the Premium model generation workflow (only applies to reasoning models). Leave empty to use the model's configured default.",
+            ConfigSection.Ai, false, false,
+            SubGroup: "Premium Model Overrides",
+            InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
+
         new ConfigDefinition("Ai:AllowedModels", "Allowed Playground Models",
             "Restrict which models users can select in the AI Playground. When empty, all models from configured providers are available. Use this to control costs or limit access to specific models.",
             ConfigSection.Ai, false, false,

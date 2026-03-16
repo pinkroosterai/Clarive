@@ -33,7 +33,11 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { handleApiError } from '@/lib/handleApiError';
 import { cn } from '@/lib/utils';
-import { getProviders, type AiProviderResponse } from '@/services/api/aiProviderService';
+import {
+  getProviders,
+  type AiProviderResponse,
+  type AiProviderModelResponse,
+} from '@/services/api/aiProviderService';
 import { setConfigValue, resetConfigValue, type ConfigSetting } from '@/services/api/configService';
 
 interface AiConfigSectionProps {
@@ -67,6 +71,20 @@ function groupByProvider(models: ProviderModel[]): Record<string, ProviderModel[
     (acc[m.providerName] ??= []).push(m);
     return acc;
   }, {});
+}
+
+function findModelMetadata(
+  providers: AiProviderResponse[] | undefined,
+  modelId: string,
+  providerId: string
+) {
+  if (!providers || !modelId || !providerId) return null;
+  for (const p of providers) {
+    if (p.id !== providerId) continue;
+    const model = p.models.find((m) => m.modelId === modelId);
+    if (model) return model;
+  }
+  return null;
 }
 
 export default function AiConfigSection({ settings, onSaved }: AiConfigSectionProps) {
@@ -228,6 +246,19 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
         </SettingField>
       )}
 
+      {/* Default Model Parameter Overrides */}
+      {currentDefaultModel && (
+        <ModelOverrideFields
+          prefix="DefaultModel"
+          settings={settings}
+          dirtyValues={dirtyValues}
+          modelMetadata={findModelMetadata(providers, currentDefaultModel, currentDefaultProviderId)}
+          onChange={handleChange}
+          onReset={(key) => resetMutation.mutate(key)}
+          isResetting={(key) => resetMutation.isPending && resetMutation.variables === key}
+        />
+      )}
+
       <Separator className="my-4" />
 
       {/* Premium Model */}
@@ -267,6 +298,19 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
             </div>
           )}
         </SettingField>
+      )}
+
+      {/* Premium Model Parameter Overrides */}
+      {currentPremiumModel && (
+        <ModelOverrideFields
+          prefix="PremiumModel"
+          settings={settings}
+          dirtyValues={dirtyValues}
+          modelMetadata={findModelMetadata(providers, currentPremiumModel, currentPremiumProviderId)}
+          onChange={handleChange}
+          onReset={(key) => resetMutation.mutate(key)}
+          isResetting={(key) => resetMutation.isPending && resetMutation.variables === key}
+        />
       )}
 
       {/* Allowed Playground Models */}
@@ -598,6 +642,101 @@ function ModelTransferList({ allModels, value, onChange, loading }: ModelTransfe
           </div>
         </ScrollArea>
       </div>
+    </div>
+  );
+}
+
+// ── Model parameter override fields ──
+
+interface ModelOverrideFieldsProps {
+  prefix: 'DefaultModel' | 'PremiumModel';
+  settings: ConfigSetting[];
+  dirtyValues: Record<string, string>;
+  modelMetadata: AiProviderModelResponse | null;
+  onChange: (key: string, value: string) => void;
+  onReset: (key: string) => void;
+  isResetting: (key: string) => boolean;
+}
+
+function ModelOverrideFields({
+  prefix,
+  settings,
+  dirtyValues,
+  modelMetadata,
+  onChange,
+  onReset,
+  isResetting,
+}: ModelOverrideFieldsProps) {
+  const tempKey = `Ai:${prefix}Temperature`;
+  const tokensKey = `Ai:${prefix}MaxTokens`;
+  const effortKey = `Ai:${prefix}ReasoningEffort`;
+
+  const tempSetting = findSetting(settings, tempKey);
+  const tokensSetting = findSetting(settings, tokensKey);
+  const effortSetting = findSetting(settings, effortKey);
+
+  const currentTemp = dirtyValues[tempKey] ?? tempSetting?.value ?? '';
+  const currentTokens = dirtyValues[tokensKey] ?? tokensSetting?.value ?? '';
+  const currentEffort = dirtyValues[effortKey] ?? effortSetting?.value ?? '';
+
+  const modelTempDefault = modelMetadata?.defaultTemperature;
+  const modelTokensDefault = modelMetadata?.defaultMaxTokens;
+  const modelEffortDefault = modelMetadata?.defaultReasoningEffort;
+  const isReasoning = modelMetadata?.isReasoning ?? false;
+
+  return (
+    <div className="ml-4 mt-3 space-y-3 border-l-2 border-border-subtle pl-4">
+      <p className="text-xs font-medium text-foreground-muted">Parameter Overrides</p>
+
+      {/* Temperature — only for non-reasoning models */}
+      {!isReasoning && tempSetting && (
+        <SettingField setting={tempSetting} onReset={() => onReset(tempKey)} isResetting={isResetting(tempKey)}>
+          <Input
+            type="number"
+            value={currentTemp}
+            onChange={(e) => onChange(tempKey, e.target.value)}
+            placeholder={modelTempDefault != null ? `Model default: ${modelTempDefault}` : 'Not set'}
+            className="max-w-[200px]"
+            min={0}
+            max={2}
+            step={0.1}
+          />
+        </SettingField>
+      )}
+
+      {/* Max Tokens */}
+      {tokensSetting && (
+        <SettingField setting={tokensSetting} onReset={() => onReset(tokensKey)} isResetting={isResetting(tokensKey)}>
+          <Input
+            type="number"
+            value={currentTokens}
+            onChange={(e) => onChange(tokensKey, e.target.value)}
+            placeholder={modelTokensDefault != null ? `Model default: ${modelTokensDefault}` : 'Not set'}
+            className="max-w-[200px]"
+            min={1}
+            max={32000}
+          />
+        </SettingField>
+      )}
+
+      {/* Reasoning Effort — only for reasoning models */}
+      {isReasoning && effortSetting && (
+        <SettingField setting={effortSetting} onReset={() => onReset(effortKey)} isResetting={isResetting(effortKey)}>
+          <select
+            value={currentEffort}
+            onChange={(e) => onChange(effortKey, e.target.value)}
+            className="h-9 rounded-md border border-border-subtle bg-background px-3 text-sm max-w-[200px]"
+          >
+            <option value="">
+              {modelEffortDefault ? `Model default: ${modelEffortDefault}` : 'Not set'}
+            </option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="extra-high">Extra High</option>
+          </select>
+        </SettingField>
+      )}
     </div>
   );
 }
