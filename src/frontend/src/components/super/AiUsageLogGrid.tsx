@@ -40,14 +40,12 @@ const formatDuration = (ms: number): string => {
 
 // ── Custom Select Filter Component ──
 
-interface SelectFilterParams {
-  options: { value: string; label: string }[];
-}
-
-function SelectFilterComponent(props: { model: string | null; onModelChange: (model: string | null) => void; params: SelectFilterParams }) {
-  const { model, onModelChange, params } = props;
-  const options = params.options ?? [];
-
+// Custom select filter: receives model, onModelChange, and filterParams merged as flat props
+function SelectFilterComponent({ model, onModelChange, options = [] }: {
+  model: string | null;
+  onModelChange: (model: string | null) => void;
+  options?: { value: string; label: string }[];
+}) {
   return (
     <div className="p-2 min-w-[160px]">
       <select
@@ -65,6 +63,10 @@ function SelectFilterComponent(props: { model: string | null; onModelChange: (mo
     </div>
   );
 }
+
+// doesFilterPass for custom select filter — server-side filtering handles actual filtering,
+// so this always returns true (we just need it defined to satisfy AG Grid)
+const selectFilterDoesFilterPass = () => true;
 
 export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   const gridRef = useRef<AgGridReact<AiUsageLogEntry>>(null);
@@ -139,16 +141,16 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         headerName: 'Model',
         sortable: true,
         width: 200,
-        filter: SelectFilterComponent,
-        filterParams: { options: modelOptions } as SelectFilterParams,
+        filter: { component: SelectFilterComponent, doesFilterPass: selectFilterDoesFilterPass },
+        filterParams: { options: modelOptions },
       },
       {
         field: 'actionType',
         headerName: 'Action',
         sortable: true,
         width: 130,
-        filter: SelectFilterComponent,
-        filterParams: { options: actionTypeOptions } as SelectFilterParams,
+        filter: { component: SelectFilterComponent, doesFilterPass: selectFilterDoesFilterPass },
+        filterParams: { options: actionTypeOptions },
       },
       {
         field: 'inputTokens',

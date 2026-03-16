@@ -145,21 +145,29 @@ public class EfAiUsageLogRepository(ClariveDbContext db) : IAiUsageLogRepository
         if (dateTo.HasValue)
             query = query.Where(l => l.CreatedAt <= dateTo.Value);
 
-        var models = await query
+        var modelsRaw = await query
             .GroupBy(l => new { l.Provider, l.Model })
-            .Select(g => new AiUsageFilterModel(
-                g.Key.Model,
-                g.Key.Provider != "" ? g.Key.Provider + ":" + g.Key.Model : g.Key.Model))
-            .OrderBy(m => m.DisplayName)
+            .Select(g => new { g.Key.Provider, g.Key.Model })
             .ToListAsync(ct);
+
+        var models = modelsRaw
+            .Select(m => new AiUsageFilterModel(
+                m.Model,
+                FormatDisplayModel(m.Provider, m.Model)))
+            .OrderBy(m => m.DisplayName)
+            .ToList();
 
         var actionTypes = Enum.GetNames<AiActionType>().Order().ToList();
 
-        var tenants = await query
+        var tenantIds = await query
             .Select(l => l.TenantId)
             .Distinct()
-            .Join(db.Tenants, tid => tid, t => t.Id, (_, t) => new AiUsageFilterTenant(t.Id, t.Name))
+            .ToListAsync(ct);
+
+        var tenants = await db.Tenants
+            .Where(t => tenantIds.Contains(t.Id))
             .OrderBy(t => t.Name)
+            .Select(t => new AiUsageFilterTenant(t.Id, t.Name))
             .ToListAsync(ct);
 
         return new AiUsageFilterOptionsResponse(models, actionTypes, tenants);
