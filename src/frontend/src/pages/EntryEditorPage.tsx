@@ -373,7 +373,7 @@ const EntryEditorPage = () => {
   if (isMobile) {
     return (
       <div className="p-4">
-        <EditorAiOverlay isVisible={isAiRunning} label={aiLabel} />
+        <EditorAiOverlay isVisible={isAiRunning} label={aiLabel} onCancel={() => window.location.reload()} />
         {readOnlyBanner && <div className="mb-4">{readOnlyBanner}</div>}
         <Tabs defaultValue="editor">
           <TabsList className="w-full">
@@ -401,7 +401,7 @@ const EntryEditorPage = () => {
   // ── Desktop layout ──
   return (
     <div className="grid h-full grid-cols-[minmax(0,1fr)_300px] gap-0">
-      <EditorAiOverlay isVisible={isAiRunning} label={aiLabel} />
+      <EditorAiOverlay isVisible={isAiRunning} label={aiLabel} onCancel={() => window.location.reload()} />
       <ScrollArea className="p-6">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
