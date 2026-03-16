@@ -210,7 +210,6 @@ export default function UsersTable() {
         flex: 3,
         minWidth: 160,
         cellRenderer: UserCell,
-        autoHeight: true,
       },
       {
         field: 'role',

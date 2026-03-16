@@ -369,7 +369,7 @@
   --ag-range-selection-background-color: hsl(var(--primary) / 0.08);
   --ag-font-family: 'DM Sans', sans-serif;
   --ag-font-size: 13px;
-  --ag-row-height: 40px;
+  --ag-row-height: 60px;
   --ag-header-height: 42px;
   --ag-cell-horizontal-padding: 12px;
   --ag-row-border-color: hsl(var(--border-subtle));
@@ -381,6 +381,11 @@
   --ag-wrapper-border-radius: var(--radius);
   --ag-borders: none;
   --ag-header-column-separator-display: none;
+}
+
+.ag-theme-quartz .ag-cell {
+  display: flex;
+  align-items: center;
 }
 
 .dark .ag-theme-quartz {
