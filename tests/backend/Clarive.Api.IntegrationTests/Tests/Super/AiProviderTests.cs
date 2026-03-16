@@ -235,4 +235,55 @@ public class AiProviderTests : IntegrationTestBase
         updateJson.GetProperty("defaultTemperature").GetSingle().Should().BeApproximately(0.7f, 0.01f);
         updateJson.GetProperty("defaultMaxTokens").GetInt32().Should().Be(8192);
     }
+
+    // ── isTemperatureConfigurable removed from response ──
+
+    [Fact]
+    public async Task AddModel_ResponseDoesNotContainIsTemperatureConfigurable()
+    {
+        var providerId = await CreateTestProvider();
+
+        var (status, json) = await PostModel(providerId, new
+        {
+            modelId = "gpt-4o-no-temp-config",
+        });
+
+        status.Should().Be(HttpStatusCode.Created);
+        json.TryGetProperty("isTemperatureConfigurable", out _).Should().BeFalse(
+            "isTemperatureConfigurable was removed — temperature configurability is derived from !isReasoning");
+    }
+
+    // ── AddModel with isReasoning pre-fill ──
+
+    [Fact]
+    public async Task AddModel_WithIsReasoningTrue_PreFillsReasoningDefaults()
+    {
+        var providerId = await CreateTestProvider();
+
+        var (status, json) = await PostModel(providerId, new
+        {
+            modelId = "o3-reasoning-test",
+            isReasoning = true,
+            defaultReasoningEffort = "medium"
+        });
+
+        status.Should().Be(HttpStatusCode.Created);
+        json.GetProperty("isReasoning").GetBoolean().Should().BeTrue();
+        json.GetProperty("defaultReasoningEffort").GetString().Should().Be("medium");
+    }
+
+    [Fact]
+    public async Task AddModel_WithIsReasoningFalse_StandardDefaults()
+    {
+        var providerId = await CreateTestProvider();
+
+        var (status, json) = await PostModel(providerId, new
+        {
+            modelId = "gpt-4o-standard-test",
+            isReasoning = false
+        });
+
+        status.Should().Be(HttpStatusCode.Created);
+        json.GetProperty("isReasoning").GetBoolean().Should().BeFalse();
+    }
 }

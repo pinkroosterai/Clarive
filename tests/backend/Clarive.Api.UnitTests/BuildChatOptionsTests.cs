@@ -21,8 +21,7 @@ public class BuildChatOptionsTests
         var model = new AiProviderModel
         {
             ModelId = "gpt-4o",
-            IsTemperatureConfigurable = true,
-            IsReasoning = false
+                        IsReasoning = false
         };
 
         var result = OpenAIAgentFactory.BuildChatOptions(model);
@@ -35,8 +34,7 @@ public class BuildChatOptionsTests
         var model = new AiProviderModel
         {
             ModelId = "gpt-4o",
-            IsTemperatureConfigurable = true,
-            DefaultTemperature = 0.7f
+                        DefaultTemperature = 0.7f
         };
 
         var result = OpenAIAgentFactory.BuildChatOptions(model);
@@ -51,7 +49,7 @@ public class BuildChatOptionsTests
         var model = new AiProviderModel
         {
             ModelId = "o1",
-            IsTemperatureConfigurable = false,
+            IsReasoning = true,
             DefaultTemperature = 0.5f
         };
 
@@ -110,12 +108,30 @@ public class BuildChatOptionsTests
     }
 
     [Fact]
-    public void AllDefaultsSet_ReturnsFullOptions()
+    public void StandardModel_WithTempAndTokens_ReturnsBoth()
+    {
+        var model = new AiProviderModel
+        {
+            ModelId = "gpt-4o",
+            IsReasoning = false,
+            DefaultTemperature = 0.3f,
+            DefaultMaxTokens = 16384
+        };
+
+        var result = OpenAIAgentFactory.BuildChatOptions(model);
+
+        result.Should().NotBeNull();
+        result!.Temperature.Should().BeApproximately(0.3f, 0.01f);
+        result.MaxOutputTokens.Should().Be(16384);
+        result.Reasoning.Should().BeNull();
+    }
+
+    [Fact]
+    public void ReasoningModel_WithTokensAndEffort_SkipsTemperature()
     {
         var model = new AiProviderModel
         {
             ModelId = "o1",
-            IsTemperatureConfigurable = true,
             IsReasoning = true,
             DefaultTemperature = 0.3f,
             DefaultMaxTokens = 16384,
@@ -125,10 +141,62 @@ public class BuildChatOptionsTests
         var result = OpenAIAgentFactory.BuildChatOptions(model);
 
         result.Should().NotBeNull();
-        result!.Temperature.Should().BeApproximately(0.3f, 0.01f);
+        result!.Temperature.Should().BeNull();
         result.MaxOutputTokens.Should().Be(16384);
         result.Reasoning.Should().NotBeNull();
         result.Reasoning!.Effort.Should().Be(ReasoningEffort.Low);
+    }
+
+    // ── WrapWithRoleOverrides ──
+
+    [Fact]
+    public void WrapWithRoleOverrides_AllNull_ReturnsOriginalClient()
+    {
+        var client = NSubstitute.Substitute.For<IChatClient>();
+
+        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, null, null, null);
+
+        result.Should().BeSameAs(client);
+    }
+
+    [Fact]
+    public void WrapWithRoleOverrides_EmptyEffort_ReturnsOriginalClient()
+    {
+        var client = NSubstitute.Substitute.For<IChatClient>();
+
+        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, null, null, "");
+
+        result.Should().BeSameAs(client);
+    }
+
+    [Fact]
+    public void WrapWithRoleOverrides_WithTemperature_WrapsClient()
+    {
+        var client = NSubstitute.Substitute.For<IChatClient>();
+
+        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, 0.9f, null, null);
+
+        result.Should().NotBeSameAs(client);
+    }
+
+    [Fact]
+    public void WrapWithRoleOverrides_WithMaxTokens_WrapsClient()
+    {
+        var client = NSubstitute.Substitute.For<IChatClient>();
+
+        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, null, 8192, null);
+
+        result.Should().NotBeSameAs(client);
+    }
+
+    [Fact]
+    public void WrapWithRoleOverrides_WithReasoningEffort_WrapsClient()
+    {
+        var client = NSubstitute.Substitute.For<IChatClient>();
+
+        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, null, null, "high");
+
+        result.Should().NotBeSameAs(client);
     }
 
     // ── ParseReasoningEffort ──

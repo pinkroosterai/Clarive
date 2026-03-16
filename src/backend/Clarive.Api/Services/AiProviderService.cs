@@ -108,8 +108,8 @@ public class AiProviderService(
             var response = await modelClient.GetModelsAsync(cts.Token);
 
             var models = response.Value
-                .Select(m => m.Id)
-                .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+                .Select(m => new FetchedModelItem(m.Id, ReasoningModelDetector.IsReasoningModel(m.Id)))
+                .OrderBy(m => m.ModelId, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             return new FetchedModelsResponse(models);
@@ -155,7 +155,6 @@ public class AiProviderService(
             DisplayName = request.DisplayName,
             IsReasoning = request.IsReasoning,
             MaxContextSize = request.MaxContextSize,
-            IsTemperatureConfigurable = request.IsTemperatureConfigurable,
             DefaultTemperature = request.DefaultTemperature,
             DefaultMaxTokens = request.DefaultMaxTokens,
             DefaultReasoningEffort = request.DefaultReasoningEffort,
@@ -180,7 +179,6 @@ public class AiProviderService(
         if (request.DisplayName is not null) model.DisplayName = request.DisplayName;
         if (request.IsReasoning.HasValue) model.IsReasoning = request.IsReasoning.Value;
         if (request.MaxContextSize.HasValue) model.MaxContextSize = request.MaxContextSize.Value;
-        if (request.IsTemperatureConfigurable.HasValue) model.IsTemperatureConfigurable = request.IsTemperatureConfigurable.Value;
         if (request.IsActive.HasValue) model.IsActive = request.IsActive.Value;
         if (request.SortOrder.HasValue) model.SortOrder = request.SortOrder.Value;
         if (request.DefaultTemperature.HasValue) model.DefaultTemperature = request.DefaultTemperature.Value;
@@ -208,7 +206,7 @@ public class AiProviderService(
 
     private static AiProviderModelResponse ToModelResponse(AiProviderModel m) => new(
         m.Id, m.ModelId, m.DisplayName, m.IsReasoning,
-        m.MaxContextSize, m.IsTemperatureConfigurable,
+        m.MaxContextSize,
         m.DefaultTemperature, m.DefaultMaxTokens, m.DefaultReasoningEffort,
         m.IsActive, m.SortOrder
     );

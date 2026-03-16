@@ -8,7 +8,7 @@ public class AiProviderModel
     public string? DisplayName { get; set; }
     public bool IsReasoning { get; set; }
     public int MaxContextSize { get; set; } = 128000;
-    public bool IsTemperatureConfigurable { get; set; } = true;
+
     public float? DefaultTemperature { get; set; }
     public int? DefaultMaxTokens { get; set; }
     public string? DefaultReasoningEffort { get; set; }

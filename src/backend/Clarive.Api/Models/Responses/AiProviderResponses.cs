@@ -18,7 +18,6 @@ public record AiProviderModelResponse(
     string? DisplayName,
     bool IsReasoning,
     int MaxContextSize,
-    bool IsTemperatureConfigurable,
     float? DefaultTemperature,
     int? DefaultMaxTokens,
     string? DefaultReasoningEffort,
@@ -26,7 +25,9 @@ public record AiProviderModelResponse(
     int SortOrder
 );
 
-public record FetchedModelsResponse(List<string> Models);
+public record FetchedModelItem(string ModelId, bool IsReasoning);
+
+public record FetchedModelsResponse(List<FetchedModelItem> Models);
 
 public record EnrichedModelResponse(
     string ModelId,
@@ -35,7 +36,6 @@ public record EnrichedModelResponse(
     string ProviderName,
     bool IsReasoning,
     int MaxContextSize,
-    bool IsTemperatureConfigurable,
     float? DefaultTemperature,
     int? DefaultMaxTokens,
     string? DefaultReasoningEffort

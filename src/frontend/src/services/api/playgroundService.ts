@@ -89,7 +89,6 @@ export interface EnrichedModel {
   providerName: string;
   isReasoning: boolean;
   maxContextSize: number;
-  isTemperatureConfigurable: boolean;
   defaultTemperature: number | null;
   defaultMaxTokens: number | null;
   defaultReasoningEffort: string | null;

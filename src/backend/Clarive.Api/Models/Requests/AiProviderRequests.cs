@@ -28,7 +28,6 @@ public record AddAiProviderModelRequest(
     string? DisplayName = null,
     bool IsReasoning = false,
     int MaxContextSize = 128000,
-    bool IsTemperatureConfigurable = true,
     [property: Range(0.0, 2.0)]
     float? DefaultTemperature = null,
     [property: Range(1, 32000)]
@@ -42,7 +41,6 @@ public record UpdateAiProviderModelRequest(
     string? DisplayName = null,
     bool? IsReasoning = null,
     int? MaxContextSize = null,
-    bool? IsTemperatureConfigurable = null,
     bool? IsActive = null,
     int? SortOrder = null,
     [property: Range(0.0, 2.0)]

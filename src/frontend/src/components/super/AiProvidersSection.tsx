@@ -12,7 +12,6 @@ import {
   Pencil,
   X,
   Brain,
-  Thermometer,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -51,6 +50,7 @@ import {
   deleteModel,
   type AiProviderResponse,
   type AiProviderModelResponse,
+  type FetchedModelItem,
 } from '@/services/api/aiProviderService';
 
 export default function AiProvidersSection() {
@@ -119,8 +119,20 @@ export default function AiProvidersSection() {
   });
 
   const addModelMutation = useMutation({
-    mutationFn: ({ providerId, modelId }: { providerId: string; modelId: string }) =>
-      addModel(providerId, { modelId }),
+    mutationFn: ({
+      providerId,
+      modelId,
+      isReasoning,
+    }: {
+      providerId: string;
+      modelId: string;
+      isReasoning?: boolean;
+    }) =>
+      addModel(providerId, {
+        modelId,
+        isReasoning,
+        defaultReasoningEffort: isReasoning ? 'medium' : undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['super', 'ai-providers'] });
     },
@@ -230,8 +242,8 @@ export default function AiProvidersSection() {
               onDelete={() => deleteMutation.mutate(provider.id)}
               onValidate={() => validateMutation.mutate(provider.id)}
               onFetchModels={() => handleFetchAndShow(provider.id)}
-              onAddModel={(modelId) =>
-                addModelMutation.mutate({ providerId: provider.id, modelId })
+              onAddModel={(modelId, isReasoning) =>
+                addModelMutation.mutate({ providerId: provider.id, modelId, isReasoning })
               }
               onUpdateModel={(modelId, data) =>
                 updateModelMutation.mutate({ providerId: provider.id, modelId, data })
@@ -320,13 +332,13 @@ interface ProviderCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onValidate: () => void;
-  onFetchModels: () => Promise<string[]>;
-  onAddModel: (modelId: string) => void;
+  onFetchModels: () => Promise<FetchedModelItem[]>;
+  onAddModel: (modelId: string, isReasoning?: boolean) => void;
   onUpdateModel: (modelId: string, data: Record<string, unknown>) => void;
   onDeleteModel: (modelId: string) => void;
   isValidating: boolean;
   isFetchingModels: boolean;
-  fetchedModels: string[] | null;
+  fetchedModels: FetchedModelItem[] | null;
 }
 
 function ProviderCard({
@@ -430,22 +442,37 @@ function ProviderCardExpanded({
   fetchedModels,
 }: {
   provider: AiProviderResponse;
-  onFetchModels: () => Promise<string[]>;
-  onAddModel: (modelId: string) => void;
+  onFetchModels: () => Promise<FetchedModelItem[]>;
+  onAddModel: (modelId: string, isReasoning?: boolean) => void;
   onUpdateModel: (modelId: string, data: Record<string, unknown>) => void;
   onDeleteModel: (modelId: string) => void;
   isFetchingModels: boolean;
-  fetchedModels: string[] | null;
+  fetchedModels: FetchedModelItem[] | null;
 }) {
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [typeOverrides, setTypeOverrides] = useState<Map<string, boolean>>(new Map());
 
   const availableModels = useMemo(() => {
     if (!fetchedModels) return [];
-    return fetchedModels.filter((m) => !provider.models.some((pm) => pm.modelId === m));
-  }, [fetchedModels, provider.models]);
+    return fetchedModels
+      .filter((m) => !provider.models.some((pm) => pm.modelId === m.modelId))
+      .map((m) => ({
+        ...m,
+        isReasoning: typeOverrides.has(m.modelId) ? typeOverrides.get(m.modelId)! : m.isReasoning,
+      }));
+  }, [fetchedModels, provider.models, typeOverrides]);
+
+  const handleToggleType = (modelId: string, currentIsReasoning: boolean) => {
+    setTypeOverrides((prev) => {
+      const next = new Map(prev);
+      next.set(modelId, !currentIsReasoning);
+      return next;
+    });
+  };
 
   const handleAddModel = (modelId: string) => {
-    onAddModel(modelId);
+    const model = availableModels.find((m) => m.modelId === modelId);
+    onAddModel(modelId, model?.isReasoning);
     // Keep popover open for multi-add convenience
   };
 
@@ -488,15 +515,31 @@ function ProviderCardExpanded({
                 <CommandList>
                   <CommandEmpty>No matching models.</CommandEmpty>
                   <CommandGroup>
-                    {availableModels.map((modelId) => (
+                    {availableModels.map((m) => (
                       <CommandItem
-                        key={modelId}
-                        value={modelId}
-                        onSelect={() => handleAddModel(modelId)}
+                        key={m.modelId}
+                        value={m.modelId}
+                        onSelect={() => handleAddModel(m.modelId)}
                         className="text-xs font-mono"
                       >
                         <Plus className="mr-2 size-3.5 text-foreground-muted" />
-                        {modelId}
+                        <span className="flex-1">{m.modelId}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleType(m.modelId, m.isReasoning);
+                          }}
+                          className="ml-2 shrink-0"
+                          title="Click to toggle model type"
+                        >
+                          <Badge
+                            variant={m.isReasoning ? 'default' : 'outline'}
+                            className="text-[10px] px-1.5 py-0 cursor-pointer"
+                          >
+                            {m.isReasoning ? '🧠 Reasoning' : 'Standard'}
+                          </Badge>
+                        </button>
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -532,21 +575,20 @@ function ProviderCardExpanded({
                 <tr className="border-b border-border-subtle">
                   <th className="text-left p-2 font-medium">Model ID</th>
                   <th className="text-left p-2 font-medium">Display Name</th>
-                  <th className="text-center p-2 font-medium" title="Reasoning Model">
+                  <th className="text-center p-2 font-medium" title="Reasoning model toggle">
                     <Brain className="size-3.5 mx-auto" />
                   </th>
-                  <th className="text-center p-2 font-medium">Context</th>
-                  <th className="text-center p-2 font-medium" title="Temperature Configurable">
-                    <Thermometer className="size-3.5 mx-auto" />
+                  <th className="text-center p-2 font-medium" title="Max context window size (tokens)">
+                    Context Size
                   </th>
-                  <th className="text-center p-2 font-medium" title="Default Temperature">
-                    Temp
+                  <th className="text-center p-2 font-medium" title="Default temperature for this model (0-2)">
+                    Default Temp
                   </th>
-                  <th className="text-center p-2 font-medium" title="Default Max Tokens">
-                    Tokens
+                  <th className="text-center p-2 font-medium" title="Default max output tokens for this model">
+                    Default Max Tokens
                   </th>
-                  <th className="text-center p-2 font-medium" title="Default Reasoning Effort">
-                    Effort
+                  <th className="text-center p-2 font-medium" title="Default reasoning effort for reasoning models">
+                    Default Effort
                   </th>
                   <th className="text-center p-2 font-medium w-10"></th>
                 </tr>
@@ -679,14 +721,7 @@ const ModelRow = React.memo(function ModelRow({
         />
       </td>
       <td className="p-2 text-center">
-        <Switch
-          checked={model.isTemperatureConfigurable}
-          onCheckedChange={(checked) => onUpdate(model.id, { isTemperatureConfigurable: checked })}
-          className="scale-75"
-        />
-      </td>
-      <td className="p-2 text-center">
-        {model.isTemperatureConfigurable ? (
+        {!model.isReasoning ? (
           <Input
             type="number"
             value={temperature.localValue}

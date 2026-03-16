@@ -6,7 +6,6 @@ export interface AiProviderModelResponse {
   displayName: string | null;
   isReasoning: boolean;
   maxContextSize: number;
-  isTemperatureConfigurable: boolean;
   defaultTemperature: number | null;
   defaultMaxTokens: number | null;
   defaultReasoningEffort: string | null;
@@ -45,7 +44,6 @@ export interface AddModelRequest {
   displayName?: string;
   isReasoning?: boolean;
   maxContextSize?: number;
-  isTemperatureConfigurable?: boolean;
   defaultTemperature?: number | null;
   defaultMaxTokens?: number | null;
   defaultReasoningEffort?: string | null;
@@ -55,7 +53,6 @@ export interface UpdateModelRequest {
   displayName?: string;
   isReasoning?: boolean;
   maxContextSize?: number;
-  isTemperatureConfigurable?: boolean;
   isActive?: boolean;
   sortOrder?: number;
   defaultTemperature?: number | null;
@@ -84,8 +81,13 @@ export async function deleteProvider(id: string): Promise<void> {
   await api.delete(`${BASE}/${id}`);
 }
 
-export async function fetchModels(id: string): Promise<{ models: string[] }> {
-  return api.post<{ models: string[] }>(`${BASE}/${id}/fetch-models`, {});
+export interface FetchedModelItem {
+  modelId: string;
+  isReasoning: boolean;
+}
+
+export async function fetchModels(id: string): Promise<{ models: FetchedModelItem[] }> {
+  return api.post<{ models: FetchedModelItem[] }>(`${BASE}/${id}/fetch-models`, {});
 }
 
 export async function validateProvider(id: string): Promise<{ valid: boolean }> {

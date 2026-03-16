@@ -44,7 +44,7 @@ public class ModelResolutionService(
                 x.Model.ModelId.Equals(model, StringComparison.OrdinalIgnoreCase));
 
         IChatClient chatClient;
-        var isTemperatureConfigurable = providerMatch?.Model.IsTemperatureConfigurable ?? true;
+        var isTemperatureConfigurable = !(providerMatch?.Model.IsReasoning ?? false);
 
         if (providerMatch is not null && encryption.IsAvailable)
         {
@@ -90,7 +90,7 @@ public class ModelResolutionService(
             if (legacyResult.IsError) return legacyResult.Errors;
 
             var legacyModels = legacyResult.Value.Select(m => new EnrichedModelResponse(
-                m, null, Guid.Empty, "Default", false, 128000, true,
+                m, null, Guid.Empty, "Default", false, 128000,
                 null, null, null
             )).ToList();
 
@@ -112,7 +112,6 @@ public class ModelResolutionService(
                     p.Name,
                     m.IsReasoning,
                     m.MaxContextSize,
-                    m.IsTemperatureConfigurable,
                     m.DefaultTemperature,
                     m.DefaultMaxTokens,
                     m.DefaultReasoningEffort

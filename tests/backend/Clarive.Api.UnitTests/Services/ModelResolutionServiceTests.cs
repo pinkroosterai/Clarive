@@ -56,7 +56,6 @@ public class ModelResolutionServiceTests : IDisposable
                 IsActive = m.isActive,
                 IsReasoning = false,
                 MaxContextSize = 128000,
-                IsTemperatureConfigurable = true
             }).ToList()
         };
         return provider;

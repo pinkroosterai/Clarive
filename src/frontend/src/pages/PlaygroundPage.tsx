@@ -398,8 +398,8 @@ const PlaygroundPage = () => {
                 )}
               </div>
 
-              {/* Temperature (hidden for non-configurable models) */}
-              {selectedModel?.isTemperatureConfigurable !== false && (
+              {/* Temperature (hidden for reasoning models) */}
+              {!selectedModel?.isReasoning && (
                 <div className="flex items-center gap-2">
                   <Label className="text-xs text-foreground-muted shrink-0">Temp</Label>
                   <Slider
