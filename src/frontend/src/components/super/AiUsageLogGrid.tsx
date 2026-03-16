@@ -189,7 +189,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         headerName: 'User',
         sortable: false,
         width: 180,
-        filter: 'agTextColumnFilter',
         valueFormatter: (p) => p.value ?? '—',
       },
       {
@@ -197,7 +196,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         headerName: 'Tenant',
         sortable: false,
         width: 140,
-        filter: 'agTextColumnFilter',
         valueFormatter: (p) => p.value ?? '—',
       },
       {
@@ -218,11 +216,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         sortable: true,
         width: 110,
         type: 'rightAligned',
-        filter: 'agNumberColumnFilter',
-        filterParams: {
-          filterOptions: ['inRange', 'greaterThan', 'lessThan', 'equals'],
-          defaultOption: 'inRange',
-        },
         valueFormatter: (p) => formatNumber(p.value),
       },
       {
@@ -231,11 +224,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         sortable: true,
         width: 110,
         type: 'rightAligned',
-        filter: 'agNumberColumnFilter',
-        filterParams: {
-          filterOptions: ['inRange', 'greaterThan', 'lessThan', 'equals'],
-          defaultOption: 'inRange',
-        },
         valueFormatter: (p) => formatNumber(p.value),
       },
       {
@@ -269,11 +257,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         sortable: true,
         width: 100,
         type: 'rightAligned',
-        filter: 'agNumberColumnFilter',
-        filterParams: {
-          filterOptions: ['inRange', 'greaterThan', 'lessThan', 'equals'],
-          defaultOption: 'inRange',
-        },
         valueFormatter: (p) => formatDuration(p.value),
       },
     ],
