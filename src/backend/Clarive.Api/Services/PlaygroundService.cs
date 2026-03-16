@@ -105,7 +105,16 @@ public class PlaygroundService(
             IChatClient chatClient;
             if (providerMatch is not null && encryption.IsAvailable)
             {
-                var apiKey = encryption.Decrypt(providerMatch.Provider.ApiKeyEncrypted);
+                string apiKey;
+                try
+                {
+                    apiKey = encryption.Decrypt(providerMatch.Provider.ApiKeyEncrypted);
+                }
+                catch (Exception)
+                {
+                    return Error.Failure("DECRYPTION_FAILED",
+                        "Failed to decrypt AI provider credentials. Contact your admin.");
+                }
                 chatClient = agentFactory.CreateChatClientForProvider(
                     apiKey, providerMatch.Provider.EndpointUrl, model);
             }

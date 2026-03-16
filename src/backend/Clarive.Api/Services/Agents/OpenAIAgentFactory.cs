@@ -249,7 +249,15 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
         if (match is null || !_encryption.IsAvailable) return null;
 
-        var apiKey = _encryption.Decrypt(match.Provider.ApiKeyEncrypted);
+        string apiKey;
+        try
+        {
+            apiKey = _encryption.Decrypt(match.Provider.ApiKeyEncrypted);
+        }
+        catch (Exception)
+        {
+            return null; // Treat corrupt credentials as unconfigured
+        }
         return new ResolvedProvider(apiKey, match.Provider.EndpointUrl, match.Provider.Name, match.Model);
     }
 
