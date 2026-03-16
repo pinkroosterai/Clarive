@@ -7,7 +7,7 @@ public record TestEntryRequest(
     string? Model = null,
     [property: Range(0.0, 2.0)]
     float Temperature = 1.0f,
-    [property: Range(1, 32000)]
+    [property: Range(1, int.MaxValue)]
     int MaxTokens = 4096,
     Dictionary<string, string>? TemplateFields = null,
     [property: StringLength(20)]

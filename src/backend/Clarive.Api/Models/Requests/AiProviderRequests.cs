@@ -27,26 +27,37 @@ public record AddAiProviderModelRequest(
     [property: StringLength(100)]
     string? DisplayName = null,
     bool IsReasoning = false,
-    int MaxContextSize = 128000,
+    long? MaxInputTokens = null,
+    long? MaxOutputTokens = null,
     [property: Range(0.0, 2.0)]
     float? DefaultTemperature = null,
-    [property: Range(1, 32000)]
+    [property: Range(1, int.MaxValue)]
     int? DefaultMaxTokens = null,
     [property: StringLength(20)]
-    string? DefaultReasoningEffort = null
+    string? DefaultReasoningEffort = null,
+    [property: Range(0, 1000)]
+    decimal? InputCostPerMillion = null,
+    [property: Range(0, 1000)]
+    decimal? OutputCostPerMillion = null
 );
 
 public record UpdateAiProviderModelRequest(
     [property: StringLength(100)]
     string? DisplayName = null,
     bool? IsReasoning = null,
-    int? MaxContextSize = null,
+    long? MaxInputTokens = null,
+    long? MaxOutputTokens = null,
     bool? IsActive = null,
     int? SortOrder = null,
     [property: Range(0.0, 2.0)]
     float? DefaultTemperature = null,
-    [property: Range(1, 32000)]
+    [property: Range(1, int.MaxValue)]
     int? DefaultMaxTokens = null,
     [property: StringLength(20)]
-    string? DefaultReasoningEffort = null
+    string? DefaultReasoningEffort = null,
+    [property: Range(0, 1000)]
+    decimal? InputCostPerMillion = null,
+    [property: Range(0, 1000)]
+    decimal? OutputCostPerMillion = null,
+    bool? HasManualCostOverride = null
 );

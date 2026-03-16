@@ -286,4 +286,107 @@ public class AiProviderTests : IntegrationTestBase
         status.Should().Be(HttpStatusCode.Created);
         json.GetProperty("isReasoning").GetBoolean().Should().BeFalse();
     }
+
+    // ── LiteLLM cost fields and override tests ──
+
+    [Fact]
+    public async Task AddModel_WithExplicitCosts_PreservesCosts()
+    {
+        var providerId = await CreateTestProvider();
+
+        var (status, json) = await PostModel(providerId, new
+        {
+            modelId = "cost-preserve-test",
+            inputCostPerMillion = 99.99m,
+            outputCostPerMillion = 199.99m,
+            maxInputTokens = 50000L
+        });
+
+        status.Should().Be(HttpStatusCode.Created);
+        json.GetProperty("inputCostPerMillion").GetDecimal().Should().Be(99.99m);
+        json.GetProperty("outputCostPerMillion").GetDecimal().Should().Be(199.99m);
+        json.GetProperty("maxInputTokens").GetInt64().Should().Be(50000);
+    }
+
+    [Fact]
+    public async Task AddModel_ResponseIncludesSplitContextFields()
+    {
+        var providerId = await CreateTestProvider();
+
+        var (status, json) = await PostModel(providerId, new
+        {
+            modelId = "context-split-test",
+            maxInputTokens = 200000,
+            maxOutputTokens = 8192
+        });
+
+        status.Should().Be(HttpStatusCode.Created);
+        json.GetProperty("maxInputTokens").GetInt32().Should().Be(200000);
+        json.GetProperty("maxOutputTokens").GetInt32().Should().Be(8192);
+        json.TryGetProperty("maxContextSize", out _).Should().BeFalse(
+            "maxContextSize was replaced by maxInputTokens + maxOutputTokens");
+    }
+
+    // ── HasManualCostOverride tests ──
+
+    [Fact]
+    public async Task AddModel_DefaultsToNoManualOverride()
+    {
+        var providerId = await CreateTestProvider();
+
+        var (status, json) = await PostModel(providerId, new
+        {
+            modelId = "override-default-test"
+        });
+
+        status.Should().Be(HttpStatusCode.Created);
+        json.GetProperty("hasManualCostOverride").GetBoolean().Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task PatchModel_CostField_AutoEnablesOverride()
+    {
+        var providerId = await CreateTestProvider();
+
+        var (addStatus, addJson) = await PostModel(providerId, new
+        {
+            modelId = "override-auto-test"
+        });
+        addStatus.Should().Be(HttpStatusCode.Created);
+        addJson.GetProperty("hasManualCostOverride").GetBoolean().Should().BeFalse();
+        var modelId = addJson.GetProperty("id").GetString()!;
+
+        // PATCH with a cost field should auto-enable override
+        var (patchStatus, patchJson) = await PatchModel(providerId, modelId, new
+        {
+            inputCostPerMillion = 5.0m
+        });
+
+        patchStatus.Should().Be(HttpStatusCode.OK);
+        patchJson.GetProperty("hasManualCostOverride").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task PatchModel_ExplicitlyDisableOverride()
+    {
+        var providerId = await CreateTestProvider();
+
+        var (addStatus, addJson) = await PostModel(providerId, new
+        {
+            modelId = "override-disable-test"
+        });
+        var modelId = addJson.GetProperty("id").GetString()!;
+
+        // Enable override by setting a cost
+        await PatchModel(providerId, modelId, new { inputCostPerMillion = 5.0m });
+
+        // Explicitly disable override
+        var (status, json) = await PatchModel(providerId, modelId, new
+        {
+            hasManualCostOverride = false
+        });
+
+        status.Should().Be(HttpStatusCode.OK);
+        json.GetProperty("hasManualCostOverride").GetBoolean().Should().BeFalse();
+    }
 }

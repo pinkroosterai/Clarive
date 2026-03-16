@@ -464,7 +464,6 @@ const PlaygroundPage = () => {
                   }
                   className="w-20 h-8 text-xs"
                   min={1}
-                  max={32000}
                 />
               </div>
             </div>

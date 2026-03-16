@@ -192,6 +192,7 @@ builder.Services.AddScoped<IFavoriteRepository, EfFavoriteRepository>();
 builder.Services.AddScoped<IPlaygroundRunRepository, EfPlaygroundRunRepository>();
 builder.Services.AddScoped<IAiProviderRepository, EfAiProviderRepository>();
 builder.Services.AddScoped<IServiceConfigRepository, EfServiceConfigRepository>();
+builder.Services.AddScoped<IAiUsageLogRepository, EfAiUsageLogRepository>();
 
 // ── Services ──
 builder.Services.AddSingleton<MaintenanceModeService>();
@@ -214,6 +215,7 @@ builder.Services.AddScoped<IPlaygroundRunService, PlaygroundRunService>();
 builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
 builder.Services.AddScoped<IPlaygroundService, PlaygroundService>();
 builder.Services.AddScoped<AiProviderService>();
+builder.Services.AddScoped<IAiUsageLogger, AiUsageLogger>();
 builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));
 builder.Services.AddScoped<IAvatarService, AvatarService>();
 // ── Email (all providers registered, resolved dynamically per-request) ──
@@ -264,12 +266,15 @@ builder.Services.AddSingleton<IAgentSessionPool, AgentSessionPool>();
 builder.Services.AddScoped<IPromptOrchestrator, PromptOrchestrator>();
 builder.Services.AddScoped<IMcpImportService, McpImportService>();
 builder.Services.AddSingleton<ITavilyClientService, TavilyClientService>();
+builder.Services.AddSingleton<ILiteLlmRegistryCache, LiteLlmRegistryCache>();
 
 // ── Background Services ──
 builder.Services.AddHostedService<Clarive.Api.Services.Background.AccountPurgeBackgroundService>();
 builder.Services.AddHostedService<Clarive.Api.Services.Background.TokenCleanupBackgroundService>();
 builder.Services.AddHostedService<Clarive.Api.Services.Background.AiSessionCleanupService>();
 builder.Services.AddHostedService<Clarive.Api.Services.Background.MaintenanceModeSyncService>();
+builder.Services.AddHostedService<Clarive.Api.Services.Background.AiUsageCleanupService>();
+builder.Services.AddHostedService<Clarive.Api.Services.Background.LiteLlmSyncService>();
 
 // ── Rate Limiting ──
 builder.Services.AddRateLimiter(options =>
@@ -448,6 +453,7 @@ app.MapSuperEndpoints();
 app.MapConfigEndpoints();
 app.MapPlaygroundEndpoints();
 app.MapAiProviderEndpoints();
+app.MapAiUsageEndpoints();
 
 app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode, IAgentFactory agentFactory, ITavilyClientService tavilyClient) =>
     Results.Ok(new { maintenance = maintenanceMode.IsEnabled, aiConfigured = agentFactory.IsConfigured, webSearchAvailable = tavilyClient.IsConfigured }))

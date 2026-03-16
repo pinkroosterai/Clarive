@@ -714,7 +714,6 @@ function ModelOverrideFields({
             placeholder={modelTokensDefault != null ? `Model default: ${modelTokensDefault}` : 'Not set'}
             className="max-w-[200px]"
             min={1}
-            max={32000}
           />
         </SettingField>
       )}

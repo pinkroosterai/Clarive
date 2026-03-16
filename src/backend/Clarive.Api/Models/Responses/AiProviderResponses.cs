@@ -17,10 +17,14 @@ public record AiProviderModelResponse(
     string ModelId,
     string? DisplayName,
     bool IsReasoning,
-    int MaxContextSize,
+    long? MaxInputTokens,
+    long? MaxOutputTokens,
     float? DefaultTemperature,
     int? DefaultMaxTokens,
     string? DefaultReasoningEffort,
+    decimal? InputCostPerMillion,
+    decimal? OutputCostPerMillion,
+    bool HasManualCostOverride,
     bool IsActive,
     int SortOrder
 );
@@ -35,7 +39,8 @@ public record EnrichedModelResponse(
     Guid ProviderId,
     string ProviderName,
     bool IsReasoning,
-    int MaxContextSize,
+    long? MaxInputTokens,
+    long? MaxOutputTokens,
     float? DefaultTemperature,
     int? DefaultMaxTokens,
     string? DefaultReasoningEffort

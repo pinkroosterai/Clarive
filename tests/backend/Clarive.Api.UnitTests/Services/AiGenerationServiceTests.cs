@@ -8,6 +8,7 @@ using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Clarive.Api.Services.Interfaces;
 using FluentAssertions;
+using Microsoft.Extensions.AI;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
@@ -18,9 +19,12 @@ public class AiGenerationServiceTests
     private readonly IAiSessionRepository _sessionRepo = Substitute.For<IAiSessionRepository>();
     private readonly IEntryRepository _entryRepo = Substitute.For<IEntryRepository>();
     private readonly IToolRepository _toolRepo = Substitute.For<IToolRepository>();
+    private readonly IAiUsageLogger _usageLogger = Substitute.For<IAiUsageLogger>();
+    private readonly IAgentFactory _agentFactory = Substitute.For<IAgentFactory>();
     private readonly AiGenerationService _sut;
 
     private static readonly Guid TenantId = Guid.NewGuid();
+    private static readonly Guid UserId = Guid.NewGuid();
     private static readonly Guid EntryId = Guid.NewGuid();
 
     public AiGenerationServiceTests()
@@ -28,7 +32,12 @@ public class AiGenerationServiceTests
         _sessionRepo.CreateAsync(Arg.Any<AiSession>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<AiSession>());
 
-        _sut = new AiGenerationService(_orchestrator, _sessionRepo, _entryRepo, _toolRepo);
+        _agentFactory.DefaultModelId.Returns("gpt-4o");
+        _agentFactory.DefaultProviderName.Returns("OpenAI");
+        _agentFactory.PremiumModelId.Returns("gpt-4o");
+        _agentFactory.PremiumProviderName.Returns("OpenAI");
+
+        _sut = new AiGenerationService(_orchestrator, _sessionRepo, _entryRepo, _toolRepo, _usageLogger, _agentFactory);
     }
 
     private static GenerateOrchestratorResult MakeOrchestratorResult() => new(
@@ -70,7 +79,7 @@ public class AiGenerationServiceTests
                 Arg.Any<Func<ProgressEvent, Task>?>())
             .Returns(MakeOrchestratorResult());
 
-        var result = await _sut.GenerateAsync(TenantId, request, default);
+        var result = await _sut.GenerateAsync(TenantId, UserId, request, default);
 
         result.SessionId.Should().NotBeEmpty();
         result.Draft.Should().NotBeNull();
@@ -102,7 +111,7 @@ public class AiGenerationServiceTests
                 Arg.Any<Func<ProgressEvent, Task>?>())
             .Returns(MakeOrchestratorResult());
 
-        await _sut.GenerateAsync(TenantId, request, default);
+        await _sut.GenerateAsync(TenantId, UserId, request, default);
 
         await _toolRepo.Received(1).GetByIdsAsync(TenantId, Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>());
         await _orchestrator.Received(1).GenerateAsync(
@@ -118,7 +127,7 @@ public class AiGenerationServiceTests
         _sessionRepo.GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((AiSession?)null);
 
-        var result = await _sut.RefineAsync(TenantId,
+        var result = await _sut.RefineAsync(TenantId, UserId,
             new RefinePromptRequest(Guid.NewGuid(), null, null), default);
 
         result.IsError.Should().BeTrue();
@@ -140,7 +149,7 @@ public class AiGenerationServiceTests
                 ScoreHistory = []
             });
 
-        var result = await _sut.RefineAsync(TenantId,
+        var result = await _sut.RefineAsync(TenantId, UserId,
             new RefinePromptRequest(Guid.NewGuid(), null, null), default);
 
         result.IsError.Should().BeTrue();
@@ -155,7 +164,7 @@ public class AiGenerationServiceTests
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await _sut.EnhanceAsync(TenantId, EntryId, default);
+        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NOT_FOUND");
@@ -167,7 +176,7 @@ public class AiGenerationServiceTests
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, IsTrashed = true });
 
-        var result = await _sut.EnhanceAsync(TenantId, EntryId, default);
+        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NOT_FOUND");
@@ -181,7 +190,7 @@ public class AiGenerationServiceTests
         _entryRepo.GetWorkingVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var result = await _sut.EnhanceAsync(TenantId, EntryId, default);
+        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NOT_FOUND");
@@ -195,7 +204,7 @@ public class AiGenerationServiceTests
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await _sut.GenerateSystemMessageAsync(TenantId, EntryId, default);
+        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NOT_FOUND");
@@ -213,7 +222,7 @@ public class AiGenerationServiceTests
                 Prompts = [new Prompt { Content = "Test", Order = 0 }]
             });
 
-        var result = await _sut.GenerateSystemMessageAsync(TenantId, EntryId, default);
+        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ALREADY_EXISTS");
@@ -231,9 +240,9 @@ public class AiGenerationServiceTests
                 Prompts = [new Prompt { Content = "Test prompt", Order = 0 }]
             });
         _orchestrator.GenerateSystemMessageAsync(Arg.Any<List<PromptInput>>(), Arg.Any<CancellationToken>())
-            .Returns("Generated system message");
+            .Returns(new AgentResult<string>("Generated system message"));
 
-        var result = await _sut.GenerateSystemMessageAsync(TenantId, EntryId, default);
+        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeFalse();
         result.Value.Should().Be("Generated system message");
@@ -247,7 +256,7 @@ public class AiGenerationServiceTests
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await _sut.DecomposeAsync(TenantId, EntryId, default);
+        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NOT_FOUND");
@@ -267,7 +276,7 @@ public class AiGenerationServiceTests
                 ]
             });
 
-        var result = await _sut.DecomposeAsync(TenantId, EntryId, default);
+        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ALREADY_CHAIN");
@@ -284,14 +293,14 @@ public class AiGenerationServiceTests
                 Prompts = [new Prompt { Content = "Original prompt", Order = 0, IsTemplate = false }]
             });
         _orchestrator.DecomposeAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .Returns(new List<PromptInput>
+            .Returns(new AgentResult<List<PromptInput>>(new List<PromptInput>
             {
                 new("Step 1", false),
                 new("Step 2", false),
                 new("Step 3", false)
-            });
+            }));
 
-        var result = await _sut.DecomposeAsync(TenantId, EntryId, default);
+        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeFalse();
         result.Value.Should().HaveCount(3);

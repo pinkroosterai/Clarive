@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import AiTab from '@/components/super/AiTab';
+import AiUsageDashboard from '@/components/super/AiUsageDashboard';
 import { CompactMetricStrip, type MetricItem } from '@/components/super/CompactMetricStrip';
 import { HeroStatCard } from '@/components/super/HeroStatCard';
 import SettingsTab from '@/components/super/SettingsTab';
@@ -26,12 +27,13 @@ import { getSuperStats } from '@/services/api/superService';
 
 // ── Tab configuration ──
 
-const VALID_TABS = ['overview', 'users', 'ai', 'settings'];
+const VALID_TABS = ['dashboard', 'users', 'ai', 'settings'];
 const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
 
 // Map old tab param values to new ones for backwards compatibility
 const TAB_REDIRECTS: Record<string, string> = {
-  dashboard: 'overview',
+  overview: 'dashboard',
+  usage: 'dashboard',
   'ai-providers': 'ai',
   authentication: 'settings',
   email: 'settings',
@@ -59,7 +61,7 @@ const SuperDashboardPage = () => {
       ? tabFromUrl
       : tabFromUrl && TAB_REDIRECTS[tabFromUrl]
         ? TAB_REDIRECTS[tabFromUrl]
-        : 'overview';
+        : 'dashboard';
 
   const [restartKeys, setRestartKeys] = useState<string[]>([]);
 
@@ -174,9 +176,9 @@ const SuperDashboardPage = () => {
         className="w-full"
       >
         <TabsList className="w-full h-auto justify-start bg-elevated rounded-lg p-1">
-          <TabsTrigger value="overview" className={TAB_STYLE}>
+          <TabsTrigger value="dashboard" className={TAB_STYLE}>
             <LayoutDashboard className="size-4 hidden sm:block" />
-            Overview
+            Dashboard
           </TabsTrigger>
           <TabsTrigger value="users" className={TAB_STYLE}>
             <Users className="size-4 hidden sm:block" />
@@ -192,55 +194,74 @@ const SuperDashboardPage = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab — Bento Layout */}
-        <TabsContent value="overview" className="mt-6 space-y-4">
-          {/* Hero Cards */}
-          {statsLoading ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-[140px] animate-pulse rounded-xl bg-muted" />
-              ))}
+        {/* Dashboard Tab — Platform Overview + AI Usage Analytics */}
+        <TabsContent value="dashboard" className="mt-6 space-y-8">
+          {/* Platform Overview */}
+          <section className="space-y-4">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
+                Platform Overview
+              </h3>
             </div>
-          ) : (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              <HeroStatCard
-                icon={Users}
-                label="Total Users"
-                value={stats?.totalUsers ?? 0}
-                delta={stats?.newUsers7d ?? 0}
-                index={0}
-              />
-              <HeroStatCard
-                icon={FileText}
-                label="Total Entries"
-                value={stats?.totalEntries ?? 0}
-                delta={stats?.entriesCreated7d ?? 0}
-                index={1}
-              />
-              <HeroStatCard
-                icon={Bot}
-                label="AI Sessions"
-                value={stats?.totalAiSessions ?? 0}
-                delta={stats?.aiSessions7d ?? 0}
-                index={2}
-              />
-            </div>
-          )}
+            {statsLoading ? (
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-[140px] animate-pulse rounded-xl bg-muted" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <HeroStatCard
+                  icon={Users}
+                  label="Total Users"
+                  value={stats?.totalUsers ?? 0}
+                  delta={stats?.newUsers7d ?? 0}
+                  index={0}
+                />
+                <HeroStatCard
+                  icon={FileText}
+                  label="Total Entries"
+                  value={stats?.totalEntries ?? 0}
+                  delta={stats?.entriesCreated7d ?? 0}
+                  index={1}
+                />
+                <HeroStatCard
+                  icon={Bot}
+                  label="AI Sessions"
+                  value={stats?.totalAiSessions ?? 0}
+                  delta={stats?.aiSessions7d ?? 0}
+                  index={2}
+                />
+              </div>
+            )}
 
-          {/* Compact Metric Strips */}
-          {statsLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-[56px] animate-pulse rounded-lg bg-muted" />
-              ))}
+            {statsLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-[56px] animate-pulse rounded-lg bg-muted" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <CompactMetricStrip title="Users & Auth" items={userAuthMetrics} index={0} />
+                <CompactMetricStrip title="Workspaces" items={workspaceMetrics} index={1} />
+                <CompactMetricStrip title="Content" items={contentMetrics} index={2} />
+              </div>
+            )}
+          </section>
+
+          {/* AI Usage Analytics */}
+          <section>
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
+                AI Usage Analytics
+              </h3>
+              <p className="text-xs text-foreground-muted mt-1">
+                Token consumption, cost breakdown, and usage trends across all AI operations.
+              </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <CompactMetricStrip title="Users & Auth" items={userAuthMetrics} index={0} />
-              <CompactMetricStrip title="Workspaces" items={workspaceMetrics} index={1} />
-              <CompactMetricStrip title="Content" items={contentMetrics} index={2} />
-            </div>
-          )}
+            <AiUsageDashboard />
+          </section>
         </TabsContent>
 
         {/* Users Tab */}
@@ -248,7 +269,7 @@ const SuperDashboardPage = () => {
           <UsersTable />
         </TabsContent>
 
-        {/* AI Tab (merged AI Providers + AI Config) */}
+        {/* AI Tab (AI Providers + AI Config) */}
         <TabsContent value="ai" className="mt-6">
           <AiTab
             aiSettings={settingsBySection['ai'] ?? []}

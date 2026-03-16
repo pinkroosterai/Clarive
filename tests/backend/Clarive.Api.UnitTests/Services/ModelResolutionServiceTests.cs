@@ -55,7 +55,7 @@ public class ModelResolutionServiceTests : IDisposable
                 ModelId = m.modelId,
                 IsActive = m.isActive,
                 IsReasoning = false,
-                MaxContextSize = 128000,
+                MaxInputTokens = 128000,
             }).ToList()
         };
         return provider;

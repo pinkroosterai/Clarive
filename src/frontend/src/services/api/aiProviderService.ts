@@ -5,10 +5,14 @@ export interface AiProviderModelResponse {
   modelId: string;
   displayName: string | null;
   isReasoning: boolean;
-  maxContextSize: number;
+  maxInputTokens: number | null;
+  maxOutputTokens: number | null;
   defaultTemperature: number | null;
   defaultMaxTokens: number | null;
   defaultReasoningEffort: string | null;
+  inputCostPerMillion: number | null;
+  outputCostPerMillion: number | null;
+  hasManualCostOverride: boolean;
   isActive: boolean;
   sortOrder: number;
 }
@@ -43,21 +47,28 @@ export interface AddModelRequest {
   modelId: string;
   displayName?: string;
   isReasoning?: boolean;
-  maxContextSize?: number;
+  maxInputTokens?: number | null;
+  maxOutputTokens?: number | null;
   defaultTemperature?: number | null;
   defaultMaxTokens?: number | null;
   defaultReasoningEffort?: string | null;
+  inputCostPerMillion?: number | null;
+  outputCostPerMillion?: number | null;
 }
 
 export interface UpdateModelRequest {
   displayName?: string;
   isReasoning?: boolean;
-  maxContextSize?: number;
+  maxInputTokens?: number | null;
+  maxOutputTokens?: number | null;
   isActive?: boolean;
   sortOrder?: number;
   defaultTemperature?: number | null;
   defaultMaxTokens?: number | null;
   defaultReasoningEffort?: string | null;
+  inputCostPerMillion?: number | null;
+  outputCostPerMillion?: number | null;
+  hasManualCostOverride?: boolean;
 }
 
 const BASE = '/api/super/ai-providers';

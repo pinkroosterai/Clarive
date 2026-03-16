@@ -50,7 +50,7 @@ public static class AiGenerationEndpoints
 
         if (!WantsSse(ctx))
         {
-            var result = await aiService.GenerateAsync(ctx.GetTenantId(), request, ct);
+            var result = await aiService.GenerateAsync(ctx.GetTenantId(), ctx.GetUserId(), request, ct);
             return Results.Ok(ToResponse(result));
         }
 
@@ -61,7 +61,7 @@ public static class AiGenerationEndpoints
         try
         {
             var result = await aiService.GenerateAsync(
-                ctx.GetTenantId(), request, ct,
+                ctx.GetTenantId(), ctx.GetUserId(), request, ct,
                 progress => sse.WriteProgressAsync(progress, ct));
 
             await sse.WriteDoneAsync(ToResponse(result), ct);
@@ -93,7 +93,7 @@ public static class AiGenerationEndpoints
         {
             try
             {
-                var result = await aiService.RefineAsync(ctx.GetTenantId(), request, ct);
+                var result = await aiService.RefineAsync(ctx.GetTenantId(), ctx.GetUserId(), request, ct);
 
                 if (result.IsError)
                     return result.Errors.ToHttpResult(ctx);
@@ -113,7 +113,7 @@ public static class AiGenerationEndpoints
         try
         {
             var result = await aiService.RefineAsync(
-                ctx.GetTenantId(), request, ct,
+                ctx.GetTenantId(), ctx.GetUserId(), request, ct,
                 progress => sse.WriteProgressAsync(progress, ct));
 
             if (result.IsError)
@@ -146,10 +146,11 @@ public static class AiGenerationEndpoints
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
 
         if (!WantsSse(ctx))
         {
-            var result = await aiService.EnhanceAsync(tenantId, request.EntryId, ct);
+            var result = await aiService.EnhanceAsync(tenantId, userId, request.EntryId, ct);
 
             if (result.IsError)
                 return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
@@ -164,7 +165,7 @@ public static class AiGenerationEndpoints
         try
         {
             var result = await aiService.EnhanceAsync(
-                tenantId, request.EntryId, ct,
+                tenantId, userId, request.EntryId, ct,
                 progress => sse.WriteProgressAsync(progress, ct));
 
             if (result.IsError)
@@ -197,8 +198,9 @@ public static class AiGenerationEndpoints
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
 
-        var result = await aiService.GenerateSystemMessageAsync(tenantId, request.EntryId, ct);
+        var result = await aiService.GenerateSystemMessageAsync(tenantId, userId, request.EntryId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
@@ -214,8 +216,9 @@ public static class AiGenerationEndpoints
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
 
-        var result = await aiService.DecomposeAsync(tenantId, request.EntryId, ct);
+        var result = await aiService.DecomposeAsync(tenantId, userId, request.EntryId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 

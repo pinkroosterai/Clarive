@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
@@ -17,6 +19,7 @@ public class PlaygroundService(
     IEntryRepository entryRepo,
     IModelResolutionService modelResolution,
     IPlaygroundRunService runService,
+    IAiUsageLogger usageLogger,
     IOptionsMonitor<AiSettings> aiSettings,
     ILogger<PlaygroundService> logger) : IPlaygroundService
 {
@@ -78,6 +81,7 @@ public class PlaygroundService(
         long? totalInputTokens = null;
         long? totalOutputTokens = null;
 
+        var sw = Stopwatch.StartNew();
         try
         {
             using var client = resolved.ChatClient;
@@ -174,6 +178,13 @@ public class PlaygroundService(
         };
 
         await runService.SaveRunAsync(run, ct);
+        sw.Stop();
+
+        await usageLogger.LogAsync(
+            tenantId, userId, AiActionType.PlaygroundTest,
+            model, resolved.ProviderName,
+            totalInputTokens ?? 0, totalOutputTokens ?? 0,
+            sw.ElapsedMilliseconds, entryId, ct);
 
         var fullReasoning = reasoningText.Length > 0 ? reasoningText.ToString() : null;
         return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens, fullReasoning);

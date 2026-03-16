@@ -40,6 +40,7 @@ public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PlaygroundRun> PlaygroundRuns => Set<PlaygroundRun>();
     public DbSet<AiProvider> AiProviders => Set<AiProvider>();
     public DbSet<AiProviderModel> AiProviderModels => Set<AiProviderModel>();
+    public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

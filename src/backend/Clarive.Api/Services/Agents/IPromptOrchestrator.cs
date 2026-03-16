@@ -1,6 +1,7 @@
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Services.Agents.AiExtensions;
+using Microsoft.Extensions.AI;
 
 namespace Clarive.Api.Services.Agents;
 
@@ -40,13 +41,13 @@ public interface IPromptOrchestrator
     /// <summary>
     /// Single-turn: generates a system message for existing prompts.
     /// </summary>
-    Task<string> GenerateSystemMessageAsync(
+    Task<AgentResult<string>> GenerateSystemMessageAsync(
         List<PromptInput> prompts, CancellationToken ct = default);
 
     /// <summary>
     /// Single-turn: decomposes a single prompt into a chain.
     /// </summary>
-    Task<List<PromptInput>> DecomposeAsync(
+    Task<AgentResult<List<PromptInput>>> DecomposeAsync(
         string promptContent, bool isTemplate, string? systemMessage,
         CancellationToken ct = default);
 
@@ -57,10 +58,14 @@ public record GenerateOrchestratorResult(
     string AgentSessionId,
     PromptSet Prompts,
     PromptEvaluation? Evaluation,
-    ClarificationResult? Clarification);
+    ClarificationResult? Clarification,
+    UsageDetails? Usage = null);
+
+public record AgentResult<T>(T Value, UsageDetails? Usage = null);
 
 public record EnhanceOrchestratorResult(
     string AgentSessionId,
     PromptSet Prompts,
     PromptEvaluation? Evaluation,
-    ClarificationResult? Clarification);
+    ClarificationResult? Clarification,
+    UsageDetails? Usage = null);

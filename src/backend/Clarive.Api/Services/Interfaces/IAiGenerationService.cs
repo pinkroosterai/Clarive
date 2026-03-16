@@ -13,7 +13,7 @@ public interface IAiGenerationService
     /// persists session. Throws on orchestrator failure.
     /// </summary>
     Task<AiGenerationResult> GenerateAsync(
-        Guid tenantId, GeneratePromptRequest request, CancellationToken ct = default,
+        Guid tenantId, Guid userId, GeneratePromptRequest request, CancellationToken ct = default,
         Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
@@ -22,7 +22,7 @@ public interface IAiGenerationService
     /// Returns error if the session is not found or invalid.
     /// </summary>
     Task<ErrorOr<AiGenerationResult>> RefineAsync(
-        Guid tenantId, RefinePromptRequest request, CancellationToken ct = default,
+        Guid tenantId, Guid userId, RefinePromptRequest request, CancellationToken ct = default,
         Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
@@ -30,7 +30,7 @@ public interface IAiGenerationService
     /// Returns error on validation failure. Throws on orchestrator failure.
     /// </summary>
     Task<ErrorOr<AiGenerationResult>> EnhanceAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct = default,
+        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct = default,
         Func<ProgressEvent, Task>? onProgress = null);
 
     /// <summary>
@@ -38,12 +38,12 @@ public interface IAiGenerationService
     /// Returns error on validation failure. Throws on orchestrator failure.
     /// </summary>
     Task<ErrorOr<string>> GenerateSystemMessageAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct = default);
+        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct = default);
 
     /// <summary>
     /// Validates and decomposes a single-prompt entry into a chain in a single atomic operation.
     /// Returns error on validation failure. Throws on orchestrator failure.
     /// </summary>
     Task<ErrorOr<List<PromptInput>>> DecomposeAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct = default);
+        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct = default);
 }

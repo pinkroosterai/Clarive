@@ -29,6 +29,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     private IChatClient? _premiumClient;
     private IChatClient? _defaultClient;
     private bool _isConfigured;
+    private string? _defaultModelId;
+    private string? _defaultProviderName;
+    private string? _premiumModelId;
+    private string? _premiumProviderName;
 
     public bool IsConfigured
     {
@@ -39,6 +43,11 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             finally { _lock.ExitReadLock(); }
         }
     }
+
+    public string? DefaultModelId => _defaultModelId;
+    public string? DefaultProviderName => _defaultProviderName;
+    public string? PremiumModelId => _premiumModelId;
+    public string? PremiumProviderName => _premiumProviderName;
 
     public event Action? OnReconfigured;
 
@@ -207,6 +216,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                 settings.DefaultModelMaxTokens,
                 settings.DefaultModelReasoningEffort);
             _isConfigured = true;
+            _defaultModelId = settings.DefaultModel;
+            _defaultProviderName = defaultResolved.ProviderName;
+            _premiumModelId = settings.PremiumModel;
+            _premiumProviderName = premiumResolved.ProviderName;
         }
         finally { _lock.ExitWriteLock(); }
 
@@ -229,6 +242,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             _defaultClient = null;
             _openAiClient = null;
             _isConfigured = false;
+            _defaultModelId = null;
+            _defaultProviderName = null;
+            _premiumModelId = null;
+            _premiumProviderName = null;
         }
         finally { _lock.ExitWriteLock(); }
     }

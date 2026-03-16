@@ -12,6 +12,8 @@ import {
   Pencil,
   X,
   Brain,
+  Lock,
+  LockOpen,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -578,8 +580,11 @@ function ProviderCardExpanded({
                   <th className="text-center p-2 font-medium" title="Reasoning model toggle">
                     <Brain className="size-3.5 mx-auto" />
                   </th>
-                  <th className="text-center p-2 font-medium" title="Max context window size (tokens)">
-                    Context Size
+                  <th className="text-center p-2 font-medium" title="Max input tokens">
+                    Max In
+                  </th>
+                  <th className="text-center p-2 font-medium" title="Max output tokens">
+                    Max Out
                   </th>
                   <th className="text-center p-2 font-medium" title="Default temperature for this model (0-2)">
                     Default Temp
@@ -589,6 +594,15 @@ function ProviderCardExpanded({
                   </th>
                   <th className="text-center p-2 font-medium" title="Default reasoning effort for reasoning models">
                     Default Effort
+                  </th>
+                  <th className="text-center p-2 font-medium" title="Cost per million input tokens (USD)">
+                    Input $/1M
+                  </th>
+                  <th className="text-center p-2 font-medium" title="Cost per million output tokens (USD)">
+                    Output $/1M
+                  </th>
+                  <th className="text-center p-2 font-medium w-10" title="Lock pricing to prevent auto-sync updates">
+                    <Lock className="size-3.5 mx-auto" />
                   </th>
                   <th className="text-center p-2 font-medium w-10"></th>
                 </tr>
@@ -672,12 +686,19 @@ const ModelRow = React.memo(function ModelRow({
     onUpdate,
     (v) => v || null
   );
-  const contextSize = useDebouncedUpdate(
+  const maxInputTokens = useDebouncedUpdate(
     model.id,
-    'maxContextSize',
-    model.maxContextSize,
+    'maxInputTokens',
+    model.maxInputTokens,
     onUpdate,
-    (v) => Number(v) || 128000
+    (v) => (v ? Number(v) : null)
+  );
+  const maxOutputTokens = useDebouncedUpdate(
+    model.id,
+    'maxOutputTokens',
+    model.maxOutputTokens,
+    onUpdate,
+    (v) => (v ? Number(v) : null)
   );
   const temperature = useDebouncedUpdate(
     model.id,
@@ -690,6 +711,20 @@ const ModelRow = React.memo(function ModelRow({
     model.id,
     'defaultMaxTokens',
     model.defaultMaxTokens,
+    onUpdate,
+    (v) => (v ? Number(v) : null)
+  );
+  const inputCost = useDebouncedUpdate(
+    model.id,
+    'inputCostPerMillion',
+    model.inputCostPerMillion,
+    onUpdate,
+    (v) => (v ? Number(v) : null)
+  );
+  const outputCost = useDebouncedUpdate(
+    model.id,
+    'outputCostPerMillion',
+    model.outputCostPerMillion,
     onUpdate,
     (v) => (v ? Number(v) : null)
   );
@@ -715,9 +750,21 @@ const ModelRow = React.memo(function ModelRow({
       <td className="p-2 text-center">
         <Input
           type="number"
-          value={contextSize.localValue}
-          onChange={(e) => contextSize.handleChange(e.target.value)}
+          value={maxInputTokens.localValue ?? ''}
+          onChange={(e) => maxInputTokens.handleChange(e.target.value)}
           className="h-6 text-xs w-20 text-center"
+          placeholder="—"
+          min={1}
+        />
+      </td>
+      <td className="p-2 text-center">
+        <Input
+          type="number"
+          value={maxOutputTokens.localValue ?? ''}
+          onChange={(e) => maxOutputTokens.handleChange(e.target.value)}
+          className="h-6 text-xs w-20 text-center"
+          placeholder="—"
+          min={1}
         />
       </td>
       <td className="p-2 text-center">
@@ -744,7 +791,6 @@ const ModelRow = React.memo(function ModelRow({
           className="h-6 text-xs w-20 text-center"
           placeholder="—"
           min={1}
-          max={32000}
         />
       </td>
       <td className="p-2 text-center">
@@ -763,6 +809,37 @@ const ModelRow = React.memo(function ModelRow({
         ) : (
           <span className="text-foreground-muted">—</span>
         )}
+      </td>
+      <td className="p-2 text-center">
+        <Input
+          type="number"
+          value={inputCost.localValue}
+          onChange={(e) => inputCost.handleChange(e.target.value)}
+          className="h-6 text-xs w-20 text-center"
+          placeholder="—"
+          min={0}
+          step={0.01}
+        />
+      </td>
+      <td className="p-2 text-center">
+        <Input
+          type="number"
+          value={outputCost.localValue}
+          onChange={(e) => outputCost.handleChange(e.target.value)}
+          className="h-6 text-xs w-20 text-center"
+          placeholder="—"
+          min={0}
+          step={0.01}
+        />
+      </td>
+      <td className="p-2 text-center">
+        <button
+          onClick={() => onUpdate(model.id, { hasManualCostOverride: !model.hasManualCostOverride })}
+          className={`transition-colors ${model.hasManualCostOverride ? 'text-warning' : 'text-foreground-muted hover:text-foreground'}`}
+          title={model.hasManualCostOverride ? 'Costs locked — sync will not update this model. Click to unlock.' : 'Costs auto-synced from registry. Click to lock.'}
+        >
+          {model.hasManualCostOverride ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
+        </button>
       </td>
       <td className="p-2 text-center">
         <button onClick={() => onDelete(model.id)} className="text-destructive hover:text-destructive/80">

@@ -90,7 +90,7 @@ public class ModelResolutionService(
             if (legacyResult.IsError) return legacyResult.Errors;
 
             var legacyModels = legacyResult.Value.Select(m => new EnrichedModelResponse(
-                m, null, Guid.Empty, "Default", false, 128000,
+                m, null, Guid.Empty, "Default", false, 128000, null,
                 null, null, null
             )).ToList();
 
@@ -111,7 +111,8 @@ public class ModelResolutionService(
                     p.Id,
                     p.Name,
                     m.IsReasoning,
-                    m.MaxContextSize,
+                    m.MaxInputTokens,
+                    m.MaxOutputTokens,
                     m.DefaultTemperature,
                     m.DefaultMaxTokens,
                     m.DefaultReasoningEffort

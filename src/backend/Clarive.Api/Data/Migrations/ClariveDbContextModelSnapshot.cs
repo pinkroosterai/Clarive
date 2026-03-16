@@ -96,6 +96,15 @@ namespace Clarive.Api.Data.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("display_name");
 
+                    b.Property<bool>("HasManualCostOverride")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_manual_cost_override");
+
+                    b.Property<decimal?>("InputCostPerMillion")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("input_cost_per_million");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
@@ -104,15 +113,24 @@ namespace Clarive.Api.Data.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_reasoning");
 
-                    b.Property<int>("MaxContextSize")
-                        .HasColumnType("integer")
-                        .HasColumnName("max_context_size");
+                    b.Property<long?>("MaxInputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("max_input_tokens");
+
+                    b.Property<long?>("MaxOutputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("max_output_tokens");
 
                     b.Property<string>("ModelId")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("model_id");
+
+                    b.Property<decimal?>("OutputCostPerMillion")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("output_cost_per_million");
 
                     b.Property<Guid>("ProviderId")
                         .HasColumnType("uuid")
@@ -181,6 +199,85 @@ namespace Clarive.Api.Data.Migrations
                         .HasDatabaseName("ix_ai_sessions_tenant_id");
 
                     b.ToTable("ai_sessions", (string)null);
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.AiUsageLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("action_type");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("DurationMs")
+                        .HasColumnType("bigint")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<Guid?>("EntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entry_id");
+
+                    b.Property<decimal?>("EstimatedInputCostUsd")
+                        .HasPrecision(18, 8)
+                        .HasColumnType("numeric(18,8)")
+                        .HasColumnName("estimated_input_cost_usd");
+
+                    b.Property<decimal?>("EstimatedOutputCostUsd")
+                        .HasPrecision(18, 8)
+                        .HasColumnType("numeric(18,8)")
+                        .HasColumnName("estimated_output_cost_usd");
+
+                    b.Property<long>("InputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("input_tokens");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model");
+
+                    b.Property<long>("OutputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("output_tokens");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActionType")
+                        .HasDatabaseName("ix_ai_usage_logs_action_type");
+
+                    b.HasIndex("EntryId");
+
+                    b.HasIndex("Model")
+                        .HasDatabaseName("ix_ai_usage_logs_model");
+
+                    b.HasIndex("TenantId", "CreatedAt")
+                        .HasDatabaseName("ix_ai_usage_logs_tenant_created");
+
+                    b.ToTable("ai_usage_logs", (string)null);
                 });
 
             modelBuilder.Entity("Clarive.Api.Models.Entities.ApiKey", b =>
@@ -1255,6 +1352,22 @@ namespace Clarive.Api.Data.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.AiUsageLog", b =>
+                {
+                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", "Entry")
+                        .WithMany()
+                        .HasForeignKey("EntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entry");
                 });
 
             modelBuilder.Entity("Clarive.Api.Models.Entities.ApiKey", b =>

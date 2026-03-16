@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Models.Results;
@@ -8,6 +10,7 @@ using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
+using Microsoft.Extensions.AI;
 
 namespace Clarive.Api.Services;
 
@@ -15,10 +18,12 @@ public class AiGenerationService(
     IPromptOrchestrator orchestrator,
     IAiSessionRepository sessionRepo,
     IEntryRepository entryRepo,
-    IToolRepository toolRepo) : IAiGenerationService
+    IToolRepository toolRepo,
+    IAiUsageLogger usageLogger,
+    IAgentFactory agentFactory) : IAiGenerationService
 {
     public async Task<AiGenerationResult> GenerateAsync(
-        Guid tenantId, GeneratePromptRequest request, CancellationToken ct,
+        Guid tenantId, Guid userId, GeneratePromptRequest request, CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null)
     {
         var config = await BuildGenerationConfig(
@@ -26,16 +31,17 @@ public class AiGenerationService(
             request.GenerateTemplate, request.GenerateChain,
             request.ToolIds, request.EnableWebSearch, tenantId, ct);
 
-        // Orchestrator creates the agent session and generates the draft
+        var sw = Stopwatch.StartNew();
         var result = await orchestrator.GenerateAsync(config, ct, onProgress);
+        sw.Stop();
 
-        // Build score history
+        await LogUsageAsync(tenantId, userId, AiActionType.Generation, sw.ElapsedMilliseconds, result.Usage, ct);
+
         var scoreHistory = BuildInitialScoreHistory(result.Evaluation);
         var draft = MapPromptSetToDraft(result.Prompts);
         var questions = result.Clarification?.Questions ?? [];
         var enhancements = result.Clarification?.Enhancements ?? [];
 
-        // Persist session
         var sessionId = Guid.NewGuid();
         await sessionRepo.CreateAsync(new AiSession
         {
@@ -54,7 +60,7 @@ public class AiGenerationService(
     }
 
     public async Task<ErrorOr<AiGenerationResult>> RefineAsync(
-        Guid tenantId, RefinePromptRequest request, CancellationToken ct,
+        Guid tenantId, Guid userId, RefinePromptRequest request, CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null)
     {
         var session = await sessionRepo.GetByIdAsync(tenantId, request.SessionId, ct);
@@ -64,20 +70,17 @@ public class AiGenerationService(
         if (session.AgentSessionId is null || session.Config is null)
             return Error.Validation("VALIDATION_ERROR", "Session does not have an active agent workflow.");
 
-        // Resolve answers
         var answers = request.Answers?
             .Where(a => a.QuestionIndex >= 0 && a.QuestionIndex < session.Questions.Count)
             .Select(a => new AnsweredQuestion(
                 session.Questions[a.QuestionIndex].Text, a.Answer))
             .ToList() ?? [];
 
-        // Resolve enhancement indices
         var selectedEnhancements = request.SelectedEnhancements?
             .Where(i => i >= 0 && i < session.Enhancements.Count)
             .Select(i => session.Enhancements[i])
             .ToList() ?? [];
 
-        // Get current evaluation from last score history entry
         var currentEvaluation = session.ScoreHistory.LastOrDefault();
         var evalForRevision = currentEvaluation is not null
             ? new PromptEvaluation { PromptEvaluations = currentEvaluation.Scores }
@@ -87,13 +90,15 @@ public class AiGenerationService(
             .Select(s => s.AverageScore)
             .ToList();
 
-        // This can throw — caller should handle failure
+        var sw = Stopwatch.StartNew();
         var result = await orchestrator.RefineAsync(
             session.AgentSessionId, session.Config,
             evalForRevision, answers, selectedEnhancements,
             scoreHistoryAverages, ct, onProgress);
+        sw.Stop();
 
-        // Append to score history
+        await LogUsageAsync(tenantId, userId, AiActionType.Generation, sw.ElapsedMilliseconds, result.Usage, ct);
+
         var newScoreHistory = new List<IterationScore>(session.ScoreHistory);
         if (result.Evaluation is not null)
         {
@@ -120,7 +125,7 @@ public class AiGenerationService(
     }
 
     public async Task<ErrorOr<AiGenerationResult>> EnhanceAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct,
+        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
@@ -143,8 +148,11 @@ public class AiGenerationService(
             GenerateAsPromptChain = prompts.Count > 1,
         };
 
-        // This can throw — caller should handle failure
+        var sw = Stopwatch.StartNew();
         var result = await orchestrator.EnhanceAsync(working.SystemMessage, prompts, config, ct, onProgress);
+        sw.Stop();
+
+        await LogUsageAsync(tenantId, userId, AiActionType.Generation, sw.ElapsedMilliseconds, result.Usage, entryId, ct);
 
         var scoreHistory = BuildInitialScoreHistory(result.Evaluation);
         var draft = MapPromptSetToDraft(result.Prompts);
@@ -169,7 +177,7 @@ public class AiGenerationService(
     }
 
     public async Task<ErrorOr<string>> GenerateSystemMessageAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct)
+        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
@@ -186,13 +194,17 @@ public class AiGenerationService(
             .Select(p => new PromptInput(p.Content, p.IsTemplate))
             .ToList();
 
-        // This can throw — caller should handle failure
-        var systemMessage = await orchestrator.GenerateSystemMessageAsync(promptInputs, ct);
-        return systemMessage;
+        var sw = Stopwatch.StartNew();
+        var agentResult = await orchestrator.GenerateSystemMessageAsync(promptInputs, ct);
+        sw.Stop();
+
+        await LogUsageAsync(tenantId, userId, AiActionType.SystemMessage, sw.ElapsedMilliseconds, agentResult.Usage, entryId, ct);
+
+        return agentResult.Value;
     }
 
     public async Task<ErrorOr<List<PromptInput>>> DecomposeAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct)
+        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
@@ -205,13 +217,38 @@ public class AiGenerationService(
         if (working.Prompts.Count != 1)
             return Error.Conflict("ALREADY_CHAIN", "Entry must have exactly one prompt to decompose.");
 
-        // This can throw — caller should handle failure
-        var decomposed = await orchestrator.DecomposeAsync(
+        var sw = Stopwatch.StartNew();
+        var agentResult = await orchestrator.DecomposeAsync(
             working.Prompts[0].Content, working.Prompts[0].IsTemplate, working.SystemMessage, ct);
-        return decomposed;
+        sw.Stop();
+
+        await LogUsageAsync(tenantId, userId, AiActionType.Decomposition, sw.ElapsedMilliseconds, agentResult.Usage, entryId, ct);
+
+        return agentResult.Value;
     }
 
     // ── Private helpers ──
+
+    private Task LogUsageAsync(
+        Guid tenantId, Guid userId, AiActionType actionType,
+        long durationMs, UsageDetails? usage, CancellationToken ct)
+        => LogUsageAsync(tenantId, userId, actionType, durationMs, usage, null, ct);
+
+    private Task LogUsageAsync(
+        Guid tenantId, Guid userId, AiActionType actionType,
+        long durationMs, UsageDetails? usage, Guid? entryId, CancellationToken ct)
+    {
+        // Generation agent uses Premium model; all others use Default model
+        var (modelId, providerName) = actionType == AiActionType.Generation
+            ? (agentFactory.PremiumModelId, agentFactory.PremiumProviderName)
+            : (agentFactory.DefaultModelId, agentFactory.DefaultProviderName);
+
+        return usageLogger.LogAsync(
+            tenantId, userId, actionType,
+            modelId ?? "unknown", providerName ?? "unknown",
+            usage?.InputTokenCount ?? 0, usage?.OutputTokenCount ?? 0,
+            durationMs, entryId, ct);
+    }
 
     private async Task<GenerationConfig> BuildGenerationConfig(
         string description, bool generateSystemMessage,

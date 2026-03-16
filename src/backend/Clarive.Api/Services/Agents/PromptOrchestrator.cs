@@ -54,6 +54,7 @@ public class PromptOrchestrator : IPromptOrchestrator
             var entry = _pool.Get(agentSessionId)!;
 
             PromptSet prompts;
+            UsageDetails? genUsage;
             await entry.Lock.WaitAsync(ct);
             try
             {
@@ -65,6 +66,7 @@ public class PromptOrchestrator : IPromptOrchestrator
                 var genTask = TaskBuilder.BuildGenerationTask(config);
                 var genResponse = await entry.Agent.RunAsync<PromptSet>(genTask, session: entry.Session, cancellationToken: ct);
                 prompts = genResponse.Result;
+                genUsage = genResponse.Usage;
             }
             finally
             {
@@ -82,7 +84,7 @@ public class PromptOrchestrator : IPromptOrchestrator
             // Run evaluation + clarification in parallel
             (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, prompts, ct, onProgress);
 
-            return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification);
+            return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification, genUsage);
         }
         catch
         {
@@ -105,6 +107,7 @@ public class PromptOrchestrator : IPromptOrchestrator
             ?? throw new InvalidOperationException("Agent session expired or not found.");
 
         PromptSet prompts;
+        UsageDetails? revUsage;
         await entry.Lock.WaitAsync(ct);
         try
         {
@@ -117,6 +120,7 @@ public class PromptOrchestrator : IPromptOrchestrator
                 config, currentEvaluation, answers, selectedEnhancements, scoreHistory);
             var revResponse = await entry.Agent.RunAsync<PromptSet>(revisionTask, session: entry.Session, cancellationToken: ct);
             prompts = revResponse.Result;
+            revUsage = revResponse.Usage;
         }
         finally
         {
@@ -134,7 +138,7 @@ public class PromptOrchestrator : IPromptOrchestrator
         // Run evaluation + clarification in parallel
         (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, prompts, ct, onProgress);
 
-        return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification);
+        return new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification, revUsage);
     }
 
     public async Task<EnhanceOrchestratorResult> EnhanceAsync(
@@ -166,13 +170,15 @@ public class PromptOrchestrator : IPromptOrchestrator
 
             // Seed the generation agent with the existing entry content
             // (This gives it context for future revisions in the same session)
+            UsageDetails? bootstrapUsage;
             await entry.Lock.WaitAsync(ct);
             try
             {
-                await entry.Agent.RunAsync<PromptSet>(
+                var bootstrapResponse = await entry.Agent.RunAsync<PromptSet>(
                     $"Here is an existing prompt entry that the user wants to enhance. " +
                     $"Analyze it and return it as-is for now:\n\n{bootstrapTask}",
                     session: entry.Session, cancellationToken: ct);
+                bootstrapUsage = bootstrapResponse.Usage;
             }
             finally
             {
@@ -184,7 +190,7 @@ public class PromptOrchestrator : IPromptOrchestrator
             // Run evaluation + clarification in parallel on existing prompts
             (PromptEvaluation? evaluation, ClarificationResult? clarification) = await RunParallelFeedback(config, bootstrapPromptSet, ct, onProgress);
 
-            return new EnhanceOrchestratorResult(agentSessionId, bootstrapPromptSet, evaluation, clarification);
+            return new EnhanceOrchestratorResult(agentSessionId, bootstrapPromptSet, evaluation, clarification, bootstrapUsage);
         }
         catch
         {
@@ -193,7 +199,7 @@ public class PromptOrchestrator : IPromptOrchestrator
         }
     }
 
-    public async Task<string> GenerateSystemMessageAsync(
+    public async Task<AgentResult<string>> GenerateSystemMessageAsync(
         List<PromptInput> prompts, CancellationToken ct = default)
     {
         var agent = _factory.CreateSystemMessageAgent();
@@ -201,10 +207,10 @@ public class PromptOrchestrator : IPromptOrchestrator
 
         var response = await agent.RunAsync<GeneratedSystemMessageOutput>(task, cancellationToken: ct);
 
-        return response.Result.SystemMessage;
+        return new AgentResult<string>(response.Result.SystemMessage, response.Usage);
     }
 
-    public async Task<List<PromptInput>> DecomposeAsync(
+    public async Task<AgentResult<List<PromptInput>>> DecomposeAsync(
         string promptContent, bool isTemplate, string? systemMessage,
         CancellationToken ct = default)
     {
@@ -217,9 +223,11 @@ public class PromptOrchestrator : IPromptOrchestrator
         if (chain.Steps.Count == 0)
             throw new InvalidOperationException("AI returned an empty decomposition. Please try again.");
 
-        return chain.Steps
+        var result = chain.Steps
             .Select(s => new PromptInput(s.Content, s.IsTemplate))
             .ToList();
+
+        return new AgentResult<List<PromptInput>>(result, response.Usage);
     }
 
     // ── Private helpers ──

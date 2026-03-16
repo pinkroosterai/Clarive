@@ -7,6 +7,8 @@ interface HeroStatCardProps {
   icon: LucideIcon;
   label: string;
   value: number;
+  prefix?: string;
+  decimals?: number;
   delta?: number;
   deltaLabel?: string;
   index?: number;
@@ -16,12 +18,19 @@ export const HeroStatCard = memo(function HeroStatCard({
   icon: Icon,
   label,
   value,
+  prefix,
+  decimals,
   delta,
   deltaLabel = '7d',
   index = 0,
 }: HeroStatCardProps) {
   const spring = useSpring(0, { stiffness: 60, damping: 20 });
-  const display = useTransform(spring, (v) => Math.round(v).toLocaleString());
+  const display = useTransform(spring, (v) => {
+    const formatted = decimals !== undefined
+      ? v.toFixed(decimals)
+      : Math.round(v).toLocaleString();
+    return prefix ? `${prefix}${formatted}` : formatted;
+  });
 
   useEffect(() => {
     spring.set(value);

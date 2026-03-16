@@ -205,21 +205,21 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             enhancedPrompts, evaluation, clarification));
     }
 
-    public Task<string> GenerateSystemMessageAsync(
+    public Task<AgentResult<string>> GenerateSystemMessageAsync(
         List<PromptInput> prompts, CancellationToken ct = default)
     {
-        return Task.FromResult("You are a helpful AI assistant specialized in this domain.");
+        return Task.FromResult(new AgentResult<string>("You are a helpful AI assistant specialized in this domain."));
     }
 
-    public Task<List<PromptInput>> DecomposeAsync(
+    public Task<AgentResult<List<PromptInput>>> DecomposeAsync(
         string promptContent, bool isTemplate = false, string? systemMessage = null,
         CancellationToken ct = default)
     {
-        return Task.FromResult(new List<PromptInput>
+        return Task.FromResult(new AgentResult<List<PromptInput>>(new List<PromptInput>
         {
             new("Step 1: Understand the task"),
             new("Step 2: Research and plan"),
             new("Step 3: Execute and deliver")
-        });
+        }));
     }
 }

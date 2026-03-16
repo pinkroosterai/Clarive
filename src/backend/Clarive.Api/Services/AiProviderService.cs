@@ -4,6 +4,7 @@ using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Agents;
+using Clarive.Api.Services.Interfaces;
 using ErrorOr;
 using OpenAI;
 
@@ -12,6 +13,7 @@ namespace Clarive.Api.Services;
 public class AiProviderService(
     IAiProviderRepository repo,
     IEncryptionService encryption,
+    ILiteLlmRegistryCache liteLlmCache,
     ILogger<AiProviderService> logger)
 {
     private static readonly HashSet<string> ValidReasoningEfforts = new(StringComparer.OrdinalIgnoreCase)
@@ -154,13 +156,27 @@ public class AiProviderService(
             ModelId = request.ModelId,
             DisplayName = request.DisplayName,
             IsReasoning = request.IsReasoning,
-            MaxContextSize = request.MaxContextSize,
+            MaxInputTokens = request.MaxInputTokens,
+            MaxOutputTokens = request.MaxOutputTokens,
             DefaultTemperature = request.DefaultTemperature,
             DefaultMaxTokens = request.DefaultMaxTokens,
             DefaultReasoningEffort = request.DefaultReasoningEffort,
+            InputCostPerMillion = request.InputCostPerMillion,
+            OutputCostPerMillion = request.OutputCostPerMillion,
             IsActive = true,
             SortOrder = provider.Models.Count
         };
+
+        // Auto-fill from LiteLLM registry cache
+        var info = liteLlmCache.TryGetModelInfo(provider.Name, request.ModelId);
+        if (info is not null)
+        {
+            model.InputCostPerMillion ??= info.InputCostPerMillion;
+            model.OutputCostPerMillion ??= info.OutputCostPerMillion;
+            model.MaxInputTokens ??= info.MaxInputTokens;
+            model.MaxOutputTokens ??= info.MaxOutputTokens;
+            if (info.IsReasoning == true) model.IsReasoning = true;
+        }
 
         await repo.AddModelAsync(model, ct);
         return ToModelResponse(model);
@@ -178,12 +194,24 @@ public class AiProviderService(
 
         if (request.DisplayName is not null) model.DisplayName = request.DisplayName;
         if (request.IsReasoning.HasValue) model.IsReasoning = request.IsReasoning.Value;
-        if (request.MaxContextSize.HasValue) model.MaxContextSize = request.MaxContextSize.Value;
+        if (request.MaxInputTokens.HasValue) model.MaxInputTokens = request.MaxInputTokens.Value;
+        if (request.MaxOutputTokens.HasValue) model.MaxOutputTokens = request.MaxOutputTokens.Value;
         if (request.IsActive.HasValue) model.IsActive = request.IsActive.Value;
         if (request.SortOrder.HasValue) model.SortOrder = request.SortOrder.Value;
         if (request.DefaultTemperature.HasValue) model.DefaultTemperature = request.DefaultTemperature.Value;
         if (request.DefaultMaxTokens.HasValue) model.DefaultMaxTokens = request.DefaultMaxTokens.Value;
         if (request.DefaultReasoningEffort is not null) model.DefaultReasoningEffort = request.DefaultReasoningEffort;
+        if (request.InputCostPerMillion.HasValue) model.InputCostPerMillion = request.InputCostPerMillion.Value;
+        if (request.OutputCostPerMillion.HasValue) model.OutputCostPerMillion = request.OutputCostPerMillion.Value;
+
+        // Auto-enable manual override when cost/context fields are explicitly set
+        if (request.InputCostPerMillion.HasValue || request.OutputCostPerMillion.HasValue ||
+            request.MaxInputTokens.HasValue || request.MaxOutputTokens.HasValue)
+            model.HasManualCostOverride = true;
+
+        // Allow explicit toggle of the override flag
+        if (request.HasManualCostOverride.HasValue)
+            model.HasManualCostOverride = request.HasManualCostOverride.Value;
 
         await repo.UpdateModelAsync(model, ct);
         return ToModelResponse(model);
@@ -206,8 +234,10 @@ public class AiProviderService(
 
     private static AiProviderModelResponse ToModelResponse(AiProviderModel m) => new(
         m.Id, m.ModelId, m.DisplayName, m.IsReasoning,
-        m.MaxContextSize,
+        m.MaxInputTokens, m.MaxOutputTokens,
         m.DefaultTemperature, m.DefaultMaxTokens, m.DefaultReasoningEffort,
+        m.InputCostPerMillion, m.OutputCostPerMillion,
+        m.HasManualCostOverride,
         m.IsActive, m.SortOrder
     );
 
