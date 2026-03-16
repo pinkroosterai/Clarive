@@ -29,17 +29,23 @@ public static class PublicApiEndpoints
         return group;
     }
 
-    private static Guid GetApiKeyTenantId(HttpContext ctx)
-        => Guid.Parse((ctx.User.FindFirst("tenantId")
-                        ?? throw new InvalidOperationException("Missing 'tenantId' claim.")).Value);
+    private record ApiKeyClaims(Guid TenantId, Guid ApiKeyId, string ApiKeyName);
 
-    private static Guid GetApiKeyId(HttpContext ctx)
-        => Guid.Parse((ctx.User.FindFirst("apiKeyId")
-                        ?? throw new InvalidOperationException("Missing 'apiKeyId' claim.")).Value);
+    private static (ApiKeyClaims? Claims, IResult? Error) GetApiKeyClaims(HttpContext ctx)
+    {
+        var tenantClaim = ctx.User.FindFirst("tenantId")?.Value;
+        var apiKeyIdClaim = ctx.User.FindFirst("apiKeyId")?.Value;
+        var apiKeyNameClaim = ctx.User.FindFirst("apiKeyName")?.Value;
 
-    private static string GetApiKeyName(HttpContext ctx)
-        => (ctx.User.FindFirst("apiKeyName")
-            ?? throw new InvalidOperationException("Missing 'apiKeyName' claim.")).Value;
+        if (tenantClaim is null || !Guid.TryParse(tenantClaim, out var tenantId) ||
+            apiKeyIdClaim is null || !Guid.TryParse(apiKeyIdClaim, out var apiKeyId) ||
+            apiKeyNameClaim is null)
+        {
+            return (null, ctx.ErrorResult(401, "UNAUTHORIZED", "Invalid or missing API key claims."));
+        }
+
+        return (new ApiKeyClaims(tenantId, apiKeyId, apiKeyNameClaim), null);
+    }
 
     private static async Task<IResult> HandleGet(
         Guid entryId,
@@ -48,18 +54,20 @@ public static class PublicApiEndpoints
         IAuditLogger auditLogger,
         CancellationToken ct)
     {
-        var tenantId = GetApiKeyTenantId(ctx);
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        var (claims, claimsError) = GetApiKeyClaims(ctx);
+        if (claims is null) return claimsError!;
+
+        var entry = await entryRepo.GetByIdAsync(claims.TenantId, entryId, ct);
 
         if (entry is null || entry.IsTrashed)
             return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
 
-        var published = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        var published = await entryRepo.GetPublishedVersionAsync(claims.TenantId, entryId, ct);
         if (published is null)
             return ctx.ErrorResult(404, "NOT_PUBLISHED", "This entry has no published version.", "Entry", entryId.ToString());
 
         await auditLogger.LogAsync(
-            tenantId, GetApiKeyId(ctx), GetApiKeyName(ctx),
+            claims.TenantId, claims.ApiKeyId, claims.ApiKeyName,
             AuditAction.ApiGet, "entry", entry.Id, entry.Title, ct: ct);
 
         var prompts = published.Prompts
@@ -82,17 +90,20 @@ public static class PublicApiEndpoints
         IAuditLogger auditLogger,
         CancellationToken ct)
     {
-        var tenantId = GetApiKeyTenantId(ctx);
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        var (claims, claimsError) = GetApiKeyClaims(ctx);
+        if (claims is null) return claimsError!;
+
+        var entry = await entryRepo.GetByIdAsync(claims.TenantId, entryId, ct);
 
         if (entry is null || entry.IsTrashed)
             return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
 
-        var published = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        var published = await entryRepo.GetPublishedVersionAsync(claims.TenantId, entryId, ct);
         if (published is null)
             return ctx.ErrorResult(404, "NOT_PUBLISHED", "This entry has no published version.", "Entry", entryId.ToString());
 
-        // Collect all template fields across all prompts
+        // Collect all template fields across all prompts, deduplicated by name.
+        // GroupBy guarantees non-empty groups, so First() is always safe here.
         var allFields = published.Prompts
             .Where(p => p.IsTemplate)
             .SelectMany(p => p.TemplateFields)
@@ -122,7 +133,7 @@ public static class PublicApiEndpoints
             systemMessage = TemplateParser.Render(systemMessage, fields);
 
         await auditLogger.LogAsync(
-            tenantId, GetApiKeyId(ctx), GetApiKeyName(ctx),
+            claims.TenantId, claims.ApiKeyId, claims.ApiKeyName,
             AuditAction.ApiGenerate, "entry", entry.Id, entry.Title, ct: ct);
 
         return Results.Ok(new PublicGenerateResponse(

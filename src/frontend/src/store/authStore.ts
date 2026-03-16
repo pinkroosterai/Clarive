@@ -30,99 +30,106 @@ interface AuthState {
   initializeAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  currentUser: null,
-  workspaces: [],
-  activeWorkspace: null,
-  isAuthenticated: !!getToken(),
-  isInitialized: false,
-  maintenanceMode: false,
-  aiConfigured: true,
-  webSearchAvailable: false,
-  setMaintenanceMode: (enabled: boolean) => set({ maintenanceMode: enabled }),
-  setUser: (user: User) => {
-    set({ currentUser: user, isAuthenticated: true, isInitialized: true });
-    // Fetch system status (AI config, maintenance) after login
-    getSystemStatus()
-      .then((status) => {
-        if (status.maintenance) set({ maintenanceMode: true });
-        if (status.aiConfigured === false) set({ aiConfigured: false });
-        set({ webSearchAvailable: status.webSearchAvailable ?? false });
-      })
-      .catch(() => {
-        // Non-critical — system status (AI, maintenance) uses safe defaults
+export const useAuthStore = create<AuthState>((rawSet, get) => {
+  // Wrap set to always derive isAuthenticated from token presence.
+  // This eliminates sync risk — isAuthenticated is never manually set.
+  const set: typeof rawSet = (partial, replace) =>
+    rawSet((state) => {
+      const updates = typeof partial === 'function' ? partial(state) : partial;
+      return { ...updates, isAuthenticated: !!getToken() } as AuthState;
+    }, replace);
+
+  return {
+    currentUser: null,
+    workspaces: [],
+    activeWorkspace: null,
+    isAuthenticated: !!getToken(),
+    isInitialized: false,
+    maintenanceMode: false,
+    aiConfigured: true,
+    webSearchAvailable: false,
+    setMaintenanceMode: (enabled: boolean) => set({ maintenanceMode: enabled }),
+    setUser: (user: User) => {
+      set({ currentUser: user, isInitialized: true });
+      // Fetch system status (AI config, maintenance) after login
+      getSystemStatus()
+        .then((status) => {
+          if (status.maintenance) set({ maintenanceMode: true });
+          if (status.aiConfigured === false) set({ aiConfigured: false });
+          set({ webSearchAvailable: status.webSearchAvailable ?? false });
+        })
+        .catch(() => {
+          // Non-critical — system status (AI, maintenance) uses safe defaults
+        });
+    },
+    setWorkspaces: (workspaces: Workspace[]) => {
+      const activeId = getActiveWorkspaceId();
+      const active = workspaces.find((w) => w.id === activeId) ?? workspaces[0] ?? null;
+      if (active) setActiveWorkspaceId(active.id);
+      set({ workspaces, activeWorkspace: active });
+    },
+    switchWorkspace: async (workspaceId: string) => {
+      const { user } = await apiSwitchWorkspace(workspaceId);
+      const workspaces = get().workspaces.map((w) =>
+        w.id === workspaceId ? { ...w, role: user.role } : w
+      );
+      const active = workspaces.find((w) => w.id === workspaceId) ?? null;
+      set({
+        currentUser: user,
+        workspaces,
+        activeWorkspace: active,
       });
-  },
-  setWorkspaces: (workspaces: Workspace[]) => {
-    const activeId = getActiveWorkspaceId();
-    const active = workspaces.find((w) => w.id === activeId) ?? workspaces[0] ?? null;
-    if (active) setActiveWorkspaceId(active.id);
-    set({ workspaces, activeWorkspace: active });
-  },
-  switchWorkspace: async (workspaceId: string) => {
-    const { user } = await apiSwitchWorkspace(workspaceId);
-    const workspaces = get().workspaces.map((w) =>
-      w.id === workspaceId ? { ...w, role: user.role } : w
-    );
-    const active = workspaces.find((w) => w.id === workspaceId) ?? null;
-    set({
-      currentUser: user,
-      workspaces,
-      activeWorkspace: active,
-      isAuthenticated: true,
-    });
-  },
-  logout: () => {
-    setToken(null);
-    setRefreshToken(null);
-    setActiveWorkspaceId(null);
-    queryClient.clear();
-    set({
-      currentUser: null,
-      workspaces: [],
-      activeWorkspace: null,
-      isAuthenticated: false,
-      isInitialized: true,
-      maintenanceMode: false,
-      aiConfigured: true,
-      webSearchAvailable: false,
-    });
-  },
-  initializeAuth: async () => {
-    if (get().currentUser || !getToken()) {
-      set({ isInitialized: true });
-      return;
-    }
-    try {
-      const data = await getMe();
-      const { workspaces: ws, ...user } = data;
-      set({ currentUser: user, isAuthenticated: true, isInitialized: true });
-      if (ws) {
-        const activeId = getActiveWorkspaceId();
-        const active = ws.find((w) => w.id === activeId) ?? ws[0] ?? null;
-        if (active) setActiveWorkspaceId(active.id);
-        set({ workspaces: ws, activeWorkspace: active });
-      }
-      // Check maintenance status so super users see the banner
-      // and non-super users get blocked before any flash
-      try {
-        const status = await getSystemStatus();
-        if (status.maintenance) set({ maintenanceMode: true });
-        if (status.aiConfigured === false) set({ aiConfigured: false });
-        set({ webSearchAvailable: status.webSearchAvailable ?? false });
-      } catch {
-        // Ignore — maintenance status is non-critical
-      }
-    } catch {
+    },
+    logout: () => {
       setToken(null);
       setRefreshToken(null);
+      setActiveWorkspaceId(null);
+      queryClient.clear();
       set({
         currentUser: null,
-        isAuthenticated: false,
-        isInitialized: true,
         workspaces: [],
         activeWorkspace: null,
+        isInitialized: true,
+        maintenanceMode: false,
+        aiConfigured: true,
+        webSearchAvailable: false,
       });
-    }
-  },
-}));
+    },
+    initializeAuth: async () => {
+      if (get().currentUser || !getToken()) {
+        set({ isInitialized: true });
+        return;
+      }
+      try {
+        const data = await getMe();
+        const { workspaces: ws, ...user } = data;
+        set({ currentUser: user, isInitialized: true });
+        if (ws) {
+          const activeId = getActiveWorkspaceId();
+          const active = ws.find((w) => w.id === activeId) ?? ws[0] ?? null;
+          if (active) setActiveWorkspaceId(active.id);
+          set({ workspaces: ws, activeWorkspace: active });
+        }
+        // Check maintenance status so super users see the banner
+        // and non-super users get blocked before any flash
+        try {
+          const status = await getSystemStatus();
+          if (status.maintenance) set({ maintenanceMode: true });
+          if (status.aiConfigured === false) set({ aiConfigured: false });
+          set({ webSearchAvailable: status.webSearchAvailable ?? false });
+        } catch {
+          // Ignore — maintenance status is non-critical
+        }
+      } catch {
+        setToken(null);
+        setRefreshToken(null);
+        set({
+          currentUser: null,
+          isInitialized: true,
+          workspaces: [],
+          activeWorkspace: null,
+        });
+      }
+    },
+  };
+});

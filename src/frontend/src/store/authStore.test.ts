@@ -65,39 +65,44 @@ const mockedGetMe = vi.mocked(getMe);
 
 describe('authStore', () => {
   beforeEach(() => {
-    // Reset store state
+    // Reset the token state inside the mock closure first
+    mockedSetToken(null);
+    mockedSetRefreshToken(null);
+    // Reset store state — isAuthenticated will be derived as false (no token)
     useAuthStore.setState({
       currentUser: null,
-      isAuthenticated: false,
       isInitialized: false,
     });
     vi.clearAllMocks();
-    // Reset the token state inside the mock
-    mockedSetToken(null);
-    mockedSetRefreshToken(null);
-    vi.clearAllMocks(); // Clear again after resetting tokens
   });
 
   describe('initial state', () => {
     it('is unauthenticated when no token', () => {
-      mockedGetToken.mockReturnValue(null);
-      // Re-read state after mock change
       const state = useAuthStore.getState();
       expect(state.currentUser).toBeNull();
+      expect(state.isAuthenticated).toBe(false);
       expect(state.isInitialized).toBe(false);
     });
 
-    it('has isAuthenticated based on token presence', () => {
-      // The store reads getToken() at creation time.
-      // Since we control the mock, we can test the state we set.
-      useAuthStore.setState({ isAuthenticated: true });
+    it('derives isAuthenticated from token presence via actions', () => {
+      // isAuthenticated is derived from getToken() inside store actions.
+      // Verify via setUser (which goes through the wrapped set).
+      const user = createUser();
+      mockedSetToken('jwt');
+      useAuthStore.getState().setUser(user);
       expect(useAuthStore.getState().isAuthenticated).toBe(true);
+
+      // After logout (which calls setToken(null)), isAuthenticated flips to false
+      useAuthStore.getState().logout();
+      expect(useAuthStore.getState().isAuthenticated).toBe(false);
     });
   });
 
   describe('setUser', () => {
     it('updates state correctly', () => {
       const user = createUser({ name: 'Alice' });
+      // In real usage, token is set by login response before setUser is called
+      mockedSetToken('jwt-token');
 
       useAuthStore.getState().setUser(user);
 
@@ -112,11 +117,12 @@ describe('authStore', () => {
     it('clears everything and removes tokens', () => {
       // Set up an authenticated state
       const user = createUser();
+      mockedSetToken('jwt-token');
       useAuthStore.setState({
         currentUser: user,
-        isAuthenticated: true,
         isInitialized: true,
       });
+      vi.clearAllMocks();
 
       useAuthStore.getState().logout();
 
@@ -132,7 +138,7 @@ describe('authStore', () => {
   describe('initializeAuth', () => {
     it('fetches user with valid token', async () => {
       const user = createUser({ name: 'Bob' });
-      mockedGetToken.mockReturnValue('valid-jwt');
+      mockedSetToken('valid-jwt');
       mockedGetMe.mockResolvedValue(user);
 
       await useAuthStore.getState().initializeAuth();
@@ -145,13 +151,14 @@ describe('authStore', () => {
     });
 
     it('clears state when token is expired/invalid', async () => {
-      mockedGetToken.mockReturnValue('expired-jwt');
+      mockedSetToken('expired-jwt');
       mockedGetMe.mockRejectedValue(new Error('Unauthorized'));
 
       await useAuthStore.getState().initializeAuth();
 
       const state = useAuthStore.getState();
       expect(state.currentUser).toBeNull();
+      // After failure, setToken(null) is called, so isAuthenticated derives as false
       expect(state.isAuthenticated).toBe(false);
       expect(state.isInitialized).toBe(true);
       expect(mockedSetToken).toHaveBeenCalledWith(null);
@@ -160,12 +167,11 @@ describe('authStore', () => {
 
     it('skips fetch if user already loaded', async () => {
       const user = createUser({ name: 'Existing' });
+      mockedSetToken('some-token');
       useAuthStore.setState({
         currentUser: user,
-        isAuthenticated: true,
         isInitialized: false,
       });
-      mockedGetToken.mockReturnValue('some-token');
 
       await useAuthStore.getState().initializeAuth();
 
@@ -174,8 +180,6 @@ describe('authStore', () => {
     });
 
     it('skips fetch if no token', async () => {
-      mockedGetToken.mockReturnValue(null);
-
       await useAuthStore.getState().initializeAuth();
 
       expect(mockedGetMe).not.toHaveBeenCalled();
@@ -186,7 +190,7 @@ describe('authStore', () => {
 
     it('does not overwrite user if concurrent calls happen', async () => {
       const user = createUser({ name: 'First' });
-      mockedGetToken.mockReturnValue('jwt');
+      mockedSetToken('jwt');
       mockedGetMe.mockResolvedValue(user);
 
       // Call twice concurrently
