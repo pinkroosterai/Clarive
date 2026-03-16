@@ -1,17 +1,26 @@
 import {
   AllCommunityModule,
   type ColDef,
-  type FilterChangedEvent,
   type SortChangedEvent,
   themeQuartz,
 } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { format } from 'date-fns';
-import { Download } from 'lucide-react';
+import { Check, ChevronsUpDown, Download, X } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import AiUsageLogDetailPanel from '@/components/super/AiUsageLogDetailPanel';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -19,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { useAiUsageFilters, useAiUsageLogs } from '@/hooks/useAiUsage';
 import type { AiUsageFilterParams, AiUsageLogEntry } from '@/services/api/aiUsageService';
 
@@ -38,35 +48,79 @@ const formatDuration = (ms: number): string => {
   return `${(ms / 1000).toFixed(1)}s`;
 };
 
-// ── Custom Select Filter Component ──
+// ── Multi-select filter dropdown ──
 
-// Custom select filter: receives model, onModelChange, and filterParams merged as flat props
-function SelectFilterComponent({ model, onModelChange, options = [] }: {
-  model: string | null;
-  onModelChange: (model: string | null) => void;
-  options?: { value: string; label: string }[];
-}) {
+interface MultiSelectFilterProps {
+  label: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+}
+
+function MultiSelectFilter({ label, options, selected, onChange }: MultiSelectFilterProps) {
+  const [open, setOpen] = useState(false);
+
+  const toggle = (value: string) => {
+    onChange(
+      selected.includes(value)
+        ? selected.filter((v) => v !== value)
+        : [...selected, value],
+    );
+  };
+
+  const clear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange([]);
+  };
+
   return (
-    <div className="p-2 min-w-[160px]">
-      <select
-        className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-        value={model ?? ''}
-        onChange={(e) => onModelChange(e.target.value || null)}
-      >
-        <option value="">All</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+          <ChevronsUpDown className="size-3" />
+          {label}
+          {selected.length > 0 && (
+            <>
+              <Badge variant="secondary" className="px-1 py-0 text-xs font-normal">
+                {selected.length}
+              </Badge>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={clear}
+                onKeyDown={(e) => { if (e.key === 'Enter') clear(e as unknown as React.MouseEvent); }}
+                className="ml-0.5 rounded-full hover:bg-muted p-0.5"
+              >
+                <X className="size-3" />
+              </span>
+            </>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
+          <CommandList>
+            <CommandEmpty>No results.</CommandEmpty>
+            <CommandGroup>
+              {options.map((opt) => {
+                const isSelected = selected.includes(opt.value);
+                return (
+                  <CommandItem key={opt.value} value={opt.label} onSelect={() => toggle(opt.value)}>
+                    <Check className={cn('mr-2 size-4', isSelected ? 'opacity-100' : 'opacity-0')} />
+                    {opt.label}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
-// doesFilterPass for custom select filter — server-side filtering handles actual filtering,
-// so this always returns true (we just need it defined to satisfy AG Grid)
-const selectFilterDoesFilterPass = () => true;
+// ── Main Component ──
 
 export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   const gridRef = useRef<AgGridReact<AiUsageLogEntry>>(null);
@@ -78,27 +132,11 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   const [selectedRow, setSelectedRow] = useState<AiUsageLogEntry | null>(null);
 
   // Server-side column filters
-  const [filterModel, setFilterModel] = useState<string | undefined>();
-  const [filterActionType, setFilterActionType] = useState<string | undefined>();
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [selectedActionTypes, setSelectedActionTypes] = useState<string[]>([]);
 
   // Fetch available filter options from backend
   const { data: filterOptions } = useAiUsageFilters(filters.dateFrom, filters.dateTo);
-
-  // Merge parent filters with column filters
-  const mergedFilters = useMemo<AiUsageFilterParams>(
-    () => ({
-      ...filters,
-      models: filterModel ? [filterModel] : filters.models,
-      actionTypes: filterActionType ? [filterActionType] : filters.actionTypes,
-    }),
-    [filters, filterModel, filterActionType],
-  );
-
-  const { data, isLoading } = useAiUsageLogs(mergedFilters, page, pageSize, sortBy, sortDesc);
-
-  const logs = data?.items ?? [];
-  const totalCount = data?.totalCount ?? 0;
-  const totalPages = Math.ceil(totalCount / pageSize);
 
   // Build select options from filter API response
   const modelOptions = useMemo(
@@ -109,6 +147,32 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
     () => (filterOptions?.actionTypes ?? []).map((a) => ({ value: a, label: a })),
     [filterOptions],
   );
+
+  // Merge parent filters with column filters
+  const mergedFilters = useMemo<AiUsageFilterParams>(
+    () => ({
+      ...filters,
+      models: selectedModels.length > 0 ? selectedModels : undefined,
+      actionTypes: selectedActionTypes.length > 0 ? selectedActionTypes : undefined,
+    }),
+    [filters, selectedModels, selectedActionTypes],
+  );
+
+  const { data, isLoading } = useAiUsageLogs(mergedFilters, page, pageSize, sortBy, sortDesc);
+
+  const logs = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  const handleModelsChange = useCallback((values: string[]) => {
+    setSelectedModels(values);
+    setPage(1);
+  }, []);
+
+  const handleActionTypesChange = useCallback((values: string[]) => {
+    setSelectedActionTypes(values);
+    setPage(1);
+  }, []);
 
   const columnDefs = useMemo<ColDef<AiUsageLogEntry>[]>(
     () => [
@@ -141,16 +205,12 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         headerName: 'Model',
         sortable: true,
         width: 200,
-        filter: { component: SelectFilterComponent, doesFilterPass: selectFilterDoesFilterPass },
-        filterParams: { options: modelOptions },
       },
       {
         field: 'actionType',
         headerName: 'Action',
         sortable: true,
         width: 130,
-        filter: { component: SelectFilterComponent, doesFilterPass: selectFilterDoesFilterPass },
-        filterParams: { options: actionTypeOptions },
       },
       {
         field: 'inputTokens',
@@ -217,7 +277,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         valueFormatter: (p) => formatDuration(p.value),
       },
     ],
-    [modelOptions, actionTypeOptions],
+    [],
   );
 
   const onSortChanged = useCallback((event: SortChangedEvent<AiUsageLogEntry>) => {
@@ -242,18 +302,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
     setPage(1);
   }, []);
 
-  const onFilterChanged = useCallback((event: FilterChangedEvent<AiUsageLogEntry>) => {
-    const model = event.api.getFilterModel();
-
-    // Server-side filters: Model and Action Type (from custom SelectFilter)
-    const modelVal = model['displayModel'] as string | undefined;
-    const actionVal = model['actionType'] as string | undefined;
-    setFilterModel(modelVal || undefined);
-    setFilterActionType(actionVal || undefined);
-
-    setPage(1);
-  }, []);
-
   const handleExportCsv = useCallback(() => {
     gridRef.current?.api.exportDataAsCsv({
       fileName: `ai-usage-${format(new Date(), 'yyyy-MM-dd')}.csv`,
@@ -262,17 +310,57 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
 
   const handleDetailClose = useCallback(() => setSelectedRow(null), []);
 
+  const hasActiveFilters = selectedModels.length > 0 || selectedActionTypes.length > 0;
+
   return (
     <div className="space-y-3">
       {/* Toolbar */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-foreground-muted">
-          {totalCount.toLocaleString()} request{totalCount !== 1 ? 's' : ''} total
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground-muted">
+            {totalCount.toLocaleString()} request{totalCount !== 1 ? 's' : ''} total
+          </span>
+          {hasActiveFilters && (
+            <Badge variant="outline" className="text-xs font-normal text-primary">
+              Filtered
+            </Badge>
+          )}
         </div>
         <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={logs.length === 0}>
           <Download className="size-3.5 mr-1.5" />
           Export CSV
         </Button>
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex items-center gap-2">
+        <MultiSelectFilter
+          label="Model"
+          options={modelOptions}
+          selected={selectedModels}
+          onChange={handleModelsChange}
+        />
+        <MultiSelectFilter
+          label="Action"
+          options={actionTypeOptions}
+          selected={selectedActionTypes}
+          onChange={handleActionTypesChange}
+        />
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-foreground-muted"
+            onClick={() => {
+              setSelectedModels([]);
+              setSelectedActionTypes([]);
+              setPage(1);
+            }}
+          >
+            <X className="size-3 mr-1" />
+            Clear filters
+          </Button>
+        )}
       </div>
 
       {/* Grid */}
@@ -288,7 +376,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
           suppressCellFocus
           animateRows={false}
           onSortChanged={onSortChanged}
-          onFilterChanged={onFilterChanged}
           onRowClicked={(e) =>
             setSelectedRow((prev) => (prev?.id === e.data?.id ? null : e.data ?? null))
           }
