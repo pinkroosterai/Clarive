@@ -42,7 +42,7 @@ const SetupWizardPage = () => {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    document.title = 'Clarive \u2014 Setup Wizard';
+    document.title = 'Clarive — Setup Wizard';
   }, []);
 
   // AI Provider state

@@ -30,6 +30,7 @@ public static class ConfigEndpoints
 
     private static async Task<IResult> HandleSetupStatus(
         IAiProviderRepository aiProviderRepo,
+        IServiceConfigRepository configRepo,
         IConfiguration configuration,
         CancellationToken ct)
     {
@@ -45,9 +46,15 @@ public static class ConfigEndpoints
         if (string.Equals(emailProvider, "none", StringComparison.OrdinalIgnoreCase))
             unconfigured.Add("email");
 
+        // Only require setup on truly fresh installs — if ANY config has been
+        // saved to the DB, the admin has already been through setup (or configured
+        // via Super Admin settings). AI and email are optional.
+        var dbOverrides = await configRepo.GetAllAsync(ct);
+        var hasAnyDbConfig = dbOverrides.Count > 0 || providers.Count > 0;
+
         return Results.Ok(new
         {
-            requiresSetup = unconfigured.Count > 0,
+            requiresSetup = !hasAnyDbConfig,
             unconfiguredSections = unconfigured
         });
     }
