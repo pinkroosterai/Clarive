@@ -58,7 +58,7 @@ export default function PlaygroundHistorySidebar({
           <div className="px-4 py-3 border-b border-border-subtle bg-primary/5">
             <div className="flex items-center gap-1.5 text-xs">
               <Loader2 className="size-3 animate-spin text-primary" />
-              <span className="font-mono text-foreground-secondary">
+              <span className="font-mono text-foreground-muted">
                 {selectedModel?.displayName || selectedModel?.modelId || 'Running...'}
               </span>
             </div>
@@ -76,7 +76,7 @@ export default function PlaygroundHistorySidebar({
                 <div className="flex items-center justify-between mb-1">
                   <button
                     onClick={() => setExpandedRunId(expandedRunId === run.id ? null : run.id)}
-                    className="flex items-center gap-1.5 text-xs text-foreground-secondary hover:text-foreground transition-colors"
+                    className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground transition-colors"
                   >
                     {expandedRunId === run.id ? (
                       <ChevronDown className="size-3" />

@@ -115,7 +115,7 @@ export function McpImportSection() {
                         {t.toolName}
                       </span>
                     </div>
-                    <p className="text-xs text-foreground-secondary">{t.description}</p>
+                    <p className="text-xs text-foreground-muted">{t.description}</p>
                     <ParamSummary schema={t.inputSchema} />
                   </div>
                 ))}

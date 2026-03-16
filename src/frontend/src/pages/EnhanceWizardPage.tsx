@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { WizardContent } from '@/components/wizard/WizardContent';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { entryService } from '@/services';
@@ -54,7 +54,26 @@ const EnhanceWizardPage = () => {
   }
 
   if (isLoading || !entry) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex h-full flex-col">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
+          <Skeleton className="h-6 w-32 rounded" />
+          <Skeleton className="h-4 w-48 rounded" />
+          <Skeleton className="size-8 rounded" />
+        </div>
+        {/* Content skeleton */}
+        <div className="flex-1 flex items-start justify-center p-8">
+          <div className="w-full max-w-2xl space-y-6">
+            <Skeleton className="h-8 w-64 rounded" />
+            <Skeleton className="h-4 w-96 rounded" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

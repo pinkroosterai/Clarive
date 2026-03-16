@@ -104,7 +104,7 @@ export const ToolCard = memo(function ToolCard({ tool, onUpdate, onDelete }: Too
           </span>
         </CardHeader>
         <CardContent className="space-y-1">
-          <p className="text-sm text-foreground-secondary line-clamp-2">{tool.description}</p>
+          <p className="text-sm text-foreground-muted line-clamp-2">{tool.description}</p>
           <ToolParamSummary schema={tool.inputSchema} />
         </CardContent>
       </Card>

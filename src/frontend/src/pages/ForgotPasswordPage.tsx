@@ -57,7 +57,7 @@ const ForgotPasswordPage = () => {
               <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Mail className="size-6" />
               </div>
-              <p className="text-center text-sm text-foreground-secondary">
+              <p className="text-center text-sm text-foreground-muted">
                 If an account exists for{' '}
                 <span className="font-medium text-foreground">{emailValue}</span>, you'll receive an
                 email with instructions to reset your password.

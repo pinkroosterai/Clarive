@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { Users, Key, ScrollText, ArrowLeftRight, UserCircle, Wrench } from 'lucide-react';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -21,7 +22,7 @@ function TabCount({ count }: { count: number | undefined }) {
 }
 
 const TAB_STYLE =
-  'gap-1.5 min-h-[44px] text-foreground-muted hover:text-foreground-secondary data-[state=active]:bg-surface data-[state=active]:elevation-1 data-[state=active]:rounded-md data-[state=active]:text-foreground';
+  'gap-1.5 min-h-[44px] text-foreground-muted hover:text-foreground data-[state=active]:bg-surface data-[state=active]:elevation-1 data-[state=active]:rounded-md data-[state=active]:text-foreground';
 
 const VALID_TABS = ['profile', 'users', 'api-keys', 'tools', 'audit-log', 'import-export'];
 
@@ -87,34 +88,68 @@ const SettingsPage = () => {
         </TabsList>
 
         <TabsContent value="profile">
-          <div className="space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-8"
+          >
             <ProfileSection />
             <SessionManager />
             <AccountDeletionSection />
-          </div>
+          </motion.div>
         </TabsContent>
 
         <TabsContent value="users">
-          <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-6"
+          >
             <WorkspaceSection />
             <UserManagement />
-          </div>
+          </motion.div>
         </TabsContent>
 
         <TabsContent value="api-keys">
-          <ApiKeyPanel />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <ApiKeyPanel />
+          </motion.div>
         </TabsContent>
 
         <TabsContent value="tools">
-          <ToolsPanel />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <ToolsPanel />
+          </motion.div>
         </TabsContent>
 
         <TabsContent value="audit-log">
-          <AuditLogTable />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <AuditLogTable />
+          </motion.div>
         </TabsContent>
 
         <TabsContent value="import-export">
-          <ImportExportPanel />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <ImportExportPanel />
+          </motion.div>
         </TabsContent>
       </Tabs>
     </div>

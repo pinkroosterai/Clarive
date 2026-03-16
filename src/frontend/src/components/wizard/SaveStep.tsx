@@ -41,7 +41,7 @@ export function SaveStep({ draft, mode, evaluation, onSave, isSaving }: SaveStep
       <div className="bg-surface rounded-xl border border-border-subtle elevation-1 p-5 text-left space-y-3">
         <h4 className="font-semibold text-foreground">{draft.title}</h4>
 
-        <div className="flex flex-wrap gap-3 text-xs text-foreground-secondary">
+        <div className="flex flex-wrap gap-3 text-xs text-foreground-muted">
           <span className="flex items-center gap-1.5">
             <MessageSquare className="size-3.5" />
             {draft.prompts.length} {draft.prompts.length === 1 ? 'prompt' : 'prompts'}

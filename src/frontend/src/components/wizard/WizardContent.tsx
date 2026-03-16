@@ -157,7 +157,7 @@ export function WizardContent({ mode, existingEntry, onClose }: WizardContentPro
                 className="flex flex-col items-center justify-center h-full gap-4"
               >
                 <AlertTriangle className="size-8 text-destructive" />
-                <p className="text-foreground-secondary">Failed to initialize enhancement.</p>
+                <p className="text-foreground-muted">Failed to initialize enhancement.</p>
                 <Button onClick={runBootstrap}>Try Again</Button>
               </motion.div>
             )}

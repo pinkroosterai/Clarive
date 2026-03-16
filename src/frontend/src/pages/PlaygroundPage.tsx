@@ -3,12 +3,12 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import PlaygroundHistorySidebar from '@/components/playground/PlaygroundHistorySidebar';
 import PlaygroundResultsArea from '@/components/playground/PlaygroundResultsArea';
 import PlaygroundToolbar from '@/components/playground/PlaygroundToolbar';
 import { safeSessionGet } from '@/components/playground/utils';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { usePlaygroundKeyboardShortcuts } from '@/hooks/usePlaygroundKeyboardShortcuts';
 import { usePlaygroundStreaming } from '@/hooks/usePlaygroundStreaming';
@@ -24,6 +24,7 @@ import {
 import type { TemplateField } from '@/types';
 
 // ── Page ──
+// Animation tier: None — streaming provides real-time feedback
 
 const PlaygroundPage = () => {
   const { entryId } = useParams<{ entryId: string }>();
@@ -214,8 +215,24 @@ const PlaygroundPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <LoadingSpinner />
+      <div className="flex flex-col h-full">
+        {/* Toolbar skeleton */}
+        <div className="flex items-center gap-3 border-b border-border-subtle px-4 h-14">
+          <Skeleton className="size-8 rounded" />
+          <Skeleton className="h-5 w-40 rounded" />
+          <div className="ml-auto flex items-center gap-2">
+            <Skeleton className="h-8 w-32 rounded-lg" />
+            <Skeleton className="h-8 w-20 rounded-lg" />
+            <Skeleton className="h-8 w-20 rounded-lg" />
+          </div>
+        </div>
+        {/* Content skeleton */}
+        <div className="flex-1 p-6 space-y-4">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-10 w-3/4 rounded-lg" />
+          <Skeleton className="mt-6 h-[300px] w-full rounded-xl" />
+        </div>
       </div>
     );
   }

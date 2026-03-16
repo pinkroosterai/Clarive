@@ -23,7 +23,7 @@ const PrivacyPage = () => {
         <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Privacy Policy</h1>
         <p className="text-sm text-foreground-muted mb-10">Last updated: March 2, 2026</p>
 
-        <div className="space-y-8 text-foreground-secondary text-[15px] leading-relaxed">
+        <div className="space-y-8 text-foreground-muted text-[15px] leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-3">
               1. Information We Collect

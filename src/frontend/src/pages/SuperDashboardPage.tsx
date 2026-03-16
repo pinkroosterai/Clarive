@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import {
   Users,
   FileText,
@@ -41,7 +42,7 @@ const TAB_REDIRECTS: Record<string, string> = {
 };
 
 const TAB_STYLE =
-  'gap-1.5 min-h-[44px] text-foreground-muted hover:text-foreground-secondary data-[state=active]:bg-surface data-[state=active]:elevation-1 data-[state=active]:rounded-md data-[state=active]:text-foreground';
+  'gap-1.5 min-h-[44px] text-foreground-muted hover:text-foreground data-[state=active]:bg-surface data-[state=active]:elevation-1 data-[state=active]:rounded-md data-[state=active]:text-foreground';
 
 // ── Page ──
 
@@ -195,98 +196,123 @@ const SuperDashboardPage = () => {
         </TabsList>
 
         {/* Dashboard Tab — Platform Overview + AI Usage Analytics */}
-        <TabsContent value="dashboard" className="mt-6 space-y-6">
-          {/* Platform Overview */}
-          <section className="space-y-4">
-            <div className="mb-2">
-              <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
-                Platform Overview
-              </h3>
-            </div>
-            {statsLoading ? (
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-[140px] animate-pulse rounded-xl bg-muted" />
-                ))}
+        <TabsContent value="dashboard" className="mt-6">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-6"
+          >
+            {/* Platform Overview */}
+            <section className="space-y-4">
+              <div className="mb-2">
+                <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
+                  Platform Overview
+                </h3>
               </div>
-            ) : (
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                <HeroStatCard
-                  icon={Users}
-                  label="Total Users"
-                  value={stats?.totalUsers ?? 0}
-                  delta={stats?.newUsers7d ?? 0}
-                  index={0}
-                />
-                <HeroStatCard
-                  icon={FileText}
-                  label="Total Entries"
-                  value={stats?.totalEntries ?? 0}
-                  delta={stats?.entriesCreated7d ?? 0}
-                  index={1}
-                />
-                <HeroStatCard
-                  icon={Bot}
-                  label="AI Sessions"
-                  value={stats?.totalAiSessions ?? 0}
-                  delta={stats?.aiSessions7d ?? 0}
-                  index={2}
-                />
-              </div>
-            )}
+              {statsLoading ? (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-[140px] animate-pulse rounded-xl bg-muted" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  <HeroStatCard
+                    icon={Users}
+                    label="Total Users"
+                    value={stats?.totalUsers ?? 0}
+                    delta={stats?.newUsers7d ?? 0}
+                    index={0}
+                  />
+                  <HeroStatCard
+                    icon={FileText}
+                    label="Total Entries"
+                    value={stats?.totalEntries ?? 0}
+                    delta={stats?.entriesCreated7d ?? 0}
+                    index={1}
+                  />
+                  <HeroStatCard
+                    icon={Bot}
+                    label="AI Sessions"
+                    value={stats?.totalAiSessions ?? 0}
+                    delta={stats?.aiSessions7d ?? 0}
+                    index={2}
+                  />
+                </div>
+              )}
 
-            {statsLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-[56px] animate-pulse rounded-lg bg-muted" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <CompactMetricStrip title="Users & Auth" items={userAuthMetrics} index={0} />
-                <CompactMetricStrip title="Workspaces" items={workspaceMetrics} index={1} />
-                <CompactMetricStrip title="Content" items={contentMetrics} index={2} />
-              </div>
-            )}
-          </section>
+              {statsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-[56px] animate-pulse rounded-lg bg-muted" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <CompactMetricStrip title="Users & Auth" items={userAuthMetrics} index={0} />
+                  <CompactMetricStrip title="Workspaces" items={workspaceMetrics} index={1} />
+                  <CompactMetricStrip title="Content" items={contentMetrics} index={2} />
+                </div>
+              )}
+            </section>
 
-          {/* AI Usage Analytics */}
-          <section>
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
-                AI Usage Analytics
-              </h3>
-              <p className="text-xs text-foreground-muted mt-1">
-                Token consumption, cost breakdown, and usage trends across all AI operations.
-              </p>
-            </div>
-            <AiUsageDashboard />
-          </section>
+            {/* AI Usage Analytics */}
+            <section>
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
+                  AI Usage Analytics
+                </h3>
+                <p className="text-xs text-foreground-muted mt-1">
+                  Token consumption, cost breakdown, and usage trends across all AI operations.
+                </p>
+              </div>
+              <AiUsageDashboard />
+            </section>
+          </motion.div>
         </TabsContent>
 
         {/* Users Tab */}
         <TabsContent value="users" className="mt-6">
-          <UsersTable />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <UsersTable />
+          </motion.div>
         </TabsContent>
 
         {/* AI Tab (AI Providers + AI Config) */}
         <TabsContent value="ai" className="mt-6">
-          <AiTab
-            aiSettings={settingsBySection['ai'] ?? []}
-            configLoading={configLoading}
-            configError={configError}
-            onSaved={refreshRestartKeys}
-          />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <AiTab
+              aiSettings={settingsBySection['ai'] ?? []}
+              configLoading={configLoading}
+              configError={configError}
+              onSaved={refreshRestartKeys}
+            />
+          </motion.div>
         </TabsContent>
 
         {/* Settings Tab (merged Authentication + Email + Application) */}
         <TabsContent value="settings" className="mt-6">
-          <SettingsTab
-            settingsBySection={settingsBySection}
-            configLoading={configLoading}
-            configError={configError}
-            onSaved={refreshRestartKeys}
-          />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <SettingsTab
+              settingsBySection={settingsBySection}
+              configLoading={configLoading}
+              configError={configError}
+              onSaved={refreshRestartKeys}
+            />
+          </motion.div>
         </TabsContent>
       </Tabs>
     </div>

@@ -157,7 +157,7 @@ export const EntryCard = memo(function EntryCard({
         </CardHeader>
 
         <CardContent className="pb-3">
-          <p className="text-sm text-foreground-secondary line-clamp-2">
+          <p className="text-sm text-foreground-muted line-clamp-2">
             {preview || 'Empty prompt'}
           </p>
           {entry.tags && entry.tags.length > 0 && (

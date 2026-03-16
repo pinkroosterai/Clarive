@@ -42,7 +42,7 @@ const MaintenancePage = () => {
           We're performing scheduled maintenance to improve your experience. Please try again in a
           few minutes.
         </p>
-        <p className="text-xs text-foreground-muted/60">
+        <p className="text-xs text-foreground-muted">
           This page will automatically refresh when maintenance is complete.
         </p>
       </div>

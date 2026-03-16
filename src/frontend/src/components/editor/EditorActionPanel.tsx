@@ -134,7 +134,7 @@ export function EditorActionPanel({
       initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="space-y-5"
+      className="space-y-4"
     >
       {!isReadOnly && (
         <>

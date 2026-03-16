@@ -67,7 +67,7 @@ const SetupPage = () => {
 
           <div className="flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-3 mb-5">
             <ShieldAlert className="size-4 text-primary mt-0.5 shrink-0" />
-            <p className="text-xs text-foreground-secondary leading-relaxed">
+            <p className="text-xs text-foreground-muted leading-relaxed">
               This account will have full administrative access including system configuration,
               maintenance controls, and user management.
             </p>

@@ -53,7 +53,7 @@ export function ReviewStep({
             <h3 className="text-sm font-semibold text-foreground">Clarification Questions</h3>
             {questions.map((q, i) => (
               <div key={i} className="space-y-2">
-                <Label className="text-xs text-foreground-secondary">{q.text}</Label>
+                <Label className="text-xs text-foreground-muted">{q.text}</Label>
 
                 {q.suggestions.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
@@ -68,7 +68,7 @@ export function ReviewStep({
                         className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                           answers[i] === suggestion
                             ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                            : 'bg-elevated border-border-subtle hover:bg-accent hover:border-primary/30 text-foreground-secondary'
+                            : 'bg-elevated border-border-subtle hover:bg-accent hover:border-primary/30 text-foreground-muted'
                         }`}
                       >
                         {suggestion}
@@ -107,7 +107,7 @@ export function ReviewStep({
                   disabled={isRefining}
                   className="mt-0.5"
                 />
-                <span className="text-sm text-foreground-secondary">{enh}</span>
+                <span className="text-sm text-foreground-muted">{enh}</span>
               </label>
             ))}
           </div>

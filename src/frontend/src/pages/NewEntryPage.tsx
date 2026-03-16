@@ -1,13 +1,22 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Sparkles, Loader2, PenLine } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectTrigger,
@@ -19,6 +28,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { flattenFolders } from '@/lib/folderUtils';
 import { handleApiError } from '@/lib/handleApiError';
+import { newEntrySchema, type NewEntryFormData } from '@/lib/validationSchemas';
 import { entryService, folderService } from '@/services';
 
 const NewEntryPage = () => {
@@ -27,9 +37,12 @@ const NewEntryPage = () => {
     document.title = 'Clarive \u2014 New Entry';
   }, []);
   const navigate = useNavigate();
-  const [title, setTitle] = useState('');
-  const [folderId, setFolderId] = useState('__root__');
   const [isCreating, setIsCreating] = useState(false);
+
+  const form = useForm<NewEntryFormData>({
+    resolver: zodResolver(newEntrySchema),
+    defaultValues: { title: '', folderId: '__root__' },
+  });
 
   const { data: folders = [] } = useQuery({
     queryKey: ['folders'],
@@ -38,13 +51,12 @@ const NewEntryPage = () => {
 
   const flatFolders = flattenFolders(folders);
 
-  const handleCreate = async () => {
-    if (!title.trim()) return;
+  const onSubmit = async (data: NewEntryFormData) => {
     setIsCreating(true);
     try {
       const entry = await entryService.createEntry({
-        title: title.trim(),
-        folderId: folderId === '__root__' ? null : folderId,
+        title: data.title.trim(),
+        folderId: data.folderId === '__root__' ? null : data.folderId,
       });
       toast.success('Entry created');
       navigate(`/entry/${entry.id}`);
@@ -79,63 +91,88 @@ const NewEntryPage = () => {
         </div>
 
         {/* Form card */}
-        <div className="rounded-b-xl border border-border-subtle bg-surface elevation-1 px-6 py-6 space-y-5">
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.3 }}
-            className="space-y-2"
-          >
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              placeholder="My prompt entry"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreate();
-              }}
-              className="h-11"
-            />
-          </motion.div>
+        <div className="rounded-b-xl border border-border-subtle bg-surface elevation-1 px-6 py-6 space-y-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+              >
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="My prompt entry"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              form.handleSubmit(onSubmit)();
+                            }
+                          }}
+                          className="h-11"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.3 }}
-            className="space-y-2"
-          >
-            <Label htmlFor="folder">Folder</Label>
-            <Select value={folderId} onValueChange={setFolderId}>
-              <SelectTrigger id="folder">
-                <SelectValue placeholder="Root (no folder)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__root__">Root (no folder)</SelectItem>
-                {flatFolders.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {'\u00A0\u00A0'.repeat(f.depth) + f.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
+              >
+                <FormField
+                  control={form.control}
+                  name="folderId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Folder</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Root (no folder)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="__root__">Root (no folder)</SelectItem>
+                          {flatFolders.map((f) => (
+                            <SelectItem key={f.id} value={f.id}>
+                              {'\u00A0\u00A0'.repeat(f.depth) + f.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.3 }}
-          >
-            <Button
-              className="w-full h-11"
-              onClick={handleCreate}
-              disabled={!title.trim() || isCreating}
-            >
-              {isCreating && <Loader2 className="animate-spin" />}
-              Create Entry
-            </Button>
-          </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+              >
+                <Button
+                  type="submit"
+                  className="w-full h-11"
+                  disabled={isCreating || form.formState.isSubmitting}
+                >
+                  {isCreating && <Loader2 className="animate-spin" />}
+                  Create Entry
+                </Button>
+              </motion.div>
+            </form>
+          </Form>
 
           {/* Divider */}
           <div className="relative py-1">

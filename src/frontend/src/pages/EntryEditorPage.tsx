@@ -5,7 +5,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
 import { EditorAiOverlay } from '@/components/editor/EditorAiOverlay';
 import { PromptEditor } from '@/components/editor/PromptEditor';
@@ -26,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -193,7 +193,38 @@ const EntryEditorPage = () => {
   }
 
   if (isLoading || !editor.localEntry) {
-    return <LoadingSpinner />;
+    if (isMobile) {
+      return (
+        <div className="p-4 space-y-4">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-6 w-32 rounded" />
+          <Skeleton className="h-[400px] w-full rounded-xl" />
+        </div>
+      );
+    }
+    return (
+      <div className="grid h-full grid-cols-[minmax(0,1fr)_300px] gap-0">
+        <div className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-6 w-20 rounded" />
+            </div>
+            <Skeleton className="size-8 rounded" />
+          </div>
+          <Skeleton className="h-[500px] w-full rounded-xl" />
+        </div>
+        <div className="bg-surface border-l border-border-subtle p-4 space-y-4">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-px w-full" />
+          <Skeleton className="h-6 w-24 rounded" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+          <Skeleton className="h-px w-full" />
+          <Skeleton className="h-6 w-20 rounded" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
+      </div>
+    );
   }
 
   const localEntry = editor.localEntry;

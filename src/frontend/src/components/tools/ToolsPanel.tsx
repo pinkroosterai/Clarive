@@ -179,7 +179,7 @@ export default function ToolsPanel() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -188,7 +188,7 @@ export default function ToolsPanel() {
           ))}
         </div>
       ) : tools && tools.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {tools.map((tool) => (
             <ToolCard key={tool.id} tool={tool} onUpdate={handleUpdate} onDelete={handleDelete} />
           ))}

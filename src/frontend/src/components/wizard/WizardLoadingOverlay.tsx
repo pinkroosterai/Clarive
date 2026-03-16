@@ -91,7 +91,7 @@ export function WizardLoadingOverlay({
       {/* Fallback message — only shown before any real events arrive */}
       {!hasLog && (
         <p
-          className={`text-sm font-medium text-foreground-secondary transition-opacity duration-200 ${
+          className={`text-sm font-medium text-foreground-muted transition-opacity duration-200 ${
             fading ? 'opacity-0' : 'opacity-100'
           }`}
         >
@@ -138,7 +138,7 @@ export function WizardLoadingOverlay({
 
                         {/* Message + detail */}
                         <span className="min-w-0 flex items-baseline gap-1.5">
-                          <span className="font-medium text-foreground-secondary whitespace-nowrap">
+                          <span className="font-medium text-foreground-muted whitespace-nowrap">
                             {entry.message}
                           </span>
                           {entry.detail && (

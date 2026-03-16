@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import { Trash2, Undo2, FolderOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -199,14 +200,18 @@ const TrashPage = () => {
       {isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
+            <motion.div
               key={i}
-              className="flex items-center gap-4 rounded-lg border border-border-subtle bg-surface skeleton-shimmer p-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05, duration: 0.3 }}
+              className="flex items-center gap-4 rounded-lg border border-border-subtle bg-surface p-4"
             >
-              <Skeleton className="size-4" />
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-4 w-24 ml-auto" />
-            </div>
+              <Skeleton className="size-4 rounded" />
+              <Skeleton className="h-4 w-48 rounded" />
+              <Skeleton className="h-4 w-24 ml-auto rounded hidden sm:block" />
+              <Skeleton className="h-4 w-20 ml-2 rounded hidden md:block" />
+            </motion.div>
           ))}
         </div>
       )}
@@ -236,9 +241,12 @@ const TrashPage = () => {
             <span className="w-24" />
           </div>
 
-          {entries.map((entry) => (
-            <div
+          {entries.map((entry, index) => (
+            <motion.div
               key={entry.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: Math.min(index * 0.03, 0.3), duration: 0.25 }}
               className="flex items-center gap-4 rounded-lg border border-border-subtle bg-surface hover:bg-elevated transition-colors border-l-2 border-l-destructive/30 px-4 py-3"
             >
               <Checkbox
@@ -302,7 +310,7 @@ const TrashPage = () => {
                   </AlertDialog>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}

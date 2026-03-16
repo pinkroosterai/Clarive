@@ -34,13 +34,13 @@ export function EditorAiOverlay({ isVisible, label, onCancel }: EditorAiOverlayP
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-5 bg-background/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-background/60 backdrop-blur-sm"
           style={{ pointerEvents: 'all' }}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
           <AiLoadingAnimation />
-          <p className="text-sm font-medium text-foreground-secondary">{label}</p>
+          <p className="text-sm font-medium text-foreground-muted">{label}</p>
           <span className="text-xs text-foreground-muted tabular-nums">{elapsed}s</span>
           {onCancel && (
             <Button

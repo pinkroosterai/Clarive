@@ -76,7 +76,7 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
               What would you like to create?
             </h2>
           </div>
-          <p className="text-sm text-foreground-secondary max-w-md">
+          <p className="text-sm text-foreground-muted max-w-md">
             Describe your idea and the AI will generate a structured, high-quality prompt for you.
           </p>
         </div>

@@ -714,7 +714,7 @@ export default function HelpPage() {
                 {section.title}
               </span>
             </AccordionTrigger>
-            <AccordionContent className="text-foreground-secondary">
+            <AccordionContent className="text-foreground-muted">
               {section.content}
             </AccordionContent>
           </AccordionItem>

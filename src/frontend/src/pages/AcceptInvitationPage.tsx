@@ -1,13 +1,27 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AnvilIcon } from '@/components/icons/AnvilIcon';
 import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { handleApiError } from '@/lib/handleApiError';
+import {
+  acceptInvitationSchema,
+  type AcceptInvitationFormData,
+} from '@/lib/validationSchemas';
 import { invitationService } from '@/services';
 import type { InvitationInfo } from '@/services/api/invitationService';
 import { useAuthStore } from '@/store/authStore';
@@ -24,11 +38,13 @@ const AcceptInvitationPage = () => {
   const [info, setInfo] = useState<InvitationInfo | null>(null);
   const [errorMessage, setErrorMessage] = useState('Invalid or missing invitation link.');
 
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const form = useForm<AcceptInvitationFormData>({
+    resolver: zodResolver(acceptInvitationSchema),
+    defaultValues: { name: '', password: '', confirmPassword: '' },
+  });
 
   // Validate token on mount
   useEffect(() => {
@@ -59,24 +75,10 @@ const AcceptInvitationPage = () => {
     return <Navigate to="/" replace />;
   }
 
-  const MIN_PASSWORD_LENGTH = 12;
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      toast.error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
+  const onSubmit = async (data: AcceptInvitationFormData) => {
     setState('submitting');
     try {
-      const res = await invitationService.acceptInvitation(token, name, password);
+      const res = await invitationService.acceptInvitation(token, data.name, data.password);
       setUser(res.user);
       if (res.workspaces) setWorkspaces(res.workspaces);
       setState('success');
@@ -100,7 +102,7 @@ const AcceptInvitationPage = () => {
             {info && state !== 'success' && (
               <p className="text-foreground-muted text-sm">
                 You've been invited to{' '}
-                <span className="font-medium text-foreground-secondary">{info.workspaceName}</span>{' '}
+                <span className="font-medium text-foreground-muted">{info.workspaceName}</span>{' '}
                 as {info.role === 'editor' ? 'an' : 'a'} {info.role}
               </p>
             )}
@@ -117,7 +119,7 @@ const AcceptInvitationPage = () => {
             {state === 'expired' && (
               <div className="text-center space-y-4">
                 <XCircle className="mx-auto size-12 text-error-text" />
-                <p className="text-foreground-secondary text-sm">{errorMessage}</p>
+                <p className="text-foreground-muted text-sm">{errorMessage}</p>
                 <p className="text-foreground-muted text-xs">
                   Contact your workspace admin for a new invitation.
                 </p>
@@ -127,96 +129,130 @@ const AcceptInvitationPage = () => {
             {state === 'success' && (
               <div className="text-center space-y-4">
                 <CheckCircle2 className="mx-auto size-12 text-success-text" />
-                <p className="text-foreground-secondary text-sm">
+                <p className="text-foreground-muted text-sm">
                   Your account has been created. Redirecting...
                 </p>
               </div>
             )}
 
             {(state === 'form' || state === 'submitting') && (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="invite-email">Email</Label>
-                  <Input
-                    id="invite-email"
-                    type="email"
-                    value={info?.email ?? ''}
-                    disabled
-                    className="bg-elevated border-border opacity-60"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="invite-name">Name</Label>
-                  <Input
-                    id="invite-name"
-                    type="text"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    autoComplete="name"
-                    autoFocus
-                    className="bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="invite-password">Password</Label>
-                  <div className="relative">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="invite-email">Email</Label>
                     <Input
-                      id="invite-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={MIN_PASSWORD_LENGTH}
-                      autoComplete="new-password"
-                      className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
+                      id="invite-email"
+                      type="email"
+                      value={info?.email ?? ''}
+                      disabled
+                      className="bg-elevated border-border opacity-60"
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                      onClick={() => setShowPassword(!showPassword)}
-                      tabIndex={-1}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </Button>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="invite-confirm">Confirm password</Label>
-                  <div className="relative">
-                    <Input
-                      id="invite-confirm"
-                      type={showConfirm ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      autoComplete="new-password"
-                      className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      tabIndex={-1}
-                      aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
-                    >
-                      {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full" disabled={state === 'submitting'}>
-                  {state === 'submitting' && <Loader2 className="animate-spin" />}
-                  Create account & join
-                </Button>
-              </form>
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Your name"
+                            autoComplete="name"
+                            autoFocus
+                            className="bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              type={showPassword ? 'text' : 'password'}
+                              placeholder="••••••••"
+                              autoComplete="new-password"
+                              className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                              onClick={() => setShowPassword(!showPassword)}
+                              tabIndex={-1}
+                              aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="size-4" />
+                              ) : (
+                                <Eye className="size-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              type={showConfirm ? 'text' : 'password'}
+                              placeholder="••••••••"
+                              autoComplete="new-password"
+                              className="pr-10 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                              onClick={() => setShowConfirm(!showConfirm)}
+                              tabIndex={-1}
+                              aria-label={
+                                showConfirm ? 'Hide confirm password' : 'Show confirm password'
+                              }
+                            >
+                              {showConfirm ? (
+                                <EyeOff className="size-4" />
+                              ) : (
+                                <Eye className="size-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={state === 'submitting' || form.formState.isSubmitting}
+                  >
+                    {(state === 'submitting' || form.formState.isSubmitting) && (
+                      <Loader2 className="animate-spin" />
+                    )}
+                    Create account & join
+                  </Button>
+                </form>
+              </Form>
             )}
           </div>
         </div>

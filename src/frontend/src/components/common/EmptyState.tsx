@@ -28,7 +28,7 @@ export function EmptyState({ icon: Icon, title, description, actions }: EmptySta
         </motion.div>
       </div>
       <h3 className="text-base font-semibold text-foreground mb-1">{title}</h3>
-      <p className="text-sm text-foreground-secondary max-w-sm mb-6">{description}</p>
+      <p className="text-sm text-foreground-muted max-w-sm mb-6">{description}</p>
       {actions && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}

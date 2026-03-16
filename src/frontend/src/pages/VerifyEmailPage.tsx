@@ -62,7 +62,7 @@ const VerifyEmailPage = () => {
             {state === 'success' && (
               <>
                 <CheckCircle2 className="mx-auto size-12 text-success-text" />
-                <p className="text-foreground-secondary text-sm">
+                <p className="text-foreground-muted text-sm">
                   Your email has been verified successfully.
                 </p>
                 <Link to="/login">
@@ -74,7 +74,7 @@ const VerifyEmailPage = () => {
             {state === 'error' && (
               <>
                 <XCircle className="mx-auto size-12 text-error-text" />
-                <p className="text-foreground-secondary text-sm">{errorMessage}</p>
+                <p className="text-foreground-muted text-sm">{errorMessage}</p>
                 <Link to="/login">
                   <Button variant="outline" className="w-full">
                     Back to sign in

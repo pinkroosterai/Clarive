@@ -32,7 +32,7 @@ function DeltaIndicator({ current, previous }: { current: number; previous: numb
     );
   }
   return (
-    <span className="flex items-center gap-0.5 text-foreground-secondary text-xs">
+    <span className="flex items-center gap-0.5 text-foreground-muted text-xs">
       <Minus className="size-3" />
     </span>
   );
@@ -71,7 +71,7 @@ export function QualityScoreCard({ evaluation, scoreHistory }: QualityScoreCardP
           return (
             <div key={dim} className="space-y-0.5">
               <div className="flex items-center gap-3">
-                <span className="text-xs text-foreground-secondary w-24 shrink-0">{dim}</span>
+                <span className="text-xs text-foreground-muted w-24 shrink-0">{dim}</span>
                 <div className="flex-1 h-2 rounded-full bg-elevated">
                   <motion.div
                     className={`h-2 rounded-full ${bar}`}
@@ -84,7 +84,7 @@ export function QualityScoreCard({ evaluation, scoreHistory }: QualityScoreCardP
                 {prevEntry && <DeltaIndicator current={entry.score} previous={prevEntry.score} />}
               </div>
               {entry.feedback && (
-                <p className="text-xs text-foreground-secondary pl-[calc(6rem+0.75rem)] leading-snug">
+                <p className="text-xs text-foreground-muted pl-[calc(6rem+0.75rem)] leading-snug">
                   {entry.feedback}
                 </p>
               )}

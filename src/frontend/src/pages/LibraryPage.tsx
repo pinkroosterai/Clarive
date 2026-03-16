@@ -40,7 +40,7 @@ const PAGE_SIZE = 50;
 
 function SkeletonCards() {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
         <motion.div
           key={i}
@@ -325,7 +325,7 @@ export default function LibraryPage() {
           <p className="text-sm">No prompts match your filters.</p>
         </motion.div>
       ) : (
-        <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((entry, index) => (
               <div

@@ -72,7 +72,7 @@ const GoogleCallbackPage = () => {
             </div>
             <div className="space-y-4 text-center">
               <XCircle className="mx-auto size-12 text-error-text" />
-              <p className="text-foreground-secondary text-sm">{error}</p>
+              <p className="text-foreground-muted text-sm">{error}</p>
               <Button className="w-full" onClick={() => navigate('/login', { replace: true })}>
                 Back to sign in
               </Button>
