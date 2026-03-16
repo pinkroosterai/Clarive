@@ -1,3 +1,4 @@
+using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
 using Clarive.Api.Models.Entities;
@@ -9,20 +10,20 @@ namespace Clarive.Api.UnitTests.Services.EntryService;
 public class UpdateEntryTests : EntryServiceTestBase
 {
     [Fact]
-    public async Task Update_EntryNotFound_ThrowsKeyNotFound()
+    public async Task Update_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
         EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var act = () => Sut.UpdateEntryAsync(TenantId, entryId, ValidUpdateRequest(), CancellationToken.None);
+        var result = await Sut.UpdateEntryAsync(TenantId, entryId, ValidUpdateRequest(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("*Entry*");
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
-    public async Task Update_WorkingVersionNotFound_ThrowsKeyNotFound()
+    public async Task Update_WorkingVersionNotFound_ReturnsNotFoundError()
     {
         var entry = MakeEntry();
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
@@ -30,10 +31,10 @@ public class UpdateEntryTests : EntryServiceTestBase
         EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var act = () => Sut.UpdateEntryAsync(TenantId, entry.Id, ValidUpdateRequest(), CancellationToken.None);
+        var result = await Sut.UpdateEntryAsync(TenantId, entry.Id, ValidUpdateRequest(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("*version*");
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -47,8 +48,10 @@ public class UpdateEntryTests : EntryServiceTestBase
 
         var request = new UpdateEntryRequest("New Title", "New system msg", null);
 
-        var (resultEntry, resultVersion) = await Sut.UpdateEntryAsync(
-            TenantId, entry.Id, request, CancellationToken.None);
+        var result = await Sut.UpdateEntryAsync(TenantId, entry.Id, request, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var (resultEntry, resultVersion) = result.Value;
 
         resultEntry.Title.Should().Be("New Title");
         resultVersion.SystemMessage.Should().Be("New system msg");
@@ -72,8 +75,10 @@ public class UpdateEntryTests : EntryServiceTestBase
 
         var request = new UpdateEntryRequest("New Title", "New system", [new PromptInput("Updated prompt")]);
 
-        var (_, resultVersion) = await Sut.UpdateEntryAsync(
-            TenantId, entry.Id, request, CancellationToken.None);
+        var result = await Sut.UpdateEntryAsync(TenantId, entry.Id, request, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var (_, resultVersion) = result.Value;
 
         resultVersion.Version.Should().Be(2);
         resultVersion.VersionState.Should().Be(VersionState.Draft);
@@ -96,9 +101,9 @@ public class UpdateEntryTests : EntryServiceTestBase
 
         var request = new UpdateEntryRequest("Title", null, null); // systemMessage = null
 
-        var (_, resultVersion) = await Sut.UpdateEntryAsync(
-            TenantId, entry.Id, request, CancellationToken.None);
+        var result = await Sut.UpdateEntryAsync(TenantId, entry.Id, request, CancellationToken.None);
 
-        resultVersion.SystemMessage.Should().Be("Keep this");
+        result.IsError.Should().BeFalse();
+        result.Value.WorkingVersion.SystemMessage.Should().Be("Keep this");
     }
 }

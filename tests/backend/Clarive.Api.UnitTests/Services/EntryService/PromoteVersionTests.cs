@@ -1,3 +1,4 @@
+using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
 using Clarive.Api.Models.Entities;
@@ -8,19 +9,20 @@ namespace Clarive.Api.UnitTests.Services.EntryService;
 public class PromoteVersionTests : EntryServiceTestBase
 {
     [Fact]
-    public async Task Promote_EntryNotFound_ThrowsKeyNotFound()
+    public async Task Promote_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
         EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var act = () => Sut.PromoteVersionAsync(TenantId, entryId, 1, CancellationToken.None);
+        var result = await Sut.PromoteVersionAsync(TenantId, entryId, 1, CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
-    public async Task Promote_VersionNotHistorical_ThrowsKeyNotFound()
+    public async Task Promote_VersionNotHistorical_ReturnsNotFoundError()
     {
         var entry = MakeEntry();
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
@@ -29,23 +31,24 @@ public class PromoteVersionTests : EntryServiceTestBase
         var draftVersion = MakeVersion(entry.Id, version: 1, state: VersionState.Draft);
         EntryRepo.GetVersionAsync(TenantId, entry.Id, 1, Arg.Any<CancellationToken>()).Returns(draftVersion);
 
-        var act = () => Sut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
+        var result = await Sut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("*Historical*");
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
-    public async Task Promote_VersionNotFound_ThrowsKeyNotFound()
+    public async Task Promote_VersionNotFound_ReturnsNotFoundError()
     {
         var entry = MakeEntry();
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
         EntryRepo.GetVersionAsync(TenantId, entry.Id, 99, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var act = () => Sut.PromoteVersionAsync(TenantId, entry.Id, 99, CancellationToken.None);
+        var result = await Sut.PromoteVersionAsync(TenantId, entry.Id, 99, CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -61,8 +64,10 @@ public class PromoteVersionTests : EntryServiceTestBase
         EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null); // no existing draft
 
-        var (_, newDraft) = await Sut.PromoteVersionAsync(
-            TenantId, entry.Id, 1, CancellationToken.None);
+        var result = await Sut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var (_, newDraft) = result.Value;
 
         newDraft.Version.Should().Be(3); // maxVersion(2) + 1
         newDraft.VersionState.Should().Be(VersionState.Draft);
@@ -86,8 +91,9 @@ public class PromoteVersionTests : EntryServiceTestBase
         EntryRepo.GetMaxVersionNumberAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(2);
         EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(existingDraft);
 
-        await Sut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
+        var result = await Sut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
 
+        result.IsError.Should().BeFalse();
         await EntryRepo.Received(1).DeleteVersionAsync(existingDraft, Arg.Any<CancellationToken>());
         await EntryRepo.Received(1).CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>());
     }

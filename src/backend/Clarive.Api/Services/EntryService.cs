@@ -4,6 +4,7 @@ using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
+using ErrorOr;
 
 namespace Clarive.Api.Services;
 
@@ -14,11 +15,11 @@ public class EntryService(
 {
     private const int MaxPromptContentLength = 100_000;
 
-    public async Task<(PromptEntry Entry, PromptEntryVersion Version)> CreateEntryAsync(
+    public async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion Version)>> CreateEntryAsync(
         Guid tenantId, Guid userId, CreateEntryRequest request, CancellationToken ct)
     {
         if (request.FolderId is not null && await folderRepo.GetByIdAsync(tenantId, request.FolderId.Value, ct) is null)
-            throw new KeyNotFoundException("Folder not found.");
+            return Error.NotFound("NOT_FOUND", "Folder not found.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -51,14 +52,16 @@ public class EntryService(
         return (entry, version);
     }
 
-    public async Task<(PromptEntry Entry, PromptEntryVersion WorkingVersion)> UpdateEntryAsync(
+    public async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion WorkingVersion)>> UpdateEntryAsync(
         Guid tenantId, Guid entryId, UpdateEntryRequest request, CancellationToken ct)
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct)
-            ?? throw new KeyNotFoundException("Entry not found.");
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct)
-            ?? throw new KeyNotFoundException("No version found.");
+        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        if (working is null)
+            return Error.NotFound("NOT_FOUND", "No version found.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -98,15 +101,16 @@ public class EntryService(
         return (entry, working);
     }
 
-    public async Task<(PromptEntry Entry, PromptEntryVersion PublishedVersion)> PublishDraftAsync(
+    public async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> PublishDraftAsync(
         Guid tenantId, Guid entryId, Guid userId, CancellationToken ct)
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct)
-            ?? throw new KeyNotFoundException("Entry not found.");
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         var draft = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (draft is null || draft.VersionState != VersionState.Draft)
-            throw new InvalidOperationException("No draft version to publish.");
+            return Error.Conflict("NO_DRAFT", "No draft version to publish.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -131,15 +135,16 @@ public class EntryService(
         return (entry, draft);
     }
 
-    public async Task<(PromptEntry Entry, PromptEntryVersion NewDraft)> PromoteVersionAsync(
+    public async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion NewDraft)>> PromoteVersionAsync(
         Guid tenantId, Guid entryId, int version, CancellationToken ct)
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct)
-            ?? throw new KeyNotFoundException("Entry not found.");
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         var historical = await entryRepo.GetVersionAsync(tenantId, entryId, version, ct);
         if (historical is null || historical.VersionState != VersionState.Historical)
-            throw new KeyNotFoundException("Historical version not found.");
+            return Error.NotFound("NOT_FOUND", "Historical version not found.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -170,14 +175,15 @@ public class EntryService(
         return (entry, newDraft);
     }
 
-    public async Task<PromptEntry> MoveEntryAsync(
+    public async Task<ErrorOr<PromptEntry>> MoveEntryAsync(
         Guid tenantId, Guid entryId, Guid? folderId, CancellationToken ct)
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct)
-            ?? throw new KeyNotFoundException("Entry not found.");
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         if (folderId is not null && await folderRepo.GetByIdAsync(tenantId, folderId.Value, ct) is null)
-            throw new KeyNotFoundException("Target folder not found.");
+            return Error.NotFound("NOT_FOUND", "Target folder not found.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -189,10 +195,11 @@ public class EntryService(
         return entry;
     }
 
-    public async Task<PromptEntry> TrashEntryAsync(Guid tenantId, Guid entryId, CancellationToken ct)
+    public async Task<ErrorOr<PromptEntry>> TrashEntryAsync(Guid tenantId, Guid entryId, CancellationToken ct)
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct)
-            ?? throw new KeyNotFoundException("Entry not found.");
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -204,13 +211,14 @@ public class EntryService(
         return entry;
     }
 
-    public async Task<PromptEntry> RestoreEntryAsync(Guid tenantId, Guid entryId, CancellationToken ct)
+    public async Task<ErrorOr<PromptEntry>> RestoreEntryAsync(Guid tenantId, Guid entryId, CancellationToken ct)
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct)
-            ?? throw new KeyNotFoundException("Entry not found.");
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         if (!entry.IsTrashed)
-            throw new InvalidOperationException("Entry is not in trash.");
+            return Error.Conflict("NOT_TRASHED", "Entry is not in trash.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -222,13 +230,14 @@ public class EntryService(
         return entry;
     }
 
-    public async Task<PromptEntry> DeleteEntryPermanentlyAsync(Guid tenantId, Guid entryId, CancellationToken ct)
+    public async Task<ErrorOr<PromptEntry>> DeleteEntryPermanentlyAsync(Guid tenantId, Guid entryId, CancellationToken ct)
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct)
-            ?? throw new KeyNotFoundException("Entry not found.");
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
 
         if (!entry.IsTrashed)
-            throw new InvalidOperationException("Entry must be trashed before permanent deletion.");
+            return Error.Conflict("NOT_TRASHED", "Entry must be trashed before permanent deletion.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 

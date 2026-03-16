@@ -1,3 +1,4 @@
+using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
 using Clarive.Api.Models.Entities;
@@ -13,7 +14,10 @@ public class CreateEntryTests : EntryServiceTestBase
     {
         var request = ValidCreateRequest(title: " My Prompt ");
 
-        var (entry, version) = await Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
+        var result = await Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var (entry, version) = result.Value;
 
         entry.Title.Should().Be("My Prompt"); // trimmed
         entry.TenantId.Should().Be(TenantId);
@@ -29,7 +33,7 @@ public class CreateEntryTests : EntryServiceTestBase
     }
 
     [Fact]
-    public async Task CreateEntry_FolderNotFound_ThrowsKeyNotFound()
+    public async Task CreateEntry_FolderNotFound_ReturnsNotFoundError()
     {
         var folderId = Guid.NewGuid();
         FolderRepo.GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
@@ -37,10 +41,10 @@ public class CreateEntryTests : EntryServiceTestBase
 
         var request = ValidCreateRequest(folderId: folderId);
 
-        var act = () => Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
+        var result = await Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("*Folder*");
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -52,9 +56,10 @@ public class CreateEntryTests : EntryServiceTestBase
 
         var request = ValidCreateRequest(folderId: folder.Id);
 
-        var (entry, _) = await Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
+        var result = await Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
 
-        entry.FolderId.Should().Be(folder.Id);
+        result.IsError.Should().BeFalse();
+        result.Value.Entry.FolderId.Should().Be(folder.Id);
     }
 
     [Fact]
@@ -62,7 +67,10 @@ public class CreateEntryTests : EntryServiceTestBase
     {
         var request = ValidCreateRequest(prompts: [new PromptInput("Hello {{user}}")]);
 
-        var (_, version) = await Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
+        var result = await Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var (_, version) = result.Value;
 
         version.Prompts[0].IsTemplate.Should().BeTrue();
         version.Prompts[0].TemplateFields.Should().NotBeEmpty();

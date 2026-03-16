@@ -1,3 +1,4 @@
+using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
 using Clarive.Api.Models.Entities;
@@ -7,19 +8,20 @@ namespace Clarive.Api.UnitTests.Services.EntryService;
 public class MoveEntryTests : EntryServiceTestBase
 {
     [Fact]
-    public async Task Move_EntryNotFound_ThrowsKeyNotFound()
+    public async Task Move_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
         EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var act = () => Sut.MoveEntryAsync(TenantId, entryId, null, CancellationToken.None);
+        var result = await Sut.MoveEntryAsync(TenantId, entryId, null, CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
-    public async Task Move_TargetFolderNotFound_ThrowsKeyNotFound()
+    public async Task Move_TargetFolderNotFound_ReturnsNotFoundError()
     {
         var entry = MakeEntry();
         var targetFolderId = Guid.NewGuid();
@@ -28,10 +30,10 @@ public class MoveEntryTests : EntryServiceTestBase
         FolderRepo.GetByIdAsync(TenantId, targetFolderId, Arg.Any<CancellationToken>())
             .Returns((Folder?)null);
 
-        var act = () => Sut.MoveEntryAsync(TenantId, entry.Id, targetFolderId, CancellationToken.None);
+        var result = await Sut.MoveEntryAsync(TenantId, entry.Id, targetFolderId, CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("*folder*");
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -42,7 +44,8 @@ public class MoveEntryTests : EntryServiceTestBase
 
         var result = await Sut.MoveEntryAsync(TenantId, entry.Id, null, CancellationToken.None);
 
-        result.FolderId.Should().BeNull();
+        result.IsError.Should().BeFalse();
+        result.Value.FolderId.Should().BeNull();
         await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
     }
 
@@ -56,7 +59,8 @@ public class MoveEntryTests : EntryServiceTestBase
 
         var result = await Sut.MoveEntryAsync(TenantId, entry.Id, folder.Id, CancellationToken.None);
 
-        result.FolderId.Should().Be(folder.Id);
+        result.IsError.Should().BeFalse();
+        result.Value.FolderId.Should().Be(folder.Id);
         await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
     }
 }

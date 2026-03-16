@@ -237,22 +237,19 @@ public static partial class EntryEndpoints
         if (error is not null)
             return ctx.ErrorResult(422, "VALIDATION_ERROR", error);
 
-        try
-        {
-            var (entry, version) = await entryService.CreateEntryAsync(tenantId, userId, request, ct);
+        var result = await entryService.CreateEntryAsync(tenantId, userId, request, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-            TenantCacheKeys.EvictEntryData(cache, tenantId);
+        var (entry, version) = result.Value;
 
-            await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryCreated,
-                "prompt_entry", entry.Id, entry.Title, $"Created '{entry.Title}'", ct);
+        TenantCacheKeys.EvictEntryData(cache, tenantId);
 
-            return Results.Created($"/api/entries/{entry.Id}",
-                await BuildFullResponseAsync(entry, version, userRepo, tenantId, ct));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ctx.ErrorResult(404, "NOT_FOUND", ex.Message);
-        }
+        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryCreated,
+            "prompt_entry", entry.Id, entry.Title, $"Created '{entry.Title}'", ct);
+
+        return Results.Created($"/api/entries/{entry.Id}",
+            await BuildFullResponseAsync(entry, version, userRepo, tenantId, ct));
     }
 
     // ── Update entry (overwrite draft or create draft from published) ──
@@ -272,19 +269,16 @@ public static partial class EntryEndpoints
         if (error is not null)
             return ctx.ErrorResult(422, "VALIDATION_ERROR", error);
 
-        try
-        {
-            var (entry, working) = await entryService.UpdateEntryAsync(tenantId, entryId, request, ct);
+        var result = await entryService.UpdateEntryAsync(tenantId, entryId, request, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-            await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryDraftUpdated,
-                "prompt_entry", entry.Id, entry.Title, $"Updated draft v{working.Version}", ct);
+        var (entry, working) = result.Value;
 
-            return Results.Ok(await BuildFullResponseAsync(entry, working, userRepo, tenantId, ct));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ctx.ErrorResult(404, "NOT_FOUND", ex.Message, "Entry", entryId.ToString());
-        }
+        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryDraftUpdated,
+            "prompt_entry", entry.Id, entry.Title, $"Updated draft v{working.Version}", ct);
+
+        return Results.Ok(await BuildFullResponseAsync(entry, working, userRepo, tenantId, ct));
     }
 
     // ── Publish ──
@@ -300,25 +294,18 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        try
-        {
-            var (entry, published) = await entryService.PublishDraftAsync(tenantId, entryId, userId, ct);
+        var result = await entryService.PublishDraftAsync(tenantId, entryId, userId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-            TenantCacheKeys.EvictEntryData(cache, tenantId);
+        var (entry, published) = result.Value;
 
-            await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryPublished,
-                "prompt_entry", entry.Id, entry.Title, $"Published version {published.Version}", ct);
+        TenantCacheKeys.EvictEntryData(cache, tenantId);
 
-            return Results.Ok(await BuildFullResponseAsync(entry, published, userRepo, tenantId, ct));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ctx.ErrorResult(404, "NOT_FOUND", ex.Message, "Entry", entryId.ToString());
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ctx.ErrorResult(409, "NO_DRAFT", ex.Message, "Entry", entryId.ToString());
-        }
+        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryPublished,
+            "prompt_entry", entry.Id, entry.Title, $"Published version {published.Version}", ct);
+
+        return Results.Ok(await BuildFullResponseAsync(entry, published, userRepo, tenantId, ct));
     }
 
     // ── Promote historical version ──
@@ -334,19 +321,16 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        try
-        {
-            var (entry, newDraft) = await entryService.PromoteVersionAsync(tenantId, entryId, version, ct);
+        var result = await entryService.PromoteVersionAsync(tenantId, entryId, version, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-            await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.VersionPromoted,
-                "prompt_entry", entry.Id, entry.Title, $"Restored v{version} as new draft v{newDraft.Version}", ct);
+        var (entry, newDraft) = result.Value;
 
-            return Results.Ok(await BuildFullResponseAsync(entry, newDraft, userRepo, tenantId, ct));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ctx.ErrorResult(404, "NOT_FOUND", ex.Message, "Entry", entryId.ToString());
-        }
+        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.VersionPromoted,
+            "prompt_entry", entry.Id, entry.Title, $"Restored v{version} as new draft v{newDraft.Version}", ct);
+
+        return Results.Ok(await BuildFullResponseAsync(entry, newDraft, userRepo, tenantId, ct));
     }
 
     // ── Move to folder ──
@@ -361,19 +345,16 @@ public static partial class EntryEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        try
-        {
-            var entry = await entryService.MoveEntryAsync(tenantId, entryId, request.FolderId, ct);
+        var result = await entryService.MoveEntryAsync(tenantId, entryId, request.FolderId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-            var (version, versionErr) = await GetWorkingVersionOrError(ctx, entryRepo, tenantId, entryId, ct);
-            if (versionErr is not null) return versionErr;
+        var entry = result.Value;
 
-            return Results.Ok(await BuildFullResponseAsync(entry, version!, userRepo, tenantId, ct));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ctx.ErrorResult(404, "NOT_FOUND", ex.Message);
-        }
+        var (version, versionErr) = await GetWorkingVersionOrError(ctx, entryRepo, tenantId, entryId, ct);
+        if (versionErr is not null) return versionErr;
+
+        return Results.Ok(await BuildFullResponseAsync(entry, version!, userRepo, tenantId, ct));
     }
 
     // ── Trash ──
@@ -387,21 +368,18 @@ public static partial class EntryEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        try
-        {
-            var entry = await entryService.TrashEntryAsync(tenantId, entryId, ct);
+        var result = await entryService.TrashEntryAsync(tenantId, entryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-            TenantCacheKeys.EvictEntryData(cache, tenantId);
+        var entry = result.Value;
 
-            await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryTrashed,
-                "prompt_entry", entry.Id, entry.Title, $"Moved '{entry.Title}' to trash", ct);
+        TenantCacheKeys.EvictEntryData(cache, tenantId);
 
-            return Results.NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ctx.ErrorResult(404, "NOT_FOUND", ex.Message, "Entry", entryId.ToString());
-        }
+        await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryTrashed,
+            "prompt_entry", entry.Id, entry.Title, $"Moved '{entry.Title}' to trash", ct);
+
+        return Results.NoContent();
     }
 
     // ── Restore ──
@@ -417,27 +395,20 @@ public static partial class EntryEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        try
-        {
-            var entry = await entryService.RestoreEntryAsync(tenantId, entryId, ct);
+        var result = await entryService.RestoreEntryAsync(tenantId, entryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-            TenantCacheKeys.EvictEntryData(cache, tenantId);
+        var entry = result.Value;
 
-            await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryRestored,
-                "prompt_entry", entry.Id, entry.Title, $"Restored '{entry.Title}' from trash", ct);
+        TenantCacheKeys.EvictEntryData(cache, tenantId);
 
-            var (version, versionErr) = await GetWorkingVersionOrError(ctx, entryRepo, tenantId, entryId, ct);
-            if (versionErr is not null) return versionErr;
-            return Results.Ok(await BuildFullResponseAsync(entry, version!, userRepo, tenantId, ct));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ctx.ErrorResult(404, "NOT_FOUND", ex.Message, "Entry", entryId.ToString());
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ctx.ErrorResult(409, "NOT_TRASHED", ex.Message, "Entry", entryId.ToString());
-        }
+        await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryRestored,
+            "prompt_entry", entry.Id, entry.Title, $"Restored '{entry.Title}' from trash", ct);
+
+        var (version, versionErr) = await GetWorkingVersionOrError(ctx, entryRepo, tenantId, entryId, ct);
+        if (versionErr is not null) return versionErr;
+        return Results.Ok(await BuildFullResponseAsync(entry, version!, userRepo, tenantId, ct));
     }
 
     // ── Permanent delete ──
@@ -451,25 +422,18 @@ public static partial class EntryEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        try
-        {
-            var entry = await entryService.DeleteEntryPermanentlyAsync(tenantId, entryId, ct);
+        var result = await entryService.DeleteEntryPermanentlyAsync(tenantId, entryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-            TenantCacheKeys.EvictEntryData(cache, tenantId);
+        var entry = result.Value;
 
-            await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryDeleted,
-                "prompt_entry", entryId, entry.Title, $"Permanently deleted '{entry.Title}'", ct);
+        TenantCacheKeys.EvictEntryData(cache, tenantId);
 
-            return Results.NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ctx.ErrorResult(404, "NOT_FOUND", ex.Message, "Entry", entryId.ToString());
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ctx.ErrorResult(409, "NOT_TRASHED", ex.Message, "Entry", entryId.ToString());
-        }
+        await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryDeleted,
+            "prompt_entry", entryId, entry.Title, $"Permanently deleted '{entry.Title}'", ct);
+
+        return Results.NoContent();
     }
 
     // ── Tags ──

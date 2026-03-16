@@ -1,3 +1,4 @@
+using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
 using Clarive.Api.Models.Entities;
@@ -9,15 +10,16 @@ public class EntryLifecycleTests : EntryServiceTestBase
     // ── TrashEntryAsync ──────────────────────────────────────────
 
     [Fact]
-    public async Task Trash_EntryNotFound_ThrowsKeyNotFound()
+    public async Task Trash_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
         EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var act = () => Sut.TrashEntryAsync(TenantId, entryId, CancellationToken.None);
+        var result = await Sut.TrashEntryAsync(TenantId, entryId, CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -28,34 +30,37 @@ public class EntryLifecycleTests : EntryServiceTestBase
 
         var result = await Sut.TrashEntryAsync(TenantId, entry.Id, CancellationToken.None);
 
-        result.IsTrashed.Should().BeTrue();
+        result.IsError.Should().BeFalse();
+        result.Value.IsTrashed.Should().BeTrue();
         await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
     }
 
     // ── RestoreEntryAsync ────────────────────────────────────────
 
     [Fact]
-    public async Task Restore_EntryNotFound_ThrowsKeyNotFound()
+    public async Task Restore_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
         EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var act = () => Sut.RestoreEntryAsync(TenantId, entryId, CancellationToken.None);
+        var result = await Sut.RestoreEntryAsync(TenantId, entryId, CancellationToken.None);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
-    public async Task Restore_NotTrashed_ThrowsInvalidOperation()
+    public async Task Restore_NotTrashed_ReturnsConflictError()
     {
         var entry = MakeEntry(isTrashed: false);
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        var act = () => Sut.RestoreEntryAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await Sut.RestoreEntryAsync(TenantId, entry.Id, CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not in trash*");
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.Conflict);
+        result.FirstError.Code.Should().Be("NOT_TRASHED");
     }
 
     [Fact]
@@ -66,22 +71,24 @@ public class EntryLifecycleTests : EntryServiceTestBase
 
         var result = await Sut.RestoreEntryAsync(TenantId, entry.Id, CancellationToken.None);
 
-        result.IsTrashed.Should().BeFalse();
+        result.IsError.Should().BeFalse();
+        result.Value.IsTrashed.Should().BeFalse();
         await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
     }
 
     // ── DeleteEntryPermanentlyAsync ──────────────────────────────
 
     [Fact]
-    public async Task Delete_NotTrashed_ThrowsInvalidOperation()
+    public async Task Delete_NotTrashed_ReturnsConflictError()
     {
         var entry = MakeEntry(isTrashed: false);
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        var act = () => Sut.DeleteEntryPermanentlyAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await Sut.DeleteEntryPermanentlyAsync(TenantId, entry.Id, CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*trashed*");
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.Conflict);
+        result.FirstError.Code.Should().Be("NOT_TRASHED");
     }
 
     [Fact]
@@ -90,8 +97,9 @@ public class EntryLifecycleTests : EntryServiceTestBase
         var entry = MakeEntry(isTrashed: true);
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        await Sut.DeleteEntryPermanentlyAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await Sut.DeleteEntryPermanentlyAsync(TenantId, entry.Id, CancellationToken.None);
 
+        result.IsError.Should().BeFalse();
         await EntryRepo.Received(1).DeleteAsync(TenantId, entry.Id, Arg.Any<CancellationToken>());
     }
 }
