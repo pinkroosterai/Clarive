@@ -51,7 +51,8 @@ public class PromptOrchestrator : IPromptOrchestrator
 
         try
         {
-            var entry = _pool.Get(agentSessionId)!;
+            var entry = _pool.Get(agentSessionId)
+                ?? throw new InvalidOperationException("Agent session expired or not found.");
 
             PromptSet prompts;
             UsageDetails? genUsage;
@@ -153,7 +154,8 @@ public class PromptOrchestrator : IPromptOrchestrator
 
         try
         {
-            var entry = _pool.Get(agentSessionId)!;
+            var entry = _pool.Get(agentSessionId)
+                ?? throw new InvalidOperationException("Agent session expired or not found.");
 
             // Bootstrap: feed existing prompts to the generation agent so it has context
             var bootstrapTask = TaskBuilder.BuildEnhanceBootstrapTask(systemMessage, prompts);
