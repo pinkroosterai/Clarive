@@ -124,23 +124,15 @@ public class ImportExportService(
 
         if (entryIds is { Count: > 0 })
         {
-            foreach (var id in entryIds)
-            {
-                var entry = await entryRepo.GetByIdAsync(tenantId, id, ct);
-                if (entry is not null && !entry.IsTrashed)
-                    entries.Add(entry);
-            }
+            var byId = await entryRepo.GetByIdsAsync(tenantId, entryIds, ct);
+            entries.AddRange(byId.Values.Where(e => !e.IsTrashed));
         }
         else if (folderIds is { Count: > 0 })
         {
             var allFolderIds = new HashSet<Guid>(folderIds);
             await ExpandFolderSubtreeAsync(tenantId, folderIds, allFolderIds, ct: ct);
 
-            foreach (var fid in allFolderIds)
-            {
-                var (folderEntries, _) = await entryRepo.GetByFolderAsync(tenantId, fid, includeAll: false, new EntryQueryOptions(PageSize: int.MaxValue), ct);
-                entries.AddRange(folderEntries);
-            }
+            entries.AddRange(await entryRepo.GetByFolderIdsAsync(tenantId, allFolderIds, ct));
         }
         else
         {

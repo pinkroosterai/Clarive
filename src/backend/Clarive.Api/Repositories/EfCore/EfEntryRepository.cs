@@ -75,6 +75,16 @@ public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
             .ToDictionaryAsync(e => e.Id, ct);
     }
 
+    public async Task<List<PromptEntry>> GetByFolderIdsAsync(Guid tenantId, IEnumerable<Guid> folderIds, CancellationToken ct = default)
+    {
+        var ids = folderIds.ToList();
+        if (ids.Count == 0) return [];
+        return await db.PromptEntries
+            .AsNoTracking()
+            .Where(e => e.TenantId == tenantId && !e.IsTrashed && e.FolderId.HasValue && ids.Contains(e.FolderId.Value))
+            .ToListAsync(ct);
+    }
+
     public async Task<PromptEntry> CreateAsync(PromptEntry entry, CancellationToken ct = default)
     {
         db.PromptEntries.Add(entry);
