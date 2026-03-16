@@ -11,7 +11,7 @@ public class BuildChatOptionsTests
     [Fact]
     public void NullModel_ReturnsNull()
     {
-        var result = OpenAIAgentFactory.BuildChatOptions(null);
+        var result = ChatOptionsBuilder.BuildChatOptions(null);
         result.Should().BeNull();
     }
 
@@ -24,7 +24,7 @@ public class BuildChatOptionsTests
                         IsReasoning = false
         };
 
-        var result = OpenAIAgentFactory.BuildChatOptions(model);
+        var result = ChatOptionsBuilder.BuildChatOptions(model);
         result.Should().BeNull();
     }
 
@@ -37,7 +37,7 @@ public class BuildChatOptionsTests
                         DefaultTemperature = 0.7f
         };
 
-        var result = OpenAIAgentFactory.BuildChatOptions(model);
+        var result = ChatOptionsBuilder.BuildChatOptions(model);
 
         result.Should().NotBeNull();
         result!.Temperature.Should().BeApproximately(0.7f, 0.01f);
@@ -53,7 +53,7 @@ public class BuildChatOptionsTests
             DefaultTemperature = 0.5f
         };
 
-        var result = OpenAIAgentFactory.BuildChatOptions(model);
+        var result = ChatOptionsBuilder.BuildChatOptions(model);
 
         // Temperature is set but model doesn't support it — should return null (no other defaults)
         result.Should().BeNull();
@@ -68,7 +68,7 @@ public class BuildChatOptionsTests
             DefaultMaxTokens = 8192
         };
 
-        var result = OpenAIAgentFactory.BuildChatOptions(model);
+        var result = ChatOptionsBuilder.BuildChatOptions(model);
 
         result.Should().NotBeNull();
         result!.MaxOutputTokens.Should().Be(8192);
@@ -84,7 +84,7 @@ public class BuildChatOptionsTests
             DefaultReasoningEffort = "high"
         };
 
-        var result = OpenAIAgentFactory.BuildChatOptions(model);
+        var result = ChatOptionsBuilder.BuildChatOptions(model);
 
         result.Should().NotBeNull();
         result!.Reasoning.Should().NotBeNull();
@@ -101,7 +101,7 @@ public class BuildChatOptionsTests
             DefaultReasoningEffort = "high"
         };
 
-        var result = OpenAIAgentFactory.BuildChatOptions(model);
+        var result = ChatOptionsBuilder.BuildChatOptions(model);
 
         // Non-reasoning model with reasoning effort set — should return null (no other defaults)
         result.Should().BeNull();
@@ -118,7 +118,7 @@ public class BuildChatOptionsTests
             DefaultMaxTokens = 16384
         };
 
-        var result = OpenAIAgentFactory.BuildChatOptions(model);
+        var result = ChatOptionsBuilder.BuildChatOptions(model);
 
         result.Should().NotBeNull();
         result!.Temperature.Should().BeApproximately(0.3f, 0.01f);
@@ -138,7 +138,7 @@ public class BuildChatOptionsTests
             DefaultReasoningEffort = "low"
         };
 
-        var result = OpenAIAgentFactory.BuildChatOptions(model);
+        var result = ChatOptionsBuilder.BuildChatOptions(model);
 
         result.Should().NotBeNull();
         result!.Temperature.Should().BeNull();
@@ -154,7 +154,7 @@ public class BuildChatOptionsTests
     {
         var client = NSubstitute.Substitute.For<IChatClient>();
 
-        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, null, null, null);
+        var result = ChatOptionsBuilder.WrapWithRoleOverrides(client, null, null, null);
 
         result.Should().BeSameAs(client);
     }
@@ -164,7 +164,7 @@ public class BuildChatOptionsTests
     {
         var client = NSubstitute.Substitute.For<IChatClient>();
 
-        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, null, null, "");
+        var result = ChatOptionsBuilder.WrapWithRoleOverrides(client, null, null, "");
 
         result.Should().BeSameAs(client);
     }
@@ -174,7 +174,7 @@ public class BuildChatOptionsTests
     {
         var client = NSubstitute.Substitute.For<IChatClient>();
 
-        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, 0.9f, null, null);
+        var result = ChatOptionsBuilder.WrapWithRoleOverrides(client, 0.9f, null, null);
 
         result.Should().NotBeSameAs(client);
     }
@@ -184,7 +184,7 @@ public class BuildChatOptionsTests
     {
         var client = NSubstitute.Substitute.For<IChatClient>();
 
-        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, null, 8192, null);
+        var result = ChatOptionsBuilder.WrapWithRoleOverrides(client, null, 8192, null);
 
         result.Should().NotBeSameAs(client);
     }
@@ -194,7 +194,7 @@ public class BuildChatOptionsTests
     {
         var client = NSubstitute.Substitute.For<IChatClient>();
 
-        var result = OpenAIAgentFactory.WrapWithRoleOverrides(client, null, null, "high");
+        var result = ChatOptionsBuilder.WrapWithRoleOverrides(client, null, null, "high");
 
         result.Should().NotBeSameAs(client);
     }
@@ -211,7 +211,7 @@ public class BuildChatOptionsTests
     [InlineData("LOW", ReasoningEffort.Low)]
     public void ParseReasoningEffort_MapsCorrectly(string input, ReasoningEffort expected)
     {
-        var result = OpenAIAgentFactory.ParseReasoningEffort(input);
+        var result = ChatOptionsBuilder.ParseReasoningEffort(input);
         result.Should().Be(expected);
     }
 }

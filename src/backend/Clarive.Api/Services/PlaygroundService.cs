@@ -97,7 +97,7 @@ public class PlaygroundService(
             {
                 options.Reasoning = new ReasoningOptions
                 {
-                    Effort = OpenAIAgentFactory.ParseReasoningEffort(request.ReasoningEffort ?? "medium"),
+                    Effort = ChatOptionsBuilder.ParseReasoningEffort(request.ReasoningEffort ?? "medium"),
                     Output = ReasoningOutput.Full,
                 };
             }

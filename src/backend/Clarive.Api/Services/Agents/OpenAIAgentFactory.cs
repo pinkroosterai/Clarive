@@ -163,7 +163,23 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             return;
         }
 
-        // Load providers asynchronously OUTSIDE the lock to avoid deadlocks
+        var resolved = await ResolveProvidersAsync(settings);
+        if (resolved is null)
+            return;
+
+        var (defaultResolved, premiumResolved) = resolved.Value;
+        SwapClients(settings, defaultResolved, premiumResolved);
+
+        _logger.LogInformation(
+            "AI clients initialized (default: {Default} via {DefaultProvider}, premium: {Premium} via {PremiumProvider})",
+            settings.DefaultModel, defaultResolved.ProviderName,
+            settings.PremiumModel, premiumResolved.ProviderName);
+
+        OnReconfigured?.Invoke();
+    }
+
+    private async Task<(ResolvedProvider Default, ResolvedProvider Premium)?> ResolveProvidersAsync(AiSettings settings)
+    {
         List<AiProvider> providers;
         try
         {
@@ -173,7 +189,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         {
             ResetClients();
             _logger.LogWarning(ex, "Failed to load AI providers — AI features unavailable");
-            return;
+            return null;
         }
 
         var defaultResolved = ResolveProviderForModel(providers, settings.DefaultModel, settings.DefaultModelProviderId);
@@ -184,15 +200,19 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             ResetClients();
             _logger.LogWarning("AI not configured — no active provider found for {Missing} model",
                 defaultResolved is null ? "default" : "premium");
-            return;
+            return null;
         }
 
+        return (defaultResolved, premiumResolved);
+    }
+
+    private void SwapClients(AiSettings settings, ResolvedProvider defaultResolved, ResolvedProvider premiumResolved)
+    {
         var premiumOpenAiClient = CreateOpenAIClient(premiumResolved.ApiKey, premiumResolved.EndpointUrl);
         var defaultOpenAiClient = premiumResolved == defaultResolved
             ? premiumOpenAiClient
             : CreateOpenAIClient(defaultResolved.ApiKey, defaultResolved.EndpointUrl);
 
-        // Only hold the write lock for the fast field swap
         _lock.EnterWriteLock();
         try
         {
@@ -204,14 +224,13 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             var premiumBase = premiumOpenAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
             var defaultBase = defaultOpenAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
 
-            // Wrap clients with ConfigureOptions to apply model-specific defaults + role overrides
-            _premiumClient = WrapWithRoleOverrides(
-                WrapWithModelDefaults(premiumBase, premiumResolved.Model),
+            _premiumClient = ChatOptionsBuilder.WrapWithRoleOverrides(
+                ChatOptionsBuilder.WrapWithModelDefaults(premiumBase, premiumResolved.Model),
                 settings.PremiumModelTemperature,
                 settings.PremiumModelMaxTokens,
                 settings.PremiumModelReasoningEffort);
-            _defaultClient = WrapWithRoleOverrides(
-                WrapWithModelDefaults(defaultBase, defaultResolved.Model),
+            _defaultClient = ChatOptionsBuilder.WrapWithRoleOverrides(
+                ChatOptionsBuilder.WrapWithModelDefaults(defaultBase, defaultResolved.Model),
                 settings.DefaultModelTemperature,
                 settings.DefaultModelMaxTokens,
                 settings.DefaultModelReasoningEffort);
@@ -222,13 +241,6 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             _premiumProviderName = premiumResolved.ProviderName;
         }
         finally { _lock.ExitWriteLock(); }
-
-        _logger.LogInformation(
-            "AI clients initialized (default: {Default} via {DefaultProvider}, premium: {Premium} via {PremiumProvider})",
-            settings.DefaultModel, defaultResolved.ProviderName,
-            settings.PremiumModel, premiumResolved.ProviderName);
-
-        OnReconfigured?.Invoke();
     }
 
     private void ResetClients()
@@ -317,85 +329,6 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         }
         finally { _lock.ExitReadLock(); }
     }
-
-    private static IChatClient WrapWithModelDefaults(IChatClient client, AiProviderModel? model)
-    {
-        var defaults = BuildChatOptions(model);
-        if (defaults is null)
-            return client;
-
-        return new ChatClientBuilder(client)
-            .ConfigureOptions(options =>
-            {
-                options.Temperature ??= defaults.Temperature;
-                options.MaxOutputTokens ??= defaults.MaxOutputTokens;
-                options.Reasoning ??= defaults.Reasoning;
-            })
-            .Build();
-    }
-
-    internal static IChatClient WrapWithRoleOverrides(
-        IChatClient client, float? temperature, int? maxTokens, string? reasoningEffort)
-    {
-        if (temperature is null && maxTokens is null && string.IsNullOrWhiteSpace(reasoningEffort))
-            return client;
-
-        return new ChatClientBuilder(client)
-            .ConfigureOptions(options =>
-            {
-                // Role overrides replace (not fallback) — they take priority over model defaults
-                if (temperature.HasValue)
-                    options.Temperature = temperature.Value;
-                if (maxTokens.HasValue)
-                    options.MaxOutputTokens = maxTokens.Value;
-                if (!string.IsNullOrWhiteSpace(reasoningEffort))
-                    options.Reasoning = new ReasoningOptions
-                    {
-                        Effort = ParseReasoningEffort(reasoningEffort)
-                    };
-            })
-            .Build();
-    }
-
-    internal static ChatOptions? BuildChatOptions(AiProviderModel? model)
-    {
-        if (model is null)
-            return null;
-
-        var hasTemp = !model.IsReasoning && model.DefaultTemperature.HasValue;
-        var hasTokens = model.DefaultMaxTokens.HasValue;
-        var hasReasoning = model.IsReasoning && !string.IsNullOrWhiteSpace(model.DefaultReasoningEffort);
-
-        if (!hasTemp && !hasTokens && !hasReasoning)
-            return null;
-
-        var options = new ChatOptions();
-
-        if (hasTemp)
-            options.Temperature = model.DefaultTemperature!.Value;
-
-        if (hasTokens)
-            options.MaxOutputTokens = model.DefaultMaxTokens!.Value;
-
-        if (hasReasoning)
-        {
-            options.Reasoning = new ReasoningOptions
-            {
-                Effort = ParseReasoningEffort(model.DefaultReasoningEffort!)
-            };
-        }
-
-        return options;
-    }
-
-    internal static ReasoningEffort ParseReasoningEffort(string effort) =>
-        effort.ToLowerInvariant() switch
-        {
-            "low" => ReasoningEffort.Low,
-            "high" => ReasoningEffort.High,
-            "extra-high" or "extrahigh" => ReasoningEffort.ExtraHigh,
-            _ => ReasoningEffort.Medium,
-        };
 
     private void EnsureConfigured()
     {
