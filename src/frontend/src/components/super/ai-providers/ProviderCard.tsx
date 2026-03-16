@@ -48,7 +48,7 @@ export default function ProviderCard({
   const activeModels = provider.models.filter((m) => m.isActive);
 
   return (
-    <div className="border border-border-subtle rounded-lg">
+    <div className="rounded-lg border border-border-subtle bg-surface">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <button onClick={onToggle} className="shrink-0">
@@ -79,7 +79,6 @@ export default function ProviderCard({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2"
             onClick={onValidate}
             disabled={isValidating}
           >
@@ -89,13 +88,13 @@ export default function ProviderCard({
               <ShieldCheck className="size-3.5" />
             )}
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onEdit}>
+          <Button variant="ghost" size="sm" onClick={onEdit}>
             <Pencil className="size-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-destructive"
+            className="text-destructive"
             onClick={onDelete}
           >
             <Trash2 className="size-3.5" />

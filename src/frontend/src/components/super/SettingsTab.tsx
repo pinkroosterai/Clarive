@@ -39,8 +39,8 @@ export default function SettingsTab({
   if (configLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-lg" />
       </div>
     );
   }

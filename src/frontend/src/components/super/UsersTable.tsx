@@ -264,7 +264,7 @@ export default function UsersTable() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-foreground-muted" />

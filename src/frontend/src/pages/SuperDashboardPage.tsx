@@ -195,7 +195,7 @@ const SuperDashboardPage = () => {
         </TabsList>
 
         {/* Dashboard Tab — Platform Overview + AI Usage Analytics */}
-        <TabsContent value="dashboard" className="mt-6 space-y-8">
+        <TabsContent value="dashboard" className="mt-6 space-y-6">
           {/* Platform Overview */}
           <section className="space-y-4">
             <div className="mb-2">
