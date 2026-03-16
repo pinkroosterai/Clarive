@@ -38,6 +38,7 @@ const WorkspaceSelectorPage = lazy(() => import('@/pages/WorkspaceSelectorPage')
 const SuperDashboardPage = lazy(() => import('@/pages/SuperDashboardPage'));
 const HelpPage = lazy(() => import('@/pages/HelpPage'));
 const SetupPage = lazy(() => import('@/pages/SetupPage'));
+const SetupWizardPage = lazy(() => import('@/pages/SetupWizardPage'));
 import { useAuthStore } from '@/store/authStore';
 
 function SetupGuard({ children }: { children: React.ReactNode }) {
@@ -126,6 +127,7 @@ const App = () => (
                     {/* Super admin routes */}
                     <Route element={<SuperRoute />}>
                       <Route path="/super" element={<SuperDashboardPage />} />
+                      <Route path="/setup-wizard" element={<SetupWizardPage />} />
                     </Route>
 
                     {/* Protected routes */}

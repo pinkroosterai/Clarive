@@ -25,7 +25,7 @@ Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 // Mock config so apiUrl is undefined (not '') — triggers the fallback to http://localhost:5000
 vi.mock('@/lib/config', () => ({
-  config: { apiUrl: undefined, googleClientId: '', mode: 'test' },
+  config: { apiUrl: undefined, mode: 'test' },
 }));
 
 // Mock auth store logout

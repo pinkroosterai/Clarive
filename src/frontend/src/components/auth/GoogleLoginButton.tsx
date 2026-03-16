@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { config } from '@/lib/config';
+import { getGoogleClientId } from '@/lib/config';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
@@ -12,11 +12,14 @@ function generateNonce(): string {
 }
 
 export function GoogleLoginButton() {
+  const [clientId, setClientId] = useState('');
+
+  useEffect(() => {
+    getGoogleClientId().then(setClientId);
+  }, []);
+
   const handleClick = useCallback(() => {
-    const clientId = config.googleClientId;
-    if (!clientId) {
-      return;
-    }
+    if (!clientId) return;
 
     const nonce = generateNonce();
     sessionStorage.setItem('google_nonce', nonce);
@@ -31,9 +34,8 @@ export function GoogleLoginButton() {
     });
 
     window.location.href = `${GOOGLE_AUTH_URL}?${params.toString()}`;
-  }, []);
+  }, [clientId]);
 
-  const clientId = config.googleClientId;
   if (!clientId) return null;
 
   return (

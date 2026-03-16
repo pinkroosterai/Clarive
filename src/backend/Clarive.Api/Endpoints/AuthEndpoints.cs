@@ -53,6 +53,10 @@ public static class AuthEndpoints
         group.MapGet("/setup-status", HandleSetupStatus)
             .AllowAnonymous();
 
+        group.MapGet("/google-client-id", (IConfiguration config) =>
+                Results.Ok(new { clientId = config["Google:ClientId"] ?? "" }))
+            .AllowAnonymous();
+
         // Avatar serving (public, no auth required)
         app.MapGet("/api/users/{userId:guid}/avatar", HandleGetAvatar)
             .WithTags("Users")

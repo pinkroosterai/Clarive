@@ -26,17 +26,15 @@ services:
     ports:
       - "5000:5000"
     environment:
+      # Infrastructure only — all other settings configured via Super Admin UI
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:5000
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=clarive;Username=clarive;Password=clarive"
       Jwt__Secret: "dev-secret-minimum-32-characters-long!"
-      Jwt__Issuer: Clarive
-      Jwt__Audience: Clarive
       Cors__AllowedOrigins__0: http://localhost:8080
       App__FrontendUrl: http://localhost:8080
       AllowedHosts: "*"
       CONFIG_ENCRYPTION_KEY: "j71XleMO3XGcPGXmqdcucaLMVbrKP+LXUR0aGBGfjOo="
-      RateLimiting__StrictPermitLimit: "100"
     volumes:
       - ../src/backend:/app
       - /app/Clarive.Api/obj

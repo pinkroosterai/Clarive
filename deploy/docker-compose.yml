@@ -37,32 +37,15 @@ services:
     ports:
       - "${CLARIVE_PORT:-8080}:8080"
     environment:
+      # Infrastructure only — all other settings configured via Super Admin UI
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}"
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in deploy/.env}
-      Jwt__Issuer: ${JWT_ISSUER:-Clarive}
-      Jwt__Audience: ${JWT_AUDIENCE:-Clarive}
       Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
       App__FrontendUrl: ${CORS_ORIGINS:-http://localhost:8080}
-      App__AllowRegistration: ${ALLOW_REGISTRATION:-true}
       AllowedHosts: "*"
-      Ai__DefaultModel: ${AI_DEFAULT_MODEL:-gpt-4o-mini}
-      Ai__PremiumModel: ${AI_PREMIUM_MODEL:-gpt-4o}
-      Google__ClientId: ${GOOGLE_CLIENT_ID:-}
-      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
-      Email__Provider: ${EMAIL_PROVIDER:-none}
-      Email__ApiKey: ${EMAIL_API_KEY:-}
-      Email__SmtpHost: ${EMAIL_SMTP_HOST:-}
-      Email__SmtpPort: ${EMAIL_SMTP_PORT:-587}
-      Email__SmtpUsername: ${EMAIL_SMTP_USERNAME:-}
-      Email__SmtpPassword: ${EMAIL_SMTP_PASSWORD:-}
-      Email__SmtpUseTls: ${EMAIL_SMTP_USE_TLS:-true}
-      Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@clarive.app}
-      Email__FromName: ${EMAIL_FROM_NAME:-Clarive}
-      RateLimiting__StrictPermitLimit: ${RATE_LIMIT_STRICT:-5}
       CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?Set CONFIG_ENCRYPTION_KEY in deploy/.env}
       VITE_API_URL: /api
-      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     volumes:
       - avatars:/app/data/avatars
     healthcheck:

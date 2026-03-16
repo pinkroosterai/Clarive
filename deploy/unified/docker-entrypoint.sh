@@ -12,7 +12,6 @@ escape_js() {
 cat > /usr/share/nginx/html/config.js << JSEOF
 window.__CLARIVE_CONFIG__ = {
   apiUrl: "$(escape_js "${VITE_API_URL:-/api}")",
-  googleClientId: "$(escape_js "${VITE_GOOGLE_CLIENT_ID:-}")",
   mode: "production"
 };
 JSEOF

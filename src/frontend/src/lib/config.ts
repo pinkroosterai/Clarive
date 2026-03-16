@@ -1,6 +1,5 @@
 interface AppConfig {
   apiUrl: string;
-  googleClientId: string;
   mode: string;
 }
 
@@ -14,6 +13,20 @@ export const APP_VERSION = '0.1.1';
 
 export const config: AppConfig = {
   apiUrl: (rc?.apiUrl as string) || import.meta.env.VITE_API_URL || '',
-  googleClientId: (rc?.googleClientId as string) || import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
   mode: import.meta.env.MODE,
 };
+
+// Fetch Google Client ID from API (DB-backed config)
+let cachedGoogleClientId: string | null = null;
+export async function getGoogleClientId(): Promise<string> {
+  if (cachedGoogleClientId !== null) return cachedGoogleClientId;
+  try {
+    const res = await fetch('/api/auth/google-client-id');
+    if (!res.ok) throw new Error('Failed to fetch Google Client ID');
+    const data = await res.json();
+    cachedGoogleClientId = data.clientId ?? '';
+  } catch {
+    cachedGoogleClientId = '';
+  }
+  return cachedGoogleClientId;
+}

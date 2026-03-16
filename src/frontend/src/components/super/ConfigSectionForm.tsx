@@ -275,7 +275,7 @@ function ConfigField({ setting, dirtyValue, onChange, onReset, isResetting }: Co
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Remove dashboard override and revert to environment default</p>
+                <p>Remove dashboard override and revert to default</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -423,26 +423,26 @@ function SourceBadge({ source }: { source: ConfigSetting['source'] }) {
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Value set via the super user dashboard (overrides environment)</p>
+              <p>Value set via the super user dashboard</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       );
-    case 'environment':
+    case 'default':
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge
                 variant="outline"
-                className="text-success-text border-success-border gap-1 text-xs"
+                className="text-foreground-muted border-border-subtle gap-1 text-xs"
               >
                 <Server className="size-3" />
-                Environment
+                Default
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Value provided by environment variable</p>
+              <p>Using default value — configure via the dashboard to override</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

@@ -18,7 +18,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { config } from '@/lib/config';
 import { handleApiError } from '@/lib/handleApiError';
 import { registerSchema, type RegisterFormData } from '@/lib/validationSchemas';
 import { authService } from '@/services';
@@ -64,20 +63,18 @@ const RegisterPage = () => {
             <p className="text-foreground-muted text-sm">Create your account to get started</p>
           </div>
 
-          {config.googleClientId && (
-            <div className="space-y-4">
-              <GoogleLoginButton />
+          <div className="space-y-4">
+            <GoogleLoginButton />
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-surface/80 px-2 text-foreground-muted">or</span>
-                </div>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-surface/80 px-2 text-foreground-muted">or</span>
               </div>
             </div>
-          )}
+          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-4">

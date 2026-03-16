@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
@@ -10,8 +11,26 @@ import { MaintenanceBanner } from '@/components/common/MaintenanceBanner';
 import { DndProvider } from '@/components/dnd/DndProvider';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { useSetupStatus } from '@/hooks/useSetupStatus';
+import { useAuthStore } from '@/store/authStore';
 
 export function AppShell() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const { data: setupStatus } = useSetupStatus();
+
+  useEffect(() => {
+    if (
+      setupStatus?.requiresSetup &&
+      currentUser?.isSuperUser &&
+      location.pathname !== '/setup-wizard' &&
+      !sessionStorage.getItem('cl_setup_wizard_dismissed')
+    ) {
+      navigate('/setup-wizard', { replace: true });
+    }
+  }, [setupStatus, currentUser, navigate, location.pathname]);
+
   return (
     <SidebarProvider defaultOpen>
       <DndProvider>

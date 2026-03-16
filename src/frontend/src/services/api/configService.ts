@@ -25,7 +25,7 @@ export interface ConfigSetting {
   value: string | null;
   isOverridden: boolean;
   isConfigured: boolean;
-  source: 'none' | 'environment' | 'dashboard';
+  source: 'none' | 'default' | 'dashboard';
   inputType: ConfigInputType;
   selectOptions: string[] | null;
   subGroup: string | null;
@@ -53,4 +53,15 @@ export async function setConfigValue(key: string, value: string): Promise<SetCon
 
 export async function resetConfigValue(key: string): Promise<ResetConfigResult> {
   return api.delete<ResetConfigResult>(`/api/super/config/${encodeURIComponent(key)}`);
+}
+
+export interface SetupStatus {
+  requiresSetup: boolean;
+  unconfiguredSections: string[];
+}
+
+export async function getSetupStatus(): Promise<SetupStatus> {
+  const res = await fetch('/api/super/setup-status');
+  if (!res.ok) throw new Error('Failed to fetch setup status');
+  return res.json();
 }

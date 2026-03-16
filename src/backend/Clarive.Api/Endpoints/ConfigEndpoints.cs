@@ -19,7 +19,37 @@ public static class ConfigEndpoints
         group.MapGet("/", HandleGetAll);
         group.MapPut("/{key}", HandleSetValue);
         group.MapDelete("/{key}", HandleDeleteValue);
+
+        // Public setup-status endpoint (no auth required)
+        app.MapGet("/api/super/setup-status", HandleSetupStatus)
+            .WithTags("Service Configuration")
+            .AllowAnonymous();
+
         return group;
+    }
+
+    private static async Task<IResult> HandleSetupStatus(
+        IAiProviderRepository aiProviderRepo,
+        IConfiguration configuration,
+        CancellationToken ct)
+    {
+        var unconfigured = new List<string>();
+
+        // Check if any AI provider is configured
+        var providers = await aiProviderRepo.GetAllAsync(ct);
+        if (providers.Count == 0)
+            unconfigured.Add("ai");
+
+        // Check if email provider is configured (not 'none')
+        var emailProvider = configuration["Email:Provider"] ?? "none";
+        if (string.Equals(emailProvider, "none", StringComparison.OrdinalIgnoreCase))
+            unconfigured.Add("email");
+
+        return Results.Ok(new
+        {
+            requiresSetup = unconfigured.Count > 0,
+            unconfiguredSections = unconfigured
+        });
     }
 
     private static async Task<IResult> HandleGetAll(
@@ -54,13 +84,13 @@ public static class ConfigEndpoints
                 : effectiveValue ?? "";
         }
 
-        // For secrets: configured if there's a DB override OR the env var is non-empty
+        // For secrets: configured only if there's a DB override (env vars removed)
         var isConfigured = def.IsSecret
-            ? hasOverride || !string.IsNullOrEmpty(effectiveValue)
+            ? hasOverride
             : !string.IsNullOrEmpty(effectiveValue);
 
         var source = hasOverride ? "dashboard"
-            : isConfigured ? "environment"
+            : isConfigured ? "default"
             : "none";
 
         return new ConfigSettingResponse(
