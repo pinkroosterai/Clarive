@@ -247,6 +247,20 @@ public class EntryService(
         return entry;
     }
 
+    public async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> GetPublishedEntryAsync(
+        Guid tenantId, Guid entryId, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null || entry.IsTrashed)
+            return Error.NotFound("ENTRY_NOT_FOUND", "Entry not found.");
+
+        var published = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        if (published is null)
+            return Error.NotFound("NO_PUBLISHED_VERSION", "This entry has no published version.");
+
+        return (entry, published);
+    }
+
     public string? ValidateCreateRequest(CreateEntryRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))

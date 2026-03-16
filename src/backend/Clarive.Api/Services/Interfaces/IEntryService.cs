@@ -27,6 +27,9 @@ public interface IEntryService
 
     Task<ErrorOr<PromptEntry>> DeleteEntryPermanentlyAsync(Guid tenantId, Guid entryId, CancellationToken ct = default);
 
+    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> GetPublishedEntryAsync(
+        Guid tenantId, Guid entryId, CancellationToken ct = default);
+
     string? ValidateCreateRequest(CreateEntryRequest request);
     string? ValidateUpdateRequest(UpdateEntryRequest request);
 }

@@ -1,9 +1,7 @@
 using Clarive.Api.Auth;
-using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 using Clarive.Api.Helpers;
@@ -50,21 +48,18 @@ public static class PublicApiEndpoints
     private static async Task<IResult> HandleGet(
         Guid entryId,
         HttpContext ctx,
-        IEntryRepository entryRepo,
+        IEntryService entryService,
         IAuditLogger auditLogger,
         CancellationToken ct)
     {
         var (claims, claimsError) = GetApiKeyClaims(ctx);
         if (claims is null) return claimsError!;
 
-        var entry = await entryRepo.GetByIdAsync(claims.TenantId, entryId, ct);
+        var result = await entryService.GetPublishedEntryAsync(claims.TenantId, entryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        if (entry is null || entry.IsTrashed)
-            return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
-
-        var published = await entryRepo.GetPublishedVersionAsync(claims.TenantId, entryId, ct);
-        if (published is null)
-            return ctx.ErrorResult(404, "NOT_PUBLISHED", "This entry has no published version.", "Entry", entryId.ToString());
+        var (entry, published) = result.Value;
 
         await auditLogger.LogAsync(
             claims.TenantId, claims.ApiKeyId, claims.ApiKeyName,
@@ -86,21 +81,18 @@ public static class PublicApiEndpoints
         Guid entryId,
         HttpContext ctx,
         PublicGenerateRequest request,
-        IEntryRepository entryRepo,
+        IEntryService entryService,
         IAuditLogger auditLogger,
         CancellationToken ct)
     {
         var (claims, claimsError) = GetApiKeyClaims(ctx);
         if (claims is null) return claimsError!;
 
-        var entry = await entryRepo.GetByIdAsync(claims.TenantId, entryId, ct);
+        var result = await entryService.GetPublishedEntryAsync(claims.TenantId, entryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        if (entry is null || entry.IsTrashed)
-            return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
-
-        var published = await entryRepo.GetPublishedVersionAsync(claims.TenantId, entryId, ct);
-        if (published is null)
-            return ctx.ErrorResult(404, "NOT_PUBLISHED", "This entry has no published version.", "Entry", entryId.ToString());
+        var (entry, published) = result.Value;
 
         // Collect all template fields across all prompts, deduplicated by name.
         // GroupBy guarantees non-empty groups, so First() is always safe here.

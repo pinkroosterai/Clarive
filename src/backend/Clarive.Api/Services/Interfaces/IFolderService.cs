@@ -1,0 +1,19 @@
+using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Requests;
+using Clarive.Api.Models.Responses;
+using ErrorOr;
+
+namespace Clarive.Api.Services.Interfaces;
+
+public interface IFolderService
+{
+    Task<ErrorOr<List<FolderDto>>> GetTreeAsync(Guid tenantId, CancellationToken ct = default);
+
+    Task<ErrorOr<Folder>> CreateAsync(Guid tenantId, CreateFolderRequest request, CancellationToken ct = default);
+
+    Task<ErrorOr<Folder>> RenameAsync(Guid tenantId, Guid folderId, RenameFolderRequest request, CancellationToken ct = default);
+
+    Task<ErrorOr<Success>> DeleteAsync(Guid tenantId, Guid folderId, CancellationToken ct = default);
+
+    Task<ErrorOr<Folder>> MoveAsync(Guid tenantId, Guid folderId, MoveFolderRequest request, CancellationToken ct = default);
+}
