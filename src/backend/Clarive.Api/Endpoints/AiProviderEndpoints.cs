@@ -130,7 +130,6 @@ public static class AiProviderEndpoints
     }
 
     private static async Task<IResult> HandleUpdateModel(
-        Guid providerId,
         Guid modelId,
         HttpContext ctx,
         UpdateAiProviderModelRequest request,
@@ -146,7 +145,6 @@ public static class AiProviderEndpoints
     }
 
     private static async Task<IResult> HandleDeleteModel(
-        Guid providerId,
         Guid modelId,
         HttpContext ctx,
         AiProviderService service,

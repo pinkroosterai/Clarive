@@ -5,7 +5,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Clarive.Api.Migrations
+namespace Clarive.Api.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

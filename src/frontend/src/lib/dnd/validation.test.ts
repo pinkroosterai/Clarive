@@ -68,7 +68,7 @@ describe('isValidDrop', () => {
         type: 'entry',
         entry: createEntry({ folderId: 'f1' }),
       };
-      expect(isValidDrop(drag, 'f2', tree)).toBe(true);
+      expect(isValidDrop(drag, 'f2')).toBe(true);
     });
 
     it('rejects moving entry to same folder', () => {
@@ -76,7 +76,7 @@ describe('isValidDrop', () => {
         type: 'entry',
         entry: createEntry({ folderId: 'f1' }),
       };
-      expect(isValidDrop(drag, 'f1', tree)).toBe(false);
+      expect(isValidDrop(drag, 'f1')).toBe(false);
     });
 
     it('allows moving entry to root (null)', () => {
@@ -84,7 +84,7 @@ describe('isValidDrop', () => {
         type: 'entry',
         entry: createEntry({ folderId: 'f1' }),
       };
-      expect(isValidDrop(drag, null, tree)).toBe(true);
+      expect(isValidDrop(drag, null)).toBe(true);
     });
 
     it('rejects moving root entry back to root', () => {
@@ -92,7 +92,7 @@ describe('isValidDrop', () => {
         type: 'entry',
         entry: createEntry({ folderId: null }),
       };
-      expect(isValidDrop(drag, null, tree)).toBe(false);
+      expect(isValidDrop(drag, null)).toBe(false);
     });
   });
 
@@ -102,12 +102,12 @@ describe('isValidDrop', () => {
         type: 'folder',
         folder: tree[0].children[1], // f4 (parent: f1)
       };
-      expect(isValidDrop(drag, 'f2', tree)).toBe(true);
+      expect(isValidDrop(drag, 'f2')).toBe(true);
     });
 
     it('rejects dropping folder on itself', () => {
       const drag: DragData = { type: 'folder', folder: tree[0].children[0] };
-      expect(isValidDrop(drag, 'f2', tree)).toBe(false);
+      expect(isValidDrop(drag, 'f2')).toBe(false);
     });
 
     it('rejects dropping folder on same parent', () => {
@@ -115,12 +115,12 @@ describe('isValidDrop', () => {
         type: 'folder',
         folder: tree[0].children[0], // f2 (parent: f1)
       };
-      expect(isValidDrop(drag, 'f1', tree)).toBe(false);
+      expect(isValidDrop(drag, 'f1')).toBe(false);
     });
 
     it('rejects dropping folder into its own descendant (circular)', () => {
       const drag: DragData = { type: 'folder', folder: tree[0] }; // f1
-      expect(isValidDrop(drag, 'f3', tree)).toBe(false);
+      expect(isValidDrop(drag, 'f3')).toBe(false);
     });
 
     it('allows moving folder to root', () => {
@@ -128,7 +128,7 @@ describe('isValidDrop', () => {
         type: 'folder',
         folder: tree[0].children[0], // f2 (parent: f1)
       };
-      expect(isValidDrop(drag, null, tree)).toBe(true);
+      expect(isValidDrop(drag, null)).toBe(true);
     });
   });
 });

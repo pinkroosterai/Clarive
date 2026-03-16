@@ -10,21 +10,120 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Clarive.Api.Migrations
+namespace Clarive.Api.Data.Migrations
 {
     [DbContext(typeof(ClariveDbContext))]
-    [Migration("20260306110648_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260315122007_AddAiProviders")]
+    partial class AddAiProviders
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.AiProvider", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApiKeyEncrypted")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("api_key_encrypted");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EndpointUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("endpoint_url");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ai_providers_name");
+
+                    b.ToTable("ai_providers", (string)null);
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.AiProviderModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("display_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsReasoning")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_reasoning");
+
+                    b.Property<bool>("IsTemperatureConfigurable")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_temperature_configurable");
+
+                    b.Property<int>("MaxContextSize")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_context_size");
+
+                    b.Property<string>("ModelId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model_id");
+
+                    b.Property<Guid>("ProviderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("provider_id");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderId", "ModelId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ai_provider_models_provider_model");
+
+                    b.ToTable("ai_provider_models", (string)null);
+                });
 
             modelBuilder.Entity("Clarive.Api.Models.Entities.AiSession", b =>
                 {
@@ -186,6 +285,10 @@ namespace Clarive.Api.Migrations
                         .IsDescending(false, true)
                         .HasDatabaseName("ix_audit_log_tenant_timestamp");
 
+                    b.HasIndex("TenantId", "EntityId", "Timestamp")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("ix_audit_log_tenant_entity_timestamp");
+
                     b.ToTable("audit_log_entries", (string)null);
                 });
 
@@ -228,6 +331,87 @@ namespace Clarive.Api.Migrations
                         .HasDatabaseName("ix_email_verification_user_id");
 
                     b.ToTable("email_verification_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.EntryFavorite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entry_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntryId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId", "TenantId", "CreatedAt")
+                        .HasDatabaseName("ix_entry_favorites_user_tenant_created");
+
+                    b.HasIndex("UserId", "TenantId", "EntryId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_entry_favorites_user_tenant_entry");
+
+                    b.ToTable("entry_favorites", (string)null);
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.EntryTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entry_id");
+
+                    b.Property<string>("TagName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("tag_name");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntryId");
+
+                    b.HasIndex("TenantId", "EntryId")
+                        .HasDatabaseName("ix_entry_tags_tenant_entry");
+
+                    b.HasIndex("TenantId", "TagName")
+                        .HasDatabaseName("ix_entry_tags_tenant_tag");
+
+                    b.HasIndex("TenantId", "EntryId", "TagName")
+                        .IsUnique()
+                        .HasDatabaseName("uq_entry_tags_tenant_entry_tag");
+
+                    b.ToTable("entry_tags", (string)null);
                 });
 
             modelBuilder.Entity("Clarive.Api.Models.Entities.Folder", b =>
@@ -434,6 +618,65 @@ namespace Clarive.Api.Migrations
                         .HasDatabaseName("ix_password_reset_user_id");
 
                     b.ToTable("password_reset_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.PlaygroundRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entry_id");
+
+                    b.Property<int>("MaxTokens")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_tokens");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model");
+
+                    b.Property<string>("Responses")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("responses");
+
+                    b.Property<float>("Temperature")
+                        .HasColumnType("real")
+                        .HasColumnName("temperature");
+
+                    b.Property<string>("TemplateFieldValues")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("template_field_values");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntryId");
+
+                    b.HasIndex("TenantId", "CreatedAt")
+                        .HasDatabaseName("ix_playground_runs_tenant_created");
+
+                    b.HasIndex("TenantId", "EntryId")
+                        .HasDatabaseName("ix_playground_runs_tenant_entry");
+
+                    b.ToTable("playground_runs", (string)null);
                 });
 
             modelBuilder.Entity("Clarive.Api.Models.Entities.Prompt", b =>
@@ -978,10 +1221,25 @@ namespace Clarive.Api.Migrations
                         .HasDatabaseName("uq_users_google_id")
                         .HasFilter("google_id IS NOT NULL");
 
+                    b.HasIndex("IsSuperUser")
+                        .HasDatabaseName("ix_users_is_super_user")
+                        .HasFilter("is_super_user = true");
+
                     b.HasIndex("TenantId")
                         .HasDatabaseName("ix_users_tenant_id");
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.AiProviderModel", b =>
+                {
+                    b.HasOne("Clarive.Api.Models.Entities.AiProvider", "Provider")
+                        .WithMany("Models")
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Provider");
                 });
 
             modelBuilder.Entity("Clarive.Api.Models.Entities.AiSession", b =>
@@ -1016,6 +1274,42 @@ namespace Clarive.Api.Migrations
                     b.HasOne("Clarive.Api.Models.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.EntryFavorite", b =>
+                {
+                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", null)
+                        .WithMany()
+                        .HasForeignKey("EntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.EntryTag", b =>
+                {
+                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", null)
+                        .WithMany()
+                        .HasForeignKey("EntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -1078,6 +1372,23 @@ namespace Clarive.Api.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.PlaygroundRun", b =>
+                {
+                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", "Entry")
+                        .WithMany()
+                        .HasForeignKey("EntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entry");
                 });
 
             modelBuilder.Entity("Clarive.Api.Models.Entities.Prompt", b =>
@@ -1186,6 +1497,11 @@ namespace Clarive.Api.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Clarive.Api.Models.Entities.AiProvider", b =>
+                {
+                    b.Navigation("Models");
                 });
 
             modelBuilder.Entity("Clarive.Api.Models.Entities.Folder", b =>

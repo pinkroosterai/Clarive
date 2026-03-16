@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Clarive.Api.Migrations
+namespace Clarive.Api.Data.Migrations
 {
     /// <inheritdoc />
     public partial class AddPlaygroundRuns : Migration

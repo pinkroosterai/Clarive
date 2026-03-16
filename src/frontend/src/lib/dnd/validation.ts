@@ -29,8 +29,7 @@ export function findFolder(tree: Folder[], id: string): Folder | null {
  */
 export function isValidDrop(
   dragData: DragData,
-  targetFolderId: string | null,
-  _folderTree: Folder[]
+  targetFolderId: string | null
 ): boolean {
   if (dragData.type === 'entry') {
     // Same folder → no-op
