@@ -242,7 +242,7 @@ export default function LibraryPage() {
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-foreground-muted" />
             <Input
-              placeholder="Search prompts\u2026"
+              placeholder="Search prompts…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"

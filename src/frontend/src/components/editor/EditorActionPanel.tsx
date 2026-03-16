@@ -203,7 +203,7 @@ export function EditorActionPanel({
                       </motion.span>
                     )}
                   </AnimatePresence>
-                  {showSaveSuccess ? 'Saved!' : isSaving ? 'Saving\u2026' : 'Save Draft'}
+                  {showSaveSuccess ? 'Saved!' : isSaving ? 'Saving…' : 'Save Draft'}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left">
@@ -251,7 +251,7 @@ export function EditorActionPanel({
                     disabled={isDeletingDraft}
                   >
                     <Trash2 className="size-4" />
-                    {isDeletingDraft ? 'Deleting\u2026' : 'Delete Draft'}
+                    {isDeletingDraft ? 'Deleting…' : 'Delete Draft'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -355,7 +355,7 @@ export function EditorActionPanel({
                     disabled={isGeneratingSystemMessage || !aiEnabled}
                   >
                     <Wand2 className="size-4" />
-                    {isGeneratingSystemMessage ? 'Generating\u2026' : 'Generate System Message'}
+                    {isGeneratingSystemMessage ? 'Generating…' : 'Generate System Message'}
                   </Button>
                 )}
 
@@ -368,7 +368,7 @@ export function EditorActionPanel({
                         disabled={isDecomposing || !aiEnabled}
                       >
                         <Wand2 className="size-4" />
-                        {isDecomposing ? 'Decomposing\u2026' : 'Decompose to Chain'}
+                        {isDecomposing ? 'Decomposing…' : 'Decompose to Chain'}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>

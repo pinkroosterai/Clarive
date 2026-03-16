@@ -111,7 +111,7 @@ export function InviteUserDialog() {
               inviteMutation.mutate();
             }}
           >
-            {inviteMutation.isPending ? 'Sending\u2026' : 'Send Invitation'}
+            {inviteMutation.isPending ? 'Sending…' : 'Send Invitation'}
           </Button>
         </DialogFooter>
       </DialogContent>

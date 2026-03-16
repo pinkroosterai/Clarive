@@ -116,7 +116,7 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
             disabled={transferConfirm !== 'TRANSFER' || !transferTargetId || transferring}
             onClick={handleTransfer}
           >
-            {transferring ? 'Transferring\u2026' : 'Confirm Transfer'}
+            {transferring ? 'Transferring…' : 'Confirm Transfer'}
           </Button>
         </DialogFooter>
       </DialogContent>

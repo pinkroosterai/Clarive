@@ -248,7 +248,7 @@ const EntryEditorPage = () => {
               className="shrink-0"
               disabled={promoteMutation.isPending}
             >
-              {promoteMutation.isPending ? 'Restoring\u2026' : 'Restore as draft'}
+              {promoteMutation.isPending ? 'Restoring…' : 'Restore as draft'}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -377,8 +377,8 @@ const EntryEditorPage = () => {
 
   const isAiRunning = mutations.isGeneratingSystemMessage || mutations.isDecomposing;
   const aiLabel = mutations.isGeneratingSystemMessage
-    ? 'Generating system message\u2026'
-    : 'Decomposing prompt\u2026';
+    ? 'Generating system message…'
+    : 'Decomposing prompt…';
 
   const dialogs = (
     <>

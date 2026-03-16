@@ -15,22 +15,22 @@ interface WizardLoadingOverlayProps {
 
 const FALLBACK_MESSAGES: Record<GeneratingOperation, string[]> = {
   generate: [
-    'Analyzing your description\u2026',
-    'Crafting your prompt\u2026',
-    'Evaluating quality\u2026',
-    'Polishing the result\u2026',
+    'Analyzing your description…',
+    'Crafting your prompt…',
+    'Evaluating quality…',
+    'Polishing the result…',
   ],
   refine: [
-    'Applying your feedback\u2026',
-    'Refining prompt\u2026',
-    'Re-evaluating quality\u2026',
-    'Polishing the result\u2026',
+    'Applying your feedback…',
+    'Refining prompt…',
+    'Re-evaluating quality…',
+    'Polishing the result…',
   ],
   enhance: [
-    'Analyzing existing entry\u2026',
-    'Identifying improvements\u2026',
-    'Generating enhancements\u2026',
-    'Evaluating quality\u2026',
+    'Analyzing existing entry…',
+    'Identifying improvements…',
+    'Generating enhancements…',
+    'Evaluating quality…',
   ],
 };
 
