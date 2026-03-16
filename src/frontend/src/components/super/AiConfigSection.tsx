@@ -1,90 +1,29 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import {
-  Check,
-  ChevronRight,
-  ChevronsUpDown,
-  Loader2,
-  Minus,
-  RotateCcw,
-  Save,
-  Search,
-  Server,
-  Database,
-  X,
-} from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/ui/badge';
+import {
+  findSetting,
+  buildProviderModels,
+  findModelMetadata,
+  type ProviderModel,
+} from './ai-config/aiConfigUtils';
+import ModelOverrideFields from './ai-config/ModelOverrideFields';
+import ModelTransferList from './ai-config/ModelTransferList';
+import ProviderModelCombobox from './ai-config/ProviderModelCombobox';
+import SettingField from './ai-config/SettingField';
+
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { handleApiError } from '@/lib/handleApiError';
-import { cn } from '@/lib/utils';
-import {
-  getProviders,
-  type AiProviderResponse,
-  type AiProviderModelResponse,
-} from '@/services/api/aiProviderService';
+import { getProviders } from '@/services/api/aiProviderService';
 import { setConfigValue, resetConfigValue, type ConfigSetting } from '@/services/api/configService';
 
 interface AiConfigSectionProps {
   settings: ConfigSetting[];
   onSaved: () => void;
-}
-
-interface ProviderModel {
-  providerId: string;
-  providerName: string;
-  modelId: string;
-}
-
-function findSetting(settings: ConfigSetting[], key: string): ConfigSetting | undefined {
-  return settings.find((s) => s.key === key);
-}
-
-function buildProviderModels(providers: AiProviderResponse[] | undefined): ProviderModel[] {
-  if (!providers) return [];
-  return providers
-    .filter((p) => p.isActive)
-    .flatMap((p) =>
-      p.models
-        .filter((m) => m.isActive)
-        .map((m) => ({ providerId: p.id, providerName: p.name, modelId: m.modelId }))
-    );
-}
-
-function groupByProvider(models: ProviderModel[]): Record<string, ProviderModel[]> {
-  return models.reduce<Record<string, ProviderModel[]>>((acc, m) => {
-    (acc[m.providerName] ??= []).push(m);
-    return acc;
-  }, {});
-}
-
-function findModelMetadata(
-  providers: AiProviderResponse[] | undefined,
-  modelId: string,
-  providerId: string
-) {
-  if (!providers || !modelId || !providerId) return null;
-  for (const p of providers) {
-    if (p.id !== providerId) continue;
-    const model = p.models.find((m) => m.modelId === modelId);
-    if (model) return model;
-  }
-  return null;
 }
 
 export default function AiConfigSection({ settings, onSaved }: AiConfigSectionProps) {
@@ -252,7 +191,11 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
           prefix="DefaultModel"
           settings={settings}
           dirtyValues={dirtyValues}
-          modelMetadata={findModelMetadata(providers, currentDefaultModel, currentDefaultProviderId)}
+          modelMetadata={findModelMetadata(
+            providers,
+            currentDefaultModel,
+            currentDefaultProviderId
+          )}
           onChange={handleChange}
           onReset={(key) => resetMutation.mutate(key)}
           isResetting={(key) => resetMutation.isPending && resetMutation.variables === key}
@@ -306,7 +249,11 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
           prefix="PremiumModel"
           settings={settings}
           dirtyValues={dirtyValues}
-          modelMetadata={findModelMetadata(providers, currentPremiumModel, currentPremiumProviderId)}
+          modelMetadata={findModelMetadata(
+            providers,
+            currentPremiumModel,
+            currentPremiumProviderId
+          )}
           onChange={handleChange}
           onReset={(key) => resetMutation.mutate(key)}
           isResetting={(key) => resetMutation.isPending && resetMutation.variables === key}
@@ -365,430 +312,4 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
       </div>
     </div>
   );
-}
-
-// ── Shared field wrapper ──
-
-interface SettingFieldProps {
-  setting: ConfigSetting;
-  onReset: () => void;
-  isResetting: boolean;
-  children: React.ReactNode;
-}
-
-function SettingField({ setting, onReset, isResetting, children }: SettingFieldProps) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Label className="text-sm font-medium">{setting.label}</Label>
-        <SourceBadge source={setting.source} />
-      </div>
-      <p className="text-xs text-foreground-muted">{setting.description}</p>
-      <div className="flex items-center gap-2">
-        {children}
-        {setting.source === 'dashboard' && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onReset}
-                  disabled={isResetting}
-                  className="shrink-0"
-                >
-                  <RotateCcw className={`size-4 ${isResetting ? 'animate-spin' : ''}`} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Remove dashboard override and revert to environment default</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Provider-grouped model combobox ──
-
-interface ProviderModelComboboxProps {
-  providerModels: ProviderModel[];
-  value: string;
-  providerId: string;
-  providerName?: string;
-  onSelect: (model: ProviderModel) => void;
-  onClear: () => void;
-  loading?: boolean;
-  placeholder?: string;
-}
-
-function ProviderModelCombobox({
-  providerModels,
-  value,
-  providerId,
-  providerName,
-  onSelect,
-  onClear,
-  loading,
-  placeholder,
-}: ProviderModelComboboxProps) {
-  const [open, setOpen] = useState(false);
-
-  const grouped = useMemo(() => groupByProvider(providerModels), [providerModels]);
-
-  return (
-    <div className="flex items-center gap-1.5 max-w-md w-full">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2 text-foreground-muted">
-                <Loader2 className="size-4 animate-spin" />
-                Loading models...
-              </span>
-            ) : value ? (
-              <span className="flex items-center gap-1.5 truncate">
-                <span>{value}</span>
-                {providerName && (
-                  <span className="text-foreground-muted text-xs">via {providerName}</span>
-                )}
-              </span>
-            ) : (
-              <span className="text-foreground-muted">{placeholder}</span>
-            )}
-            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="max-w-md w-full p-0" align="start">
-          <Command>
-            <CommandInput placeholder="Search models..." />
-            <CommandList>
-              <CommandEmpty>No models found.</CommandEmpty>
-              {Object.entries(grouped).map(([groupName, models]) => (
-                <CommandGroup key={groupName} heading={groupName}>
-                  {models.map((m) => {
-                    const isSelected = m.modelId === value && m.providerId === providerId;
-                    return (
-                      <CommandItem
-                        key={`${m.providerId}:${m.modelId}`}
-                        value={`${m.providerName} ${m.modelId}`}
-                        onSelect={() => {
-                          onSelect(m);
-                          setOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn('mr-2 size-4', isSelected ? 'opacity-100' : 'opacity-0')}
-                        />
-                        {m.modelId}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              ))}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      {value && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={onClear} className="shrink-0">
-                <X className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Clear selection</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-    </div>
-  );
-}
-
-// ── Model transfer list ──
-
-interface ModelTransferListProps {
-  allModels: string[];
-  value: string;
-  onChange: (value: string) => void;
-  loading?: boolean;
-}
-
-function ModelTransferList({ allModels, value, onChange, loading }: ModelTransferListProps) {
-  const [search, setSearch] = useState('');
-
-  const allowedSet = useMemo(() => {
-    if (!value) return new Set<string>();
-    return new Set(
-      value
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    );
-  }, [value]);
-
-  const available = useMemo(() => {
-    const filtered = allModels.filter((m) => !allowedSet.has(m));
-    if (!search) return filtered;
-    const q = search.toLowerCase();
-    return filtered.filter((m) => m.toLowerCase().includes(q));
-  }, [allModels, allowedSet, search]);
-
-  const allowed = useMemo(() => {
-    return value
-      ? value
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : [];
-  }, [value]);
-
-  const addModel = (model: string) => {
-    const next = [...allowed, model];
-    onChange(next.join(','));
-  };
-
-  const removeModel = (model: string) => {
-    const next = allowed.filter((m) => m !== model);
-    onChange(next.join(','));
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-foreground-muted py-4">
-        <Loader2 className="size-4 animate-spin" />
-        Loading models...
-      </div>
-    );
-  }
-
-  if (allModels.length === 0) {
-    return (
-      <p className="text-sm text-foreground-muted py-2">
-        Add an AI provider with models to configure allowed playground models.
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex gap-4">
-      {/* Available models (left) */}
-      <div className="flex-1 space-y-2">
-        <Label className="text-xs text-foreground-muted">Available Models</Label>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 size-3.5 text-foreground-muted" />
-          <Input
-            placeholder="Filter models..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-8 text-xs"
-          />
-        </div>
-        <ScrollArea className="h-48 border border-border-subtle rounded-md">
-          <div className="p-1">
-            {available.length === 0 ? (
-              <p className="text-xs text-foreground-muted p-2 text-center">
-                {search ? 'No matching models' : 'All models selected'}
-              </p>
-            ) : (
-              available.map((model) => (
-                <button
-                  key={model}
-                  onClick={() => addModel(model)}
-                  className="flex items-center justify-between w-full px-2 py-1 text-xs rounded hover:bg-elevated transition-colors group"
-                >
-                  <span className="font-mono truncate">{model}</span>
-                  <ChevronRight className="size-3 opacity-0 group-hover:opacity-100 text-foreground-muted shrink-0" />
-                </button>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* Allowed models (right) */}
-      <div className="flex-1 space-y-2">
-        <Label className="text-xs text-foreground-muted">Allowed Models ({allowed.length})</Label>
-        <ScrollArea className="h-[calc(2rem+12rem+2px)] border border-border-subtle rounded-md">
-          <div className="p-1">
-            {allowed.length === 0 ? (
-              <p className="text-xs text-foreground-muted p-2 text-center">All models allowed</p>
-            ) : (
-              allowed.map((model) => (
-                <div
-                  key={model}
-                  className="flex items-center justify-between px-2 py-1 text-xs rounded hover:bg-elevated transition-colors group"
-                >
-                  <span className="font-mono truncate">{model}</span>
-                  <button
-                    onClick={() => removeModel(model)}
-                    className="opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive shrink-0"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-    </div>
-  );
-}
-
-// ── Model parameter override fields ──
-
-interface ModelOverrideFieldsProps {
-  prefix: 'DefaultModel' | 'PremiumModel';
-  settings: ConfigSetting[];
-  dirtyValues: Record<string, string>;
-  modelMetadata: AiProviderModelResponse | null;
-  onChange: (key: string, value: string) => void;
-  onReset: (key: string) => void;
-  isResetting: (key: string) => boolean;
-}
-
-function ModelOverrideFields({
-  prefix,
-  settings,
-  dirtyValues,
-  modelMetadata,
-  onChange,
-  onReset,
-  isResetting,
-}: ModelOverrideFieldsProps) {
-  const tempKey = `Ai:${prefix}Temperature`;
-  const tokensKey = `Ai:${prefix}MaxTokens`;
-  const effortKey = `Ai:${prefix}ReasoningEffort`;
-
-  const tempSetting = findSetting(settings, tempKey);
-  const tokensSetting = findSetting(settings, tokensKey);
-  const effortSetting = findSetting(settings, effortKey);
-
-  const currentTemp = dirtyValues[tempKey] ?? tempSetting?.value ?? '';
-  const currentTokens = dirtyValues[tokensKey] ?? tokensSetting?.value ?? '';
-  const currentEffort = dirtyValues[effortKey] ?? effortSetting?.value ?? '';
-
-  const modelTempDefault = modelMetadata?.defaultTemperature;
-  const modelTokensDefault = modelMetadata?.defaultMaxTokens;
-  const modelEffortDefault = modelMetadata?.defaultReasoningEffort;
-  const isReasoning = modelMetadata?.isReasoning ?? false;
-
-  return (
-    <div className="ml-4 mt-3 space-y-3 border-l-2 border-border-subtle pl-4">
-      <p className="text-xs font-medium text-foreground-muted">Parameter Overrides</p>
-
-      {/* Temperature — only for non-reasoning models */}
-      {!isReasoning && tempSetting && (
-        <SettingField setting={tempSetting} onReset={() => onReset(tempKey)} isResetting={isResetting(tempKey)}>
-          <Input
-            type="number"
-            value={currentTemp}
-            onChange={(e) => onChange(tempKey, e.target.value)}
-            placeholder={modelTempDefault != null ? `Model default: ${modelTempDefault}` : 'Not set'}
-            className="max-w-[200px]"
-            min={0}
-            max={2}
-            step={0.1}
-          />
-        </SettingField>
-      )}
-
-      {/* Max Tokens */}
-      {tokensSetting && (
-        <SettingField setting={tokensSetting} onReset={() => onReset(tokensKey)} isResetting={isResetting(tokensKey)}>
-          <Input
-            type="number"
-            value={currentTokens}
-            onChange={(e) => onChange(tokensKey, e.target.value)}
-            placeholder={modelTokensDefault != null ? `Model default: ${modelTokensDefault}` : 'Not set'}
-            className="max-w-[200px]"
-            min={1}
-          />
-        </SettingField>
-      )}
-
-      {/* Reasoning Effort — only for reasoning models */}
-      {isReasoning && effortSetting && (
-        <SettingField setting={effortSetting} onReset={() => onReset(effortKey)} isResetting={isResetting(effortKey)}>
-          <select
-            value={currentEffort}
-            onChange={(e) => onChange(effortKey, e.target.value)}
-            className="h-9 rounded-md border border-border-subtle bg-background px-3 text-sm max-w-[200px]"
-          >
-            <option value="">
-              {modelEffortDefault ? `Model default: ${modelEffortDefault}` : 'Not set'}
-            </option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="extra-high">Extra High</option>
-          </select>
-        </SettingField>
-      )}
-    </div>
-  );
-}
-
-// ── Source badge ──
-
-function SourceBadge({ source }: { source: ConfigSetting['source'] }) {
-  switch (source) {
-    case 'dashboard':
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-info-text border-info-border gap-1 text-xs">
-                <Database className="size-3" />
-                Dashboard
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Value set via the super user dashboard (overrides environment)</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    case 'environment':
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge
-                variant="outline"
-                className="text-success-text border-success-border gap-1 text-xs"
-              >
-                <Server className="size-3" />
-                Environment
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Value provided by environment variable</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    case 'none':
-    default:
-      return (
-        <Badge
-          variant="outline"
-          className="text-foreground-muted border-foreground-muted/30 gap-1 text-xs"
-        >
-          <Minus className="size-3" />
-          Not configured
-        </Badge>
-      );
-  }
 }
