@@ -1,4 +1,10 @@
-import { AllCommunityModule, type ColDef, type SortChangedEvent, themeQuartz } from 'ag-grid-community';
+import {
+  AllCommunityModule,
+  type ColDef,
+  type FilterChangedEvent,
+  type SortChangedEvent,
+  themeQuartz,
+} from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { format } from 'date-fns';
 import { Download } from 'lucide-react';
@@ -41,7 +47,21 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   const [sortDesc, setSortDesc] = useState(true);
   const [selectedRow, setSelectedRow] = useState<AiUsageLogEntry | null>(null);
 
-  const { data, isLoading } = useAiUsageLogs(filters, page, pageSize, sortBy, sortDesc);
+  // Server-side column filters
+  const [filterModel, setFilterModel] = useState<string | undefined>();
+  const [filterActionType, setFilterActionType] = useState<string | undefined>();
+
+  // Merge parent filters with column filters
+  const mergedFilters = useMemo<AiUsageFilterParams>(
+    () => ({
+      ...filters,
+      models: filterModel ? [filterModel] : filters.models,
+      actionTypes: filterActionType ? [filterActionType] : filters.actionTypes,
+    }),
+    [filters, filterModel, filterActionType],
+  );
+
+  const { data, isLoading } = useAiUsageLogs(mergedFilters, page, pageSize, sortBy, sortDesc);
 
   const logs = data?.items ?? [];
   const totalCount = data?.totalCount ?? 0;
@@ -62,6 +82,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         headerName: 'User',
         sortable: false,
         width: 180,
+        filter: 'agTextColumnFilter',
         valueFormatter: (p) => p.value ?? '—',
       },
       {
@@ -69,6 +90,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         headerName: 'Tenant',
         sortable: false,
         width: 140,
+        filter: 'agTextColumnFilter',
         valueFormatter: (p) => p.value ?? '—',
       },
       {
@@ -76,12 +98,14 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         headerName: 'Model',
         sortable: true,
         width: 200,
+        filter: 'agTextColumnFilter',
       },
       {
         field: 'actionType',
         headerName: 'Action',
         sortable: true,
         width: 130,
+        filter: 'agTextColumnFilter',
       },
       {
         field: 'inputTokens',
@@ -89,6 +113,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         sortable: true,
         width: 110,
         type: 'rightAligned',
+        filter: 'agNumberColumnFilter',
         valueFormatter: (p) => formatNumber(p.value),
       },
       {
@@ -97,6 +122,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         sortable: true,
         width: 110,
         type: 'rightAligned',
+        filter: 'agNumberColumnFilter',
         valueFormatter: (p) => formatNumber(p.value),
       },
       {
@@ -130,6 +156,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         sortable: true,
         width: 100,
         type: 'rightAligned',
+        filter: 'agNumberColumnFilter',
         valueFormatter: (p) => formatDuration(p.value),
       },
     ],
@@ -139,7 +166,6 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   const onSortChanged = useCallback((event: SortChangedEvent<AiUsageLogEntry>) => {
     const sortModel = event.api.getColumnState().find((c) => c.sort != null);
     if (sortModel) {
-      // Map field names to backend sort keys
       const fieldMap: Record<string, string> = {
         createdAt: 'createdAt',
         displayModel: 'model',
@@ -156,6 +182,18 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
       setSortBy('createdAt');
       setSortDesc(true);
     }
+    setPage(1);
+  }, []);
+
+  const onFilterChanged = useCallback((event: FilterChangedEvent<AiUsageLogEntry>) => {
+    const model = event.api.getFilterModel();
+
+    // Server-side filters: Model and Action Type
+    const modelVal = model['displayModel']?.filter as string | undefined;
+    const actionVal = model['actionType']?.filter as string | undefined;
+    setFilterModel(modelVal || undefined);
+    setFilterActionType(actionVal || undefined);
+
     setPage(1);
   }, []);
 
@@ -193,6 +231,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
           suppressCellFocus
           animateRows={false}
           onSortChanged={onSortChanged}
+          onFilterChanged={onFilterChanged}
           onRowClicked={(e) =>
             setSelectedRow((prev) => (prev?.id === e.data?.id ? null : e.data ?? null))
           }
