@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
-import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -349,32 +349,8 @@ const EntryEditorPage = () => {
     ? 'Generating system message\u2026'
     : 'Decomposing prompt\u2026';
 
-  // Block in-app navigation while AI operation is running
-  const blocker = useBlocker(() => isAiRunning);
-
   const dialogs = (
     <>
-      {blocker.state === 'blocked' && (
-        <AlertDialog open onOpenChange={(open) => !open && blocker.reset()}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Leave during AI operation?</AlertDialogTitle>
-              <AlertDialogDescription>
-                An AI operation is still running. Leaving will cancel it and discard the result.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => blocker.reset()}>Stay</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => blocker.proceed()}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Leave
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
       <FolderPickerDialog
         open={folderPickerOpen}
         onOpenChange={setFolderPickerOpen}
