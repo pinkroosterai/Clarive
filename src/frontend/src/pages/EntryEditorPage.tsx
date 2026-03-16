@@ -102,6 +102,18 @@ const EntryEditorPage = () => {
     onError: () => toast.error('Failed to restore version'),
   });
 
+  const deleteDraftMutation = useMutation({
+    mutationFn: () => entryService.deleteDraft(entryId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
+      toast.success('Draft deleted, reverted to published version');
+      navigate(`/entry/${entryId}`);
+    },
+    onError: () => toast.error('Failed to delete draft'),
+  });
+
   useEditorKeyboardShortcuts({
     isReadOnly,
     onSave: mutations.handleSave,
@@ -318,6 +330,8 @@ const EntryEditorPage = () => {
     showDecomposeToChain: localEntry.prompts.length === 1,
     onTest: aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/test`) : undefined,
     versions,
+    onDeleteDraft: () => deleteDraftMutation.mutate(),
+    isDeletingDraft: deleteDraftMutation.isPending,
   } as const;
 
   const dialogs = (

@@ -10,6 +10,7 @@ import {
   Calendar,
   Wand2,
   RotateCcw,
+  Trash2,
   Undo2,
   Redo2,
   Copy,
@@ -66,6 +67,8 @@ export interface EditorActionPanelProps {
   onTest?: () => void;
   versions: VersionInfo[];
   versionPanel?: ReactNode;
+  onDeleteDraft?: () => void;
+  isDeletingDraft?: boolean;
 }
 
 function ActionGroup({ label, children }: { label: string; children: ReactNode }) {
@@ -104,9 +107,12 @@ export function EditorActionPanel({
   onTest,
   versions,
   versionPanel,
+  onDeleteDraft,
+  isDeletingDraft,
 }: EditorActionPanelProps) {
   const aiEnabled = useAiEnabled();
   const hasDraft = versions.some((v) => v.versionState === 'draft');
+  const hasPublished = versions.some((v) => v.versionState === 'published');
   const publishedVersion = versions.find((v) => v.versionState === 'published')?.version;
 
   const [showActivity, setShowActivity] = useState(false);
@@ -230,6 +236,39 @@ export function EditorActionPanel({
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                       Discard
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
+            {onDeleteDraft && hasDraft && hasPublished && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full gap-2 text-destructive hover:text-destructive"
+                    disabled={isDeletingDraft}
+                  >
+                    <Trash2 className="size-4" />
+                    {isDeletingDraft ? 'Deleting\u2026' : 'Delete Draft'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this draft?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete the current draft and revert to the published
+                      version. Draft content cannot be recovered.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={onDeleteDraft}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete Draft
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

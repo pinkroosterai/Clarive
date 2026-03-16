@@ -52,6 +52,8 @@ public static partial class EntryEndpoints
             .RequireAuthorization("EditorOrAdmin");
         group.MapPost("/{entryId:guid}/versions/{version:int}/promote", HandlePromote)
             .RequireAuthorization("EditorOrAdmin");
+        group.MapDelete("/{entryId:guid}/draft", HandleDeleteDraft)
+            .RequireAuthorization("EditorOrAdmin");
         group.MapPost("/{entryId:guid}/move", HandleMove)
             .RequireAuthorization("EditorOrAdmin");
         group.MapPost("/{entryId:guid}/trash", HandleTrash)
@@ -331,6 +333,32 @@ public static partial class EntryEndpoints
             "prompt_entry", entry.Id, entry.Title, $"Restored v{version} as new draft v{newDraft.Version}", ct);
 
         return Results.Ok(await BuildFullResponseAsync(entry, newDraft, userRepo, tenantId, ct));
+    }
+
+    // ── Delete draft ──
+    private static async Task<IResult> HandleDeleteDraft(
+        Guid entryId,
+        HttpContext ctx,
+        IEntryService entryService,
+        IEntryRepository entryRepo,
+        IUserRepository userRepo,
+        IAuditLogger auditLogger,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var result = await entryService.DeleteDraftAsync(tenantId, entryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
+
+        var entry = result.Value;
+
+        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.DraftDeleted,
+            "prompt_entry", entry.Id, entry.Title, "Deleted draft, reverted to published version", ct);
+
+        var published = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        return Results.Ok(await BuildFullResponseAsync(entry, published!, userRepo, tenantId, ct));
     }
 
     // ── Move to folder ──

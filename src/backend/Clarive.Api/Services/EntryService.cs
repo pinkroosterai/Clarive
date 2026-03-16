@@ -200,6 +200,32 @@ public class EntryService(
         return (entry, newDraft);
     }
 
+    public async Task<ErrorOr<PromptEntry>> DeleteDraftAsync(
+        Guid tenantId, Guid entryId, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return Error.NotFound("NOT_FOUND", "Entry not found.");
+
+        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        if (working is null || working.VersionState != VersionState.Draft)
+            return Error.Validation("NO_DRAFT", "No draft version exists for this entry.");
+
+        var published = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        if (published is null)
+            return Error.Validation("NO_PUBLISHED_VERSION", "Cannot delete the only version. A published version must exist to fall back to.");
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+        await entryRepo.DeleteVersionAsync(working, ct);
+
+        entry.UpdatedAt = DateTime.UtcNow;
+        await entryRepo.UpdateAsync(entry, ct);
+
+        await tx.CommitAsync(ct);
+        return entry;
+    }
+
     public async Task<ErrorOr<PromptEntry>> MoveEntryAsync(
         Guid tenantId, Guid entryId, Guid? folderId, CancellationToken ct)
     {

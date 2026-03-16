@@ -18,6 +18,9 @@ public interface IEntryService
     Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion NewDraft)>> PromoteVersionAsync(
         Guid tenantId, Guid entryId, int version, CancellationToken ct = default);
 
+    Task<ErrorOr<PromptEntry>> DeleteDraftAsync(
+        Guid tenantId, Guid entryId, CancellationToken ct = default);
+
     Task<ErrorOr<PromptEntry>> MoveEntryAsync(
         Guid tenantId, Guid entryId, Guid? folderId, CancellationToken ct = default);
 

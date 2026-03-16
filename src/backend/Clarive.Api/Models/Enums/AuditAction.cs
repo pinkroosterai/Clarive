@@ -8,6 +8,7 @@ public enum AuditAction
     EntryRestored,
     EntryDeleted,
     VersionPromoted,
+    DraftDeleted,
     ApiGet,
     ApiGenerate,
     UserInvited,

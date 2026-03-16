@@ -108,6 +108,10 @@ export async function promoteVersion(entryId: string, version: number): Promise<
   return api.post<PromptEntry>(`/api/entries/${entryId}/versions/${version}/promote`);
 }
 
+export async function deleteDraft(entryId: string): Promise<PromptEntry> {
+  return api.delete<PromptEntry>(`/api/entries/${entryId}/draft`);
+}
+
 export async function getVersion(entryId: string, version: number): Promise<PromptEntry> {
   return api.get<PromptEntry>(`/api/entries/${entryId}/versions/${version}`);
 }
