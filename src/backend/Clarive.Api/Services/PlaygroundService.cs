@@ -6,27 +6,20 @@ using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Agents;
+using Clarive.Api.Services.Interfaces;
 using ErrorOr;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace Clarive.Api.Services;
 
 public class PlaygroundService(
     IEntryRepository entryRepo,
-    IPlaygroundRunRepository runRepo,
-    IAiProviderRepository providerRepo,
-    IAgentFactory agentFactory,
-    IEncryptionService encryption,
+    IModelResolutionService modelResolution,
+    IPlaygroundRunService runService,
     IOptionsMonitor<AiSettings> aiSettings,
-    IMemoryCache cache,
-    ILogger<PlaygroundService> logger)
+    ILogger<PlaygroundService> logger) : IPlaygroundService
 {
-    private const int MaxRunsPerEntry = 20;
-    private const int DefaultHistoryLimit = 10;
-
-    private const string ProvidersCacheKey = "ai_providers_all";
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -60,7 +53,6 @@ public class PlaygroundService(
 
         if (allFields.Count > 0)
         {
-            // Filter to only defined fields (strip extra keys)
             fields = TemplateFieldValidator.FilterToDefinedFields(allFields, fields);
 
             var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
@@ -69,18 +61,17 @@ public class PlaygroundService(
                     string.Join("; ", errors.Select(e => $"{e.Key}: {e.Value}")));
         }
 
-        // Resolve and validate model
+        // Resolve model
         var settings = aiSettings.CurrentValue;
         var model = !string.IsNullOrWhiteSpace(request.Model)
             ? request.Model
             : settings.DefaultModel;
 
-        var availableModels = await GetAvailableModelsAsync(ct);
-        if (!availableModels.IsError &&
-            !availableModels.Value.Contains(model, StringComparer.OrdinalIgnoreCase))
-        {
-            return Error.Validation("INVALID_MODEL", $"Model '{model}' is not available.");
-        }
+        var resolvedResult = await modelResolution.ResolveProviderForModelAsync(model, ct);
+        if (resolvedResult.IsError)
+            return resolvedResult.Errors;
+
+        var resolved = resolvedResult.Value;
 
         var responses = new List<TestRunPromptResponse>();
         var reasoningText = new StringBuilder();
@@ -89,52 +80,15 @@ public class PlaygroundService(
 
         try
         {
-            // Resolve provider for this model (cached)
-            var providers = await cache.GetOrCreateAsync(ProvidersCacheKey, async entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-                entry.Size = 1;
-                return await providerRepo.GetAllAsync(ct);
-            }) ?? [];
-            var providerMatch = providers
-                .Where(p => p.IsActive)
-                .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
-                .FirstOrDefault(x => x.Model.IsActive &&
-                    x.Model.ModelId.Equals(model, StringComparison.OrdinalIgnoreCase));
+            using var client = resolved.ChatClient;
 
-            IChatClient chatClient;
-            if (providerMatch is not null && encryption.IsAvailable)
-            {
-                string apiKey;
-                try
-                {
-                    apiKey = encryption.Decrypt(providerMatch.Provider.ApiKeyEncrypted);
-                }
-                catch (Exception)
-                {
-                    return Error.Failure("DECRYPTION_FAILED",
-                        "Failed to decrypt AI provider credentials. Contact your admin.");
-                }
-                chatClient = agentFactory.CreateChatClientForProvider(
-                    apiKey, providerMatch.Provider.EndpointUrl, model);
-            }
-            else
-            {
-                chatClient = agentFactory.CreateChatClient(model);
-            }
-
-            using var client = chatClient;
-
-            // Skip temperature for models that don't support it (e.g. reasoning models)
-            var isTemperatureConfigurable = providerMatch?.Model.IsTemperatureConfigurable ?? true;
             var options = new ChatOptions
             {
                 ModelId = model,
-                Temperature = isTemperatureConfigurable ? request.Temperature : null,
+                Temperature = resolved.IsTemperatureConfigurable ? request.Temperature : null,
                 MaxOutputTokens = request.MaxTokens
             };
 
-            // Configure reasoning if requested
             if (request.ShowReasoning == true)
             {
                 options.Reasoning = new ReasoningOptions
@@ -146,7 +100,6 @@ public class PlaygroundService(
 
             var conversationMessages = new List<ChatMessage>();
 
-            // Add system message if present
             var systemMessage = version.SystemMessage;
             if (!string.IsNullOrEmpty(systemMessage))
             {
@@ -176,7 +129,6 @@ public class PlaygroundService(
                             await onChunk(new TestStreamChunk(i, update.Text, "text"));
                     }
 
-                    // Extract reasoning content (TextReasoningContent in Contents)
                     var reasoningContent = update.Contents.OfType<TextReasoningContent>().FirstOrDefault();
                     if (reasoningContent?.Text is not null)
                     {
@@ -185,7 +137,6 @@ public class PlaygroundService(
                             await onChunk(new TestStreamChunk(i, reasoningContent.Text, "reasoning"));
                     }
 
-                    // Collect token usage from the final streaming update
                     var usageContent = update.Contents.OfType<UsageContent>().FirstOrDefault();
                     if (usageContent is not null)
                     {
@@ -205,7 +156,7 @@ public class PlaygroundService(
             return Error.Failure("TEST_FAILED", $"LLM request failed: {ex.Message}");
         }
 
-        // Persist the run (store only defined fields)
+        // Persist the run
         var run = new PlaygroundRun
         {
             Id = Guid.NewGuid(),
@@ -222,132 +173,9 @@ public class PlaygroundService(
             CreatedAt = DateTime.UtcNow
         };
 
-        await runRepo.AddAsync(run, ct);
-        await runRepo.DeleteOldestByEntryIdAsync(entryId, MaxRunsPerEntry, ct);
+        await runService.SaveRunAsync(run, ct);
 
         var fullReasoning = reasoningText.Length > 0 ? reasoningText.ToString() : null;
         return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens, fullReasoning);
-    }
-
-    public async Task<List<TestRunResponse>> GetTestRunsAsync(
-        Guid tenantId, Guid entryId, CancellationToken ct)
-    {
-        var runs = await runRepo.GetByEntryIdAsync(entryId, DefaultHistoryLimit, ct);
-
-        return runs.Select(r => new TestRunResponse(
-            r.Id,
-            r.Model,
-            r.Temperature,
-            r.MaxTokens,
-            !string.IsNullOrEmpty(r.TemplateFieldValues)
-                ? JsonSerializer.Deserialize<Dictionary<string, string>>(r.TemplateFieldValues, JsonOptions)
-                : null,
-            JsonSerializer.Deserialize<List<TestRunPromptResponse>>(r.Responses, JsonOptions) ?? [],
-            null, null, // Token counts not stored in historical runs
-            r.CreatedAt
-        )).ToList();
-    }
-
-    public async Task<ErrorOr<List<EnrichedModelResponse>>> GetEnrichedModelsAsync(CancellationToken ct)
-    {
-        const string cacheKey = "playground_enriched_models";
-
-        if (cache.TryGetValue(cacheKey, out List<EnrichedModelResponse>? cached) && cached is not null)
-            return cached;
-
-        var providers = await providerRepo.GetAllAsync(ct);
-        var activeProviders = providers.Where(p => p.IsActive).ToList();
-
-        if (activeProviders.Count == 0)
-        {
-            // Fall back to legacy model list (as simple enriched models with no provider metadata)
-            var legacyResult = await GetAvailableModelsAsync(ct);
-            if (legacyResult.IsError) return legacyResult.Errors;
-
-            var legacyModels = legacyResult.Value.Select(m => new EnrichedModelResponse(
-                m, null, Guid.Empty, "Default", false, 128000, true,
-                null, null, null
-            )).ToList();
-
-            cache.Set(cacheKey, legacyModels, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-                Size = 1
-            });
-            return legacyModels;
-        }
-
-        var enriched = activeProviders
-            .SelectMany(p => p.Models
-                .Where(m => m.IsActive)
-                .Select(m => new EnrichedModelResponse(
-                    m.ModelId,
-                    m.DisplayName,
-                    p.Id,
-                    p.Name,
-                    m.IsReasoning,
-                    m.MaxContextSize,
-                    m.IsTemperatureConfigurable,
-                    m.DefaultTemperature,
-                    m.DefaultMaxTokens,
-                    m.DefaultReasoningEffort
-                )))
-            .ToList();
-
-        cache.Set(cacheKey, enriched, new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-            Size = 1
-        });
-        return enriched;
-    }
-
-    public async Task<ErrorOr<List<string>>> GetAvailableModelsAsync(CancellationToken ct)
-    {
-        const string cacheKey = "playground_available_models";
-
-        if (cache.TryGetValue(cacheKey, out List<string>? cached) && cached is not null)
-            return cached;
-
-        try
-        {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(TimeSpan.FromSeconds(10));
-
-            var client = agentFactory.GetOpenAIClient();
-            var modelClient = client.GetOpenAIModelClient();
-            var response = await modelClient.GetModelsAsync(cts.Token);
-
-            var models = response.Value
-                .Select(m => m.Id)
-                .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            // Filter to admin-whitelisted models if configured
-            var allowedModels = aiSettings.CurrentValue.AllowedModels;
-            if (!string.IsNullOrWhiteSpace(allowedModels))
-            {
-                var whitelist = new HashSet<string>(
-                    allowedModels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-                    StringComparer.OrdinalIgnoreCase);
-                models = models.Where(m => whitelist.Contains(m)).ToList();
-            }
-
-            cache.Set(cacheKey, models, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-                Size = 1
-            });
-            return models;
-        }
-        catch (OperationCanceledException)
-        {
-            return Error.Failure("TIMEOUT", "Connection timed out fetching models.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to fetch available models");
-            return Error.Failure("MODEL_FETCH_FAILED", ex.Message);
-        }
     }
 }

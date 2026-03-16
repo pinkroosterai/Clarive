@@ -4,6 +4,7 @@ using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Agents;
+using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Endpoints;
 
@@ -53,7 +54,7 @@ public static class PlaygroundEndpoints
         Guid entryId,
         HttpContext ctx,
         TestEntryRequest request,
-        PlaygroundService playground,
+        IPlaygroundService playground,
         CancellationToken ct)
     {
         if (Validator.ValidateRequest(request) is { } validationErr)
@@ -106,11 +107,10 @@ public static class PlaygroundEndpoints
     private static async Task<IResult> HandleGetTestRuns(
         Guid entryId,
         HttpContext ctx,
-        PlaygroundService playground,
+        IPlaygroundRunService runService,
         CancellationToken ct)
     {
-        var tenantId = ctx.GetTenantId();
-        var runs = await playground.GetTestRunsAsync(tenantId, entryId, ct);
+        var runs = await runService.GetRunsAsync(entryId, ct);
         return Results.Ok(runs);
     }
 
@@ -118,10 +118,10 @@ public static class PlaygroundEndpoints
 
     private static async Task<IResult> HandleGetEnrichedModels(
         HttpContext ctx,
-        PlaygroundService playground,
+        IModelResolutionService modelResolution,
         CancellationToken ct)
     {
-        var result = await playground.GetEnrichedModelsAsync(ct);
+        var result = await modelResolution.GetEnrichedModelsAsync(ct);
 
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
@@ -133,10 +133,10 @@ public static class PlaygroundEndpoints
 
     private static async Task<IResult> HandleGetModels(
         HttpContext ctx,
-        PlaygroundService playground,
+        IModelResolutionService modelResolution,
         CancellationToken ct)
     {
-        var result = await playground.GetAvailableModelsAsync(ct);
+        var result = await modelResolution.GetAvailableModelsAsync(ct);
 
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
