@@ -75,11 +75,6 @@ export interface AiUsageFilterParams {
   dateTo?: string;
 }
 
-export interface AiUsageFilterOptionsResponse {
-  models: { id: string; displayName: string }[];
-  actionTypes: string[];
-  tenants: { id: string; name: string }[];
-}
 
 // ── API Functions ──
 
@@ -116,18 +111,5 @@ export async function getAiUsageStats(
 ): Promise<AiUsageStatsResponse> {
   return api.get<AiUsageStatsResponse>(
     `/api/super/ai-usage/stats${buildQueryString(filters)}`,
-  );
-}
-
-export async function getAiUsageFilters(
-  dateFrom?: string,
-  dateTo?: string,
-): Promise<AiUsageFilterOptionsResponse> {
-  const query = new URLSearchParams();
-  if (dateFrom) query.set('dateFrom', dateFrom);
-  if (dateTo) query.set('dateTo', dateTo);
-  const qs = query.toString();
-  return api.get<AiUsageFilterOptionsResponse>(
-    `/api/super/ai-usage/filters${qs ? `?${qs}` : ''}`,
   );
 }

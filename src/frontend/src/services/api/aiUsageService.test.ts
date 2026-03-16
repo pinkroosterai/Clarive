@@ -6,7 +6,7 @@ vi.mock('@/services/api/apiClient', () => ({
   },
 }));
 
-import { getAiUsageLogs, getAiUsageStats, getAiUsageFilters } from './aiUsageService';
+import { getAiUsageLogs, getAiUsageStats } from './aiUsageService';
 import { api } from '@/services/api/apiClient';
 
 const mockApi = vi.mocked(api);
@@ -94,27 +94,5 @@ describe('getAiUsageStats', () => {
     await getAiUsageStats({});
 
     expect(mockApi.get).toHaveBeenCalledWith('/api/super/ai-usage/stats');
-  });
-});
-
-describe('getAiUsageFilters', () => {
-  it('calls GET /api/super/ai-usage/filters', async () => {
-    const filterOptions = { models: [{ id: 'gpt-4o', displayName: 'OpenAI:gpt-4o' }], actionTypes: ['Generation'], tenants: [] };
-    mockApi.get.mockResolvedValue(filterOptions);
-
-    const result = await getAiUsageFilters();
-
-    expect(mockApi.get).toHaveBeenCalledWith('/api/super/ai-usage/filters');
-    expect(result).toEqual(filterOptions);
-  });
-
-  it('includes date range params', async () => {
-    mockApi.get.mockResolvedValue({ models: [], actionTypes: [], tenants: [] });
-
-    await getAiUsageFilters('2026-03-01T00:00:00Z', '2026-03-16T00:00:00Z');
-
-    expect(mockApi.get).toHaveBeenCalledWith(
-      expect.stringContaining('dateFrom=2026-03-01T00%3A00%3A00Z'),
-    );
   });
 });
