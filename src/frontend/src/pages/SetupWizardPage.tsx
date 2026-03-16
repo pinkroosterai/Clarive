@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Bot,
@@ -39,6 +39,7 @@ const STEPS = [
 
 const SetupWizardPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -452,7 +453,14 @@ const SetupWizardPage = () => {
                   Settings.
                 </p>
               )}
-              <Button className="w-full" onClick={() => navigate('/', { replace: true })}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  sessionStorage.setItem('cl_setup_wizard_dismissed', 'true');
+                  queryClient.invalidateQueries({ queryKey: ['setup-status'] });
+                  navigate('/', { replace: true });
+                }}
+              >
                 Go to Dashboard
               </Button>
             </div>
