@@ -66,6 +66,10 @@ public static class AiGenerationEndpoints
 
             await sse.WriteDoneAsync(ToResponse(result), ct);
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("expired"))
+        {
+            await sse.WriteErrorAsync("SESSION_EXPIRED", "Agent session expired. Please start a new generation.", ct);
+        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             await sse.WriteErrorAsync("GENERATION_FAILED", "Generation failed.", ct);
@@ -171,6 +175,10 @@ public static class AiGenerationEndpoints
             {
                 await sse.WriteDoneAsync(ToResponse(result.Value), ct);
             }
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("expired"))
+        {
+            await sse.WriteErrorAsync("SESSION_EXPIRED", "Agent session expired. Please start a new generation.", ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
