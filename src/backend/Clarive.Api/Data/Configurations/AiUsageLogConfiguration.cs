@@ -43,6 +43,8 @@ public class AiUsageLogConfiguration : IEntityTypeConfiguration<AiUsageLog>
 
         builder.HasIndex(l => new { l.TenantId, l.CreatedAt })
             .HasDatabaseName("ix_ai_usage_logs_tenant_created");
+        builder.HasIndex(l => l.UserId)
+            .HasDatabaseName("ix_ai_usage_logs_user_id");
         builder.HasIndex(l => l.Model)
             .HasDatabaseName("ix_ai_usage_logs_model");
         builder.HasIndex(l => l.ActionType)
