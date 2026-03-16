@@ -177,7 +177,10 @@ const EntryEditorPage = () => {
   const localEntry = editor.localEntry;
 
   // ── Shared elements ──
-  const canRestore = !!version && currentUser?.role !== 'viewer';
+  const viewedVersionState = versionNum
+    ? versions.find((v) => v.version === versionNum)?.versionState
+    : undefined;
+  const canRestore = viewedVersionState === 'historical' && currentUser?.role !== 'viewer';
 
   const readOnlyBanner = isReadOnly && version && (
     <div className="flex items-center gap-3 rounded-md border border-warning-border bg-warning-bg px-4 py-2.5 text-sm">
