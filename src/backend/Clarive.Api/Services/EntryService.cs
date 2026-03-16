@@ -155,14 +155,39 @@ public class EntryService(
         if (workingVersion?.VersionState == VersionState.Draft)
             await entryRepo.DeleteVersionAsync(workingVersion, ct);
 
+        var newDraftId = Guid.NewGuid();
+        var clonedPrompts = historical.Prompts.Select(p =>
+        {
+            var newPromptId = Guid.NewGuid();
+            return new Prompt
+            {
+                Id = newPromptId,
+                VersionId = newDraftId,
+                Content = p.Content,
+                Order = p.Order,
+                IsTemplate = p.IsTemplate,
+                TemplateFields = p.TemplateFields.Select(tf => new TemplateField
+                {
+                    Id = Guid.NewGuid(),
+                    PromptId = newPromptId,
+                    Name = tf.Name,
+                    Type = tf.Type,
+                    EnumValues = tf.EnumValues,
+                    DefaultValue = tf.DefaultValue,
+                    Min = tf.Min,
+                    Max = tf.Max
+                }).ToList()
+            };
+        }).ToList();
+
         var newDraft = await entryRepo.CreateVersionAsync(new PromptEntryVersion
         {
-            Id = Guid.NewGuid(),
+            Id = newDraftId,
             EntryId = entryId,
             Version = maxVersion + 1,
             VersionState = VersionState.Draft,
             SystemMessage = historical.SystemMessage,
-            Prompts = historical.Prompts,
+            Prompts = clonedPrompts,
             PublishedAt = null,
             PublishedBy = null,
             CreatedAt = now
