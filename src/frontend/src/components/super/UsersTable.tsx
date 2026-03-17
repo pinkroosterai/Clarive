@@ -67,12 +67,12 @@ interface GridContext {
 function UserCell({ data }: ICellRendererParams<SuperUser>) {
   if (!data) return null;
   return (
-    <div className="flex items-center gap-3">
-      <Avatar className="size-8">
+    <div className="flex items-center gap-2 py-1">
+      <Avatar className="size-7">
         {data.avatarUrl && <AvatarImage src={data.avatarUrl} alt={data.name} />}
         <AvatarFallback className="text-xs">{getInitials(data.name)}</AvatarFallback>
       </Avatar>
-      <div className="min-w-0">
+      <div className="min-w-0 leading-tight">
         <div className="flex items-center gap-1.5">
           <span className="font-medium truncate">{data.name}</span>
           {data.isSuperUser && (
@@ -209,6 +209,7 @@ export default function UsersTable() {
         sortable: true,
         flex: 3,
         minWidth: 160,
+        autoHeight: true,
         cellRenderer: UserCell,
       },
       {
