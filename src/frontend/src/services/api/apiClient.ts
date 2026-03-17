@@ -184,7 +184,7 @@ export const api = {
     body: unknown,
     onProgress: (event: ProgressEvent) => void,
     signal?: AbortSignal,
-    timeoutMs = 120_000
+    inactivityTimeoutMs = 300_000
   ): Promise<T> => {
     const token = getToken();
     const headers: Record<string, string> = {
@@ -194,7 +194,12 @@ export const api = {
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    // Inactivity timeout — resets on each SSE event so active streams are never killed
+    let timeout = setTimeout(() => controller.abort(), inactivityTimeoutMs);
+    const resetTimeout = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => controller.abort(), inactivityTimeoutMs);
+    };
     if (signal) signal.addEventListener('abort', () => controller.abort());
 
     try {
@@ -211,7 +216,7 @@ export const api = {
         const refreshed = await tryRefresh();
         if (refreshed) {
           headers['Authorization'] = `Bearer ${getToken()}`;
-          return api.postSSE<T>(path, body, onProgress, signal, timeoutMs);
+          return api.postSSE<T>(path, body, onProgress, signal, inactivityTimeoutMs);
         }
         const { useAuthStore } = await import('@/store/authStore');
         useAuthStore.getState().logout();
@@ -234,6 +239,7 @@ export const api = {
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
+        resetTimeout();
 
         buffer += decoder.decode(value, { stream: true });
 
