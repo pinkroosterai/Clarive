@@ -17,6 +17,9 @@ Thumbs.db
 # Playwright MCP cache
 .playwright-mcp/
 
+# Node
+node_modules/
+
 # .NET build artifacts
 **/bin/
 **/obj/
