@@ -1,3 +1,4 @@
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
@@ -22,7 +23,8 @@ public static class ConfigEndpoints
         // Public setup-status endpoint (no auth required)
         app.MapGet("/api/super/setup-status", HandleSetupStatus)
             .WithTags("Service Configuration")
-            .AllowAnonymous();
+            .AllowAnonymous()
+            .AddEndpointFilter(new CacheControlFilter(600));
 
         return group;
     }

@@ -1,9 +1,9 @@
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 using Clarive.Api.Auth;
-using Clarive.Api.Helpers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -15,7 +15,7 @@ public static class FolderEndpoints
             .WithTags("Folders")
             .RequireAuthorization();
 
-        group.MapGet("/", HandleGetTree);
+        group.MapGet("/", HandleGetTree).AddEndpointFilter(new CacheControlFilter(60));
 
         group.MapPost("/", HandleCreate)
             .RequireAuthorization("EditorOrAdmin");

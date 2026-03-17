@@ -12,7 +12,7 @@ public static class AiProviderEndpoints
             .WithTags("AI Providers")
             .RequireAuthorization("SuperUser");
 
-        group.MapGet("/", HandleGetAll);
+        group.MapGet("/", HandleGetAll).AddEndpointFilter(new CacheControlFilter(300));
         group.MapPost("/", HandleCreate);
         group.MapPatch("/{id:guid}", HandleUpdate);
         group.MapDelete("/{id:guid}", HandleDelete);

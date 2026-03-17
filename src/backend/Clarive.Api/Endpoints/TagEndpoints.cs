@@ -1,9 +1,9 @@
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Auth;
-using Clarive.Api.Helpers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -17,7 +17,7 @@ public static class TagEndpoints
             .WithTags("Tags")
             .RequireAuthorization();
 
-        group.MapGet("/", HandleList);
+        group.MapGet("/", HandleList).AddEndpointFilter(new CacheControlFilter(300));
         group.MapPut("/{tagName}", HandleRename).RequireAuthorization("AdminOnly");
         group.MapDelete("/{tagName}", HandleDelete).RequireAuthorization("AdminOnly");
 
