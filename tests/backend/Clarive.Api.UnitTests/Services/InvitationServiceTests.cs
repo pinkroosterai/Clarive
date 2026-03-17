@@ -1,10 +1,13 @@
 using Clarive.Api.Auth;
+using Clarive.Api.Data;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -38,6 +41,12 @@ public class InvitationServiceTests
         };
         _jwtService = new JwtService(new OptionsMonitorStub<JwtSettings>(jwtSettings));
 
+        var options = new DbContextOptionsBuilder<ClariveDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .Options;
+        var db = new ClariveDbContext(options);
+
         var appSettings = Options.Create(new AppSettings { FrontendUrl = "https://test.clarive.dev" });
         var logger = Substitute.For<ILogger<InvitationService>>();
 
@@ -47,7 +56,7 @@ public class InvitationServiceTests
             .Returns(ci => ci.Arg<TenantMembership>());
 
         _sut = new InvitationService(
-            _invitationRepo, _userRepo, _tenantRepo, _membershipRepo,
+            db, _invitationRepo, _userRepo, _tenantRepo, _membershipRepo,
             _auditLogger, _emailService, _jwtService, appSettings, logger);
     }
 
