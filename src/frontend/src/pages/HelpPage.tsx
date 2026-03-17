@@ -1055,37 +1055,6 @@ export default function HelpPage() {
 
   return (
     <div className="flex gap-8 max-w-6xl mx-auto p-6">
-      {/* Sidebar TOC — desktop only */}
-      <nav className="hidden lg:block w-56 shrink-0">
-        <div className="sticky top-20 space-y-3 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
-          {filteredGroups.map((group) => (
-            <div key={group.label}>
-              <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider pb-1">
-                {group.label}
-              </p>
-              <div className="space-y-0.5">
-                {group.sections.map((section) => (
-                  <button
-                    key={section.id}
-                    type="button"
-                    onClick={() => handleTocClick(section.id)}
-                    className={cn(
-                      'flex items-center gap-2 text-sm w-full text-left py-1 px-2 rounded-md transition-colors',
-                      activeSection === section.id
-                        ? 'text-foreground font-medium bg-primary/5 border-l-2 border-primary'
-                        : 'text-foreground-muted hover:text-foreground hover:bg-elevated',
-                    )}
-                  >
-                    <section.icon className="size-3.5 shrink-0" />
-                    <span className="truncate">{section.title}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </nav>
-
       {/* Main content */}
       <div className="flex-1 min-w-0 space-y-6">
         <div className="flex items-center gap-3">
@@ -1168,6 +1137,37 @@ export default function HelpPage() {
           </Accordion>
         )}
       </div>
+
+      {/* Sidebar TOC — desktop only, right side */}
+      <nav className="hidden lg:block w-56 shrink-0">
+        <div className="sticky top-20 space-y-3">
+          {filteredGroups.map((group) => (
+            <div key={group.label}>
+              <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider pb-1">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.sections.map((section) => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => handleTocClick(section.id)}
+                    className={cn(
+                      'flex items-center gap-2 text-sm w-full text-left py-1 px-2 rounded-md transition-colors',
+                      activeSection === section.id
+                        ? 'text-foreground font-medium bg-primary/5 border-l-2 border-primary'
+                        : 'text-foreground-muted hover:text-foreground hover:bg-elevated',
+                    )}
+                  >
+                    <section.icon className="size-3.5 shrink-0" />
+                    <span className="truncate">{section.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }

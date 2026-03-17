@@ -85,6 +85,16 @@ function useBreadcrumbs(): Crumb[] {
       href: `/library/folder/${a.id}`,
     }));
 
+    // /entry/:entryId/test
+    if (pathname.match(/^\/entry\/[^/]+\/test/)) {
+      return [
+        LIBRARY_CRUMB,
+        ...folderCrumbs,
+        { label: entryTitle, href: `/entry/${entryId}` },
+        { label: 'Playground' },
+      ];
+    }
+
     // /entry/:entryId/enhance
     if (pathname.match(/^\/entry\/[^/]+\/enhance/)) {
       return [
@@ -115,6 +125,10 @@ function useBreadcrumbs(): Crumb[] {
     '/library': 'Library',
     '/settings': 'Settings',
     '/trash': 'Trash',
+    '/help': 'Help',
+    '/super': 'Super Admin',
+    '/setup-wizard': 'Setup Wizard',
+    '/select-workspace': 'Select Workspace',
   };
 
   return [{ label: map[pathname] || 'Page' }];
