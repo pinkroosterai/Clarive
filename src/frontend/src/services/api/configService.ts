@@ -43,8 +43,13 @@ export interface ResetConfigResult {
   reset: boolean;
 }
 
-export async function getAllConfig(): Promise<ConfigSetting[]> {
-  return api.get<ConfigSetting[]>('/api/super/config');
+export interface ConfigResponse {
+  settings: ConfigSetting[];
+  serverStartedAtUtc: string;
+}
+
+export async function getAllConfig(): Promise<ConfigResponse> {
+  return api.get<ConfigResponse>('/api/super/config');
 }
 
 export async function setConfigValue(key: string, value: string): Promise<SetConfigResult> {

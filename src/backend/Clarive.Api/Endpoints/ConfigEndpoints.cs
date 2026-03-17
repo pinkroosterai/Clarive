@@ -10,6 +10,8 @@ namespace Clarive.Api.Endpoints;
 
 public static class ConfigEndpoints
 {
+    private static readonly DateTime ServerStartedAtUtc = DateTime.UtcNow;
+
     public static RouteGroupBuilder MapConfigEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/super/config")
@@ -72,7 +74,7 @@ public static class ConfigEndpoints
             .Select(def => ResolveConfigSetting(def, overrides, configuration))
             .ToList();
 
-        return Results.Ok(result);
+        return Results.Ok(new { settings = result, serverStartedAtUtc = ServerStartedAtUtc });
     }
 
     private static ConfigSettingResponse ResolveConfigSetting(

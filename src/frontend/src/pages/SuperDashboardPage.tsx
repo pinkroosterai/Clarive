@@ -31,7 +31,12 @@ import { getSuperStats } from '@/services/api/superService';
 // ── Tab configuration ──
 
 const VALID_TABS = ['dashboard', 'users', 'ai', 'settings', 'logs'];
-const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
+const RESTART_STORAGE_KEY = 'cl_pending_restart';
+
+interface PendingRestart {
+  keys: string[];
+  changedAt: string;
+}
 
 // Map old tab param values to new ones for backwards compatibility
 const TAB_REDIRECTS: Record<string, string> = {
@@ -74,11 +79,13 @@ const SuperDashboardPage = () => {
 
   // Load restart-required keys from sessionStorage
   useEffect(() => {
-    setRestartKeys(safeSessionStorageGet<string[]>(RESTART_STORAGE_KEY, []));
+    const pending = safeSessionStorageGet<PendingRestart | null>(RESTART_STORAGE_KEY, null);
+    setRestartKeys(pending?.keys ?? []);
   }, []);
 
   const refreshRestartKeys = () => {
-    setRestartKeys(safeSessionStorageGet<string[]>(RESTART_STORAGE_KEY, []));
+    const pending = safeSessionStorageGet<PendingRestart | null>(RESTART_STORAGE_KEY, null);
+    setRestartKeys(pending?.keys ?? []);
   };
 
   const clearRestartKeys = () => {
@@ -96,13 +103,30 @@ const SuperDashboardPage = () => {
   // ── Config data ──
 
   const {
-    data: settings,
+    data: configData,
     isLoading: configLoading,
     isError: configError,
   } = useQuery({
     queryKey: ['super', 'config'],
     queryFn: getAllConfig,
   });
+
+  // Auto-clear stale restart banner when server has restarted since the change
+  useEffect(() => {
+    if (!configData?.serverStartedAtUtc) return;
+    const pending = safeSessionStorageGet<PendingRestart | null>(RESTART_STORAGE_KEY, null);
+    if (!pending || pending.keys.length === 0) return;
+
+    const serverStarted = new Date(configData.serverStartedAtUtc).getTime();
+    const changedAt = new Date(pending.changedAt).getTime();
+
+    if (serverStarted >= changedAt) {
+      sessionStorage.removeItem(RESTART_STORAGE_KEY);
+      setRestartKeys([]);
+    }
+  }, [configData?.serverStartedAtUtc]);
+
+  const settings = configData?.settings;
 
   const settingsBySection = useMemo(() => {
     if (!settings) return {} as Record<string, ConfigSetting[]>;

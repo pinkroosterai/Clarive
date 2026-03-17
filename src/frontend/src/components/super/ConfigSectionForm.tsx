@@ -32,12 +32,32 @@ import { handleApiError } from '@/lib/handleApiError';
 import { cn, safeSessionStorageGet } from '@/lib/utils';
 import { setConfigValue, resetConfigValue, type ConfigSetting } from '@/services/api/configService';
 
-const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
+const RESTART_STORAGE_KEY = 'cl_pending_restart';
+
+interface PendingRestart {
+  keys: string[];
+  changedAt: string;
+}
 
 function addRestartKey(key: string) {
-  const existing = safeSessionStorageGet<string[]>(RESTART_STORAGE_KEY, []);
-  if (!existing.includes(key)) {
-    existing.push(key);
+  const existing = safeSessionStorageGet<PendingRestart>(RESTART_STORAGE_KEY, {
+    keys: [],
+    changedAt: new Date().toISOString(),
+  });
+  if (!existing.keys.includes(key)) {
+    existing.keys.push(key);
+  }
+  existing.changedAt = new Date().toISOString();
+  sessionStorage.setItem(RESTART_STORAGE_KEY, JSON.stringify(existing));
+}
+
+function removeRestartKey(key: string) {
+  const existing = safeSessionStorageGet<PendingRestart | null>(RESTART_STORAGE_KEY, null);
+  if (!existing) return;
+  existing.keys = existing.keys.filter((k) => k !== key);
+  if (existing.keys.length === 0) {
+    sessionStorage.removeItem(RESTART_STORAGE_KEY);
+  } else {
     sessionStorage.setItem(RESTART_STORAGE_KEY, JSON.stringify(existing));
   }
 }
@@ -61,6 +81,11 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
         delete next[key];
         return next;
       });
+      // Remove from pending restart keys if this setting required restart
+      const def = settings.find((s) => s.key === key);
+      if (def?.requiresRestart) {
+        removeRestartKey(key);
+      }
       queryClient.invalidateQueries({ queryKey: ['super', 'config'] });
     },
     onError: (err) => handleApiError(err, { fallback: 'Failed to reset setting' }),

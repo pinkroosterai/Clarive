@@ -21,13 +21,16 @@ beforeEach(() => {
 
 describe('getAllConfig', () => {
   it('calls GET /api/super/config', async () => {
-    const settings = [{ key: 'ai:provider', value: 'openai' }];
-    mockApi.get.mockResolvedValue(settings);
+    const response = {
+      settings: [{ key: 'ai:provider', value: 'openai' }],
+      serverStartedAtUtc: '2026-03-17T00:00:00Z',
+    };
+    mockApi.get.mockResolvedValue(response);
 
     const result = await getAllConfig();
 
     expect(mockApi.get).toHaveBeenCalledWith('/api/super/config');
-    expect(result).toEqual(settings);
+    expect(result).toEqual(response);
   });
 });
 
