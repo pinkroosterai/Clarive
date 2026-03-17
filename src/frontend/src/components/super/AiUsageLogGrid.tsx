@@ -28,8 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { useAiUsageFilters, useAiUsageLogs } from '@/hooks/useAiUsage';
+import { cn } from '@/lib/utils';
 import type { AiUsageFilterParams, AiUsageLogEntry } from '@/services/api/aiUsageService';
 
 interface AiUsageLogGridProps {
@@ -61,11 +61,7 @@ function MultiSelectFilter({ label, options, selected, onChange }: MultiSelectFi
   const [open, setOpen] = useState(false);
 
   const toggle = (value: string) => {
-    onChange(
-      selected.includes(value)
-        ? selected.filter((v) => v !== value)
-        : [...selected, value],
-    );
+    onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
   };
 
   const clear = (e: React.MouseEvent) => {
@@ -88,7 +84,9 @@ function MultiSelectFilter({ label, options, selected, onChange }: MultiSelectFi
                 role="button"
                 tabIndex={0}
                 onClick={clear}
-                onKeyDown={(e) => { if (e.key === 'Enter') clear(e as unknown as React.MouseEvent); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') clear(e as unknown as React.MouseEvent);
+                }}
                 className="ml-0.5 rounded-full hover:bg-muted p-0.5"
               >
                 <X className="size-3" />
@@ -107,7 +105,9 @@ function MultiSelectFilter({ label, options, selected, onChange }: MultiSelectFi
                 const isSelected = selected.includes(opt.value);
                 return (
                   <CommandItem key={opt.value} value={opt.label} onSelect={() => toggle(opt.value)}>
-                    <Check className={cn('mr-2 size-4', isSelected ? 'opacity-100' : 'opacity-0')} />
+                    <Check
+                      className={cn('mr-2 size-4', isSelected ? 'opacity-100' : 'opacity-0')}
+                    />
                     {opt.label}
                   </CommandItem>
                 );
@@ -141,11 +141,11 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
   // Build select options from filter API response
   const modelOptions = useMemo(
     () => (filterOptions?.models ?? []).map((m) => ({ value: m.id, label: m.displayName })),
-    [filterOptions],
+    [filterOptions]
   );
   const actionTypeOptions = useMemo(
     () => (filterOptions?.actionTypes ?? []).map((a) => ({ value: a, label: a })),
-    [filterOptions],
+    [filterOptions]
   );
 
   // Merge parent filters with column filters
@@ -155,7 +155,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
       models: selectedModels.length > 0 ? selectedModels : undefined,
       actionTypes: selectedActionTypes.length > 0 ? selectedActionTypes : undefined,
     }),
-    [filters, selectedModels, selectedActionTypes],
+    [filters, selectedModels, selectedActionTypes]
   );
 
   const { data, isLoading } = useAiUsageLogs(mergedFilters, page, pageSize, sortBy, sortDesc);
@@ -260,7 +260,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         valueFormatter: (p) => formatDuration(p.value),
       },
     ],
-    [],
+    []
   );
 
   const onSortChanged = useCallback((event: SortChangedEvent<AiUsageLogEntry>) => {
@@ -360,7 +360,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
           animateRows={false}
           onSortChanged={onSortChanged}
           onRowClicked={(e) =>
-            setSelectedRow((prev) => (prev?.id === e.data?.id ? null : e.data ?? null))
+            setSelectedRow((prev) => (prev?.id === e.data?.id ? null : (e.data ?? null)))
           }
           getRowClass={(params) =>
             params.data?.id === selectedRow?.id ? 'ag-row-selected' : undefined

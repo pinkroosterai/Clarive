@@ -54,7 +54,7 @@ const PlaygroundPage = () => {
     enabled: !!entryId && aiEnabled,
   });
 
-  const prompts = entry?.prompts ?? [];
+  const prompts = useMemo(() => entry?.prompts ?? [], [entry]);
   const isChain = prompts.length > 1;
 
   // ── Model & params ──

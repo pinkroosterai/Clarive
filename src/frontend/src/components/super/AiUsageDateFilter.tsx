@@ -14,6 +14,7 @@ const presets: { label: string; value: DatePreset }[] = [
   { label: '90d', value: '90d' },
 ];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getDateRange(preset: DatePreset): { dateFrom: string; dateTo: string } {
   const now = new Date();
   const dateTo = now.toISOString();

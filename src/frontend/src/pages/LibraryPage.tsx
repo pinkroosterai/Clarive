@@ -306,7 +306,10 @@ export default function LibraryPage() {
             actions={
               <>
                 {emptyStateActions}
-                <Link to="/help#folders" className="text-xs text-foreground-muted underline hover:text-foreground">
+                <Link
+                  to="/help#folders"
+                  className="text-xs text-foreground-muted underline hover:text-foreground"
+                >
                   Learn more about folders
                 </Link>
               </>
@@ -320,7 +323,10 @@ export default function LibraryPage() {
             actions={
               <>
                 {emptyStateActions}
-                <Link to="/help#getting-started" className="text-xs text-foreground-muted underline hover:text-foreground">
+                <Link
+                  to="/help#getting-started"
+                  className="text-xs text-foreground-muted underline hover:text-foreground"
+                >
                   Learn more
                 </Link>
               </>

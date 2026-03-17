@@ -165,6 +165,7 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
             {tools.map((tool) => (
               <label
                 key={tool.id}
+                htmlFor={`tool-${tool.id}`}
                 className={`flex items-center gap-3 cursor-pointer bg-surface border rounded-lg px-3 py-2 transition-colors ${
                   selectedToolIds.includes(tool.id)
                     ? 'border-primary/50 bg-primary/8'
@@ -172,6 +173,7 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
                 }`}
               >
                 <Checkbox
+                  id={`tool-${tool.id}`}
                   checked={selectedToolIds.includes(tool.id)}
                   onCheckedChange={() => toggleTool(tool.id)}
                   disabled={isGenerating}

@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { createUser } from '@/test/factories';
-
 // Mock apiClient — must be before authStore import
 vi.mock('@/services/api/apiClient', () => {
   let token: string | null = null;
@@ -57,6 +55,7 @@ import { useAuthStore } from './authStore';
 
 import { getToken, setToken, setRefreshToken } from '@/services/api/apiClient';
 import { getMe } from '@/services/api/profileService';
+import { createUser } from '@/test/factories';
 
 const mockedGetToken = vi.mocked(getToken);
 const mockedSetToken = vi.mocked(setToken);

@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
-import { AiLoadingAnimation } from '@/components/wizard/AiLoadingAnimation';
 import { Button } from '@/components/ui/button';
+import { AiLoadingAnimation } from '@/components/wizard/AiLoadingAnimation';
 
 interface EditorAiOverlayProps {
   isVisible: boolean;
@@ -43,12 +43,7 @@ export function EditorAiOverlay({ isVisible, label, onCancel }: EditorAiOverlayP
           <p className="text-sm font-medium text-foreground-muted">{label}</p>
           <span className="text-xs text-foreground-muted tabular-nums">{elapsed}s</span>
           {onCancel && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onCancel}
-              className="mt-2"
-            >
+            <Button variant="outline" size="sm" onClick={onCancel} className="mt-2">
               Cancel
             </Button>
           )}

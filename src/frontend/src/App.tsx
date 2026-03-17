@@ -1,3 +1,4 @@
+/* eslint-disable import/order -- @/ alias misclassified as external by eslint-plugin-import */
 import { QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';

@@ -162,11 +162,7 @@ const SetupWizardPage = () => {
                     : 'text-foreground-muted/40'
               }`}
             >
-              {i < step ? (
-                <Check className="size-3.5" />
-              ) : (
-                <s.icon className="size-3.5" />
-              )}
+              {i < step ? <Check className="size-3.5" /> : <s.icon className="size-3.5" />}
               <span className="hidden sm:inline">{s.label}</span>
               {i < STEPS.length - 1 && (
                 <ChevronRight className="size-3 text-foreground-muted/30 ml-1" />
@@ -189,8 +185,8 @@ const SetupWizardPage = () => {
               <AnvilIcon className="mx-auto size-16" />
               <h1 className="text-2xl font-bold tracking-tight">Configure Your Instance</h1>
               <p className="text-foreground-muted text-sm max-w-sm mx-auto">
-                Let's set up the core services for your Clarive instance. You can skip optional steps
-                and configure them later via Super Admin &gt; Settings.
+                Let's set up the core services for your Clarive instance. You can skip optional
+                steps and configure them later via Super Admin &gt; Settings.
               </p>
               <Button className="w-full" onClick={() => setStep(1)}>
                 Get Started <ChevronRight className="size-4" />
@@ -266,8 +262,8 @@ const SetupWizardPage = () => {
               <div>
                 <h2 className="text-lg font-semibold">Email Service</h2>
                 <p className="text-sm text-foreground-muted mt-1">
-                  Configure email for verification, invitations, and password resets. Leave as "None"
-                  to auto-verify users.
+                  Configure email for verification, invitations, and password resets. Leave as
+                  "None" to auto-verify users.
                 </p>
               </div>
               <div className="space-y-3">
@@ -443,9 +439,7 @@ const SetupWizardPage = () => {
               {configured.length > 0 ? (
                 <div className="text-sm text-foreground-muted">
                   <p>Configured: {configured.join(', ')}</p>
-                  <p className="mt-1">
-                    You can change these anytime in Super Admin &gt; Settings.
-                  </p>
+                  <p className="mt-1">You can change these anytime in Super Admin &gt; Settings.</p>
                 </div>
               ) : (
                 <p className="text-sm text-foreground-muted">

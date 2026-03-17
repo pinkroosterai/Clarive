@@ -83,7 +83,7 @@ export function SystemMessageSection({
                 editable={!isReadOnly}
                 placeholder="Enter a system message to set the AI's behavior..."
                 minHeightClass="min-h-[80px]"
-                autoFocus={shouldAutoFocus}
+                autoFocus={shouldAutoFocus} // eslint-disable-line jsx-a11y/no-autofocus
               />
             </CollapsibleContent>
           </Collapsible>

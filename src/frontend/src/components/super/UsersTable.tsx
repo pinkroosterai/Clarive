@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   AllCommunityModule,
   type ColDef,
@@ -19,8 +20,6 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
-
-import { useQuery } from '@tanstack/react-query';
 
 import { DeleteUserDialog } from '@/components/super/DeleteUserDialog';
 import { ResetPasswordDialog } from '@/components/super/ResetPasswordDialog';
@@ -258,7 +257,7 @@ export default function UsersTable() {
         suppressHeaderMenuButton: true,
       },
     ],
-    [],
+    []
   );
 
   // ── Sort handler ──
@@ -289,7 +288,7 @@ export default function UsersTable() {
   // ── Grid context (passed to cell renderers) ──
   const gridContext = useMemo<GridContext>(
     () => ({ currentUserId, setResetTarget, setDeleteTarget }),
-    [currentUserId],
+    [currentUserId]
   );
 
   return (
@@ -356,56 +355,58 @@ export default function UsersTable() {
       )}
 
       {/* Pagination */}
-      {total > 0 && <div className="flex items-center justify-between">
-        <div className="text-sm text-foreground-muted">
-          Showing {users.length > 0 ? (page - 1) * pageSize + 1 : 0}–
-          {Math.min(page * pageSize, total)} of {total.toLocaleString()}
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-foreground-muted">Rows</span>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(v) => {
-                setPageSize(Number(v));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[10, 25, 50, 100].map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {total > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-foreground-muted">
+            Showing {users.length > 0 ? (page - 1) * pageSize + 1 : 0}–
+            {Math.min(page * pageSize, total)} of {total.toLocaleString()}
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-            >
-              Previous
-            </Button>
-            <span className="px-2 text-sm text-foreground-muted">
-              {page} / {totalPages || 1}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-            >
-              Next
-            </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-foreground-muted">Rows</span>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => {
+                  setPageSize(Number(v));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 25, 50, 100].map((size) => (
+                    <SelectItem key={size} value={String(size)}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Previous
+              </Button>
+              <span className="px-2 text-sm text-foreground-muted">
+                {page} / {totalPages || 1}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
-      </div>}
+      )}
 
       <DeleteUserDialog user={deleteTarget} onClose={() => setDeleteTarget(null)} />
       <ResetPasswordDialog user={resetTarget} onClose={() => setResetTarget(null)} />

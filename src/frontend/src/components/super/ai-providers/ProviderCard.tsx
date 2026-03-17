@@ -78,12 +78,7 @@ export default function ProviderCard({
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onValidate}
-            disabled={isValidating}
-          >
+          <Button variant="ghost" size="sm" onClick={onValidate} disabled={isValidating}>
             {isValidating ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
@@ -93,12 +88,7 @@ export default function ProviderCard({
           <Button variant="ghost" size="sm" onClick={onEdit}>
             <Pencil className="size-3.5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive"
-            onClick={onDelete}
-          >
+          <Button variant="ghost" size="sm" className="text-destructive" onClick={onDelete}>
             <Trash2 className="size-3.5" />
           </Button>
         </div>

@@ -1,12 +1,13 @@
+import { Copy, Lock, AlertTriangle, Clock } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Copy, Lock, AlertTriangle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getPublicShare, verifySharePassword } from '@/services/api/shareLinkService';
+import { Input } from '@/components/ui/input';
 import { ApiError } from '@/services/api/apiClient';
+import { getPublicShare, verifySharePassword } from '@/services/api/shareLinkService';
 import type { SharedEntry } from '@/types/shareLink';
 
 type ViewState =
@@ -114,11 +115,9 @@ export default function PublicShareViewerPage() {
                     placeholder="Enter password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoFocus
+                    autoFocus // eslint-disable-line jsx-a11y/no-autofocus
                   />
-                  {passwordError && (
-                    <p className="text-sm text-destructive">{passwordError}</p>
-                  )}
+                  {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
                   <Button className="w-full" disabled={verifying || !password}>
                     {verifying ? 'Verifying...' : 'View Prompt'}
                   </Button>

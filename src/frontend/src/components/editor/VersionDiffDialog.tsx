@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { DiffBlock } from './DiffBlock';
 
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -157,7 +157,7 @@ export function VersionDiffDialog({
 
           <div className="flex items-center gap-3 pt-2">
             <div className="flex-1 space-y-1">
-              <label className="text-xs text-foreground-muted">Left (old)</label>
+              <span className="text-xs text-foreground-muted">Left (old)</span>
               <Select value={String(leftVersion)} onValueChange={(v) => setLeftVersion(Number(v))}>
                 <SelectTrigger>
                   <SelectValue />
@@ -184,8 +184,11 @@ export function VersionDiffDialog({
             </div>
             <span className="text-foreground-muted pt-5">vs</span>
             <div className="flex-1 space-y-1">
-              <label className="text-xs text-foreground-muted">Right (new)</label>
-              <Select value={String(rightVersion)} onValueChange={(v) => setRightVersion(Number(v))}>
+              <span className="text-xs text-foreground-muted">Right (new)</span>
+              <Select
+                value={String(rightVersion)}
+                onValueChange={(v) => setRightVersion(Number(v))}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -271,7 +274,10 @@ export function VersionDiffDialog({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={restoreVersion !== null} onOpenChange={(o) => !o && setRestoreVersion(null)}>
+      <AlertDialog
+        open={restoreVersion !== null}
+        onOpenChange={(o) => !o && setRestoreVersion(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Restore this version?</AlertDialogTitle>
@@ -283,7 +289,9 @@ export function VersionDiffDialog({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => restoreVersion && promoteMutation.mutate(restoreVersion)}>
+            <AlertDialogAction
+              onClick={() => restoreVersion && promoteMutation.mutate(restoreVersion)}
+            >
               Restore
             </AlertDialogAction>
           </AlertDialogFooter>

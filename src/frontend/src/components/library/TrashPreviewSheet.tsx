@@ -126,9 +126,7 @@ export function TrashPreviewSheet({
             <div className="flex-1 overflow-y-auto space-y-4 py-4">
               {entry.systemMessage && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground-muted">
-                    System Message
-                  </label>
+                  <span className="text-sm font-medium text-foreground-muted">System Message</span>
                   <MarkdownEditor
                     content={entry.systemMessage}
                     onContentChange={() => {}}
@@ -141,9 +139,9 @@ export function TrashPreviewSheet({
 
               {entry.prompts.map((prompt, i) => (
                 <div key={prompt.id} className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground-muted">
+                  <span className="text-sm font-medium text-foreground-muted">
                     Prompt {entry.prompts.length > 1 ? i + 1 : ''}
-                  </label>
+                  </span>
                   <MarkdownEditor
                     content={prompt.content}
                     onContentChange={() => {}}
@@ -156,9 +154,9 @@ export function TrashPreviewSheet({
 
               {isTemplate && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground-muted">
+                  <span className="text-sm font-medium text-foreground-muted">
                     Template Variables
-                  </label>
+                  </span>
                   <div className="flex flex-wrap gap-1.5">
                     {templateFields.map((field) => (
                       <Badge key={field.name} variant="secondary">

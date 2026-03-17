@@ -210,12 +210,17 @@ export function MarkdownEditor({
   return (
     <div
       ref={containerRef}
+      role="textbox"
+      tabIndex={0}
       className={cn(
         'relative rounded-md border border-border bg-elevated focus-within:ring-2 focus-within:ring-primary/30 transition-shadow',
         minHeightClass,
         className
       )}
       onClick={handleEditorClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') handleEditorClick();
+      }}
     >
       {templateHighlight && editable && (
         <div className="flex justify-end px-2 pt-1.5">

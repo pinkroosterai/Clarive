@@ -200,7 +200,10 @@ export default function ToolsPanel() {
           title="No tools yet"
           description="Add tool descriptions manually or import them from an MCP server."
           actions={
-            <Link to="/help#tools" className="text-xs text-foreground-muted underline hover:text-foreground">
+            <Link
+              to="/help#tools"
+              className="text-xs text-foreground-muted underline hover:text-foreground"
+            >
               Learn more
             </Link>
           }

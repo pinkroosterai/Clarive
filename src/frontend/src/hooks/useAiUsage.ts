@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+
 import {
   getAiUsageFilters,
   getAiUsageLogs,
@@ -19,7 +20,7 @@ export function useAiUsageLogs(
   page = 1,
   pageSize = 50,
   sortBy?: string,
-  sortDesc?: boolean,
+  sortDesc?: boolean
 ) {
   return useQuery({
     queryKey: ['super', 'ai-usage', 'logs', filters, page, pageSize, sortBy, sortDesc],

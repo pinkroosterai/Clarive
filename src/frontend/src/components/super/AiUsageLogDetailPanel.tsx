@@ -68,10 +68,7 @@ export default function AiUsageLogDetailPanel({ row, onClose }: AiUsageLogDetail
         <div className="text-foreground-muted text-xs mb-1.5">Token Breakdown</div>
         <div className="flex items-center gap-3">
           <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full bg-primary/70 rounded-full"
-              style={{ width: `${inputPct}%` }}
-            />
+            <div className="h-full bg-primary/70 rounded-full" style={{ width: `${inputPct}%` }} />
           </div>
           <div className="text-xs text-foreground-muted whitespace-nowrap">
             {formatNumber(row.inputTokens)} in / {formatNumber(row.outputTokens)} out ={' '}

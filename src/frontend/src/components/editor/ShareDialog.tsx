@@ -1,24 +1,16 @@
-import { useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { Copy, Trash2, RefreshCw, Link, Eye, EyeOff } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  createShareLink,
-  getShareLink,
-  revokeShareLink,
-} from '@/services/api/shareLinkService';
-import type { CreateShareLinkRequest } from '@/types/shareLink';
 import { ApiError } from '@/services/api/apiClient';
+import { createShareLink, getShareLink, revokeShareLink } from '@/services/api/shareLinkService';
+import type { CreateShareLinkRequest } from '@/types/shareLink';
 
 interface ShareDialogProps {
   entryId: string;
@@ -76,17 +68,20 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
     createMutation.mutate(req);
   }, [useExpiry, expiresAt, usePassword, password, createMutation]);
 
-  const handleCopy = useCallback(async (token?: string) => {
-    const t = token ?? createdToken;
-    if (!t) return;
-    const url = `${window.location.origin}/share/${encodeURIComponent(t)}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Link copied to clipboard');
-    } catch {
-      toast.error('Failed to copy to clipboard');
-    }
-  }, [createdToken]);
+  const handleCopy = useCallback(
+    async (token?: string) => {
+      const t = token ?? createdToken;
+      if (!t) return;
+      const url = `${window.location.origin}/share/${encodeURIComponent(t)}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard');
+      } catch {
+        toast.error('Failed to copy to clipboard');
+      }
+    },
+    [createdToken]
+  );
 
   const existingLink = linkQuery.data;
   const hasLink = !!existingLink && !linkQuery.error;
@@ -185,11 +180,7 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">Share URL</Label>
               <div className="flex gap-2">
-                <Input
-                  readOnly
-                  value={shareUrl ?? ''}
-                  className="text-xs font-mono"
-                />
+                <Input readOnly value={shareUrl ?? ''} className="text-xs font-mono" />
                 <Button variant="outline" size="icon" onClick={() => handleCopy()}>
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -221,11 +212,7 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
                 <Label htmlFor="use-expiry" className="text-sm">
                   Set expiration
                 </Label>
-                <Switch
-                  id="use-expiry"
-                  checked={useExpiry}
-                  onCheckedChange={setUseExpiry}
-                />
+                <Switch id="use-expiry" checked={useExpiry} onCheckedChange={setUseExpiry} />
               </div>
               {useExpiry && (
                 <Input
@@ -240,11 +227,7 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
                 <Label htmlFor="use-password" className="text-sm">
                   Password protect
                 </Label>
-                <Switch
-                  id="use-password"
-                  checked={usePassword}
-                  onCheckedChange={setUsePassword}
-                />
+                <Switch id="use-password" checked={usePassword} onCheckedChange={setUsePassword} />
               </div>
               {usePassword && (
                 <>

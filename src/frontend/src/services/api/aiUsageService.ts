@@ -75,7 +75,6 @@ export interface AiUsageFilterParams {
   dateTo?: string;
 }
 
-
 export interface AiUsageFilterOptionsResponse {
   models: { id: string; displayName: string }[];
   actionTypes: string[];
@@ -84,7 +83,14 @@ export interface AiUsageFilterOptionsResponse {
 
 // ── API Functions ──
 
-function buildQueryString(params: AiUsageFilterParams & { page?: number; pageSize?: number; sortBy?: string; sortDesc?: boolean }): string {
+function buildQueryString(
+  params: AiUsageFilterParams & {
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortDesc?: boolean;
+  }
+): string {
   const query = new URLSearchParams();
   if (params.tenantIds?.length) query.set('tenantId', params.tenantIds.join(','));
   if (params.userId) query.set('userId', params.userId);
@@ -105,30 +111,24 @@ export async function getAiUsageLogs(
   page = 1,
   pageSize = 50,
   sortBy?: string,
-  sortDesc?: boolean,
+  sortDesc?: boolean
 ): Promise<AiUsagePagedResponse> {
   return api.get<AiUsagePagedResponse>(
-    `/api/super/ai-usage${buildQueryString({ ...filters, page, pageSize, sortBy, sortDesc })}`,
+    `/api/super/ai-usage${buildQueryString({ ...filters, page, pageSize, sortBy, sortDesc })}`
   );
 }
 
-export async function getAiUsageStats(
-  filters: AiUsageFilterParams,
-): Promise<AiUsageStatsResponse> {
-  return api.get<AiUsageStatsResponse>(
-    `/api/super/ai-usage/stats${buildQueryString(filters)}`,
-  );
+export async function getAiUsageStats(filters: AiUsageFilterParams): Promise<AiUsageStatsResponse> {
+  return api.get<AiUsageStatsResponse>(`/api/super/ai-usage/stats${buildQueryString(filters)}`);
 }
 
 export async function getAiUsageFilters(
   dateFrom?: string,
-  dateTo?: string,
+  dateTo?: string
 ): Promise<AiUsageFilterOptionsResponse> {
   const query = new URLSearchParams();
   if (dateFrom) query.set('dateFrom', dateFrom);
   if (dateTo) query.set('dateTo', dateTo);
   const qs = query.toString();
-  return api.get<AiUsageFilterOptionsResponse>(
-    `/api/super/ai-usage/filters${qs ? `?${qs}` : ''}`,
-  );
+  return api.get<AiUsageFilterOptionsResponse>(`/api/super/ai-usage/filters${qs ? `?${qs}` : ''}`);
 }

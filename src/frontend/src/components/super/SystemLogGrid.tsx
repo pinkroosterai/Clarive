@@ -29,8 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { cn } from '@/lib/utils';
 import type { SystemLogEntry, SystemLogFilterParams } from '@/services/api/systemLogService';
 
 // ── Level options ──
@@ -66,11 +66,7 @@ function MultiSelectFilter({ label, options, selected, onChange }: MultiSelectFi
   const [open, setOpen] = useState(false);
 
   const toggle = (value: string) => {
-    onChange(
-      selected.includes(value)
-        ? selected.filter((v) => v !== value)
-        : [...selected, value],
-    );
+    onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
   };
 
   const clear = (e: React.MouseEvent) => {
@@ -163,7 +159,7 @@ export default function SystemLogGrid() {
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
     }),
-    [selectedLevels, debouncedSearch, dateFrom, dateTo],
+    [selectedLevels, debouncedSearch, dateFrom, dateTo]
   );
 
   const { data, isLoading } = useSystemLogs(filters, page, pageSize, sortBy, sortDesc);
@@ -185,8 +181,7 @@ export default function SystemLogGrid() {
         sortable: true,
         sort: 'desc',
         width: 180,
-        valueFormatter: (p) =>
-          p.value ? format(new Date(p.value), 'MMM d, yyyy HH:mm:ss') : '',
+        valueFormatter: (p) => (p.value ? format(new Date(p.value), 'MMM d, yyyy HH:mm:ss') : ''),
       },
       {
         field: 'level',
@@ -229,7 +224,7 @@ export default function SystemLogGrid() {
         },
       },
     ],
-    [],
+    []
   );
 
   const onSortChanged = useCallback((event: SortChangedEvent<SystemLogEntry>) => {
@@ -257,8 +252,7 @@ export default function SystemLogGrid() {
 
   const handleDetailClose = useCallback(() => setSelectedRow(null), []);
 
-  const hasActiveFilters =
-    selectedLevels.length > 0 || !!debouncedSearch || !!dateFrom || !!dateTo;
+  const hasActiveFilters = selectedLevels.length > 0 || !!debouncedSearch || !!dateFrom || !!dateTo;
 
   return (
     <div className="space-y-3">
@@ -274,12 +268,7 @@ export default function SystemLogGrid() {
             </Badge>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportCsv}
-          disabled={logs.length === 0}
-        >
+        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={logs.length === 0}>
           <Download className="size-3.5 mr-1.5" />
           Export CSV
         </Button>
@@ -355,7 +344,7 @@ export default function SystemLogGrid() {
           animateRows={false}
           onSortChanged={onSortChanged}
           onRowClicked={(e) =>
-            setSelectedRow((prev) => (prev?.id === e.data?.id ? null : e.data ?? null))
+            setSelectedRow((prev) => (prev?.id === e.data?.id ? null : (e.data ?? null)))
           }
           getRowClass={(params) =>
             params.data?.id === selectedRow?.id ? 'ag-row-selected' : undefined

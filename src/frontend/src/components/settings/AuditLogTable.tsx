@@ -86,7 +86,10 @@ export default function AuditLogTable() {
           title="No audit log entries"
           description="Activity in your workspace will appear here."
           actions={
-            <Link to="/help#account-settings" className="text-xs text-foreground-muted underline hover:text-foreground">
+            <Link
+              to="/help#account-settings"
+              className="text-xs text-foreground-muted underline hover:text-foreground"
+            >
               Learn more
             </Link>
           }

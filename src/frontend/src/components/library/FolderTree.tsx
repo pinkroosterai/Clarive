@@ -38,7 +38,7 @@ export function FolderTree() {
     queryFn: () => entryService.getEntriesList(null, 1, 1000),
     staleTime: 60_000, // avoid refetching on every navigation — 1 min cache
   });
-  const entries = entriesData?.items ?? [];
+  const entries = useMemo(() => entriesData?.items ?? [], [entriesData]);
 
   const rootEntries = useMemo(() => entries.filter((e) => e.folderId === null), [entries]);
   const entryCountMap = useMemo(() => buildEntryCountMap(entries), [entries]);

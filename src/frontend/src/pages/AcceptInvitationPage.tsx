@@ -18,10 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { handleApiError } from '@/lib/handleApiError';
-import {
-  acceptInvitationSchema,
-  type AcceptInvitationFormData,
-} from '@/lib/validationSchemas';
+import { acceptInvitationSchema, type AcceptInvitationFormData } from '@/lib/validationSchemas';
 import { invitationService } from '@/services';
 import type { InvitationInfo } from '@/services/api/invitationService';
 import { useAuthStore } from '@/store/authStore';
@@ -102,8 +99,8 @@ const AcceptInvitationPage = () => {
             {info && state !== 'success' && (
               <p className="text-foreground-muted text-sm">
                 You've been invited to{' '}
-                <span className="font-medium text-foreground-muted">{info.workspaceName}</span>{' '}
-                as {info.role === 'editor' ? 'an' : 'a'} {info.role}
+                <span className="font-medium text-foreground-muted">{info.workspaceName}</span> as{' '}
+                {info.role === 'editor' ? 'an' : 'a'} {info.role}
               </p>
             )}
           </div>
@@ -159,7 +156,7 @@ const AcceptInvitationPage = () => {
                             {...field}
                             placeholder="Your name"
                             autoComplete="name"
-                            autoFocus
+                            autoFocus // eslint-disable-line jsx-a11y/no-autofocus
                             className="bg-elevated border-border focus:ring-2 focus:ring-primary/30 transition-shadow"
                           />
                         </FormControl>

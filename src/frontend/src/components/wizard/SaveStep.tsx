@@ -1,5 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Save, FolderInput, MessageSquare, Shield, BarChart3, ArrowLeft } from 'lucide-react';
+import {
+  Loader2,
+  Save,
+  FolderInput,
+  MessageSquare,
+  Shield,
+  BarChart3,
+  ArrowLeft,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { scoreColor } from './scoreUtils';
@@ -99,7 +107,11 @@ export function SaveStep({ draft, mode, evaluation, onSave, onBack, isSaving }: 
             <ArrowLeft className="size-4" />
             Back
           </Button>
-          <Button className="flex-1 gap-2 py-3" onClick={() => onSave(folderId)} disabled={isSaving}>
+          <Button
+            className="flex-1 gap-2 py-3"
+            onClick={() => onSave(folderId)}
+            disabled={isSaving}
+          >
             {isSaving ? (
               <>
                 <Loader2 className="size-4 animate-spin" />

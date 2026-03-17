@@ -41,12 +41,21 @@ function PickerNode({
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div
+        role="treeitem"
+        aria-selected={isSelected}
+        tabIndex={0}
         className={cn(
           'flex items-center gap-1 rounded-md py-1 pr-2 cursor-pointer hover:bg-accent',
           isSelected && 'bg-primary/10 text-primary'
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect(folder.id)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(folder.id);
+          }
+        }}
       >
         <CollapsibleTrigger asChild>
           <button
@@ -128,11 +137,20 @@ export function FolderPickerDialog({
         <div className="max-h-64 overflow-y-auto rounded-md border p-2">
           {/* Root option */}
           <div
+            role="treeitem"
+            aria-selected={isRootSelected}
+            tabIndex={0}
             className={cn(
               'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer hover:bg-accent text-sm',
               isRootSelected && 'bg-primary/10 text-primary'
             )}
             onClick={() => setSelectedId(null)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setSelectedId(null);
+              }
+            }}
           >
             <Home className="size-4 text-foreground-muted" />
             <span>Root</span>

@@ -228,7 +228,10 @@ const TrashPage = () => {
           title="Trash is empty"
           description="Items you delete will appear here for 30 days before permanent removal."
           actions={
-            <Link to="/help#trash" className="text-xs text-foreground-muted underline hover:text-foreground">
+            <Link
+              to="/help#trash"
+              className="text-xs text-foreground-muted underline hover:text-foreground"
+            >
               Learn more
             </Link>
           }

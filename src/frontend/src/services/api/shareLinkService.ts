@@ -1,4 +1,5 @@
 import { api } from './apiClient';
+
 import type {
   ShareLinkInfo,
   ShareLinkCreated,
@@ -25,9 +26,6 @@ export async function getPublicShare(token: string): Promise<SharedEntry> {
   return api.get<SharedEntry>(`/api/share/${encodeURIComponent(token)}`);
 }
 
-export async function verifySharePassword(
-  token: string,
-  password: string
-): Promise<SharedEntry> {
+export async function verifySharePassword(token: string, password: string): Promise<SharedEntry> {
   return api.post<SharedEntry>(`/api/share/${encodeURIComponent(token)}/verify`, { password });
 }

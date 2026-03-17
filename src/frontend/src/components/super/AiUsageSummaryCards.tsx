@@ -1,5 +1,7 @@
 import { Activity, Hash, TrendingUp, Cpu, DollarSign } from 'lucide-react';
+
 import { HeroStatCard } from './HeroStatCard';
+
 import type { AiUsageStatsResponse } from '@/services/api/aiUsageService';
 
 interface AiUsageSummaryCardsProps {

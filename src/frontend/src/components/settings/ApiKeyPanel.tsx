@@ -126,7 +126,10 @@ export default function ApiKeyPanel() {
           title="No API keys yet"
           description="Create one to get started with external integrations."
           actions={
-            <Link to="/help#api-keys" className="text-xs text-foreground-muted underline hover:text-foreground">
+            <Link
+              to="/help#api-keys"
+              className="text-xs text-foreground-muted underline hover:text-foreground"
+            >
               Learn more
             </Link>
           }

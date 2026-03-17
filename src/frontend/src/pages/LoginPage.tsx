@@ -191,17 +191,11 @@ const LoginPage = () => {
           </p>
         )}
         <p className="mt-3 text-center text-xs text-foreground-muted">
-          <Link
-            to="/terms"
-            className="hover:text-foreground underline-offset-4 hover:underline"
-          >
+          <Link to="/terms" className="hover:text-foreground underline-offset-4 hover:underline">
             Terms
           </Link>
           <span className="mx-1.5">&middot;</span>
-          <Link
-            to="/privacy"
-            className="hover:text-foreground underline-offset-4 hover:underline"
-          >
+          <Link to="/privacy" className="hover:text-foreground underline-offset-4 hover:underline">
             Privacy
           </Link>
         </p>

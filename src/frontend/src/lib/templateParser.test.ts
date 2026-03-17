@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-import { buildConstraintStr, buildTagString, parseTemplateTags, TAG_PATTERN } from './templateParser';
+import {
+  buildConstraintStr,
+  buildTagString,
+  parseTemplateTags,
+  TAG_PATTERN,
+} from './templateParser';
 
 describe('TAG_PATTERN', () => {
   it('matches a simple tag', () => {

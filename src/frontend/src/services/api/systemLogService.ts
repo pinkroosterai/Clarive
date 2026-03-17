@@ -35,7 +35,7 @@ function buildQueryString(
     pageSize?: number;
     sortBy?: string;
     sortDesc?: boolean;
-  },
+  }
 ): string {
   const query = new URLSearchParams();
   if (params.levels?.length) query.set('levels', params.levels.join(','));
@@ -56,9 +56,9 @@ export async function getSystemLogs(
   page = 1,
   pageSize = 50,
   sortBy?: string,
-  sortDesc?: boolean,
+  sortDesc?: boolean
 ): Promise<SystemLogPagedResponse> {
   return api.get<SystemLogPagedResponse>(
-    `/api/super/system-logs${buildQueryString({ ...filters, page, pageSize, sortBy, sortDesc })}`,
+    `/api/super/system-logs${buildQueryString({ ...filters, page, pageSize, sortBy, sortDesc })}`
   );
 }

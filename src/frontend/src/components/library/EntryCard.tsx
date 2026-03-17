@@ -157,9 +157,7 @@ export const EntryCard = memo(function EntryCard({
         </CardHeader>
 
         <CardContent className="pb-3">
-          <p className="text-sm text-foreground-muted line-clamp-2">
-            {preview || 'Empty prompt'}
-          </p>
+          <p className="text-sm text-foreground-muted line-clamp-2">{preview || 'Empty prompt'}</p>
           {entry.tags && entry.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {entry.tags.slice(0, 4).map((tag) => (

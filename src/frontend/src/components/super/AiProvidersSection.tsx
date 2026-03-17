@@ -216,7 +216,9 @@ export default function AiProvidersSection() {
         <div className="rounded-xl border border-border-subtle bg-surface elevation-1 p-12 flex flex-col items-center gap-3 text-center">
           <Server className="size-10 text-foreground-muted" />
           <p className="text-sm text-foreground-muted">No providers configured</p>
-          <p className="text-xs text-foreground-muted">Add an OpenAI-compatible provider to get started</p>
+          <p className="text-xs text-foreground-muted">
+            Add an OpenAI-compatible provider to get started
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -239,9 +241,7 @@ export default function AiProvidersSection() {
               onDeleteModel={(modelId) =>
                 deleteModelMutation.mutate({ providerId: provider.id, modelId })
               }
-              onUpdateProvider={(data) =>
-                inlineUpdateMutation.mutate({ id: provider.id, data })
-              }
+              onUpdateProvider={(data) => inlineUpdateMutation.mutate({ id: provider.id, data })}
               isValidating={
                 validateMutation.isPending && validateMutation.variables === provider.id
               }

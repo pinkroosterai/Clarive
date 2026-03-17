@@ -1,21 +1,26 @@
-import { useState, useMemo } from 'react';
 import { BarChart3 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+
+import AiUsageChart from './AiUsageChart';
+import AiUsageDateFilter, { getDateRange, type DatePreset } from './AiUsageDateFilter';
+import AiUsageLogGrid from './AiUsageLogGrid';
+import AiUsageSummaryCards from './AiUsageSummaryCards';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAiUsageStats } from '@/hooks/useAiUsage';
 import type { AiUsageFilterParams } from '@/services/api/aiUsageService';
-import AiUsageDateFilter, { getDateRange, type DatePreset } from './AiUsageDateFilter';
-import AiUsageSummaryCards from './AiUsageSummaryCards';
-import AiUsageChart from './AiUsageChart';
-import AiUsageLogGrid from './AiUsageLogGrid';
 
 export default function AiUsageDashboard() {
   const [preset, setPreset] = useState<DatePreset>('30d');
 
   const dateRange = useMemo(() => getDateRange(preset), [preset]);
 
-  const filters = useMemo<AiUsageFilterParams>(() => ({
-    ...dateRange,
-  }), [dateRange]);
+  const filters = useMemo<AiUsageFilterParams>(
+    () => ({
+      ...dateRange,
+    }),
+    [dateRange]
+  );
 
   const { data: stats, isLoading } = useAiUsageStats(filters);
 

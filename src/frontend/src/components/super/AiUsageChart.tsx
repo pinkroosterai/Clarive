@@ -1,4 +1,5 @@
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+
 import {
   ChartContainer,
   ChartTooltip,
@@ -38,32 +39,18 @@ export default function AiUsageChart({ byModel }: AiUsageChartProps) {
       <h4 className="text-sm font-semibold text-foreground mb-4">Token Usage by Model</h4>
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
         <BarChart data={data} accessibilityLayer>
-          <XAxis
-            dataKey="name"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            fontSize={12}
-          />
+          <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
           <YAxis
             tickLine={false}
             axisLine={false}
             tickMargin={8}
             fontSize={12}
-            tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+            tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
           />
           <ChartTooltip content={<ChartTooltipContent />} />
           <ChartLegend content={<ChartLegendContent />} />
-          <Bar
-            dataKey="inputTokens"
-            fill="var(--color-inputTokens)"
-            radius={[4, 4, 0, 0]}
-          />
-          <Bar
-            dataKey="outputTokens"
-            fill="var(--color-outputTokens)"
-            radius={[4, 4, 0, 0]}
-          />
+          <Bar dataKey="inputTokens" fill="var(--color-inputTokens)" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="outputTokens" fill="var(--color-outputTokens)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ChartContainer>
     </div>

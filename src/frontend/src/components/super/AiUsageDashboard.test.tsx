@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { vi, beforeAll } from 'vitest';
-import type { AiUsageStatsResponse } from '@/services/api/aiUsageService';
 
 // Recharts uses ResizeObserver which isn't available in jsdom
 beforeAll(() => {
@@ -14,7 +13,9 @@ beforeAll(() => {
 vi.mock('@/hooks/useAiUsage', () => ({
   useAiUsageStats: vi.fn(),
   useAiUsageLogs: vi.fn().mockReturnValue({ data: { items: [], totalCount: 0 }, isLoading: false }),
-  useAiUsageFilters: vi.fn().mockReturnValue({ data: { models: [], actionTypes: [], tenants: [] }, isLoading: false }),
+  useAiUsageFilters: vi
+    .fn()
+    .mockReturnValue({ data: { models: [], actionTypes: [], tenants: [] }, isLoading: false }),
 }));
 
 // Mock framer-motion to avoid animation issues in tests
@@ -35,26 +36,100 @@ vi.mock('ag-grid-react', () => ({
 }));
 
 import AiUsageDashboard from './AiUsageDashboard';
+
 import { useAiUsageStats } from '@/hooks/useAiUsage';
+import type { AiUsageStatsResponse } from '@/services/api/aiUsageService';
 
 const mockUseAiUsageStats = vi.mocked(useAiUsageStats);
 
 const mockStats: AiUsageStatsResponse = {
-  totals: { totalRequests: 100, totalInputTokens: 5000, totalOutputTokens: 3000, totalTokens: 8000, totalEstimatedInputCostUsd: 0.50, totalEstimatedOutputCostUsd: 1.20, totalEstimatedCostUsd: 1.70 },
-  averages: { avgInputTokensPerRequest: 50, avgOutputTokensPerRequest: 30, avgTotalTokensPerRequest: 80 },
+  totals: {
+    totalRequests: 100,
+    totalInputTokens: 5000,
+    totalOutputTokens: 3000,
+    totalTokens: 8000,
+    totalEstimatedInputCostUsd: 0.5,
+    totalEstimatedOutputCostUsd: 1.2,
+    totalEstimatedCostUsd: 1.7,
+  },
+  averages: {
+    avgInputTokensPerRequest: 50,
+    avgOutputTokensPerRequest: 30,
+    avgTotalTokensPerRequest: 80,
+  },
   byModel: [
-    { name: 'gpt-4o', requestCount: 60, inputTokens: 3000, outputTokens: 1800, totalTokens: 4800, percentage: 60, estimatedInputCostUsd: 0.30, estimatedOutputCostUsd: 0.72, estimatedCostUsd: 1.02 },
-    { name: 'claude-3', requestCount: 40, inputTokens: 2000, outputTokens: 1200, totalTokens: 3200, percentage: 40, estimatedInputCostUsd: 0.20, estimatedOutputCostUsd: 0.48, estimatedCostUsd: 0.68 },
+    {
+      name: 'gpt-4o',
+      requestCount: 60,
+      inputTokens: 3000,
+      outputTokens: 1800,
+      totalTokens: 4800,
+      percentage: 60,
+      estimatedInputCostUsd: 0.3,
+      estimatedOutputCostUsd: 0.72,
+      estimatedCostUsd: 1.02,
+    },
+    {
+      name: 'claude-3',
+      requestCount: 40,
+      inputTokens: 2000,
+      outputTokens: 1200,
+      totalTokens: 3200,
+      percentage: 40,
+      estimatedInputCostUsd: 0.2,
+      estimatedOutputCostUsd: 0.48,
+      estimatedCostUsd: 0.68,
+    },
   ],
   byTenant: [
-    { name: 'Acme Corp', requestCount: 70, inputTokens: 3500, outputTokens: 2100, totalTokens: 5600, percentage: 70, estimatedInputCostUsd: 0.35, estimatedOutputCostUsd: 0.84, estimatedCostUsd: 1.19 },
+    {
+      name: 'Acme Corp',
+      requestCount: 70,
+      inputTokens: 3500,
+      outputTokens: 2100,
+      totalTokens: 5600,
+      percentage: 70,
+      estimatedInputCostUsd: 0.35,
+      estimatedOutputCostUsd: 0.84,
+      estimatedCostUsd: 1.19,
+    },
   ],
   byUser: [
-    { name: 'admin@test.com', requestCount: 100, inputTokens: 5000, outputTokens: 3000, totalTokens: 8000, percentage: 100, estimatedInputCostUsd: 0.50, estimatedOutputCostUsd: 1.20, estimatedCostUsd: 1.70 },
+    {
+      name: 'admin@test.com',
+      requestCount: 100,
+      inputTokens: 5000,
+      outputTokens: 3000,
+      totalTokens: 8000,
+      percentage: 100,
+      estimatedInputCostUsd: 0.5,
+      estimatedOutputCostUsd: 1.2,
+      estimatedCostUsd: 1.7,
+    },
   ],
   byActionType: [
-    { name: 'PlaygroundTest', requestCount: 80, inputTokens: 4000, outputTokens: 2400, totalTokens: 6400, percentage: 80, estimatedInputCostUsd: 0.40, estimatedOutputCostUsd: 0.96, estimatedCostUsd: 1.36 },
-    { name: 'Generation', requestCount: 20, inputTokens: 1000, outputTokens: 600, totalTokens: 1600, percentage: 20, estimatedInputCostUsd: 0.10, estimatedOutputCostUsd: 0.24, estimatedCostUsd: 0.34 },
+    {
+      name: 'PlaygroundTest',
+      requestCount: 80,
+      inputTokens: 4000,
+      outputTokens: 2400,
+      totalTokens: 6400,
+      percentage: 80,
+      estimatedInputCostUsd: 0.4,
+      estimatedOutputCostUsd: 0.96,
+      estimatedCostUsd: 1.36,
+    },
+    {
+      name: 'Generation',
+      requestCount: 20,
+      inputTokens: 1000,
+      outputTokens: 600,
+      totalTokens: 1600,
+      percentage: 20,
+      estimatedInputCostUsd: 0.1,
+      estimatedOutputCostUsd: 0.24,
+      estimatedCostUsd: 0.34,
+    },
   ],
 };
 
@@ -74,8 +149,20 @@ describe('AiUsageDashboard', () => {
   it('shows empty state when no data', () => {
     mockUseAiUsageStats.mockReturnValue({
       data: {
-        totals: { totalRequests: 0, totalInputTokens: 0, totalOutputTokens: 0, totalTokens: 0, totalEstimatedInputCostUsd: 0, totalEstimatedOutputCostUsd: 0, totalEstimatedCostUsd: 0 },
-        averages: { avgInputTokensPerRequest: 0, avgOutputTokensPerRequest: 0, avgTotalTokensPerRequest: 0 },
+        totals: {
+          totalRequests: 0,
+          totalInputTokens: 0,
+          totalOutputTokens: 0,
+          totalTokens: 0,
+          totalEstimatedInputCostUsd: 0,
+          totalEstimatedOutputCostUsd: 0,
+          totalEstimatedCostUsd: 0,
+        },
+        averages: {
+          avgInputTokensPerRequest: 0,
+          avgOutputTokensPerRequest: 0,
+          avgTotalTokensPerRequest: 0,
+        },
         byModel: [],
         byTenant: [],
         byUser: [],

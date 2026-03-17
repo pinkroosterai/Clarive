@@ -109,7 +109,7 @@ const NewEntryPage = () => {
                         <Input
                           {...field}
                           placeholder="My prompt entry"
-                          autoFocus
+                          autoFocus // eslint-disable-line jsx-a11y/no-autofocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();

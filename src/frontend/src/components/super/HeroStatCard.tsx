@@ -26,9 +26,7 @@ export const HeroStatCard = memo(function HeroStatCard({
 }: HeroStatCardProps) {
   const spring = useSpring(0, { stiffness: 60, damping: 20 });
   const display = useTransform(spring, (v) => {
-    const formatted = decimals !== undefined
-      ? v.toFixed(decimals)
-      : Math.round(v).toLocaleString();
+    const formatted = decimals !== undefined ? v.toFixed(decimals) : Math.round(v).toLocaleString();
     return prefix ? `${prefix}${formatted}` : formatted;
   });
 

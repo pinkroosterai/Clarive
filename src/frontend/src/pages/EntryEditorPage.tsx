@@ -36,9 +36,9 @@ import { useEditorMutations } from '@/hooks/useEditorMutations';
 import { useEditorState } from '@/hooks/useEditorState';
 import { findFolderName } from '@/lib/folderUtils';
 import { entryService, folderService } from '@/services';
+import { ApiError } from '@/services/api/apiClient';
 import * as favoriteService from '@/services/api/favoriteService';
 import { getShareLink } from '@/services/api/shareLinkService';
-import { ApiError } from '@/services/api/apiClient';
 import { useAuthStore } from '@/store/authStore';
 
 const EntryEditorPage = () => {
@@ -388,7 +388,8 @@ const EntryEditorPage = () => {
     versions,
     onDeleteDraft: () => deleteDraftMutation.mutate(),
     isDeletingDraft: deleteDraftMutation.isPending,
-    onShare: !isReadOnly && currentUser?.role !== 'viewer' ? () => setShareDialogOpen(true) : undefined,
+    onShare:
+      !isReadOnly && currentUser?.role !== 'viewer' ? () => setShareDialogOpen(true) : undefined,
     hasShareLink: !!shareLinkQuery.data && !shareLinkQuery.error,
   } as const;
 
@@ -414,11 +415,7 @@ const EntryEditorPage = () => {
         open={diffOpen}
         onOpenChange={setDiffOpen}
       />
-      <ShareDialog
-        entryId={entryId!}
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-      />
+      <ShareDialog entryId={entryId!} open={shareDialogOpen} onOpenChange={setShareDialogOpen} />
     </>
   );
 

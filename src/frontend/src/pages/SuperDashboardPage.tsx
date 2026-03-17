@@ -15,10 +15,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import AiTab from '@/components/super/AiTab';
-import LogsTab from '@/components/super/LogsTab';
 import AiUsageDashboard from '@/components/super/AiUsageDashboard';
 import { CompactMetricStrip, type MetricItem } from '@/components/super/CompactMetricStrip';
 import { HeroStatCard } from '@/components/super/HeroStatCard';
+import LogsTab from '@/components/super/LogsTab';
 import SettingsTab from '@/components/super/SettingsTab';
 import UsersTable from '@/components/super/UsersTable';
 import { Alert, AlertDescription } from '@/components/ui/alert';

@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
+import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('sonner', () => ({
@@ -21,8 +22,6 @@ vi.mock('@/lib/deepEqual', () => ({
 }));
 
 import { useEditorState } from './useEditorState';
-
-import { toast } from 'sonner';
 
 import { createPublishedEntry, createDraftEntry } from '@/test/factories';
 import type { PromptEntry } from '@/types';

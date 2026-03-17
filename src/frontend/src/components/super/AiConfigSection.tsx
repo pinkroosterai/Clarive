@@ -57,7 +57,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   const providerModels = useMemo(() => buildProviderModels(providers), [providers]);
   const agentCapableModels = useMemo(
     () => providerModels.filter((m) => m.supportsFunctionCalling && m.supportsResponseSchema),
-    [providerModels],
+    [providerModels]
   );
   const flatModels = useMemo(() => providerModels.map((m) => m.modelId), [providerModels]);
   const hasModels = providerModels.length > 0;
