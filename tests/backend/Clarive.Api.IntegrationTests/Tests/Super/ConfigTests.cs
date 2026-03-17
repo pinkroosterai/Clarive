@@ -22,8 +22,11 @@ public class ConfigTests : IntegrationTestBase
         var response = await Client.GetAsync("/api/super/config");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var configs = await response.ReadJsonAsync();
+        var body = await response.ReadJsonAsync();
 
+        body.GetProperty("serverStartedAtUtc").GetString().Should().NotBeNullOrEmpty();
+
+        var configs = body.GetProperty("settings");
         configs.GetArrayLength().Should().BeGreaterOrEqualTo(1);
 
         var first = configs[0];
@@ -50,7 +53,8 @@ public class ConfigTests : IntegrationTestBase
 
         // Find a non-secret key from the config list
         var listResponse = await Client.GetAsync("/api/super/config");
-        var configs = await listResponse.ReadJsonAsync();
+        var listBody = await listResponse.ReadJsonAsync();
+        var configs = listBody.GetProperty("settings");
         string? testKey = null;
         foreach (var c in configs.EnumerateArray())
         {
@@ -97,8 +101,8 @@ public class ConfigTests : IntegrationTestBase
 
         // Get a valid key
         var listResponse = await Client.GetAsync("/api/super/config");
-        var configs = await listResponse.ReadJsonAsync();
-        var firstKey = configs[0].GetProperty("key").GetString()!;
+        var listBody = await listResponse.ReadJsonAsync();
+        var firstKey = listBody.GetProperty("settings")[0].GetProperty("key").GetString()!;
 
         var content = JsonContent.Create(new { value = "" });
         var response = await Client.PutAsync($"/api/super/config/{Uri.EscapeDataString(firstKey)}", content);
