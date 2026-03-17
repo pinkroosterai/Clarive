@@ -61,13 +61,14 @@ make db-reset                         # Destroy all database volumes (with confi
 
 ## Docker Architecture
 
-The compose file (`deploy/docker-compose.yml`) defines three services:
+The compose file (`deploy/docker-compose.yml`) defines four services:
 
 - **postgres** — PostgreSQL 16 with health check
+- **valkey** — Valkey 8 cache with AOF persistence, 256MB maxmemory, allkeys-lru eviction
 - **backend** — ASP.NET Core API (internal port 5000, not exposed to host)
 - **frontend** — React app served by nginx (port 8080), proxies `/api/` to backend
 
-All services communicate over Docker's default network. Only port 8080 is exposed to the host.
+All services communicate over Docker's default network. Only port 8080 is exposed to the host. Valkey and PostgreSQL are internal-only.
 
 ```
 Browser → :8080 (nginx)

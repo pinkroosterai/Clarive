@@ -2,7 +2,7 @@
 
 ## Overview
 
-Clarive is a multi-tenant platform for managing, versioning, and AI-enhancing LLM prompts. A React frontend talks to a C# backend, backed by PostgreSQL. Everything ships as a single container.
+Clarive is a multi-tenant platform for managing, versioning, and AI-enhancing LLM prompts. A React frontend talks to a C# backend, backed by PostgreSQL and Valkey. Everything ships as a single container with separate database and cache services.
 
 ## System Diagram
 
@@ -20,16 +20,16 @@ Clarive is a multi-tenant platform for managing, versioning, and AI-enhancing LL
               │ (React)  │  │ (ASP.NET) │
               └──────────┘  └─────┬─────┘
                                   │
-                    ┌─────────────┼─────────────┐
-                    │             │             │
-              ┌─────▼─────┐ ┌────▼────┐ ┌──────▼──────┐
-              │ PostgreSQL │ │   AI    │ │   Google    │
-              │     16     │ │ (OpenAI │ │   OAuth     │
-              │            │ │ compat) │ │             │
-              └────────────┘ └─────────┘ └─────────────┘
+                 ┌────────────┬───┴───┬─────────────┐
+                 │            │       │             │
+           ┌─────▼─────┐ ┌───▼───┐ ┌─▼───────┐ ┌──▼──────────┐
+           │ PostgreSQL │ │Valkey │ │   AI    │ │   Google    │
+           │     16     │ │  8    │ │ (OpenAI │ │   OAuth     │
+           │            │ │(cache)│ │ compat) │ │             │
+           └────────────┘ └───────┘ └─────────┘ └─────────────┘
 ```
 
-Nginx serves the React build and proxies `/api/` to the .NET backend. Supervisor manages both processes inside the container.
+Nginx serves the React build and proxies `/api/` to the .NET backend. Supervisor manages both processes inside the container. PostgreSQL and Valkey run as separate Docker services.
 
 ## Tech Stack
 
@@ -40,11 +40,12 @@ Nginx serves the React build and proxies `/api/` to the .NET backend. Supervisor
 | Backend | C# ASP.NET Core 10 Minimal APIs |
 | ORM | EF Core 10 (Npgsql) with 25 entity configurations |
 | Database | PostgreSQL 16 with EF Core migrations |
+| Cache | Valkey 8 (distributed cache with AOF persistence), tenant-scoped TenantCacheService |
 | Auth | JWT (15-min access) + rotating refresh tokens (7-day), Google OIDC, API keys |
 | AI | Any OpenAI-compatible provider via Microsoft.Extensions.AI, agent-based orchestration |
 | Search | Tavily web search integration for research-backed generation |
 | Testing | xUnit + Testcontainers (backend), Vitest (frontend unit), Playwright (E2E) |
-| Infra | Docker Compose, Makefile (35+ commands), single unified container |
+| Infra | Docker Compose (app + PostgreSQL + Valkey), Makefile (35+ commands) |
 
 ## Components
 

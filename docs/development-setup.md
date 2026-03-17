@@ -17,7 +17,7 @@ Development runs entirely in Docker with hot reload. No local SDKs needed.
 git clone https://github.com/pinkroosterai/Clarive.git
 cd Clarive
 make setup    # generates .env with dev defaults
-make dev      # starts postgres, backend, and frontend with hot reload
+make dev      # starts postgres, valkey, backend, and frontend with hot reload
 ```
 
 Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to the backend.
@@ -25,6 +25,7 @@ Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to 
 - Frontend hot reloads via Vite HMR
 - Backend hot reloads via `dotnet watch`
 - PostgreSQL is accessible on `localhost:5433` (mapped from container port 5432)
+- Valkey cache is accessible on `localhost:6379`
 
 ## Building from Source
 

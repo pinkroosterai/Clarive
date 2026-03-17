@@ -31,6 +31,7 @@ These are the only settings you need in your `.env` file. Run `make setup` to ge
 | `JWT_ISSUER` | JWT issuer claim | `Clarive` |
 | `JWT_AUDIENCE` | JWT audience claim | `Clarive` |
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET environment | `Production` |
+| `VALKEY_URL` | Valkey cache connection (host:port) | `valkey:6379` |
 
 > **Note:** `CORS_ORIGINS` is the only application setting that requires a container restart. Everything else can be changed at runtime through the dashboard.
 

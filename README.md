@@ -136,18 +136,19 @@ Clarive focuses on **prompt authoring, refinement, and team management**. If you
 
 ## Architecture
 
-One container: nginx serves the frontend and proxies `/api/` to the .NET backend.
+One container: nginx serves the frontend and proxies `/api/` to the .NET backend. PostgreSQL and Valkey run as separate Docker services.
 
 ```
                :8080 (nginx)
 ┌─────────────────────────────────┐     ┌──────────────┐
 │         Clarive Container       │     │  PostgreSQL   │
 │  ┌──────────┐   ┌────────────┐  │────▶│     16        │
-│  │  nginx   │──▶│ .NET 10 API│  │     │               │
-│  │ (frontend)│  │ (backend)  │  │     └──────────────┘
-│  └──────────┘   └────────────┘  │
-│         supervisor              │
-└─────────────────────────────────┘
+│  │  nginx   │──▶│ .NET 10 API│  │     └──────────────┘
+│  │ (frontend)│  │ (backend)  │  │
+│  └──────────┘   └────────────┘  │────▶┌──────────────┐
+│         supervisor              │     │   Valkey 8   │
+└─────────────────────────────────┘     │   (cache)    │
+                                        └──────────────┘
 ```
 
 For the full tech stack, project structure, and design details, see [docs/architecture.md](docs/architecture.md).
