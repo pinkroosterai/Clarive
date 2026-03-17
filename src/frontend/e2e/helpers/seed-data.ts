@@ -1,6 +1,6 @@
 /**
  * Mirrors the deterministic seed data from backend SeedData.cs.
- * Keep in sync with: backend/PromptForge.Api/Seed/SeedData.cs
+ * Keep in sync with: backend/Clarive.Api/Seed/SeedData.cs
  */
 
 export const USERS = {
@@ -113,13 +113,13 @@ export const ENTRIES = {
 export const API_KEYS = {
   production: {
     name: 'Production API Key',
-    value: 'pf_seed_test_key_for_seed_a3f8',
-    prefix: 'pf_seed',
+    value: 'cl_seed_test_key_for_seed_a3f8',
+    prefix: 'cl_seed',
   },
   development: {
     name: 'Development API Key',
-    value: 'pf_dev_test_key_for_seed_7b21',
-    prefix: 'pf_dev_',
+    value: 'cl_dev_test_key_for_seed_7b21',
+    prefix: 'cl_dev_',
   },
 } as const;
 

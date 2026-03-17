@@ -48,6 +48,9 @@ backups/
 claudedocs/
 CLAUDE.md
 
+# Bun lock file (project uses npm)
+bun.lockb
+
 # Root screenshots (Playwright artifacts)
 /*.png
 
