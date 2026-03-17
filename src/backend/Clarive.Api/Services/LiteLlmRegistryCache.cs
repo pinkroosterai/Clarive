@@ -138,6 +138,8 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
         long? maxInputTokens = GetLongProperty(element, "max_input_tokens");
         long? maxOutputTokens = GetLongProperty(element, "max_output_tokens");
         bool? isReasoning = GetBoolProperty(element, "supports_reasoning");
+        bool? supportsFunctionCalling = GetBoolProperty(element, "supports_function_calling");
+        bool? supportsResponseSchema = GetBoolProperty(element, "supports_response_schema");
 
         // Convert per-token to per-million
         return new LiteLlmModelInfo(
@@ -145,7 +147,9 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
             OutputCostPerMillion: outputCost.HasValue ? outputCost.Value * PerTokenToPerMillion : null,
             MaxInputTokens: maxInputTokens,
             MaxOutputTokens: maxOutputTokens,
-            IsReasoning: isReasoning
+            IsReasoning: isReasoning,
+            SupportsFunctionCalling: supportsFunctionCalling,
+            SupportsResponseSchema: supportsResponseSchema
         );
     }
 

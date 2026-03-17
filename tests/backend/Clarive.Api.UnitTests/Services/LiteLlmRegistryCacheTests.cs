@@ -21,6 +21,8 @@ public class LiteLlmRegistryCacheTests
             "max_output_tokens": 16384,
             "mode": "chat",
             "supports_reasoning": false,
+            "supports_function_calling": true,
+            "supports_response_schema": true,
             "litellm_provider": "openai"
         },
         "anthropic/claude-3-5-sonnet": {
@@ -30,6 +32,8 @@ public class LiteLlmRegistryCacheTests
             "max_output_tokens": 8192,
             "mode": "chat",
             "supports_reasoning": false,
+            "supports_function_calling": true,
+            "supports_response_schema": false,
             "litellm_provider": "anthropic"
         },
         "text-embedding-3-small": {
@@ -250,5 +254,43 @@ public class LiteLlmRegistryCacheTests
 
         Assert.NotNull(info);
         Assert.Null(info.IsReasoning);
+    }
+
+    [Fact]
+    public async Task SupportsFunctionCalling_True_Parsed()
+    {
+        var info = await _cache.TryGetModelInfoAsync("openai", "gpt-4o");
+
+        Assert.NotNull(info);
+        Assert.Equal(true, info.SupportsFunctionCalling);
+    }
+
+    [Fact]
+    public async Task SupportsResponseSchema_True_Parsed()
+    {
+        var info = await _cache.TryGetModelInfoAsync("openai", "gpt-4o");
+
+        Assert.NotNull(info);
+        Assert.Equal(true, info.SupportsResponseSchema);
+    }
+
+    [Fact]
+    public async Task SupportsResponseSchema_False_Parsed()
+    {
+        var info = await _cache.TryGetModelInfoAsync("anthropic", "claude-3-5-sonnet");
+
+        Assert.NotNull(info);
+        Assert.Equal(true, info.SupportsFunctionCalling);
+        Assert.Equal(false, info.SupportsResponseSchema);
+    }
+
+    [Fact]
+    public async Task CapabilityFlags_Missing_ReturnsNull()
+    {
+        var info = await _cache.TryGetModelInfoAsync("custom", "no-cost-model");
+
+        Assert.NotNull(info);
+        Assert.Null(info.SupportsFunctionCalling);
+        Assert.Null(info.SupportsResponseSchema);
     }
 }

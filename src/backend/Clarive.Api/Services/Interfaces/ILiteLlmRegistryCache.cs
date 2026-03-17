@@ -5,7 +5,9 @@ public record LiteLlmModelInfo(
     decimal? OutputCostPerMillion,
     long? MaxInputTokens,
     long? MaxOutputTokens,
-    bool? IsReasoning
+    bool? IsReasoning,
+    bool? SupportsFunctionCalling,
+    bool? SupportsResponseSchema
 );
 
 public interface ILiteLlmRegistryCache

@@ -170,6 +170,12 @@ export default function ProviderCardExpanded({
                   <th className="text-center p-2 font-medium" title="Reasoning model toggle">
                     <Brain className="size-3.5 mx-auto" />
                   </th>
+                  <th className="text-center p-2 font-medium" title="Supports function calling">
+                    Fn
+                  </th>
+                  <th className="text-center p-2 font-medium" title="Supports response schema">
+                    Schema
+                  </th>
                   <th className="text-center p-2 font-medium" title="Max input tokens">
                     Max In
                   </th>
@@ -321,6 +327,20 @@ const ModelRow = React.memo(function ModelRow({
         <Switch
           checked={model.isReasoning}
           onCheckedChange={(checked) => onUpdate(model.id, { isReasoning: checked })}
+          className="scale-75"
+        />
+      </td>
+      <td className="p-2 text-center">
+        <Switch
+          checked={model.supportsFunctionCalling}
+          onCheckedChange={(checked) => onUpdate(model.id, { supportsFunctionCalling: checked })}
+          className="scale-75"
+        />
+      </td>
+      <td className="p-2 text-center">
+        <Switch
+          checked={model.supportsResponseSchema}
+          onCheckedChange={(checked) => onUpdate(model.id, { supportsResponseSchema: checked })}
           className="scale-75"
         />
       </td>

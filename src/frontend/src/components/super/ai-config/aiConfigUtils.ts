@@ -5,6 +5,8 @@ export interface ProviderModel {
   providerId: string;
   providerName: string;
   modelId: string;
+  supportsFunctionCalling: boolean;
+  supportsResponseSchema: boolean;
 }
 
 export function findSetting(settings: ConfigSetting[], key: string): ConfigSetting | undefined {
@@ -18,7 +20,13 @@ export function buildProviderModels(providers: AiProviderResponse[] | undefined)
     .flatMap((p) =>
       p.models
         .filter((m) => m.isActive)
-        .map((m) => ({ providerId: p.id, providerName: p.name, modelId: m.modelId }))
+        .map((m) => ({
+          providerId: p.id,
+          providerName: p.name,
+          modelId: m.modelId,
+          supportsFunctionCalling: m.supportsFunctionCalling,
+          supportsResponseSchema: m.supportsResponseSchema,
+        }))
     );
 }
 

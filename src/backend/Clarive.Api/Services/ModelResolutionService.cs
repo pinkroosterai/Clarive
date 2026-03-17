@@ -82,16 +82,7 @@ public class ModelResolutionService(
                 var activeProviders = providers.Where(p => p.IsActive).ToList();
 
                 if (activeProviders.Count == 0)
-                {
-                    // Fall back to legacy model list
-                    var legacyResult = await GetAvailableModelsAsync(ct);
-                    if (legacyResult.IsError) return new List<EnrichedModelResponse>();
-
-                    return legacyResult.Value.Select(m => new EnrichedModelResponse(
-                        m, null, Guid.Empty, "Default", false, 128000, null,
-                        null, null, null
-                    )).ToList();
-                }
+                    return new List<EnrichedModelResponse>();
 
                 return activeProviders
                     .SelectMany(p => p.Models
@@ -102,6 +93,8 @@ public class ModelResolutionService(
                             p.Id,
                             p.Name,
                             m.IsReasoning,
+                            m.SupportsFunctionCalling,
+                            m.SupportsResponseSchema,
                             m.MaxInputTokens,
                             m.MaxOutputTokens,
                             m.DefaultTemperature,

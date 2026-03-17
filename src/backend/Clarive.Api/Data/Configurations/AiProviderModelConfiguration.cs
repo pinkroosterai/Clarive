@@ -16,6 +16,8 @@ public class AiProviderModelConfiguration : IEntityTypeConfiguration<AiProviderM
         builder.Property(m => m.ModelId).HasColumnName("model_id").HasMaxLength(100).IsRequired();
         builder.Property(m => m.DisplayName).HasColumnName("display_name").HasMaxLength(100);
         builder.Property(m => m.IsReasoning).HasColumnName("is_reasoning").IsRequired();
+        builder.Property(m => m.SupportsFunctionCalling).HasColumnName("supports_function_calling").IsRequired();
+        builder.Property(m => m.SupportsResponseSchema).HasColumnName("supports_response_schema").IsRequired();
         builder.Property(m => m.MaxInputTokens).HasColumnName("max_input_tokens");
         builder.Property(m => m.MaxOutputTokens).HasColumnName("max_output_tokens");
 

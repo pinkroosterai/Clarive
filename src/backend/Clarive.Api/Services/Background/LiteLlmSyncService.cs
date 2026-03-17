@@ -91,10 +91,20 @@ public class LiteLlmSyncService(
 
                 var changed = false;
 
-                // IsReasoning always syncs (it's a capability flag, not a cost)
+                // Capability flags always sync (not gated by HasManualCostOverride)
                 if (info.IsReasoning is not null && model.IsReasoning != info.IsReasoning.Value)
                 {
                     model.IsReasoning = info.IsReasoning.Value;
+                    changed = true;
+                }
+                if (info.SupportsFunctionCalling is not null && model.SupportsFunctionCalling != info.SupportsFunctionCalling.Value)
+                {
+                    model.SupportsFunctionCalling = info.SupportsFunctionCalling.Value;
+                    changed = true;
+                }
+                if (info.SupportsResponseSchema is not null && model.SupportsResponseSchema != info.SupportsResponseSchema.Value)
+                {
+                    model.SupportsResponseSchema = info.SupportsResponseSchema.Value;
                     changed = true;
                 }
 

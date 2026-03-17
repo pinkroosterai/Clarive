@@ -27,6 +27,8 @@ public record AddAiProviderModelRequest(
     [property: StringLength(100)]
     string? DisplayName = null,
     bool IsReasoning = false,
+    bool SupportsFunctionCalling = false,
+    bool SupportsResponseSchema = false,
     long? MaxInputTokens = null,
     long? MaxOutputTokens = null,
     [property: Range(0.0, 2.0)]
@@ -45,6 +47,8 @@ public record UpdateAiProviderModelRequest(
     [property: StringLength(100)]
     string? DisplayName = null,
     bool? IsReasoning = null,
+    bool? SupportsFunctionCalling = null,
+    bool? SupportsResponseSchema = null,
     long? MaxInputTokens = null,
     long? MaxOutputTokens = null,
     bool? IsActive = null,

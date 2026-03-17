@@ -5,6 +5,8 @@ export interface AiProviderModelResponse {
   modelId: string;
   displayName: string | null;
   isReasoning: boolean;
+  supportsFunctionCalling: boolean;
+  supportsResponseSchema: boolean;
   maxInputTokens: number | null;
   maxOutputTokens: number | null;
   defaultTemperature: number | null;
@@ -47,6 +49,8 @@ export interface AddModelRequest {
   modelId: string;
   displayName?: string;
   isReasoning?: boolean;
+  supportsFunctionCalling?: boolean;
+  supportsResponseSchema?: boolean;
   maxInputTokens?: number | null;
   maxOutputTokens?: number | null;
   defaultTemperature?: number | null;
@@ -59,6 +63,8 @@ export interface AddModelRequest {
 export interface UpdateModelRequest {
   displayName?: string;
   isReasoning?: boolean;
+  supportsFunctionCalling?: boolean;
+  supportsResponseSchema?: boolean;
   maxInputTokens?: number | null;
   maxOutputTokens?: number | null;
   isActive?: boolean;

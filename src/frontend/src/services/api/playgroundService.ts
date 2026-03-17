@@ -88,6 +88,8 @@ export interface EnrichedModel {
   providerId: string;
   providerName: string;
   isReasoning: boolean;
+  supportsFunctionCalling: boolean;
+  supportsResponseSchema: boolean;
   maxInputTokens: number | null;
   maxOutputTokens: number | null;
   defaultTemperature: number | null;

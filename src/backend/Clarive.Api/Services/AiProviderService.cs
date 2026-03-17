@@ -159,6 +159,8 @@ public class AiProviderService(
             ModelId = request.ModelId,
             DisplayName = request.DisplayName,
             IsReasoning = request.IsReasoning,
+            SupportsFunctionCalling = request.SupportsFunctionCalling,
+            SupportsResponseSchema = request.SupportsResponseSchema,
             MaxInputTokens = request.MaxInputTokens,
             MaxOutputTokens = request.MaxOutputTokens,
             DefaultTemperature = request.DefaultTemperature,
@@ -179,6 +181,8 @@ public class AiProviderService(
             model.MaxInputTokens ??= info.MaxInputTokens;
             model.MaxOutputTokens ??= info.MaxOutputTokens;
             if (info.IsReasoning == true) model.IsReasoning = true;
+            if (info.SupportsFunctionCalling == true) model.SupportsFunctionCalling = true;
+            if (info.SupportsResponseSchema == true) model.SupportsResponseSchema = true;
         }
 
         await repo.AddModelAsync(model, ct);
@@ -197,6 +201,8 @@ public class AiProviderService(
 
         if (request.DisplayName is not null) model.DisplayName = request.DisplayName;
         if (request.IsReasoning.HasValue) model.IsReasoning = request.IsReasoning.Value;
+        if (request.SupportsFunctionCalling.HasValue) model.SupportsFunctionCalling = request.SupportsFunctionCalling.Value;
+        if (request.SupportsResponseSchema.HasValue) model.SupportsResponseSchema = request.SupportsResponseSchema.Value;
         if (request.MaxInputTokens.HasValue) model.MaxInputTokens = request.MaxInputTokens.Value;
         if (request.MaxOutputTokens.HasValue) model.MaxOutputTokens = request.MaxOutputTokens.Value;
         if (request.IsActive.HasValue) model.IsActive = request.IsActive.Value;
@@ -237,6 +243,7 @@ public class AiProviderService(
 
     private static AiProviderModelResponse ToModelResponse(AiProviderModel m) => new(
         m.Id, m.ModelId, m.DisplayName, m.IsReasoning,
+        m.SupportsFunctionCalling, m.SupportsResponseSchema,
         m.MaxInputTokens, m.MaxOutputTokens,
         m.DefaultTemperature, m.DefaultMaxTokens, m.DefaultReasoningEffort,
         m.InputCostPerMillion, m.OutputCostPerMillion,

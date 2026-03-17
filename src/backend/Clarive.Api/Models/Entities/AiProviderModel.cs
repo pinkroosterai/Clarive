@@ -7,6 +7,8 @@ public class AiProviderModel
     public string ModelId { get; set; } = "";
     public string? DisplayName { get; set; }
     public bool IsReasoning { get; set; }
+    public bool SupportsFunctionCalling { get; set; }
+    public bool SupportsResponseSchema { get; set; }
     public long? MaxInputTokens { get; set; }
     public long? MaxOutputTokens { get; set; }
 

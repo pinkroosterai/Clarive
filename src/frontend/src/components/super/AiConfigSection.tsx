@@ -55,6 +55,10 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   });
 
   const providerModels = useMemo(() => buildProviderModels(providers), [providers]);
+  const agentCapableModels = useMemo(
+    () => providerModels.filter((m) => m.supportsFunctionCalling && m.supportsResponseSchema),
+    [providerModels],
+  );
   const flatModels = useMemo(() => providerModels.map((m) => m.modelId), [providerModels]);
   const hasModels = providerModels.length > 0;
 
@@ -157,7 +161,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
         >
           {hasModels ? (
             <ProviderModelCombobox
-              providerModels={providerModels}
+              providerModels={agentCapableModels}
               value={currentDefaultModel}
               providerId={currentDefaultProviderId}
               providerName={findProviderName(currentDefaultModel, currentDefaultProviderId)}
@@ -216,7 +220,7 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
         >
           {hasModels ? (
             <ProviderModelCombobox
-              providerModels={providerModels}
+              providerModels={agentCapableModels}
               value={currentPremiumModel}
               providerId={currentPremiumProviderId}
               providerName={findProviderName(currentPremiumModel, currentPremiumProviderId)}
