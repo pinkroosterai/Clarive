@@ -38,6 +38,7 @@ const WorkspaceSelectorPage = lazy(() => import('@/pages/WorkspaceSelectorPage')
 const SuperDashboardPage = lazy(() => import('@/pages/SuperDashboardPage'));
 const HelpPage = lazy(() => import('@/pages/HelpPage'));
 const SetupPage = lazy(() => import('@/pages/SetupPage'));
+const PublicShareViewerPage = lazy(() => import('@/pages/PublicShareViewerPage'));
 const SetupWizardPage = lazy(() => import('@/pages/SetupWizardPage'));
 import { useAuthStore } from '@/store/authStore';
 
@@ -123,6 +124,7 @@ const App = () => (
                     <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
                     <Route path="/terms" element={<TermsPage />} />
                     <Route path="/privacy" element={<PrivacyPage />} />
+                    <Route path="/share/:token" element={<PublicShareViewerPage />} />
 
                     {/* Super admin routes */}
                     <Route element={<SuperRoute />}>

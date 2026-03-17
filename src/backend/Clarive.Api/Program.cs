@@ -193,6 +193,7 @@ builder.Services.AddScoped<IPlaygroundRunRepository, EfPlaygroundRunRepository>(
 builder.Services.AddScoped<IAiProviderRepository, EfAiProviderRepository>();
 builder.Services.AddScoped<IServiceConfigRepository, EfServiceConfigRepository>();
 builder.Services.AddScoped<IAiUsageLogRepository, EfAiUsageLogRepository>();
+builder.Services.AddScoped<IShareLinkRepository, EfShareLinkRepository>();
 
 // ── Services ──
 builder.Services.AddSingleton<MaintenanceModeService>();
@@ -216,6 +217,7 @@ builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
 builder.Services.AddScoped<IPlaygroundService, PlaygroundService>();
 builder.Services.AddScoped<AiProviderService>();
 builder.Services.AddScoped<IAiUsageLogger, AiUsageLogger>();
+builder.Services.AddScoped<IShareLinkService, ShareLinkService>();
 builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));
 builder.Services.AddScoped<IAvatarService, AvatarService>();
 // ── Email (all providers registered, resolved dynamically per-request) ──
@@ -454,6 +456,8 @@ app.MapConfigEndpoints();
 app.MapPlaygroundEndpoints();
 app.MapAiProviderEndpoints();
 app.MapAiUsageEndpoints();
+app.MapShareLinkEndpoints();
+app.MapPublicShareEndpoints();
 
 app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode, IAgentFactory agentFactory, ITavilyClientService tavilyClient) =>
     Results.Ok(new { maintenance = maintenanceMode.IsEnabled, aiConfigured = agentFactory.IsConfigured, webSearchAvailable = tavilyClient.IsConfigured }))

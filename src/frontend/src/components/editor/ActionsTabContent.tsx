@@ -10,6 +10,7 @@ import {
   Redo2,
   Check,
   Play,
+  Share2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useRef } from 'react';
@@ -66,6 +67,7 @@ export interface ActionsTabContentProps {
   entryVersion: number;
   onDeleteDraft?: () => void;
   isDeletingDraft?: boolean;
+  onShare?: () => void;
 }
 
 export function ActionsTabContent({
@@ -92,6 +94,7 @@ export function ActionsTabContent({
   entryVersion,
   onDeleteDraft,
   isDeletingDraft,
+  onShare,
 }: ActionsTabContentProps) {
   const aiEnabled = useAiEnabled();
   const hasDraft = versions.some((v) => v.versionState === 'draft');
@@ -304,6 +307,22 @@ export function ActionsTabContent({
           </AlertDialogContent>
         </AlertDialog>
       </ActionGroup>
+
+      {onShare && hasPublished && (
+        <>
+          <Separator />
+          <ActionGroup label="Share">
+            <Button
+              variant="outline"
+              className="w-full gap-2 hover:border-primary/30 transition-all"
+              onClick={onShare}
+            >
+              <Share2 className="size-4" />
+              Share Link
+            </Button>
+          </ActionGroup>
+        </>
+      )}
 
       {(aiEnabled || showGenerateSystemMessage || showDecomposeToChain) && (
         <>

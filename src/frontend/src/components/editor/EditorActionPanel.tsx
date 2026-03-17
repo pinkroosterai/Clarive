@@ -35,6 +35,7 @@ export interface EditorActionPanelProps {
   versionPanel?: ReactNode;
   onDeleteDraft?: () => void;
   isDeletingDraft?: boolean;
+  onShare?: () => void;
 }
 
 export function EditorActionPanel({
@@ -64,6 +65,7 @@ export function EditorActionPanel({
   versionPanel,
   onDeleteDraft,
   isDeletingDraft,
+  onShare,
 }: EditorActionPanelProps) {
   const [activeTab, setActiveTab] = useState('actions');
 
@@ -127,6 +129,7 @@ export function EditorActionPanel({
             entryVersion={entry.version}
             onDeleteDraft={onDeleteDraft}
             isDeletingDraft={isDeletingDraft}
+            onShare={onShare}
           />
         </TabsContent>
 

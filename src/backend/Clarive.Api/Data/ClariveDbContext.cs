@@ -41,6 +41,7 @@ public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AiProvider> AiProviders => Set<AiProvider>();
     public DbSet<AiProviderModel> AiProviderModels => Set<AiProviderModel>();
     public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
+    public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

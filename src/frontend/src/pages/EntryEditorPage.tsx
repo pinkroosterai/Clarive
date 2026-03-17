@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
 import { EditorAiOverlay } from '@/components/editor/EditorAiOverlay';
 import { PromptEditor } from '@/components/editor/PromptEditor';
+import { ShareDialog } from '@/components/editor/ShareDialog';
 import { VersionDiffDialog } from '@/components/editor/VersionDiffDialog';
 import { VersionPanel } from '@/components/editor/VersionPanel';
 import { FolderPickerDialog } from '@/components/library/FolderPickerDialog';
@@ -170,6 +171,7 @@ const EntryEditorPage = () => {
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);
   const [folderPickerOpen, setFolderPickerOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const aiEnabled = useAiEnabled();
 
   const folderName = editor.localEntry
@@ -373,6 +375,7 @@ const EntryEditorPage = () => {
     versions,
     onDeleteDraft: () => deleteDraftMutation.mutate(),
     isDeletingDraft: deleteDraftMutation.isPending,
+    onShare: !isReadOnly && currentUser?.role !== 'viewer' ? () => setShareDialogOpen(true) : undefined,
   } as const;
 
   const isAiRunning = mutations.isGeneratingSystemMessage || mutations.isDecomposing;
@@ -396,6 +399,11 @@ const EntryEditorPage = () => {
         currentVersion={versionNum}
         open={diffOpen}
         onOpenChange={setDiffOpen}
+      />
+      <ShareDialog
+        entryId={entryId!}
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
       />
     </>
   );
