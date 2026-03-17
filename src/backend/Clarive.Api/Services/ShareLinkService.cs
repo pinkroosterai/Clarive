@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Clarive.Api.Auth;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
@@ -21,7 +22,7 @@ public class ShareLinkService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("ENTRY_NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFoundByCode;
 
         if (entry.IsTrashed)
             return Error.Validation("ENTRY_TRASHED", "Cannot create a share link for a trashed entry.");
@@ -69,7 +70,7 @@ public class ShareLinkService(
     {
         var link = await shareLinkRepo.GetByEntryIdAsync(tenantId, entryId, ct);
         if (link is null)
-            return Error.NotFound("SHARE_LINK_NOT_FOUND", "No active share link found for this entry.");
+            return DomainErrors.ShareLinkNotFound;
         return link;
     }
 
@@ -77,7 +78,7 @@ public class ShareLinkService(
     {
         var deleted = await shareLinkRepo.DeleteByEntryIdAsync(tenantId, entryId, ct);
         if (!deleted)
-            return Error.NotFound("SHARE_LINK_NOT_FOUND", "No share link found for this entry.");
+            return DomainErrors.ShareLinkNotFoundForEntry;
         return Result.Success;
     }
 
@@ -87,7 +88,7 @@ public class ShareLinkService(
         var link = await shareLinkRepo.GetByTokenHashAsync(tokenHash, ct);
 
         if (link is null || !link.IsActive)
-            return Error.NotFound("SHARE_LINK_NOT_FOUND", "Share link not found or inactive.");
+            return DomainErrors.ShareLinkNotFoundOrInactive;
 
         if (link.ExpiresAt.HasValue && link.ExpiresAt.Value <= DateTime.UtcNow)
             return Error.Custom(410, "SHARE_LINK_EXPIRED", "This share link has expired.");
@@ -106,7 +107,7 @@ public class ShareLinkService(
         var link = await shareLinkRepo.GetByTokenHashAsync(tokenHash, ct);
 
         if (link is null || !link.IsActive)
-            return Error.NotFound("SHARE_LINK_NOT_FOUND", "Share link not found or inactive.");
+            return DomainErrors.ShareLinkNotFoundOrInactive;
 
         if (link.ExpiresAt.HasValue && link.ExpiresAt.Value <= DateTime.UtcNow)
             return Error.Custom(410, "SHARE_LINK_EXPIRED", "This share link has expired.");
@@ -137,12 +138,12 @@ public class ShareLinkService(
         }
 
         if (version is null)
-            return Error.NotFound("VERSION_NOT_FOUND", "The shared version is no longer available.");
+            return DomainErrors.SharedVersionNotFound;
 
         // Get entry for title
         var entry = await entryRepo.GetByIdAsync(link.TenantId, link.EntryId, ct);
         if (entry is null || entry.IsTrashed)
-            return Error.NotFound("ENTRY_NOT_FOUND", "The shared entry is no longer available.");
+            return DomainErrors.SharedEntryNotFound;
 
         var prompts = version.Prompts
             .OrderBy(p => p.Order)

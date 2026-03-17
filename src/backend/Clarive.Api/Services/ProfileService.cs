@@ -1,4 +1,5 @@
 using Clarive.Api.Auth;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Repositories.Interfaces;
@@ -18,7 +19,7 @@ public class ProfileService(
     {
         var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
         if (user is null)
-            return Error.NotFound("NOT_FOUND", "User not found.");
+            return DomainErrors.UserNotFound;
 
         // Validate current password when changing email or password
         if (request.NewPassword is not null && user.PasswordHash is null)
@@ -80,7 +81,7 @@ public class ProfileService(
     {
         var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
         if (user is null)
-            return Error.NotFound("NOT_FOUND", "User not found.");
+            return DomainErrors.UserNotFound;
 
         user.OnboardingCompleted = true;
         await userRepo.UpdateAsync(user, ct);

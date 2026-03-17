@@ -1,4 +1,5 @@
 using System.ClientModel;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
@@ -29,7 +30,7 @@ public class AiProviderService(
     {
         var provider = await repo.GetByIdAsync(id, ct);
         if (provider is null)
-            return Error.NotFound("NOT_FOUND", "Provider not found.");
+            return DomainErrors.ProviderNotFound;
         return ToResponse(provider);
     }
 
@@ -67,7 +68,7 @@ public class AiProviderService(
     {
         var provider = await repo.GetByIdAsync(id, ct);
         if (provider is null)
-            return Error.NotFound("NOT_FOUND", "Provider not found.");
+            return DomainErrors.ProviderNotFound;
 
         if (request.Name is not null) provider.Name = request.Name;
         if (request.EndpointUrl is not null)
@@ -95,7 +96,7 @@ public class AiProviderService(
     {
         var deleted = await repo.DeleteAsync(id, ct);
         if (!deleted)
-            return Error.NotFound("NOT_FOUND", "Provider not found.");
+            return DomainErrors.ProviderNotFound;
         return Result.Success;
     }
 
@@ -103,7 +104,7 @@ public class AiProviderService(
     {
         var provider = await repo.GetByIdAsync(id, ct);
         if (provider is null)
-            return Error.NotFound("NOT_FOUND", "Provider not found.");
+            return DomainErrors.ProviderNotFound;
 
         try
         {
@@ -153,7 +154,7 @@ public class AiProviderService(
 
         var provider = await repo.GetByIdAsync(providerId, ct);
         if (provider is null)
-            return Error.NotFound("NOT_FOUND", "Provider not found.");
+            return DomainErrors.ProviderNotFound;
 
         if (provider.Models.Any(m => m.ModelId == request.ModelId))
             return Error.Conflict("DUPLICATE_MODEL", $"Model '{request.ModelId}' already exists for this provider.");
@@ -203,7 +204,7 @@ public class AiProviderService(
 
         var model = await repo.GetModelByIdAsync(modelId, ct);
         if (model is null)
-            return Error.NotFound("NOT_FOUND", "Model not found.");
+            return DomainErrors.AiModelNotFound;
 
         if (request.DisplayName is not null) model.DisplayName = request.DisplayName;
         if (request.IsReasoning.HasValue) model.IsReasoning = request.IsReasoning.Value;
@@ -236,7 +237,7 @@ public class AiProviderService(
     {
         var deleted = await repo.DeleteModelAsync(modelId, ct);
         if (!deleted)
-            return Error.NotFound("NOT_FOUND", "Model not found.");
+            return DomainErrors.AiModelNotFound;
         return Result.Success;
     }
 

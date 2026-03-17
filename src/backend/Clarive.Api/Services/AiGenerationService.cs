@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
@@ -67,7 +68,7 @@ public class AiGenerationService(
     {
         var session = await sessionRepo.GetByIdAsync(tenantId, request.SessionId, ct);
         if (session is null)
-            return Error.NotFound("NOT_FOUND", "Session not found or expired.");
+            return DomainErrors.SessionNotFound;
 
         if (session.AgentSessionId is null || session.Config is null)
             return Error.Validation("VALIDATION_ERROR", "Session does not have an active agent workflow.");
@@ -134,11 +135,11 @@ public class AiGenerationService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (working is null)
-            return Error.NotFound("NOT_FOUND", "No version found for this entry.");
+            return DomainErrors.VersionNotFoundForEntry;
 
         var prompts = working.Prompts.OrderBy(p => p.Order)
             .Select(p => new PromptInput(p.Content, p.IsTemplate))
@@ -187,11 +188,11 @@ public class AiGenerationService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (working is null)
-            return Error.NotFound("NOT_FOUND", "No version found for this entry.");
+            return DomainErrors.VersionNotFoundForEntry;
 
         if (!string.IsNullOrEmpty(working.SystemMessage))
             return Error.Conflict("ALREADY_EXISTS", "Entry already has a system message.");
@@ -214,11 +215,11 @@ public class AiGenerationService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (working is null)
-            return Error.NotFound("NOT_FOUND", "No version found for this entry.");
+            return DomainErrors.VersionNotFoundForEntry;
 
         if (working.Prompts.Count != 1)
             return Error.Conflict("ALREADY_CHAIN", "Entry must have exactly one prompt to decompose.");

@@ -38,11 +38,11 @@ public class PlaygroundService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (version is null)
-            return Error.NotFound("NO_VERSION", "Entry has no working version.");
+            return DomainErrors.NoWorkingVersion;
 
         var prompts = version.Prompts.OrderBy(p => p.Order).ToList();
 

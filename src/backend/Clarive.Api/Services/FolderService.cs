@@ -1,3 +1,4 @@
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
@@ -27,7 +28,7 @@ public class FolderService(
     public async Task<ErrorOr<Folder>> CreateAsync(Guid tenantId, CreateFolderRequest request, CancellationToken ct)
     {
         if (request.ParentId is not null && await folderRepo.GetByIdAsync(tenantId, request.ParentId.Value, ct) is null)
-            return Error.NotFound("NOT_FOUND", "Parent folder not found.");
+            return DomainErrors.ParentFolderNotFound;
 
         var folder = await folderRepo.CreateAsync(new Folder
         {
@@ -47,7 +48,7 @@ public class FolderService(
     {
         var folder = await folderRepo.GetByIdAsync(tenantId, folderId, ct);
         if (folder is null)
-            return Error.NotFound("NOT_FOUND", "Folder not found.");
+            return DomainErrors.FolderNotFound;
 
         folder.Name = request.Name.Trim();
         await folderRepo.UpdateAsync(folder, ct);
@@ -61,7 +62,7 @@ public class FolderService(
     {
         var folder = await folderRepo.GetByIdAsync(tenantId, folderId, ct);
         if (folder is null)
-            return Error.NotFound("NOT_FOUND", "Folder not found.");
+            return DomainErrors.FolderNotFound;
 
         var children = await folderRepo.GetChildrenAsync(tenantId, folderId, ct);
         if (children.Count > 0)
@@ -82,7 +83,7 @@ public class FolderService(
     {
         var folder = await folderRepo.GetByIdAsync(tenantId, folderId, ct);
         if (folder is null)
-            return Error.NotFound("NOT_FOUND", "Folder not found.");
+            return DomainErrors.FolderNotFound;
 
         if (request.ParentId == folderId)
             return Error.Conflict("CIRCULAR_REFERENCE", "Cannot move a folder into itself.");
@@ -90,7 +91,7 @@ public class FolderService(
         if (request.ParentId is not null)
         {
             if (await folderRepo.GetByIdAsync(tenantId, request.ParentId.Value, ct) is null)
-                return Error.NotFound("NOT_FOUND", "Target parent folder not found.");
+                return DomainErrors.TargetParentFolderNotFound;
 
             if (await folderRepo.IsDescendantOfAsync(tenantId, request.ParentId.Value, folderId, ct))
                 return Error.Conflict("CIRCULAR_REFERENCE", "Cannot move a folder into one of its descendants.");

@@ -1,4 +1,5 @@
 using Clarive.Api.Data;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
@@ -19,7 +20,7 @@ public class EntryService(
         Guid tenantId, Guid userId, CreateEntryRequest request, CancellationToken ct)
     {
         if (request.FolderId is not null && await folderRepo.GetByIdAsync(tenantId, request.FolderId.Value, ct) is null)
-            return Error.NotFound("NOT_FOUND", "Folder not found.");
+            return DomainErrors.FolderNotFound;
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -57,11 +58,11 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (working is null)
-            return Error.NotFound("NOT_FOUND", "No version found.");
+            return DomainErrors.VersionNotFound;
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -106,7 +107,7 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         var draft = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (draft is null || draft.VersionState != VersionState.Draft)
@@ -140,11 +141,11 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         var historical = await entryRepo.GetVersionAsync(tenantId, entryId, version, ct);
         if (historical is null || historical.VersionState != VersionState.Historical)
-            return Error.NotFound("NOT_FOUND", "Historical version not found.");
+            return DomainErrors.HistoricalVersionNotFound;
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -205,7 +206,7 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (working is null || working.VersionState != VersionState.Draft)
@@ -231,10 +232,10 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         if (folderId is not null && await folderRepo.GetByIdAsync(tenantId, folderId.Value, ct) is null)
-            return Error.NotFound("NOT_FOUND", "Target folder not found.");
+            return DomainErrors.TargetFolderNotFound;
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -250,7 +251,7 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
@@ -266,7 +267,7 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         if (!entry.IsTrashed)
             return Error.Conflict("NOT_TRASHED", "Entry is not in trash.");
@@ -285,7 +286,7 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return Error.NotFound("NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFound;
 
         if (!entry.IsTrashed)
             return Error.Conflict("NOT_TRASHED", "Entry must be trashed before permanent deletion.");
@@ -303,11 +304,11 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
-            return Error.NotFound("ENTRY_NOT_FOUND", "Entry not found.");
+            return DomainErrors.EntryNotFoundByCode;
 
         var published = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
         if (published is null)
-            return Error.NotFound("NO_PUBLISHED_VERSION", "This entry has no published version.");
+            return DomainErrors.NoPublishedVersion;
 
         return (entry, published);
     }

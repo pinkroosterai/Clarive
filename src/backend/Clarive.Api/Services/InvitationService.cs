@@ -110,7 +110,7 @@ public class InvitationService(
     {
         var invitation = await invitationRepo.GetByIdCrossTenantsAsync(invitationId, ct);
         if (invitation is null || invitation.TargetUserId != userId || invitation.ExpiresAt <= DateTime.UtcNow)
-            return Error.NotFound("NOT_FOUND", "Invitation not found or expired.");
+            return DomainErrors.InvitationNotFound;
 
         if (!accept)
         {

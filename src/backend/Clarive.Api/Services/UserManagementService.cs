@@ -1,4 +1,5 @@
 using Clarive.Api.Data;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Results;
@@ -48,13 +49,13 @@ public class UserManagementService(
     {
         var user = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (user is null)
-            return Error.NotFound("NOT_FOUND", "User not found.");
+            return DomainErrors.UserNotFound;
 
         var oldRole = user.Role.ToString().ToLower();
 
         var membership = await membershipRepo.GetAsync(targetUserId, tenantId, ct);
         if (membership is null)
-            return Error.NotFound("MEMBERSHIP_NOT_FOUND", "User membership not found for this workspace.");
+            return DomainErrors.MembershipNotFound;
 
         membership.Role = newRole;
         await membershipRepo.UpdateAsync(membership, ct);
@@ -74,7 +75,7 @@ public class UserManagementService(
     {
         var user = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (user is null)
-            return Error.NotFound("NOT_FOUND", "User not found.");
+            return DomainErrors.UserNotFound;
 
         // Prevent removing the last admin
         var membership = await membershipRepo.GetAsync(targetUserId, tenantId, ct);
@@ -117,11 +118,11 @@ public class UserManagementService(
     {
         var targetUser = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (targetUser is null)
-            return Error.NotFound("TARGET_NOT_FOUND", "Target user not found.");
+            return DomainErrors.TargetUserNotFound;
 
         var currentUser = await userRepo.GetByIdAsync(tenantId, currentUserId, ct);
         if (currentUser is null)
-            return Error.NotFound("CURRENT_NOT_FOUND", "Current user not found.");
+            return DomainErrors.CurrentUserNotFound;
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 

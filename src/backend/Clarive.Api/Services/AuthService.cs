@@ -1,4 +1,5 @@
 using Clarive.Api.Auth;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
@@ -48,7 +49,7 @@ public class AuthService(
         var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
 
         if (user is null)
-            return Error.NotFound("NOT_FOUND", "User not found.");
+            return DomainErrors.UserNotFound;
 
         if (user.EmailVerified)
             return Error.Conflict("ALREADY_VERIFIED", "Email is already verified.");

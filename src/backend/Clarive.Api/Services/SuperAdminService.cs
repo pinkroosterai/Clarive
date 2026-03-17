@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Clarive.Api.Auth;
 using Clarive.Api.Data;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
@@ -201,7 +202,7 @@ public class SuperAdminService(
     {
         var user = await userRepo.GetByIdCrossTenantsAsync(userId, ct);
         if (user is null)
-            return Error.NotFound("NOT_FOUND", "User not found.");
+            return DomainErrors.UserNotFound;
 
         if (user.GoogleId != null)
             return Error.Validation("GOOGLE_ACCOUNT", "Cannot reset password for Google accounts.");
