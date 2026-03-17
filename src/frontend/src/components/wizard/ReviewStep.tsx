@@ -116,8 +116,7 @@ export function ReviewStep({
         <div className="space-y-2">
           <div className="flex gap-3 justify-end">
             <Button
-              variant="outline"
-              className="gap-2 hover:border-primary/30"
+              className="gap-2"
               onClick={() => onRefine(answers, selectedEnhancements)}
               disabled={isRefining}
             >
@@ -133,7 +132,12 @@ export function ReviewStep({
                 </>
               )}
             </Button>
-            <Button className="gap-2" onClick={onAccept} disabled={isRefining}>
+            <Button
+              variant="outline"
+              className="gap-2 hover:border-primary/30"
+              onClick={onAccept}
+              disabled={isRefining}
+            >
               <Check className="size-4" />
               Accept
             </Button>

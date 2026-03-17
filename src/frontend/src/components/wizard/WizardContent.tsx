@@ -223,6 +223,7 @@ export function WizardContent({ mode, existingEntry, onClose }: WizardContentPro
                   mode={mode}
                   evaluation={evaluation}
                   onSave={(folderId) => saveMutation.mutate(folderId)}
+                  onBack={() => setStep(2)}
                   isSaving={saveMutation.isPending}
                 />
               </motion.div>

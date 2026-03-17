@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Save, FolderInput, MessageSquare, Shield, BarChart3 } from 'lucide-react';
+import { Loader2, Save, FolderInput, MessageSquare, Shield, BarChart3, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 
 import { scoreColor } from './scoreUtils';
@@ -15,10 +15,11 @@ interface SaveStepProps {
   mode: 'new' | 'enhance';
   evaluation?: Evaluation;
   onSave: (folderId: string | null) => void;
+  onBack: () => void;
   isSaving: boolean;
 }
 
-export function SaveStep({ draft, mode, evaluation, onSave, isSaving }: SaveStepProps) {
+export function SaveStep({ draft, mode, evaluation, onSave, onBack, isSaving }: SaveStepProps) {
   const [folderId, setFolderId] = useState<string | null>(draft.folderId);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -93,19 +94,25 @@ export function SaveStep({ draft, mode, evaluation, onSave, isSaving }: SaveStep
           </div>
         )}
 
-        <Button className="w-full gap-2 py-3" onClick={() => onSave(folderId)} disabled={isSaving}>
-          {isSaving ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="size-4" />
-              {mode === 'new' ? 'Save' : 'Apply'}
-            </>
-          )}
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" className="gap-2" onClick={onBack} disabled={isSaving}>
+            <ArrowLeft className="size-4" />
+            Back
+          </Button>
+          <Button className="flex-1 gap-2 py-3" onClick={() => onSave(folderId)} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="size-4" />
+                {mode === 'new' ? 'Save' : 'Apply'}
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
