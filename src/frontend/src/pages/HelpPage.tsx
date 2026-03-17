@@ -6,8 +6,10 @@ import {
   FlaskConical,
   Braces,
   Search,
+  X,
   Star,
   FolderTree,
+  ChevronsUpDown,
   Users,
   Wrench,
   Key,
@@ -15,7 +17,7 @@ import {
   Settings,
   Globe,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import {
@@ -24,6 +26,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
@@ -45,11 +50,28 @@ function SectionIcon({ icon: Icon }: { icon: React.ElementType }) {
   return <Icon className="size-4 shrink-0 text-foreground-muted mr-2" />;
 }
 
-const sections = [
+interface Section {
+  id: string;
+  icon: React.ElementType;
+  title: string;
+  searchText: string;
+  content: React.ReactNode;
+}
+
+interface SectionGroup {
+  label: string;
+  sections: Section[];
+}
+
+const sectionGroups: SectionGroup[] = [
+  {
+    label: 'Core Features',
+    sections: [
   {
     id: 'getting-started',
     icon: Rocket,
     title: 'Getting Started',
+    searchText: 'dashboard entry count published prompts recently edited activity new entry ai wizard title system message draft publish versioned snapshot guided tour onboarding',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Your Dashboard</h4>
@@ -87,6 +109,7 @@ const sections = [
     id: 'entry-editor',
     icon: FileText,
     title: 'Entry Editor',
+    searchText: 'title system message prompt cards rich-text editor sidebar tabs actions details versions prompt chains follow-up bold italic headings bubble menu draft published historical versioning diff restore delete draft ai enhance generate system message decompose chain test prompt playground',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Editor Layout</h4>
@@ -156,6 +179,7 @@ const sections = [
     id: 'ai-wizard',
     icon: Wand2,
     title: 'AI Wizard',
+    searchText: 'ai wizard generate prompts description system message template variables prompt chain web research review quality scores clarity effectiveness completeness faithfulness clarification enhancement save enhance existing entries',
     content: (
       <div className="space-y-3">
         <p>The AI Wizard generates prompts from a description. It works in three steps:</p>
@@ -205,6 +229,7 @@ const sections = [
     id: 'playground',
     icon: FlaskConical,
     title: 'Playground',
+    searchText: 'playground test prompt model temperature max tokens reasoning effort show thinking run stop streaming token count history comparison pin rerun copy response chain step ctrl enter escape',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Testing Your Prompts</h4>
@@ -259,10 +284,16 @@ const sections = [
       </div>
     ),
   },
+    ],
+  },
+  {
+    label: 'Content & Organization',
+    sections: [
   {
     id: 'templates',
     icon: Braces,
     title: 'Templates & Variables',
+    searchText: 'template variables curly braces placeholder type string int float enum constraints default value description popover insert variable syntax form preview rendered output',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">What Are Template Variables?</h4>
@@ -352,6 +383,7 @@ const sections = [
     id: 'library',
     icon: Search,
     title: 'Library & Search',
+    searchText: 'library browse grid search filter status draft published sort recent alphabetical oldest tags any all pagination 50 entries per page',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Browsing Your Library</h4>
@@ -390,6 +422,7 @@ const sections = [
     id: 'favorites',
     icon: Star,
     title: 'Favorites',
+    searchText: 'star favorite entry card dashboard timestamp unstar',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Starring Entries</h4>
@@ -412,6 +445,7 @@ const sections = [
     id: 'folders',
     icon: FolderTree,
     title: 'Folders & Organization',
+    searchText: 'folder tree sidebar new folder subfolder rename delete nest drag drop entries reorganize',
     content: (
       <div className="space-y-3">
         <p>Use the folder tree in the sidebar to organize your entries.</p>
@@ -437,10 +471,16 @@ const sections = [
       </div>
     ),
   },
+    ],
+  },
+  {
+    label: 'Team & Workspace',
+    sections: [
   {
     id: 'workspaces',
     icon: Users,
     title: 'Workspaces & Teams',
+    searchText: 'personal shared workspace team collaboration workspace switcher invite members email admin editor viewer roles leave revoke invitation bell notification',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Personal vs Shared Workspaces</h4>
@@ -489,6 +529,7 @@ const sections = [
     id: 'tools',
     icon: Wrench,
     title: 'Tools & MCP',
+    searchText: 'tool descriptions external functions ai model name identifier add tool edit delete mcp model context protocol server import bearer token',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">What Are Tool Descriptions?</h4>
@@ -520,10 +561,16 @@ const sections = [
       </div>
     ),
   },
+    ],
+  },
+  {
+    label: 'Reference',
+    sections: [
   {
     id: 'api-keys',
     icon: Key,
     title: 'API Keys',
+    searchText: 'api key programmatic rest api admin create copy store x-api-key header revoke regenerate cl_',
     content: (
       <div className="space-y-3">
         <p>
@@ -555,6 +602,7 @@ const sections = [
     id: 'public-api',
     icon: Globe,
     title: 'Public API',
+    searchText: 'public api fetch render published prompts get post entries generate template fields validation authentication x-api-key curl json error 401 404 422 429 rate limit',
     content: (
       <div className="space-y-3">
         <p>
@@ -724,6 +772,7 @@ const sections = [
     id: 'keyboard-shortcuts',
     icon: Keyboard,
     title: 'Keyboard Shortcuts',
+    searchText: 'keyboard shortcuts save draft ctrl s publish enter undo redo bold italic strikethrough inline code cmd mac',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Editor</h4>
@@ -790,6 +839,7 @@ const sections = [
     id: 'trash',
     icon: FileText,
     title: 'Trash & Recovery',
+    searchText: 'trash delete 30 days permanently removed restore original folder bulk restore admin permanent deletion',
     content: (
       <div className="space-y-3">
         <p>
@@ -811,6 +861,7 @@ const sections = [
     id: 'account-settings',
     icon: Settings,
     title: 'Account & Settings',
+    searchText: 'profile display name email password avatar google sign-in sessions browser os ip address revoke import export yaml backup audit log events created updated published trashed restored deleted 30 days appearance theme light dark system account deletion',
     content: (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">Profile</h4>
@@ -917,19 +968,27 @@ const sections = [
       </div>
     ),
   },
+    ],
+  },
 ];
+
+const allSections = sectionGroups.flatMap((g) => g.sections);
 
 export default function HelpPage() {
   const location = useLocation();
   const [openSections, setOpenSections] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     document.title = 'Clarive — Help';
   }, []);
 
+  // Hash navigation
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && sections.some((s) => s.id === hash)) {
+    if (hash && allSections.some((s) => s.id === hash)) {
       setOpenSections((prev) => (prev.includes(hash) ? prev : [...prev, hash]));
       setTimeout(() => {
         document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -937,33 +996,178 @@ export default function HelpPage() {
     }
   }, [location.hash]);
 
-  return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <CircleHelp className="size-7 text-foreground-muted" />
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Help</h1>
-          <p className="text-sm text-foreground-muted">
-            Everything you need to know about using Clarive.
-          </p>
-        </div>
-      </div>
+  // Filter groups by search query
+  const filteredGroups = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return sectionGroups;
+    return sectionGroups
+      .map((group) => ({
+        ...group,
+        sections: group.sections.filter(
+          (s) =>
+            s.title.toLowerCase().includes(q) ||
+            s.searchText.toLowerCase().includes(q),
+        ),
+      }))
+      .filter((group) => group.sections.length > 0);
+  }, [searchQuery]);
 
-      <Accordion type="multiple" value={openSections} onValueChange={setOpenSections} className="w-full">
-        {sections.map((section) => (
-          <AccordionItem key={section.id} value={section.id} id={section.id}>
-            <AccordionTrigger className="hover:no-underline">
-              <span className="flex items-center">
-                <SectionIcon icon={section.icon} />
-                {section.title}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="text-foreground-muted">
-              {section.content}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+  const visibleSectionIds = useMemo(
+    () => filteredGroups.flatMap((g) => g.sections.map((s) => s.id)),
+    [filteredGroups],
+  );
+
+  // IntersectionObserver for active section highlighting
+  useEffect(() => {
+    observerRef.current?.disconnect();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        }
+      },
+      { threshold: 0.1, rootMargin: '-80px 0px -60% 0px' },
+    );
+    observerRef.current = observer;
+
+    for (const id of visibleSectionIds) {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  }, [visibleSectionIds]);
+
+  const handleTocClick = useCallback(
+    (sectionId: string) => {
+      setOpenSections((prev) =>
+        prev.includes(sectionId) ? prev : [...prev, sectionId],
+      );
+      setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    },
+    [],
+  );
+
+  return (
+    <div className="flex gap-8 max-w-6xl mx-auto p-6">
+      {/* Sidebar TOC — desktop only */}
+      <nav className="hidden lg:block w-56 shrink-0">
+        <div className="sticky top-20 space-y-3 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
+          {filteredGroups.map((group) => (
+            <div key={group.label}>
+              <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider pb-1">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.sections.map((section) => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => handleTocClick(section.id)}
+                    className={cn(
+                      'flex items-center gap-2 text-sm w-full text-left py-1 px-2 rounded-md transition-colors',
+                      activeSection === section.id
+                        ? 'text-foreground font-medium bg-primary/5 border-l-2 border-primary'
+                        : 'text-foreground-muted hover:text-foreground hover:bg-elevated',
+                    )}
+                  >
+                    <section.icon className="size-3.5 shrink-0" />
+                    <span className="truncate">{section.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </nav>
+
+      {/* Main content */}
+      <div className="flex-1 min-w-0 space-y-6">
+        <div className="flex items-center gap-3">
+          <CircleHelp className="size-7 text-foreground-muted" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Help</h1>
+            <p className="text-sm text-foreground-muted">
+              Everything you need to know about using Clarive.
+            </p>
+          </div>
+        </div>
+
+        {/* Search + Expand/Collapse */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-foreground-muted" />
+            <Input
+              placeholder="Search help..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-8"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setOpenSections(visibleSectionIds)}
+            className="shrink-0 text-xs"
+          >
+            <ChevronsUpDown className="size-3.5 mr-1" />
+            Expand All
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setOpenSections([])}
+            className="shrink-0 text-xs"
+          >
+            Collapse All
+          </Button>
+        </div>
+
+        {/* Accordion with grouped sections */}
+        {filteredGroups.length === 0 ? (
+          <div className="text-center py-12 text-foreground-muted">
+            <Search className="size-8 mx-auto mb-3 opacity-40" />
+            <p className="text-sm">No results for &ldquo;{searchQuery}&rdquo;</p>
+          </div>
+        ) : (
+          <Accordion type="multiple" value={openSections} onValueChange={setOpenSections} className="w-full">
+            {filteredGroups.map((group) => (
+              <div key={group.label}>
+                <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider pt-4 pb-1">
+                  {group.label}
+                </p>
+                {group.sections.map((section) => (
+                  <AccordionItem key={section.id} value={section.id} id={section.id}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <span className="flex items-center">
+                        <SectionIcon icon={section.icon} />
+                        {section.title}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-foreground-muted">
+                      {section.content}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </div>
+            ))}
+          </Accordion>
+        )}
+      </div>
     </div>
   );
 }
