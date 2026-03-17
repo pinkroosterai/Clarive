@@ -21,7 +21,13 @@ function buildDecorations(doc: ProseMirrorNode): DecorationSet {
       const from = pos + match.index;
       const to = from + match[0].length;
 
-      decorations.push(Decoration.inline(from, to, { class: 'template-tag' }));
+      decorations.push(
+        Decoration.inline(from, to, {
+          class: 'template-tag',
+          'data-tag-from': String(from),
+          'data-tag-to': String(to),
+        })
+      );
     }
   });
 

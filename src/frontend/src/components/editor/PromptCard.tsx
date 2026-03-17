@@ -16,6 +16,8 @@ const SYNTAX_ROWS = [
   { type: 'int', example: '{{count|int:1-100}}', description: 'Integer with range' },
   { type: 'float', example: '{{temp|float:0-2}}', description: 'Decimal with range' },
   { type: 'enum', example: '{{tone|enum:formal,casual}}', description: 'Dropdown select' },
+  { type: 'default', example: '{{x|int:1-10:5}}', description: 'With default value' },
+  { type: 'desc', example: '{{x|string:::Hint text}}', description: 'With description' },
 ] as const;
 
 function TemplateSyntaxHelp() {
@@ -23,7 +25,7 @@ function TemplateSyntaxHelp() {
     <div className="rounded-lg bg-surface border border-border p-3 text-xs">
       <p className="mb-2 font-medium text-foreground">Template tag syntax</p>
       <code className="mb-2 block text-foreground-muted">
-        {'{{name}}  {{name|type}}  {{name|type:options}}'}
+        {'{{name}}  {{name|type:opts:default:description}}'}
       </code>
       <table className="w-full text-left">
         <thead>
@@ -47,8 +49,8 @@ function TemplateSyntaxHelp() {
           ))}
         </tbody>
       </table>
-      <p className="mt-2 text-foreground-muted">
-        Names allow letters, digits, and underscores. First occurrence of each name wins.
+      <p className="mt-2 text-primary/80">
+        Tip: Click any highlighted {'{{variable}}'} in the editor to configure it visually.
       </p>
     </div>
   );

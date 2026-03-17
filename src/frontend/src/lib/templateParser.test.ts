@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { parseTemplateTags, TAG_PATTERN } from './templateParser';
+import { buildConstraintStr, buildTagString, parseTemplateTags, TAG_PATTERN } from './templateParser';
 
 describe('TAG_PATTERN', () => {
   it('matches a simple tag', () => {
@@ -17,6 +17,10 @@ describe('TAG_PATTERN', () => {
 
   it('matches an enum tag', () => {
     expect('{{style|enum:formal,casual,technical}}').toMatch(new RegExp(TAG_PATTERN));
+  });
+
+  it('matches a tag with default and description', () => {
+    expect('{{tone|enum:formal,casual:formal:Writing style}}').toMatch(new RegExp(TAG_PATTERN));
   });
 
   it('does not match malformed tags', () => {
@@ -43,6 +47,7 @@ describe('parseTemplateTags', () => {
       type: 'string',
       enumValues: [],
       defaultValue: null,
+      description: null,
       min: null,
       max: null,
     });
@@ -61,6 +66,7 @@ describe('parseTemplateTags', () => {
       type: 'int',
       enumValues: [],
       defaultValue: null,
+      description: null,
       min: 1,
       max: 10,
     });
@@ -88,6 +94,7 @@ describe('parseTemplateTags', () => {
       type: 'enum',
       enumValues: ['formal', 'casual', 'technical'],
       defaultValue: null,
+      description: null,
       min: null,
       max: null,
     });
@@ -128,5 +135,165 @@ describe('parseTemplateTags', () => {
     const content = `Line one {{a}}\nLine two {{b|int:0-100}}\nLine three`;
     const fields = parseTemplateTags(content);
     expect(fields).toHaveLength(2);
+  });
+
+  // Extended syntax: default values
+  it('parses int tag with default value', () => {
+    const fields = parseTemplateTags('{{count|int:1-100:50}}');
+    expect(fields[0]).toMatchObject({
+      name: 'count',
+      type: 'int',
+      min: 1,
+      max: 100,
+      defaultValue: '50',
+    });
+  });
+
+  it('parses enum tag with default value', () => {
+    const fields = parseTemplateTags('{{tone|enum:formal,casual:formal}}');
+    expect(fields[0]).toMatchObject({
+      type: 'enum',
+      enumValues: ['formal', 'casual'],
+      defaultValue: 'formal',
+    });
+  });
+
+  // Extended syntax: default values + descriptions
+  it('parses tag with default and description', () => {
+    const fields = parseTemplateTags('{{tone|enum:formal,casual:formal:Writing style}}');
+    expect(fields[0]).toMatchObject({
+      type: 'enum',
+      enumValues: ['formal', 'casual'],
+      defaultValue: 'formal',
+      description: 'Writing style',
+    });
+  });
+
+  it('parses string tag with no default but has description', () => {
+    const fields = parseTemplateTags('{{hint|string:::A helpful hint}}');
+    expect(fields[0]).toMatchObject({
+      type: 'string',
+      defaultValue: null,
+      description: 'A helpful hint',
+    });
+  });
+
+  it('parses float tag with all fields', () => {
+    const fields = parseTemplateTags('{{temp|float:0-2:0.7:Temperature setting}}');
+    expect(fields[0]).toMatchObject({
+      type: 'float',
+      min: 0,
+      max: 2,
+      defaultValue: '0.7',
+      description: 'Temperature setting',
+    });
+  });
+
+  it('handles description containing colons', () => {
+    const fields = parseTemplateTags('{{name|string:::Note: this is important}}');
+    expect(fields[0]).toMatchObject({
+      defaultValue: null,
+      description: 'Note: this is important',
+    });
+  });
+
+  it('parses tag with empty default but non-empty description', () => {
+    const fields = parseTemplateTags('{{x|int:0-10::Range hint}}');
+    expect(fields[0]).toMatchObject({
+      min: 0,
+      max: 10,
+      defaultValue: null,
+      description: 'Range hint',
+    });
+  });
+});
+
+describe('buildTagString', () => {
+  it('builds a simple string tag', () => {
+    expect(buildTagString({ name: 'topic', type: 'string' })).toBe('{{topic}}');
+  });
+
+  it('builds a typed tag with no constraints', () => {
+    expect(buildTagString({ name: 'count', type: 'int' })).toBe('{{count|int}}');
+  });
+
+  it('builds a tag with constraints', () => {
+    expect(buildTagString({ name: 'count', type: 'int', constraintStr: '1-100' })).toBe(
+      '{{count|int:1-100}}'
+    );
+  });
+
+  it('builds a tag with constraints and default', () => {
+    expect(
+      buildTagString({ name: 'count', type: 'int', constraintStr: '1-100', defaultValue: '50' })
+    ).toBe('{{count|int:1-100:50}}');
+  });
+
+  it('builds a tag with all fields', () => {
+    expect(
+      buildTagString({
+        name: 'tone',
+        type: 'enum',
+        constraintStr: 'formal,casual',
+        defaultValue: 'formal',
+        description: 'Writing style',
+      })
+    ).toBe('{{tone|enum:formal,casual:formal:Writing style}}');
+  });
+
+  it('builds a string tag with only description', () => {
+    expect(buildTagString({ name: 'hint', type: 'string', description: 'A hint' })).toBe(
+      '{{hint|string:::A hint}}'
+    );
+  });
+
+  it('omits trailing empty segments', () => {
+    expect(buildTagString({ name: 'x', type: 'enum', constraintStr: 'a,b' })).toBe(
+      '{{x|enum:a,b}}'
+    );
+  });
+});
+
+describe('buildConstraintStr', () => {
+  it('builds int range constraint', () => {
+    expect(
+      buildConstraintStr({
+        name: 'x',
+        type: 'int',
+        enumValues: [],
+        defaultValue: null,
+        description: null,
+        min: 1,
+        max: 100,
+      })
+    ).toBe('1-100');
+  });
+
+  it('builds enum constraint', () => {
+    expect(
+      buildConstraintStr({
+        name: 'x',
+        type: 'enum',
+        enumValues: ['a', 'b', 'c'],
+        defaultValue: null,
+        description: null,
+        min: null,
+        max: null,
+      })
+    ).toBe('a,b,c');
+  });
+
+  it('returns empty string for string type', () => {
+    expect(
+      buildConstraintStr({
+        name: 'x',
+        type: 'string',
+        enumValues: [],
+        defaultValue: null,
+        description: null,
+        min: null,
+        max: null,
+      })
+    ).toBe('');
   });
 });

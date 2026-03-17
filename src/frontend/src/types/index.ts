@@ -3,6 +3,7 @@ export interface TemplateField {
   type: 'string' | 'int' | 'float' | 'enum';
   enumValues: string[];
   defaultValue: string | null;
+  description: string | null;
   min: number | null;
   max: number | null;
 }

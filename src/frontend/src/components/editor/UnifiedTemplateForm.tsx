@@ -70,8 +70,14 @@ function getValidationError(field: TemplateField, value: string): string | null 
 /**
  * Render template content as React nodes: filled tags become plain text,
  * unfilled tags get an amber warning highlight showing the raw {{tag}} syntax.
+ * Falls back to default values before showing the warning.
  */
-function renderTemplateElements(content: string, values: Record<string, string>): ReactNode[] {
+function renderTemplateElements(
+  content: string,
+  values: Record<string, string>,
+  fields: TemplateField[]
+): ReactNode[] {
+  const fieldMap = new Map(fields.map((f) => [f.name, f]));
   const tagRegex = new RegExp(TAG_PATTERN, 'g');
   const elements: ReactNode[] = [];
   let lastIndex = 0;
@@ -85,10 +91,13 @@ function renderTemplateElements(content: string, values: Record<string, string>)
     }
 
     const name = match[1];
-    const hasValue = name in values && values[name] !== '';
+    const userValue = name in values && values[name] !== '' ? values[name] : '';
+    const field = fieldMap.get(name);
+    const defaultVal = field?.defaultValue ?? '';
+    const effectiveValue = userValue || defaultVal;
 
-    if (hasValue) {
-      elements.push(values[name]);
+    if (effectiveValue) {
+      elements.push(effectiveValue);
     } else {
       elements.push(
         <span key={key++} className="rounded bg-warning-bg px-1 text-warning-text">
@@ -112,16 +121,29 @@ function RenderedPromptPreview({
   index,
   content,
   values,
+  fields,
 }: {
   index: number;
   content: string;
   values: Record<string, string>;
+  fields: TemplateField[];
 }) {
-  const elements = renderTemplateElements(content, values);
+  const elements = renderTemplateElements(content, values, fields);
+
+  // For copy, also use defaults as fallback
+  const effectiveValues = { ...values };
+  for (const field of fields) {
+    if (
+      (!effectiveValues[field.name] || effectiveValues[field.name] === '') &&
+      field.defaultValue
+    ) {
+      effectiveValues[field.name] = field.defaultValue;
+    }
+  }
 
   const handleCopy = async () => {
     try {
-      await copyToClipboard(renderTemplate(content, values));
+      await copyToClipboard(renderTemplate(content, effectiveValues));
       toast.success('Copied to clipboard');
     } catch {
       toast.error('Failed to copy');
@@ -152,12 +174,31 @@ export function UnifiedTemplateForm({ prompts, isReadOnly }: UnifiedTemplateForm
   const [values, setValues] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
 
-  // Prune stale values when fields change (e.g., tag removed from prompt)
+  // Initialize defaults and prune stale values when fields change
   useEffect(() => {
     const validNames = new Set(fields.map((f) => f.name));
     setValues((prev) => {
-      const pruned = Object.fromEntries(Object.entries(prev).filter(([k]) => validNames.has(k)));
-      return Object.keys(pruned).length === Object.keys(prev).length ? prev : pruned;
+      const next: Record<string, string> = {};
+      for (const field of fields) {
+        if (prev[field.name] !== undefined) {
+          // Keep existing user value
+          next[field.name] = prev[field.name];
+        } else if (field.defaultValue) {
+          // Pre-fill with default
+          next[field.name] = field.defaultValue;
+        }
+      }
+      // Only update if actually changed
+      const prevKeys = Object.keys(prev).filter((k) => validNames.has(k));
+      const nextKeys = Object.keys(next);
+      if (
+        prevKeys.length === nextKeys.length &&
+        prevKeys.every((k) => prev[k] === next[k]) &&
+        nextKeys.every((k) => next[k] === prev[k])
+      ) {
+        return prev;
+      }
+      return next;
     });
   }, [fields]);
 
@@ -221,10 +262,14 @@ export function UnifiedTemplateForm({ prompts, isReadOnly }: UnifiedTemplateForm
                         value={value}
                         onChange={(e) => updateValue(field.name, e.target.value)}
                         disabled={isReadOnly}
+                        placeholder={field.description ?? undefined}
                         className="h-9 text-sm"
                       />
                     )}
 
+                    {field.description && (
+                      <p className="text-xs text-muted-foreground">{field.description}</p>
+                    )}
                     {error && <p className="text-[0.8rem] font-medium text-error-text">{error}</p>}
                   </div>
                 );
@@ -249,6 +294,7 @@ export function UnifiedTemplateForm({ prompts, isReadOnly }: UnifiedTemplateForm
                     index={i + 1}
                     content={prompt.content}
                     values={values}
+                    fields={fields}
                   />
                 ))}
               </div>
