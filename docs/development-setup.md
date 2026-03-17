@@ -11,60 +11,99 @@ For running tests and migrations locally (outside Docker):
 
 ## Getting Started
 
-Development runs entirely in Docker with hot reload.
+Development runs entirely in Docker with hot reload. No local SDKs needed.
 
 ```bash
-# Clone the repo
 git clone https://github.com/pinkroosterai/Clarive.git
 cd Clarive
-
-# Generate dev env file
-make setup
-
-# Start all services with hot reload
-make dev
+make setup    # generates .env with dev defaults
+make dev      # starts postgres, backend, and frontend with hot reload
 ```
 
-Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to the backend internally.
+Open **http://localhost:8080**. The Vite dev server proxies `/api/` requests to the backend.
 
 - Frontend hot reloads via Vite HMR
 - Backend hot reloads via `dotnet watch`
 - PostgreSQL is accessible on `localhost:5433` (mapped from container port 5432)
+
+## Building from Source
+
+If you want to build the production image locally instead of pulling from Docker Hub:
+
+```bash
+make setup        # generates deploy/.env with random secrets
+make deploy       # builds the unified image and starts the stack
+```
+
+This uses `deploy/docker-compose.yml` which builds from the root `Dockerfile`. Tweak `deploy/.env` for configuration. You can also build just the image without starting anything:
+
+```bash
+make build-image  # builds the production Docker image
+```
 
 ## Project Structure
 
 ```
 Clarive/
 ├── src/
-│   ├── frontend/          # React + TypeScript + Vite
-│   └── backend/           # ASP.NET Core 10 + EF Core
-├── tests/
-│   └── backend/           # xUnit unit + integration tests
-├── deploy/                # Docker Compose files + production env template
-├── docs/                  # Documentation
-├── scripts/               # Setup and utility scripts
-└── Makefile               # All dev + deploy commands
+│   ├── frontend/                # React + TypeScript + Vite
+│   │   ├── src/
+│   │   │   ├── pages/           # 28 route pages (lazy-loaded)
+│   │   │   ├── components/      # 15 feature directories + shadcn/ui
+│   │   │   ├── services/api/    # 26 API service modules
+│   │   │   ├── hooks/           # 23 custom hooks
+│   │   │   ├── store/           # Zustand auth store
+│   │   │   ├── lib/             # Utilities, validation, config
+│   │   │   └── types/           # Shared TypeScript types
+│   │   └── e2e/                 # 22 Playwright specs
+│   └── backend/
+│       └── Clarive.Api/
+│           ├── Endpoints/       # 18 endpoint groups (~85 routes)
+│           ├── Services/        # 45+ business services
+│           │   └── Agents/      # AI orchestration
+│           ├── Data/            # DbContext, 25 entity configs, migrations
+│           │   └── Repositories/# 19 EF Core repositories
+│           ├── Models/          # 26 entities, 63 DTOs
+│           ├── Auth/            # JWT, API keys, tenant provider
+│           ├── Middleware/      # Error handling, maintenance, security headers
+│           └── Background/      # 6 cleanup services
+├── tests/backend/
+│   ├── Clarive.Api.UnitTests/           # 221+ unit tests
+│   └── Clarive.Api.IntegrationTests/    # 203+ tests (Testcontainers)
+├── docs/                        # Architecture, OpenAPI spec, guides
+├── deploy/                      # Production compose + container configs
+│   └── unified/                 # nginx, supervisord, entrypoint
+├── Dockerfile                   # Multi-stage build
+├── docker-compose.yml           # Self-host compose (Docker Hub)
+├── .env.example                 # 3 required secrets
+└── Makefile                     # 35+ commands
 ```
 
 ## Common Commands
 
-| Command | Description |
-|---------|-------------|
-| `make dev` | Start all services with hot reload |
-| `make stop` | Stop development services |
-| `make restart` | Restart development services |
-| `make dev-reset` | Stop, wipe database, and restart fresh |
-| `make status` | Show running containers and health |
-| `make logs` | Tail development service logs |
+| Command | What it does |
+|---|---|
+| `make dev` | Start everything with hot reload |
+| `make stop` | Stop dev services |
+| `make restart` | Restart dev services |
+| `make dev-reset` | Nuke the database and start fresh |
+| `make status` | Show what's running |
+| `make logs` | Tail logs |
 | `make build` | Build both projects (local, no Docker) |
-| `make test` | Run all tests |
-| `make test-frontend` | Run Vitest unit tests |
-| `make test-backend` | Run xUnit unit + integration tests |
-| `make test-e2e` | Run Playwright E2E tests |
-| `make test-e2e-ui` | Run Playwright in interactive UI mode |
+| `make build-image` | Build the production Docker image |
+| `make test` | Run all tests (frontend + backend) |
+| `make test-backend` | Backend unit + integration tests |
+| `make test-frontend` | Frontend tests (Vitest) |
+| `make test-e2e` | Playwright E2E tests |
+| `make test-e2e-ui` | Playwright in interactive UI mode |
 | `make test-filter FILTER=Auth` | Run filtered tests |
-| `make lint` | Run ESLint on frontend |
+| `make lint` | Lint frontend |
+| `make db-shell` | Open a psql shell |
+| `make db-migrate` | Apply EF Core migrations |
+| `make db-migration-add NAME=X` | Create a new migration |
+| `make db-reset` | Destroy and recreate database volumes |
 | `make clean` | Remove build artifacts |
+| `make help` | See all 35+ commands |
 
 ## Database
 
@@ -80,35 +119,26 @@ make dev-reset                        # Stop, wipe database, and restart fresh
 
 ## Environment Variables
 
-Development uses hardcoded defaults in `deploy/docker-compose.dev.yml` — no `.env` configuration is needed for basic development.
+Development uses hardcoded defaults in `deploy/docker-compose.dev.yml`. No `.env` configuration needed for basic development.
 
-For AI features, add an AI provider (with API key, endpoint, and models) via **Super Admin > AI > Providers**, then select Default and Premium models in **AI > Settings**. For AI web search during generation, set `TAVILY_API_KEY` in the dashboard or `.env`.
+For AI features, add an AI provider (with API key, endpoint, and models) via **Super Admin > AI > Providers**, then select Default and Premium models in **AI > Settings**. For web search during generation, set the Tavily API key in **Super Admin > Settings > AI**.
+
+See [configuration.md](configuration.md) for the full configuration reference.
 
 ## Testing
 
-### Frontend
-
-Unit tests use Vitest and are co-located with source files (`*.test.ts`):
+See [contributing.md](contributing.md) for the full testing breakdown. Quick version:
 
 ```bash
-make test-frontend        # Run once
-cd src/frontend && npx vitest  # Watch mode
+make test              # everything
+make test-backend      # xUnit unit + integration (Testcontainers)
+make test-frontend     # Vitest
+make test-e2e          # Playwright
 ```
 
-E2E tests use Playwright:
+## Further Reading
 
-```bash
-make test-e2e       # Headless
-make test-e2e-ui    # Interactive UI mode
-```
-
-### Backend
-
-Unit and integration tests use xUnit:
-
-```bash
-make test-backend
-make test-filter FILTER=AuthTests  # Run filtered tests
-```
-
-Integration tests use Testcontainers (auto-creates PostgreSQL containers).
+- [Architecture](architecture.md) — system design, tech stack, auth flow, AI integration
+- [Contributing](contributing.md) — workflow, testing, code conventions
+- [Configuration](configuration.md) — all environment variables
+- [Deployment Guide](deployment-guide.md) — production deployment

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Clarive is a multi-tenant SaaS platform for managing, versioning, and AI-enhancing LLM prompts across teams. It consists of a React frontend, a C# ASP.NET Core backend, and a PostgreSQL database.
+Clarive is a multi-tenant platform for managing, versioning, and AI-enhancing LLM prompts. A React frontend talks to a C# backend, backed by PostgreSQL. Everything ships as a single container.
 
 ## System Diagram
 
@@ -12,7 +12,7 @@ Clarive is a multi-tenant SaaS platform for managing, versioning, and AI-enhanci
                     └──────┬──────┘
                            │
                     ┌──────▼──────┐
-                    │    Nginx    │  (reverse proxy)
+                    │    Nginx    │  (reverse proxy, port 8080)
                     └──┬──────┬──┘
                        │      │
               ┌────────▼┐  ┌──▼────────┐
@@ -23,51 +23,91 @@ Clarive is a multi-tenant SaaS platform for managing, versioning, and AI-enhanci
                     ┌─────────────┼─────────────┐
                     │             │             │
               ┌─────▼─────┐ ┌────▼────┐ ┌──────▼──────┐
-              │ PostgreSQL │ │ OpenAI  │ │   Google    │
-              │            │ │   API   │ │   OAuth     │
+              │ PostgreSQL │ │   AI    │ │   Google    │
+              │     16     │ │ (OpenAI │ │   OAuth     │
+              │            │ │ compat) │ │             │
               └────────────┘ └─────────┘ └─────────────┘
 ```
+
+Nginx serves the React build and proxies `/api/` to the .NET backend. Supervisor manages both processes inside the container.
+
+## Tech Stack
+
+| Layer | What |
+|---|---|
+| Frontend | React 18, TypeScript, Vite 7, Tailwind CSS, shadcn/ui (Radix), Tiptap v3 |
+| State | Zustand (auth only), TanStack React Query (server state) |
+| Backend | C# ASP.NET Core 10 Minimal APIs |
+| ORM | EF Core 10 (Npgsql) with 25 entity configurations |
+| Database | PostgreSQL 16 with EF Core migrations |
+| Auth | JWT (15-min access) + rotating refresh tokens (7-day), Google OIDC, API keys |
+| AI | Any OpenAI-compatible provider via Microsoft.Extensions.AI, agent-based orchestration |
+| Search | Tavily web search integration for research-backed generation |
+| Testing | xUnit + Testcontainers (backend), Vitest (frontend unit), Playwright (E2E) |
+| Infra | Docker Compose, Makefile (35+ commands), single unified container |
 
 ## Components
 
 ### Frontend (`src/frontend/`)
-- **Stack**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
-- **State**: Zustand (auth), TanStack Query (server state)
-- **Editor**: Tiptap v3 rich text editor
-- **Routing**: React Router v6
-- **Serves on**: port 8080 (nginx in production, Vite in dev)
+
+React 18 SPA with TypeScript. All pages are lazy-loaded via `React.lazy()`. State management splits between Zustand (auth store only) and TanStack React Query (all server state). Forms use React Hook Form + Zod.
+
+The editor is Tiptap v3 with custom extensions for template variable highlighting. Drag-and-drop uses @dnd-kit.
+
+28 route pages, 15 component feature directories, 26 API service modules, 23 custom hooks.
 
 ### Backend (`src/backend/Clarive.Api/`)
-- **Stack**: ASP.NET Core 10 Minimal APIs, EF Core 10
-- **Auth**: JWT (15-min access + 7-day refresh), Google OIDC, API keys
-- **AI**: OpenAI via Microsoft.Extensions.AI
-- **Serves on**: port 5000
+
+ASP.NET Core 10 Minimal APIs. Services return `ErrorOr<T>`, endpoints bridge errors to HTTP via `result.Errors.ToHttpResult(ctx)`. Request validation uses MiniValidation with Data Annotations.
+
+18 endpoint groups (~85 routes), 45+ services, 19 EF Core repositories, 26 entity models, 63 DTOs.
+
+Background services handle token cleanup, AI session cleanup, usage log cleanup, account purge, LiteLLM registry sync, and maintenance mode sync.
 
 ### Database
-- PostgreSQL 16 with EF Core migrations
-- Multi-tenant via `tenant_id` on all entities
-- Data: users, prompts, versions, folders, tools, configs
 
-## Multi-tenancy
+PostgreSQL 16 with EF Core migrations. Multi-tenant via `tenant_id` on all scoped entities (using `ITenantScoped` interface). Global query filters handle tenant isolation automatically.
 
-Each user belongs to one or more tenants (workspaces). All data is scoped by `tenant_id`. Tenant resolution happens via JWT claims on every request.
+`PromptEntry` and `PromptEntryVersion` use PostgreSQL's `xmin` system column for optimistic concurrency. The error middleware catches `DbUpdateConcurrencyException` and returns 409.
+
+## Multi-Tenancy
+
+Each user belongs to one or more tenants (workspaces). All data queries are scoped by `tenant_id` through EF Core global query filters. Tenant resolution happens via JWT claims on every request through `HttpContextTenantProvider`.
 
 ## Authentication Flow
 
 1. User logs in via email/password or Google OIDC
-2. Backend issues JWT access token (15 min) + refresh token (7 days, stored in DB)
-3. Frontend stores tokens in memory (Zustand) and localStorage
-4. Expired access tokens are refreshed automatically via interceptor
-5. API key auth available for programmatic access
+2. Backend issues a JWT access token (15 min) + hashed refresh token (7 days, stored in DB)
+3. Frontend stores tokens in localStorage
+4. Expired access tokens refresh automatically via an interceptor in `apiClient.ts`
+5. API key auth (`X-Api-Key` header, `cl_` prefix) available for programmatic access via the public API
 
 ## AI Integration
 
-- Prompt generation (wizard), enhancement, system message generation, and chain decomposition
-- Uses OpenAI models via `Microsoft.Extensions.AI` abstraction
-- Configurable default and premium models via environment variables or in-app settings
-- Tavily web search integration for research-backed prompt generation
-- MCP (Model Context Protocol) tool import support
+AI features use an agent-based orchestration pattern:
+
+- **PromptOrchestrator** coordinates multi-step workflows (generate, refine, enhance, evaluate)
+- **OpenAIAgentFactory** creates specialized agents (generation, evaluation, clarification, system message, decompose)
+- **AgentSessionPool** manages AI session lifecycles
+- **TaskBuilder** and **ChatOptionsBuilder** handle model configuration
+
+All AI endpoints support SSE streaming via `Accept: text/event-stream`.
+
+Works with any OpenAI-compatible API. Providers and models are configured through the Super Admin dashboard, not environment variables.
+
+## Middleware Pipeline
+
+1. ForwardedHeaders
+2. SecurityHeadersMiddleware
+3. ErrorHandlingMiddleware (catches `DbUpdateConcurrencyException` → 409)
+4. MaintenanceModeMiddleware
+5. Serilog RequestLogging
+6. CORS
+7. Swagger/SwaggerUI (development only)
+8. Authentication (JWT + API Key)
+9. Authorization
+10. RateLimiter (`auth`: 20 req/min, `strict-auth`: 5 req/15min)
 
 ## Deployment
 
-See [deployment-guide.md](deployment-guide.md) for full details. Uses Docker Compose with Makefile commands: `make dev` for development (hot reload) and `make deploy` for production.
+Single Docker image containing nginx + .NET, managed by supervisor. See [deployment-guide.md](deployment-guide.md).

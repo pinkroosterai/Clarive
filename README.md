@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  Version control, AI-powered refinement, quality scoring, and team workspaces for your LLM prompts.<br />
+  Version control, AI refinement, quality scoring, and team workspaces for your LLM prompts.<br />
   Self-hosted. Single container. MIT licensed.
 </p>
 
@@ -29,11 +29,11 @@
 
 ## The Problem
 
-If you're building with LLMs, your prompts are probably scattered across your codebase, a few Notion docs, someone's Slack messages, and a spreadsheet that hasn't been updated since October.
+Your prompts are scattered. Some live in the codebase, a few in Notion, the rest in someone's Slack messages and a spreadsheet that hasn't been updated since October.
 
-When a prompt change breaks production, there's no version to roll back to. When a non-technical teammate wants to tweak wording, they file a ticket and wait for a deploy. And nobody can tell you whether last week's "small improvement" actually made things better or worse.
+When a prompt change breaks production, there's no version to roll back to. When a non-technical teammate wants to tweak wording, they file a ticket and wait for a deploy. Nobody can tell you whether last week's "small improvement" actually made things better or worse.
 
-Clarive treats prompts like code: versioned, scored, collaboratively edited, and retrievable through an API — without requiring your whole team to learn Git.
+Clarive treats prompts like code: versioned, scored, collaboratively edited, and retrievable through an API. Your whole team can use it without learning Git.
 
 ---
 
@@ -47,37 +47,23 @@ docker compose up -d
 
 Open **http://localhost:8080** and create your first account.
 
-> This pulls the pre-built image from [Docker Hub](https://hub.docker.com/r/pinkrooster/clarive). To build from source, see [Getting Started](#build-from-source).
+> Pulls the pre-built image from [Docker Hub](https://hub.docker.com/r/pinkrooster/clarive). To build from source, see the [development setup guide](docs/development-setup.md).
 
 ---
 
-## Table of Contents
-
-- [Features](#features)
-- [How Clarive Compares](#how-clarive-compares)
-- [Architecture](#architecture)
-- [Getting Started](#getting-started)
-- [Configuration](#configuration)
-- [Contributing](#contributing)
-- [Community & Support](#community--support)
-- [Star History](#star-history)
-- [License](#license)
-
 ## Features
 
-### AI-Powered Prompt Refinement
+### AI That Actually Iterates on Your Prompts
 
 <p align="center">
   <img src="docs/images/wizard.png" alt="Clarive AI wizard — multi-turn prompt refinement" width="700" />
 </p>
 
-This isn't one-shot "generate a prompt" — Clarive runs a multi-turn conversation with AI agents that iterate on your prompts until they're actually good.
+This isn't one-shot "generate a prompt." Clarive runs a multi-turn conversation with AI agents that keep refining until the output is genuinely good.
 
-- **Generation wizard**: Describe what you need, review AI-generated variations, refine through follow-ups
-- **Quality scoring**: Track how a prompt's score changes across refinement rounds — so you know if your edits helped
-- **Web search integration**: Tavily-powered research pulls real-time context into generation
-- **System message generation**: Auto-generate system prompts from your content
-- **Chain decomposition**: Split monolithic prompts into multi-step workflows
+You describe what you need, review AI-generated variations, ask follow-up questions, and watch the quality score change with each round so you know whether your edits actually helped. Behind the scenes, Tavily web search pulls real-time context into generation, and the system can auto-generate system messages or break a monolithic prompt into a multi-step chain.
+
+Works with any OpenAI-compatible API: OpenAI, Anthropic (via proxy), Azure, local models, whatever you've got.
 
 ### Prompt Playground
 
@@ -85,24 +71,18 @@ This isn't one-shot "generate a prompt" — Clarive runs a multi-turn conversati
   <img src="docs/images/playground.png" alt="Clarive playground — test prompts with streaming output and chain visualization" width="700" />
 </p>
 
-Test prompts against any configured model without leaving Clarive.
+Test prompts against any configured model without leaving the app. Responses stream token-by-token. Fill in `{{variables}}`, pick a model, tweak temperature and max tokens, then fire.
 
-- **Real-time streaming** — responses stream token-by-token as they generate
-- **Multi-provider model selection** — pick from any OpenAI-compatible provider configured by your admin
-- **Reasoning output** — inspect chain-of-thought for models that support it (o1, o3, etc.)
-- **Template variable input** — fill in `{{variables}}` and run immediately
-- **Chain visualization** — step-by-step execution view for multi-prompt entries
-- **Run history** — compare up to 20 recent runs side-by-side with pin-and-compare mode
-- **Configurable parameters** — temperature, max tokens, reasoning effort per run
+For reasoning models (o1, o3, etc.), you get the chain-of-thought alongside the answer. Multi-prompt entries show a step-by-step chain view. Run history keeps your last 20 executions for side-by-side comparison.
 
-### Version Control for Prompts
+### Version Control
 
-Every prompt moves through **Draft → Published → Historical** states. You get the rigor of code versioning without the Git overhead.
+Every prompt moves through **Draft → Published → Historical**. You get the rigor of code versioning without the Git overhead.
 
-- Inline diffs — word-by-word, color-coded comparisons between versions
+- Word-by-word, color-coded diffs between any two versions
+- One-click rollback to any previous version
 - Undo/redo with snapshot history
-- Roll back to any previous version in one click
-- Optimistic concurrency protection (two people editing the same prompt won't silently overwrite each other)
+- Concurrency protection: two people editing the same prompt won't silently overwrite each other
 
 ### Rich Editor
 
@@ -110,36 +90,21 @@ Every prompt moves through **Draft → Published → Historical** states. You ge
   <img src="docs/images/editor.png" alt="Clarive editor with template variable highlighting" width="700" />
 </p>
 
-- WYSIWYG Markdown editor built on Tiptap v3
-- Template variables (`{{variable}}`) highlighted inline as you type
-- Multi-prompt entries with drag-and-drop reordering
-- Dedicated system message section
+WYSIWYG Markdown editor built on Tiptap v3. Template variables (`{{like_this}}`) get highlighted inline as you type. Entries can hold multiple prompts with drag-and-drop reordering, plus a dedicated system message section.
 
-### Team Collaboration
+### Teams & Workspaces
 
 <p align="center">
   <img src="docs/images/library.png" alt="Clarive prompt library with folders and tags" width="700" />
 </p>
 
-- Role-based access: Admin, Editor, Viewer
-- Multiple workspaces per account
-- Email invitations with role assignment
-- Audit log — who changed what, when
-- Tag-based organization with AND/OR filtering
+Roles (Admin, Editor, Viewer), multiple workspaces per account, email invitations, and a full audit log. Organize with nested folders, tags (AND/OR filtering), favorites, and full-text search.
 
-### Developer API
+### Self-Hosted, No Strings
 
-- REST API with OpenAPI spec at `/api-docs`
-- API key auth via `X-Api-Key` header
-- Import/export in JSON, YAML, and Markdown
-- Rate limiting and structured error codes
+One container. One command. One port.
 
-### Self-Hosted
-
-- **One container** — nginx + .NET API managed by supervisor, all on port 8080
-- **One command** — `docker compose up -d`
-- **MIT licensed** — no open-core traps, no enterprise keys for features you need
-- **Your data** — PostgreSQL running on your infrastructure, not ours
+nginx + the .NET API, managed by supervisor, all on port 8080. PostgreSQL runs on your infrastructure. MIT licensed with no open-core traps and no enterprise keys gating features you need.
 
 ---
 
@@ -150,7 +115,7 @@ Every prompt moves through **Draft → Published → Historical** states. You ge
 | Prompt versioning | Yes | Yes | Yes | Yes |
 | Multi-turn AI refinement | Yes | — | — | — |
 | Quality scoring with history | Yes | — | — | — |
-| Web search-backed generation | Yes | — | — | — |
+| Web search in generation | Yes | — | — | — |
 | Rich WYSIWYG editor | Yes | — | Yes | — |
 | Chain decomposition | Yes | — | — | — |
 | Interactive playground | Yes | Yes | Yes | Yes |
@@ -160,13 +125,13 @@ Every prompt moves through **Draft → Published → Historical** states. You ge
 | MIT license | Yes | MIT (EE) | — | MIT (EE) |
 | LLM observability / tracing | — | Yes | Yes | Yes |
 
-Clarive focuses on **prompt authoring, refinement, and team management**. If you need LLM observability and tracing, tools like Langfuse pair well with it.
+Clarive focuses on **prompt authoring, refinement, and team management**. If you need LLM observability and tracing, something like Langfuse pairs well with it.
 
 ---
 
 ## Architecture
 
-Single container: nginx serves the React frontend and proxies `/api/` to the .NET backend. Supervisor manages both processes.
+One container: nginx serves the frontend and proxies `/api/` to the .NET backend.
 
 ```
                :8080 (nginx)
@@ -180,51 +145,13 @@ Single container: nginx serves the React frontend and proxies `/api/` to the .NE
 └─────────────────────────────────┘
 ```
 
-<details>
-<summary><strong>Tech Stack</strong></summary>
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Tiptap v3 |
-| State | Zustand (auth), TanStack React Query (server state) |
-| Backend | C# ASP.NET Core 10 Minimal APIs |
-| Database | PostgreSQL 16 via EF Core 10 (Npgsql) |
-| Auth | JWT (15-min) + rotating refresh tokens (7-day), Google OIDC, API keys |
-| AI | Multi-provider (OpenAI-compatible) via Microsoft.Extensions.AI |
-| Testing | xUnit + Testcontainers, Vitest, Playwright |
-| Infra | Docker Compose, Makefile |
-
-</details>
-
-<details>
-<summary><strong>Project Structure</strong></summary>
-
-```
-Clarive/
-├── src/
-│   ├── frontend/          # React 18 + TypeScript + Vite
-│   └── backend/           # ASP.NET Core 10 Minimal APIs
-├── tests/
-│   └── backend/           # xUnit integration + unit tests
-├── docs/                  # Architecture, API spec, guides
-├── deploy/                # Build-from-source Compose + env template
-│   └── unified/           # nginx, supervisord, entrypoint configs
-├── scripts/               # Setup, release, and utility scripts
-├── Dockerfile             # Multi-stage: production, dev-backend, dev-frontend
-├── docker-compose.yml     # Self-host Compose (Docker Hub pull)
-├── .env.example           # Self-host env template (3 required secrets)
-└── Makefile               # Dev + deploy commands
-```
-
-</details>
+For the full tech stack, project structure, and design details, see [docs/architecture.md](docs/architecture.md).
 
 ---
 
 ## Getting Started
 
-### Self-Hosting (Docker Hub)
-
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2.
+You need [Docker](https://docs.docker.com/get-docker/) with Compose v2. That's it.
 
 ```bash
 cp .env.example .env
@@ -232,105 +159,97 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Open **http://localhost:8080**. Everything — frontend and API — runs through a single port.
+Open **http://localhost:8080**. Frontend and API both run through that single port.
 
-Pin a specific version by setting `CLARIVE_VERSION` in `.env` (e.g., `CLARIVE_VERSION=1.0.0`). Default is `latest`.
+Want a specific version? Set `CLARIVE_VERSION` in `.env` (e.g., `CLARIVE_VERSION=1.0.0`). Default is `latest`.
 
-For AI features, Google OAuth, or email, see [Configuration](#configuration).
+### What's Next After Deploy
 
-### Build from Source
+1. **Create your account** at the login screen. The first user becomes the super admin.
+2. **Set up AI** (optional): Go to **Super Admin > AI > Providers**, add your OpenAI-compatible provider with an API key, then select default models in **AI > Settings**.
+3. **Invite your team**: **Settings > Members > Invite**. Assign Admin, Editor, or Viewer roles.
+4. **Create your first prompt**: Hit "New Entry" in the library, start writing, and publish when ready.
 
-For contributors or custom deployments:
+### Email (optional)
 
-```bash
-git clone https://github.com/pinkroosterai/Clarive.git
-cd Clarive
-make setup    # generates deploy/.env with random secrets
-make deploy   # builds unified image and starts the stack
-```
+Email is off by default. Clarive works fine without it — new users are auto-verified. If you want verification emails, password resets, and invitations delivered by email, configure it in **Super Admin > Settings > Email**:
 
-Uses `deploy/docker-compose.yml` which builds from the root `Dockerfile`. Edit `deploy/.env` for full configuration.
+- **Resend** — paste your [Resend](https://resend.com) API key
+- **SMTP** — point it at any SMTP server
 
-### Local Development
+No restart needed. Changes take effect within 30 seconds.
 
-<details>
-<summary><strong>Development setup with hot reload</strong></summary>
+### Google Login (optional)
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2.
+Add your Google OAuth client ID and secret in **Super Admin > Settings > Authentication**. The Google sign-in button appears automatically.
 
-Everything runs in Docker — Vite HMR for the frontend, `dotnet watch` for the backend. No local SDKs needed.
-
-```bash
-make setup    # generates .env with dev defaults
-make dev      # starts postgres, backend, and frontend with hot reload
-```
-
-Open **http://localhost:8080**. The Vite dev server proxies `/api/` to the backend internally.
-
-#### Useful Commands
-
-| Command | Description |
-|---|---|
-| `make dev` | Start all services with hot reload |
-| `make stop` | Stop development services |
-| `make restart` | Restart development services |
-| `make dev-reset` | Stop, wipe database, and restart fresh |
-| `make status` | Show running containers and health |
-| `make logs` | Tail development service logs |
-| `make build` | Build both projects (local, no Docker) |
-| `make build-image` | Build unified production image locally |
-| `make test` | Run all tests (frontend + backend) |
-| `make test-backend` | Run backend unit + integration tests |
-| `make test-frontend` | Run frontend tests (Vitest) |
-| `make test-e2e` | Run Playwright E2E tests |
-| `make test-filter FILTER=Auth` | Run filtered tests |
-| `make lint` | Lint frontend |
-| `make db-shell` | Open psql shell |
-| `make db-migrate` | Apply EF Core migrations |
-| `make db-migration-add NAME=X` | Create a new migration |
-| `make db-reset` | Destroy and recreate database volumes |
-| `make clean` | Remove build artifacts |
-| `make help` | Show all commands |
-
-</details>
+---
 
 ## Configuration
 
-Configuration is via environment variables.
+Your `.env` file only needs three secrets. Everything else is configured through the **Super Admin dashboard** after deploy.
 
-- **Self-hosting** (Docker Hub): `.env` (root) — used by `docker compose up`
-- **Build from source**: `deploy/.env` — used by `make deploy`
+### Environment variables (`.env`)
 
-`make setup` generates both files with random secrets.
+| Variable | What | Required |
+|---|---|---|
+| `POSTGRES_PASSWORD` | Database password | Yes |
+| `JWT_SECRET` | JWT signing key (min 32 chars) | Yes |
+| `CONFIG_ENCRYPTION_KEY` | Encrypts secrets stored in the database | Yes |
+| `CORS_ORIGINS` | Allowed CORS origin (your URL) | No (default: `http://localhost:8080`) |
+| `CLARIVE_PORT` | Host port | No (default: `8080`) |
+| `CLARIVE_VERSION` | Docker Hub image tag | No (default: `latest`) |
 
-<details>
-<summary><strong>Environment variables reference</strong></summary>
+### Dashboard settings (Super Admin > Settings)
 
-| Variable | Description | Required | Default |
-|---|---|---|---|
-| `POSTGRES_PASSWORD` | Database password | Yes | — |
-| `JWT_SECRET` | JWT signing key (min 32 chars) | Yes | — |
-| `CONFIG_ENCRYPTION_KEY` | Encryption key for stored secrets | Yes | — |
-| `CORS_ORIGINS` | Allowed CORS origins | No | `http://localhost:8080` |
-| `CLARIVE_PORT` | Host port to expose | No | `8080` |
-| `CLARIVE_VERSION` | Docker Hub image tag (self-host only) | No | `latest` |
-| `GOOGLE_CLIENT_ID` | Google OAuth client ID | No | — |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | No | — |
-| `ALLOW_REGISTRATION` | Allow new user registration | No | `true` |
-| `EMAIL_PROVIDER` | `none`, `console`, `resend`, or `smtp` | No | `none` |
+After your first login, everything else is configurable at runtime — no restart needed:
 
-</details>
+- **AI**: Add providers, pick default/premium models, set a Tavily API key for web search
+- **Email**: Choose provider (`none`, `resend`, `smtp`), configure SMTP credentials or Resend API key
+- **Google Login**: Set your Google OAuth client ID and secret
+- **Registration**: Toggle whether new users can sign up
+- **Rate limits**: Adjust auth endpoint throttling
 
-See [docs/configuration.md](docs/configuration.md) for the full reference.
+Full reference: [docs/configuration.md](docs/configuration.md).
+
+---
+
+## API
+
+Clarive has a public API for pulling prompts into your apps. Authenticate with an API key (`X-Api-Key` header), generated from **Settings > API Keys** in the UI.
+
+```bash
+# Get a published prompt
+curl -H "X-Api-Key: cl_your_key_here" \
+  http://localhost:8080/public/v1/entries/{entryId}
+
+# Render with template variables
+curl -X POST \
+  -H "X-Api-Key: cl_your_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{"fields": {"topic": "AI safety", "tone": "professional"}}' \
+  http://localhost:8080/public/v1/entries/{entryId}/generate
+```
+
+The first call returns the published version with its system message and prompts. The second substitutes `{{topic}}` and `{{tone}}` and returns the rendered result.
+
+Full OpenAPI spec: [`docs/api-reference.yaml`](docs/api-reference.yaml). Browse it interactively at `/api-docs` when running in development mode.
+
+---
 
 ## Contributing
 
-1. Fork the repo and create a feature branch
-2. Make your changes, add tests
-3. Run `make test && make lint`
-4. Open a pull request
+We'd love the help. The basics:
 
-Looking for a place to start? Check [good first issues](https://github.com/pinkroosterai/Clarive/labels/good%20first%20issue). Bugs and feature requests go in [GitHub Issues](https://github.com/pinkroosterai/Clarive/issues).
+1. Fork and branch
+2. `make setup && make dev` — everything runs in Docker
+3. Make changes, add tests
+4. `make test && make lint`
+5. Open a PR
+
+Full guide with testing details, code conventions, and project structure: [docs/contributing.md](docs/contributing.md). Development environment setup: [docs/development-setup.md](docs/development-setup.md).
+
+Looking for somewhere to start? Check [good first issues](https://github.com/pinkroosterai/Clarive/labels/good%20first%20issue).
 
 ## Community & Support
 
