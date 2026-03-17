@@ -86,6 +86,15 @@ export default function AiProvidersSection() {
     onError: (err) => handleApiError(err, { fallback: 'Failed to delete provider' }),
   });
 
+  const inlineUpdateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      updateProvider(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super', 'ai-providers'] });
+    },
+    onError: (err) => handleApiError(err, { fallback: 'Failed to update provider' }),
+  });
+
   const validateMutation = useMutation({
     mutationFn: validateProvider,
     onSuccess: () => toast.success('API key is valid'),
@@ -229,6 +238,9 @@ export default function AiProvidersSection() {
               }
               onDeleteModel={(modelId) =>
                 deleteModelMutation.mutate({ providerId: provider.id, modelId })
+              }
+              onUpdateProvider={(data) =>
+                inlineUpdateMutation.mutate({ id: provider.id, data })
               }
               isValidating={
                 validateMutation.isPending && validateMutation.variables === provider.id

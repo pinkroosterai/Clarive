@@ -16,6 +16,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type {
   AiProviderResponse,
@@ -29,6 +36,7 @@ interface ProviderCardExpandedProps {
   onAddModel: (modelId: string, isReasoning?: boolean) => void;
   onUpdateModel: (modelId: string, data: Record<string, unknown>) => void;
   onDeleteModel: (modelId: string) => void;
+  onUpdateProvider: (data: Record<string, unknown>) => void;
   isFetchingModels: boolean;
   fetchedModels: FetchedModelItem[] | null;
 }
@@ -39,6 +47,7 @@ export default function ProviderCardExpanded({
   onAddModel,
   onUpdateModel,
   onDeleteModel,
+  onUpdateProvider,
   isFetchingModels,
   fetchedModels,
 }: ProviderCardExpandedProps) {
@@ -156,6 +165,23 @@ export default function ProviderCardExpanded({
       </div>
 
       {/* Configured models table */}
+      {/* API Mode */}
+      <div className="flex items-center gap-3">
+        <Label className="text-xs text-foreground-muted whitespace-nowrap">API Mode</Label>
+        <Select
+          value={provider.apiMode}
+          onValueChange={(value) => onUpdateProvider({ apiMode: value })}
+        >
+          <SelectTrigger className="h-7 w-[180px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ResponsesApi">Responses API</SelectItem>
+            <SelectItem value="ChatCompletions">Chat Completions</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {provider.models.length > 0 && (
         <div className="space-y-2">
           <Label className="text-xs text-foreground-muted">

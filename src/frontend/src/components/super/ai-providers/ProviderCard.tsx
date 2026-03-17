@@ -25,6 +25,7 @@ export interface ProviderCardProps {
   onAddModel: (modelId: string, isReasoning?: boolean) => void;
   onUpdateModel: (modelId: string, data: Record<string, unknown>) => void;
   onDeleteModel: (modelId: string) => void;
+  onUpdateProvider: (data: Record<string, unknown>) => void;
   isValidating: boolean;
   isFetchingModels: boolean;
   fetchedModels: FetchedModelItem[] | null;
@@ -41,6 +42,7 @@ export default function ProviderCard({
   onAddModel,
   onUpdateModel,
   onDeleteModel,
+  onUpdateProvider,
   isValidating,
   isFetchingModels,
   fetchedModels,
@@ -110,6 +112,7 @@ export default function ProviderCard({
           onAddModel={onAddModel}
           onUpdateModel={onUpdateModel}
           onDeleteModel={onDeleteModel}
+          onUpdateProvider={onUpdateProvider}
           isFetchingModels={isFetchingModels}
           fetchedModels={fetchedModels}
         />

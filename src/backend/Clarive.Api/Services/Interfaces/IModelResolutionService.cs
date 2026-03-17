@@ -1,3 +1,4 @@
+using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Responses;
 using ErrorOr;
 using Microsoft.Extensions.AI;
@@ -8,7 +9,8 @@ public record ResolvedModel(
     IChatClient ChatClient,
     string Model,
     string ProviderName,
-    bool IsTemperatureConfigurable);
+    bool IsTemperatureConfigurable,
+    AiApiMode ApiMode);
 
 public interface IModelResolutionService
 {

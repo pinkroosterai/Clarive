@@ -49,6 +49,11 @@ public class AiProviderService(
             EndpointUrl = request.EndpointUrl,
             ApiKeyEncrypted = encryption.Encrypt(request.ApiKey),
             IsActive = true,
+            ApiMode = ParseApiMode(request.ApiMode)
+                ?? (request.Name.Contains("openai", StringComparison.OrdinalIgnoreCase)
+                    || request.Name.Contains("azure", StringComparison.OrdinalIgnoreCase)
+                    ? Models.Enums.AiApiMode.ResponsesApi
+                    : Models.Enums.AiApiMode.ChatCompletions),
             SortOrder = 0,
             CreatedAt = now,
             UpdatedAt = now
@@ -79,6 +84,7 @@ public class AiProviderService(
         }
         if (request.IsActive.HasValue) provider.IsActive = request.IsActive.Value;
         if (request.SortOrder.HasValue) provider.SortOrder = request.SortOrder.Value;
+        if (ParseApiMode(request.ApiMode) is { } parsedMode) provider.ApiMode = parsedMode;
         provider.UpdatedAt = DateTime.UtcNow;
 
         await repo.UpdateAsync(provider, ct);
@@ -234,8 +240,13 @@ public class AiProviderService(
         return Result.Success;
     }
 
+    private static Models.Enums.AiApiMode? ParseApiMode(string? value)
+        => value is not null && Enum.TryParse<Models.Enums.AiApiMode>(value, ignoreCase: true, out var mode)
+            ? mode
+            : null;
+
     private static AiProviderResponse ToResponse(AiProvider p) => new(
-        p.Id, p.Name, p.EndpointUrl, p.IsActive, p.SortOrder,
+        p.Id, p.Name, p.EndpointUrl, p.IsActive, p.ApiMode.ToString(), p.SortOrder,
         !string.IsNullOrEmpty(p.ApiKeyEncrypted),
         p.Models.Select(ToModelResponse).ToList(),
         p.CreatedAt, p.UpdatedAt

@@ -8,7 +8,8 @@ public record CreateAiProviderRequest(
     [property: StringLength(500)]
     string? EndpointUrl,
     [property: Required]
-    string ApiKey
+    string ApiKey,
+    string? ApiMode = null
 );
 
 public record UpdateAiProviderRequest(
@@ -18,7 +19,8 @@ public record UpdateAiProviderRequest(
     string? EndpointUrl = null,
     string? ApiKey = null,
     bool? IsActive = null,
-    int? SortOrder = null
+    int? SortOrder = null,
+    string? ApiMode = null
 );
 
 public record AddAiProviderModelRequest(

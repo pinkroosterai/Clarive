@@ -24,6 +24,7 @@ export interface AiProviderResponse {
   name: string;
   endpointUrl: string | null;
   isActive: boolean;
+  apiMode: string;
   sortOrder: number;
   isKeyConfigured: boolean;
   models: AiProviderModelResponse[];
@@ -35,6 +36,7 @@ export interface CreateAiProviderRequest {
   name: string;
   endpointUrl?: string;
   apiKey: string;
+  apiMode?: string;
 }
 
 export interface UpdateAiProviderRequest {
@@ -43,6 +45,7 @@ export interface UpdateAiProviderRequest {
   apiKey?: string;
   isActive?: boolean;
   sortOrder?: number;
+  apiMode?: string;
 }
 
 export interface AddModelRequest {

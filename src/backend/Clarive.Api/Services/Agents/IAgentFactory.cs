@@ -1,4 +1,5 @@
 using Clarive.Api.Models.Agents;
+using Clarive.Api.Models.Enums;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
@@ -16,7 +17,7 @@ public interface IAgentFactory
     AIAgent CreateSystemMessageAgent();
     AIAgent CreateDecomposeAgent();
     IChatClient CreateChatClient(string model);
-    IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model);
+    IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model, AiApiMode apiMode = AiApiMode.ResponsesApi);
     OpenAI.OpenAIClient GetOpenAIClient();
     bool IsConfigured { get; }
     string? DefaultModelId { get; }

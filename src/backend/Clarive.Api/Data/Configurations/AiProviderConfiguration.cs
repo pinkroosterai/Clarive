@@ -16,6 +16,7 @@ public class AiProviderConfiguration : IEntityTypeConfiguration<AiProvider>
         builder.Property(p => p.EndpointUrl).HasColumnName("endpoint_url").HasMaxLength(500);
         builder.Property(p => p.ApiKeyEncrypted).HasColumnName("api_key_encrypted").IsRequired();
         builder.Property(p => p.IsActive).HasColumnName("is_active").IsRequired();
+        builder.Property(p => p.ApiMode).HasColumnName("api_mode").IsRequired();
         builder.Property(p => p.SortOrder).HasColumnName("sort_order").IsRequired();
         builder.Property(p => p.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(p => p.UpdatedAt).HasColumnName("updated_at").IsRequired();

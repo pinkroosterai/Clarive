@@ -5,6 +5,7 @@ public record AiProviderResponse(
     string Name,
     string? EndpointUrl,
     bool IsActive,
+    string ApiMode,
     int SortOrder,
     bool IsKeyConfigured,
     List<AiProviderModelResponse> Models,

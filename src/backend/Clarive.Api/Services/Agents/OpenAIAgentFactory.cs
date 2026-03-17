@@ -313,14 +313,23 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         finally { _lock.ExitReadLock(); }
     }
 
-    public IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model)
+    public IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model, Models.Enums.AiApiMode apiMode = Models.Enums.AiApiMode.ResponsesApi)
     {
         var client = CreateOpenAIClient(apiKey, endpointUrl);
+        IChatClient baseClient;
+        if (apiMode == Models.Enums.AiApiMode.ChatCompletions)
+        {
+            baseClient = client.GetChatClient(model).AsIChatClient();
+        }
+        else
+        {
 #pragma warning disable OPENAI001 // Responses API is experimental
-        return new ChatClientBuilder(client.GetResponsesClient(model).AsIChatClient())
+            baseClient = client.GetResponsesClient(model).AsIChatClient();
+#pragma warning restore OPENAI001
+        }
+        return new ChatClientBuilder(baseClient)
             .UseLogging(_loggerFactory)
             .Build();
-#pragma warning restore OPENAI001
     }
 
     public OpenAIClient GetOpenAIClient()

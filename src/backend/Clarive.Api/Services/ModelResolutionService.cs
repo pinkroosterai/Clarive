@@ -44,6 +44,7 @@ public class ModelResolutionService(
 
         IChatClient chatClient;
         var isTemperatureConfigurable = !(providerMatch?.Model.IsReasoning ?? false);
+        var apiMode = providerMatch?.Provider.ApiMode ?? Models.Enums.AiApiMode.ResponsesApi;
 
         if (providerMatch is not null && encryption.IsAvailable)
         {
@@ -58,7 +59,7 @@ public class ModelResolutionService(
                     "Failed to decrypt AI provider credentials. Contact your admin.");
             }
             chatClient = agentFactory.CreateChatClientForProvider(
-                apiKey, providerMatch.Provider.EndpointUrl, model);
+                apiKey, providerMatch.Provider.EndpointUrl, model, apiMode);
         }
         else
         {
@@ -69,7 +70,8 @@ public class ModelResolutionService(
             chatClient,
             model,
             providerMatch?.Provider.Name ?? "Default",
-            isTemperatureConfigurable);
+            isTemperatureConfigurable,
+            apiMode);
     }
 
     public async Task<ErrorOr<List<EnrichedModelResponse>>> GetEnrichedModelsAsync(CancellationToken ct)

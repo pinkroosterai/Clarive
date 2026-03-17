@@ -93,7 +93,7 @@ public class PlaygroundService(
                 MaxOutputTokens = request.MaxTokens
             };
 
-            if (request.ShowReasoning == true)
+            if (request.ShowReasoning == true && resolved.ApiMode == Models.Enums.AiApiMode.ResponsesApi)
             {
                 options.Reasoning = new ReasoningOptions
                 {
@@ -101,6 +101,10 @@ public class PlaygroundService(
                     Output = ReasoningOutput.Full,
                 };
             }
+
+            var thinkParser = resolved.ApiMode == Models.Enums.AiApiMode.ChatCompletions
+                ? new Helpers.ThinkTagStreamParser()
+                : null;
 
             var conversationMessages = new List<ChatMessage>();
 
@@ -126,19 +130,43 @@ public class PlaygroundService(
                 await foreach (var update in client.GetStreamingResponseAsync(
                     conversationMessages, options, ct))
                 {
-                    if (update.Text is not null)
+                    if (thinkParser is not null && update.Text is not null)
                     {
+                        // Chat Completions mode: parse <think> tags from text
+                        foreach (var (segText, isThinking) in thinkParser.ProcessChunk(update.Text))
+                        {
+                            if (isThinking)
+                            {
+                                reasoningText.Append(segText);
+                                if (onChunk is not null)
+                                    await onChunk(new TestStreamChunk(i, segText, "reasoning"));
+                            }
+                            else
+                            {
+                                responseText.Append(segText);
+                                if (onChunk is not null)
+                                    await onChunk(new TestStreamChunk(i, segText, "text"));
+                            }
+                        }
+                    }
+                    else if (update.Text is not null)
+                    {
+                        // Responses API mode: text is always regular content
                         responseText.Append(update.Text);
                         if (onChunk is not null)
                             await onChunk(new TestStreamChunk(i, update.Text, "text"));
                     }
 
-                    var reasoningContent = update.Contents.OfType<TextReasoningContent>().FirstOrDefault();
-                    if (reasoningContent?.Text is not null)
+                    // Responses API reasoning content (not available in Chat Completions)
+                    if (thinkParser is null)
                     {
-                        reasoningText.Append(reasoningContent.Text);
-                        if (onChunk is not null)
-                            await onChunk(new TestStreamChunk(i, reasoningContent.Text, "reasoning"));
+                        var reasoningContent = update.Contents.OfType<TextReasoningContent>().FirstOrDefault();
+                        if (reasoningContent?.Text is not null)
+                        {
+                            reasoningText.Append(reasoningContent.Text);
+                            if (onChunk is not null)
+                                await onChunk(new TestStreamChunk(i, reasoningContent.Text, "reasoning"));
+                        }
                     }
 
                     var usageContent = update.Contents.OfType<UsageContent>().FirstOrDefault();
@@ -146,6 +174,26 @@ public class PlaygroundService(
                     {
                         totalInputTokens = (totalInputTokens ?? 0) + (usageContent.Details.InputTokenCount ?? 0);
                         totalOutputTokens = (totalOutputTokens ?? 0) + (usageContent.Details.OutputTokenCount ?? 0);
+                    }
+                }
+
+                // Flush any remaining buffered content from think tag parser
+                if (thinkParser is not null)
+                {
+                    foreach (var (segText, isThinking) in thinkParser.Flush())
+                    {
+                        if (isThinking)
+                        {
+                            reasoningText.Append(segText);
+                            if (onChunk is not null)
+                                await onChunk(new TestStreamChunk(i, segText, "reasoning"));
+                        }
+                        else
+                        {
+                            responseText.Append(segText);
+                            if (onChunk is not null)
+                                await onChunk(new TestStreamChunk(i, segText, "text"));
+                        }
                     }
                 }
 
