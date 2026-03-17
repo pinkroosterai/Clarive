@@ -24,6 +24,7 @@ using Clarive.Api.Services.Interfaces;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Clarive.Api.HealthChecks;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Resend;
 // ── Serilog Bootstrap (catches startup errors) ──
 Log.Logger = new LoggerConfiguration()
@@ -44,6 +45,30 @@ builder.Services.AddSerilog((services, lc) =>
       .Enrich.WithMachineName()
       .Enrich.WithThreadId();
 
+    // PostgreSQL sink — connection string comes from env vars, so configure programmatically
+    var pgConn = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (!string.IsNullOrWhiteSpace(pgConn))
+    {
+        var columnWriters = new Dictionary<string, Serilog.Sinks.PostgreSQL.ColumnWriters.ColumnWriterBase>
+        {
+            { "id", new Serilog.Sinks.PostgreSQL.ColumnWriters.IdAutoIncrementColumnWriter() },
+            { "timestamp", new Serilog.Sinks.PostgreSQL.ColumnWriters.TimestampColumnWriter() },
+            { "level", new Serilog.Sinks.PostgreSQL.ColumnWriters.LevelColumnWriter(renderAsText: false) },
+            { "message", new Serilog.Sinks.PostgreSQL.ColumnWriters.RenderedMessageColumnWriter() },
+            { "message_template", new Serilog.Sinks.PostgreSQL.ColumnWriters.MessageTemplateColumnWriter() },
+            { "exception", new Serilog.Sinks.PostgreSQL.ColumnWriters.ExceptionColumnWriter() },
+            { "properties", new Serilog.Sinks.PostgreSQL.ColumnWriters.PropertiesColumnWriter() },
+        };
+
+        lc.WriteTo.PostgreSQL(
+            connectionString: pgConn,
+            tableName: "logs",
+            columnOptions: columnWriters,
+            needAutoCreateTable: true,
+            batchSizeLimit: 50,
+            period: TimeSpan.FromSeconds(5),
+            useCopy: true);
+    }
 });
 
 // ── Validate required configuration ──
@@ -52,6 +77,14 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException(
         "ConnectionStrings:DefaultConnection is not configured. " +
         "Set it in appsettings.Development.json or the CONNECTIONSTRINGS__DEFAULTCONNECTION environment variable.");
+
+// ── NpgsqlDataSource (for raw SQL queries against Serilog logs table) ──
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var connStr = config.GetConnectionString("DefaultConnection")!;
+    return NpgsqlDataSource.Create(connStr);
+});
 
 // ── Database Configuration Override (highest priority, overrides env vars) ──
 builder.Configuration.AddDatabaseConfiguration(
@@ -282,6 +315,7 @@ builder.Services.AddHostedService<Clarive.Api.Services.Background.AiSessionClean
 builder.Services.AddHostedService<Clarive.Api.Services.Background.MaintenanceModeSyncService>();
 builder.Services.AddHostedService<Clarive.Api.Services.Background.AiUsageCleanupService>();
 builder.Services.AddHostedService<Clarive.Api.Services.Background.LiteLlmSyncService>();
+builder.Services.AddHostedService<Clarive.Api.Services.Background.LogCleanupService>();
 
 // ── Rate Limiting ──
 builder.Services.AddRateLimiter(options =>
@@ -467,6 +501,7 @@ app.MapAiProviderEndpoints();
 app.MapAiUsageEndpoints();
 app.MapShareLinkEndpoints();
 app.MapPublicShareEndpoints();
+app.MapSystemLogEndpoints();
 
 app.MapGet("/api/status", (IMaintenanceModeService maintenanceMode, IAgentFactory agentFactory, ITavilyClientService tavilyClient) =>
     Results.Ok(new { maintenance = maintenanceMode.IsEnabled, aiConfigured = agentFactory.IsConfigured, webSearchAvailable = tavilyClient.IsConfigured }))

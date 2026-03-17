@@ -9,11 +9,13 @@ import {
   X,
   Settings,
   Cpu,
+  ScrollText,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import AiTab from '@/components/super/AiTab';
+import LogsTab from '@/components/super/LogsTab';
 import AiUsageDashboard from '@/components/super/AiUsageDashboard';
 import { CompactMetricStrip, type MetricItem } from '@/components/super/CompactMetricStrip';
 import { HeroStatCard } from '@/components/super/HeroStatCard';
@@ -28,7 +30,7 @@ import { getSuperStats } from '@/services/api/superService';
 
 // ── Tab configuration ──
 
-const VALID_TABS = ['dashboard', 'users', 'ai', 'settings'];
+const VALID_TABS = ['dashboard', 'users', 'ai', 'settings', 'logs'];
 const RESTART_STORAGE_KEY = 'cl_pending_restart_keys';
 
 // Map old tab param values to new ones for backwards compatibility
@@ -193,6 +195,10 @@ const SuperDashboardPage = () => {
             <Settings className="size-4 hidden sm:block" />
             Settings
           </TabsTrigger>
+          <TabsTrigger value="logs" className={TAB_STYLE}>
+            <ScrollText className="size-4 hidden sm:block" />
+            Logs
+          </TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab — Platform Overview + AI Usage Analytics */}
@@ -312,6 +318,17 @@ const SuperDashboardPage = () => {
               configError={configError}
               onSaved={refreshRestartKeys}
             />
+          </motion.div>
+        </TabsContent>
+
+        {/* Logs Tab */}
+        <TabsContent value="logs" className="mt-6">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <LogsTab />
           </motion.div>
         </TabsContent>
       </Tabs>
