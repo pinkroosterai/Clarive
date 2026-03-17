@@ -1,0 +1,122 @@
+using Clarive.Api.Models.Entities;
+using Clarive.Api.Repositories.Interfaces;
+using Clarive.Api.Services;
+using Clarive.Api.Services.Agents;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NSubstitute;
+
+namespace Clarive.Api.UnitTests.Services;
+
+public class OpenAIAgentFactoryTests
+{
+    private readonly IEncryptionService _encryption = Substitute.For<IEncryptionService>();
+    private readonly ILogger<OpenAIAgentFactory> _logger;
+    private readonly OpenAIAgentFactory _sut;
+
+    public OpenAIAgentFactoryTests()
+    {
+        _encryption.IsAvailable.Returns(true);
+
+        var providerRepo = Substitute.For<IAiProviderRepository>();
+        providerRepo.GetAllAsync(Arg.Any<CancellationToken>()).Returns(new List<AiProvider>());
+
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        serviceProvider.GetService(typeof(IAiProviderRepository)).Returns(providerRepo);
+
+        var scope = Substitute.For<IServiceScope>();
+        scope.ServiceProvider.Returns(serviceProvider);
+
+        var scopeFactory = Substitute.For<IServiceScopeFactory>();
+        scopeFactory.CreateScope().Returns(scope);
+
+        var loggerFactory = Substitute.For<ILoggerFactory>();
+        _logger = Substitute.For<ILogger<OpenAIAgentFactory>>();
+        loggerFactory.CreateLogger(Arg.Any<string>()).Returns(_logger);
+
+        var settings = new AiSettings { DefaultModel = "", PremiumModel = "" };
+        var optionsMonitor = Substitute.For<IOptionsMonitor<AiSettings>>();
+        optionsMonitor.CurrentValue.Returns(settings);
+
+        _sut = new OpenAIAgentFactory(optionsMonitor, scopeFactory, _encryption, loggerFactory);
+    }
+
+    private static List<AiProvider> MakeProviders(string providerName, string modelId)
+    {
+        return
+        [
+            new AiProvider
+            {
+                Id = Guid.NewGuid(),
+                Name = providerName,
+                ApiKeyEncrypted = "encrypted-key",
+                EndpointUrl = "https://api.openai.com/v1",
+                IsActive = true,
+                Models =
+                [
+                    new AiProviderModel
+                    {
+                        Id = Guid.NewGuid(),
+                        ModelId = modelId,
+                        IsActive = true,
+                        IsReasoning = false,
+                        MaxInputTokens = 128000,
+                    }
+                ]
+            }
+        ];
+    }
+
+    [Fact]
+    public void ResolveProviderForModel_DecryptionFails_ReturnsNullAndLogsWarning()
+    {
+        var providers = MakeProviders("TestProvider", "gpt-4o");
+        _encryption.Decrypt("encrypted-key").Returns(_ => throw new InvalidOperationException("corrupt key"));
+
+        var result = _sut.ResolveProviderForModel(providers, "gpt-4o");
+
+        result.Should().BeNull();
+
+        // Verify warning was logged with provider context
+        var warningCalls = _logger.ReceivedCalls()
+            .Where(c => c.GetMethodInfo().Name == "Log")
+            .Select(c => c.GetArguments())
+            .Where(a => a.Length > 0 && (LogLevel)a[0]! == LogLevel.Warning)
+            .ToList();
+
+        // Filter to the decryption warning (not the constructor's "AI not configured" warning)
+        var decryptionWarning = warningCalls
+            .FirstOrDefault(a => a[2]!.ToString()!.Contains("decrypt", StringComparison.OrdinalIgnoreCase));
+
+        decryptionWarning.Should().NotBeNull("a Warning log about decryption should have been emitted");
+        var state = decryptionWarning![2]!.ToString()!;
+        state.Should().Contain("TestProvider");
+        state.Should().Contain("gpt-4o");
+        decryptionWarning[3].Should().BeOfType<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void ResolveProviderForModel_DecryptionSucceeds_ReturnsResolvedProvider()
+    {
+        var providers = MakeProviders("TestProvider", "gpt-4o");
+        _encryption.Decrypt("encrypted-key").Returns("decrypted-api-key");
+
+        var result = _sut.ResolveProviderForModel(providers, "gpt-4o");
+
+        result.Should().NotBeNull();
+        result!.ProviderName.Should().Be("TestProvider");
+        result.ApiKey.Should().Be("decrypted-api-key");
+    }
+
+    [Fact]
+    public void ResolveProviderForModel_NoMatchingModel_ReturnsNull()
+    {
+        var providers = MakeProviders("TestProvider", "gpt-4o");
+
+        var result = _sut.ResolveProviderForModel(providers, "nonexistent-model");
+
+        result.Should().BeNull();
+    }
+}

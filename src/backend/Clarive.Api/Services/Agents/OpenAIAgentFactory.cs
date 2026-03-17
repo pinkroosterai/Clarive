@@ -269,9 +269,9 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         return await repo.GetAllAsync();
     }
 
-    private record ResolvedProvider(string ApiKey, string? EndpointUrl, string ProviderName, AiProviderModel Model);
+    internal record ResolvedProvider(string ApiKey, string? EndpointUrl, string ProviderName, AiProviderModel Model);
 
-    private ResolvedProvider? ResolveProviderForModel(List<AiProvider> providers, string modelId, string? providerId = null)
+    internal ResolvedProvider? ResolveProviderForModel(List<AiProvider> providers, string modelId, string? providerId = null)
     {
         var activeProviders = providers.Where(p => p.IsActive);
 
@@ -291,9 +291,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         {
             apiKey = _encryption.Decrypt(match.Provider.ApiKeyEncrypted);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return null; // Treat corrupt credentials as unconfigured
+            _logger.LogWarning(ex, "Failed to decrypt API key for provider {ProviderName} (model {ModelId}) — treating as unconfigured", match.Provider.Name, modelId);
+            return null;
         }
         return new ResolvedProvider(apiKey, match.Provider.EndpointUrl, match.Provider.Name, match.Model);
     }

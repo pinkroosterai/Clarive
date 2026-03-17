@@ -102,7 +102,7 @@ public class ModelResolutionServiceTests
     }
 
     [Fact]
-    public async Task ResolveProviderForModelAsync_DecryptionFails_ReturnsFailure()
+    public async Task ResolveProviderForModelAsync_DecryptionFails_ReturnsFailureAndLogsWarning()
     {
         var provider = MakeProvider("OpenAI", ("gpt-4o", true));
         _providerRepo.GetAllAsync(Arg.Any<CancellationToken>()).Returns([provider]);
@@ -110,11 +110,18 @@ public class ModelResolutionServiceTests
 
         PrimeAvailableModelsCache("gpt-4o");
 
-
         var result = await _sut.ResolveProviderForModelAsync("gpt-4o", default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("DECRYPTION_FAILED");
+
+        var logCall = _logger.ReceivedCalls()
+            .Where(c => c.GetMethodInfo().Name == "Log")
+            .Select(c => c.GetArguments())
+            .FirstOrDefault(a => a.Length > 0 && (LogLevel)a[0]! == LogLevel.Warning);
+
+        logCall.Should().NotBeNull("a Warning log should have been emitted");
+        logCall![2]!.ToString()!.Should().Contain("OpenAI");
     }
 
     [Fact]

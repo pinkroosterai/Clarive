@@ -53,8 +53,9 @@ public class ModelResolutionService(
             {
                 apiKey = encryption.Decrypt(providerMatch.Provider.ApiKeyEncrypted);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogWarning(ex, "Failed to decrypt API key for provider {ProviderName} ({ProviderId})", providerMatch.Provider.Name, providerMatch.Provider.Id);
                 return Error.Failure("DECRYPTION_FAILED",
                     "Failed to decrypt AI provider credentials. Contact your admin.");
             }
