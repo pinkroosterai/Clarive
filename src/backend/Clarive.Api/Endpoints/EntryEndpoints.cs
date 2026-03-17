@@ -10,7 +10,6 @@ using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
-using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
 namespace Clarive.Api.Endpoints;
@@ -230,7 +229,7 @@ public static partial class EntryEndpoints
         IEntryService entryService,
         IUserRepository userRepo,
         IAuditLogger auditLogger,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
@@ -246,7 +245,7 @@ public static partial class EntryEndpoints
 
         var (entry, version) = result.Value;
 
-        TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
         await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryCreated,
             "prompt_entry", entry.Id, entry.Title, $"Created '{entry.Title}'", ct);
@@ -291,7 +290,7 @@ public static partial class EntryEndpoints
         IEntryService entryService,
         IUserRepository userRepo,
         IAuditLogger auditLogger,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
@@ -303,7 +302,7 @@ public static partial class EntryEndpoints
 
         var (entry, published) = result.Value;
 
-        TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
         await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryPublished,
             "prompt_entry", entry.Id, entry.Title, $"Published version {published.Version}", ct);
@@ -392,7 +391,7 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
@@ -403,7 +402,7 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
         await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryTrashed,
             "prompt_entry", entry.Id, entry.Title, $"Moved '{entry.Title}' to trash", ct);
@@ -419,7 +418,7 @@ public static partial class EntryEndpoints
         IEntryRepository entryRepo,
         IUserRepository userRepo,
         IAuditLogger auditLogger,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
@@ -430,7 +429,7 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
         await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryRestored,
             "prompt_entry", entry.Id, entry.Title, $"Restored '{entry.Title}' from trash", ct);
@@ -446,7 +445,7 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
@@ -457,7 +456,7 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
         await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryDeleted,
             "prompt_entry", entryId, entry.Title, $"Permanently deleted '{entry.Title}'", ct);

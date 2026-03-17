@@ -3,7 +3,6 @@ using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Clarive.Api.Endpoints;
 
@@ -31,7 +30,7 @@ public static partial class EntryEndpoints
         AddTagsRequest request,
         IEntryRepository entryRepo,
         ITagRepository tagRepo,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
@@ -52,7 +51,7 @@ public static partial class EntryEndpoints
         }
 
         await tagRepo.AddAsync(tenantId, entryId, normalized.Distinct().ToList(), ct);
-        TenantCacheKeys.EvictTagData(cache, tenantId);
+        await TenantCacheKeys.EvictTagData(cache, tenantId);
 
         var tags = await tagRepo.GetByEntryIdAsync(tenantId, entryId, ct);
         return Results.Ok(tags);
@@ -64,7 +63,7 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryRepository entryRepo,
         ITagRepository tagRepo,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
@@ -73,7 +72,7 @@ public static partial class EntryEndpoints
             return ctx.ErrorResult(404, "NOT_FOUND", "Entry not found.", "Entry", entryId.ToString());
 
         await tagRepo.RemoveAsync(tenantId, entryId, tagName.Trim().ToLowerInvariant(), ct);
-        TenantCacheKeys.EvictTagData(cache, tenantId);
+        await TenantCacheKeys.EvictTagData(cache, tenantId);
 
         return Results.NoContent();
     }

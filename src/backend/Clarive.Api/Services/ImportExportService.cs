@@ -5,7 +5,6 @@ using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
-using Microsoft.Extensions.Caching.Memory;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -16,7 +15,7 @@ public class ImportExportService(
     IFolderRepository folderRepo,
     ITagRepository tagRepo,
     ClariveDbContext db,
-    IMemoryCache cache) : IImportExportService
+    TenantCacheService cache) : IImportExportService
 {
     private const int MaxFolderDepth = 20;
 
@@ -106,9 +105,9 @@ public class ImportExportService(
 
         await tx.CommitAsync(ct);
 
-        TenantCacheKeys.EvictFolderData(cache, tenantId);
-        TenantCacheKeys.EvictEntryData(cache, tenantId);
-        TenantCacheKeys.EvictTagData(cache, tenantId);
+        await TenantCacheKeys.EvictFolderData(cache, tenantId);
+        await TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictTagData(cache, tenantId);
 
         return new ImportResponse(createdEntries.Count, createdEntries);
     }

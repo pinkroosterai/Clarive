@@ -5,25 +5,28 @@ using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
 
-public class ModelResolutionServiceTests : IDisposable
+public class ModelResolutionServiceTests
 {
     private readonly IAiProviderRepository _providerRepo = Substitute.For<IAiProviderRepository>();
     private readonly IAgentFactory _agentFactory = Substitute.For<IAgentFactory>();
     private readonly IEncryptionService _encryption = Substitute.For<IEncryptionService>();
     private readonly IOptionsMonitor<AiSettings> _aiSettings = Substitute.For<IOptionsMonitor<AiSettings>>();
-    private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly IDistributedCache _distributedCache = Substitute.For<IDistributedCache>();
+    private readonly TenantCacheService _cache;
     private readonly ILogger<ModelResolutionService> _logger = Substitute.For<ILogger<ModelResolutionService>>();
     private readonly ModelResolutionService _sut;
 
     public ModelResolutionServiceTests()
     {
+        _cache = new TenantCacheService(_distributedCache, Substitute.For<ILogger<TenantCacheService>>());
+
         _aiSettings.CurrentValue.Returns(new AiSettings
         {
             DefaultModel = "gpt-4o",
@@ -34,10 +37,11 @@ public class ModelResolutionServiceTests : IDisposable
         _sut = new ModelResolutionService(_providerRepo, _agentFactory, _encryption, _aiSettings, _cache, _logger);
     }
 
-    public void Dispose()
+    private void PrimeAvailableModelsCache(params string[] models)
     {
-        _cache.Dispose();
-        GC.SuppressFinalize(this);
+        var json = System.Text.Json.JsonSerializer.Serialize(models.ToList());
+        _distributedCache.GetAsync("global:playground_available_models", Arg.Any<CancellationToken>())
+            .Returns(System.Text.Encoding.UTF8.GetBytes(json));
     }
 
     private static AiProvider MakeProvider(string name = "TestProvider", params (string modelId, bool isActive)[] models)
@@ -74,9 +78,8 @@ public class ModelResolutionServiceTests : IDisposable
         _agentFactory.CreateChatClientForProvider("decrypted-api-key", "https://api.openai.com/v1", "gpt-4o")
             .Returns(mockClient);
 
-        // Prime the available models cache by setting it directly
-        _cache.Set("playground_available_models", new List<string> { "gpt-4o" },
-            new MemoryCacheEntryOptions { Size = 1 });
+        PrimeAvailableModelsCache("gpt-4o");
+
 
         var result = await _sut.ResolveProviderForModelAsync("gpt-4o", default);
 
@@ -89,9 +92,7 @@ public class ModelResolutionServiceTests : IDisposable
     [Fact]
     public async Task ResolveProviderForModelAsync_ModelNotAvailable_ReturnsValidationError()
     {
-        // Prime cache with models that don't include the requested one
-        _cache.Set("playground_available_models", new List<string> { "gpt-4o" },
-            new MemoryCacheEntryOptions { Size = 1 });
+        PrimeAvailableModelsCache("gpt-4o");
 
         var result = await _sut.ResolveProviderForModelAsync("nonexistent-model", default);
 
@@ -106,8 +107,8 @@ public class ModelResolutionServiceTests : IDisposable
         _providerRepo.GetAllAsync(Arg.Any<CancellationToken>()).Returns([provider]);
         _encryption.Decrypt("encrypted-key").Returns(_ => throw new Exception("Decryption failed"));
 
-        _cache.Set("playground_available_models", new List<string> { "gpt-4o" },
-            new MemoryCacheEntryOptions { Size = 1 });
+        PrimeAvailableModelsCache("gpt-4o");
+
 
         var result = await _sut.ResolveProviderForModelAsync("gpt-4o", default);
 
@@ -123,8 +124,8 @@ public class ModelResolutionServiceTests : IDisposable
         var mockClient = Substitute.For<IChatClient>();
         _agentFactory.CreateChatClient("gpt-4o").Returns(mockClient);
 
-        _cache.Set("playground_available_models", new List<string> { "gpt-4o" },
-            new MemoryCacheEntryOptions { Size = 1 });
+        PrimeAvailableModelsCache("gpt-4o");
+
 
         var result = await _sut.ResolveProviderForModelAsync("gpt-4o", default);
 
@@ -154,6 +155,19 @@ public class ModelResolutionServiceTests : IDisposable
     {
         var provider = MakeProvider("OpenAI", ("gpt-4o", true));
         _providerRepo.GetAllAsync(Arg.Any<CancellationToken>()).Returns([provider]);
+
+        // Capture what's written to cache so second call gets a hit
+        byte[]? stored = null;
+        _distributedCache.SetAsync(
+            Arg.Is<string>(k => k.Contains("playground_enriched_models")),
+            Arg.Any<byte[]>(),
+            Arg.Any<DistributedCacheEntryOptions>(),
+            Arg.Any<CancellationToken>())
+            .Returns(ci => { stored = ci.ArgAt<byte[]>(1); return Task.CompletedTask; });
+        _distributedCache.GetAsync(
+            Arg.Is<string>(k => k.Contains("playground_enriched_models")),
+            Arg.Any<CancellationToken>())
+            .Returns(ci => stored);
 
         await _sut.GetEnrichedModelsAsync(default);
         await _sut.GetEnrichedModelsAsync(default);

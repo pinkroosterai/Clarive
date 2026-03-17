@@ -4,26 +4,24 @@ using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Clarive.Api.Services;
 
 public class FolderService(
     IFolderRepository folderRepo,
     IEntryRepository entryRepo,
-    IMemoryCache cache) : IFolderService
+    TenantCacheService cache) : IFolderService
 {
     public async Task<ErrorOr<List<FolderDto>>> GetTreeAsync(Guid tenantId, CancellationToken ct)
     {
-        var cacheKey = TenantCacheKeys.FolderTree(tenantId);
+        var tree = await cache.GetOrCreateAsync(
+            TenantCacheKeys.FolderTreeKey,
+            tenantId,
+            _ => folderRepo.GetTreeAsync(tenantId, ct),
+            TenantCacheKeys.FolderTreeTtl,
+            ct);
 
-        var tree = await cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SetOptions(TenantCacheKeys.FolderTreeOptions);
-            return await folderRepo.GetTreeAsync(tenantId, ct);
-        });
-
-        return tree!;
+        return tree;
     }
 
     public async Task<ErrorOr<Folder>> CreateAsync(Guid tenantId, CreateFolderRequest request, CancellationToken ct)
@@ -40,7 +38,7 @@ public class FolderService(
             CreatedAt = DateTime.UtcNow
         }, ct);
 
-        TenantCacheKeys.EvictFolderData(cache, tenantId);
+        await TenantCacheKeys.EvictFolderData(cache, tenantId);
 
         return folder;
     }
@@ -54,7 +52,7 @@ public class FolderService(
         folder.Name = request.Name.Trim();
         await folderRepo.UpdateAsync(folder, ct);
 
-        TenantCacheKeys.EvictFolderData(cache, tenantId);
+        await TenantCacheKeys.EvictFolderData(cache, tenantId);
 
         return folder;
     }
@@ -75,7 +73,7 @@ public class FolderService(
 
         await folderRepo.DeleteAsync(tenantId, folderId, ct);
 
-        TenantCacheKeys.EvictFolderData(cache, tenantId);
+        await TenantCacheKeys.EvictFolderData(cache, tenantId);
 
         return Result.Success;
     }
@@ -101,7 +99,7 @@ public class FolderService(
         folder.ParentId = request.ParentId;
         await folderRepo.UpdateAsync(folder, ct);
 
-        TenantCacheKeys.EvictFolderData(cache, tenantId);
+        await TenantCacheKeys.EvictFolderData(cache, tenantId);
 
         return folder;
     }

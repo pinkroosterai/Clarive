@@ -170,8 +170,14 @@ builder.Services.AddDbContext<ClariveDbContext>(options =>
         .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning));
 });
 
-// ── In-Memory Cache ──
-builder.Services.AddMemoryCache(options => options.SizeLimit = 1024);
+// ── Caching ──
+builder.Services.AddMemoryCache(); // LiteLlmRegistryCache uses IMemoryCache directly
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Valkey");
+    options.InstanceName = "clarive:";
+});
+builder.Services.AddScoped<TenantCacheService>();
 
 // ── Repositories (Scoped — one DbContext per request) ──
 builder.Services.AddScoped<ITenantRepository, EfTenantRepository>();
@@ -335,6 +341,10 @@ builder.Services.AddHealthChecks()
         tags: ["ready"])
     .AddCheck<OpenAiHealthCheck>(
         name: "openai",
+        failureStatus: HealthStatus.Degraded,
+        tags: ["ready"])
+    .AddCheck<ValkeyHealthCheck>(
+        name: "valkey",
         failureStatus: HealthStatus.Degraded,
         tags: ["ready"]);
 

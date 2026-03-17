@@ -4,7 +4,6 @@ using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace Clarive.Api.Services;
@@ -14,11 +13,9 @@ public class ModelResolutionService(
     IAgentFactory agentFactory,
     IEncryptionService encryption,
     IOptionsMonitor<AiSettings> aiSettings,
-    IMemoryCache cache,
+    TenantCacheService cache,
     ILogger<ModelResolutionService> logger) : IModelResolutionService
 {
-    private const string ProvidersCacheKey = "ai_providers_all";
-
     public async Task<ErrorOr<ResolvedModel>> ResolveProviderForModelAsync(string model, CancellationToken ct)
     {
         // Check model is available
@@ -30,12 +27,11 @@ public class ModelResolutionService(
         }
 
         // Resolve provider for this model (cached)
-        var providers = await cache.GetOrCreateAsync(ProvidersCacheKey, async entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-            entry.Size = 1;
-            return await providerRepo.GetAllAsync(ct);
-        }) ?? [];
+        var providers = await cache.GetOrCreateGlobalAsync(
+            TenantCacheKeys.AiProvidersKey,
+            _ => providerRepo.GetAllAsync(ct),
+            TenantCacheKeys.AiCacheTtl,
+            ct);
 
         var providerMatch = providers
             .Where(p => p.IsActive)
@@ -75,99 +71,90 @@ public class ModelResolutionService(
 
     public async Task<ErrorOr<List<EnrichedModelResponse>>> GetEnrichedModelsAsync(CancellationToken ct)
     {
-        const string cacheKey = "playground_enriched_models";
-
-        if (cache.TryGetValue(cacheKey, out List<EnrichedModelResponse>? cached) && cached is not null)
-            return cached;
-
-        var providers = await providerRepo.GetAllAsync(ct);
-        var activeProviders = providers.Where(p => p.IsActive).ToList();
-
-        if (activeProviders.Count == 0)
-        {
-            // Fall back to legacy model list (as simple enriched models with no provider metadata)
-            var legacyResult = await GetAvailableModelsAsync(ct);
-            if (legacyResult.IsError) return legacyResult.Errors;
-
-            var legacyModels = legacyResult.Value.Select(m => new EnrichedModelResponse(
-                m, null, Guid.Empty, "Default", false, 128000, null,
-                null, null, null
-            )).ToList();
-
-            cache.Set(cacheKey, legacyModels, new MemoryCacheEntryOptions
+        var enriched = await cache.GetOrCreateGlobalAsync(
+            TenantCacheKeys.EnrichedModelsKey,
+            async _ =>
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-                Size = 1
-            });
-            return legacyModels;
-        }
+                var providers = await providerRepo.GetAllAsync(ct);
+                var activeProviders = providers.Where(p => p.IsActive).ToList();
 
-        var enriched = activeProviders
-            .SelectMany(p => p.Models
-                .Where(m => m.IsActive)
-                .Select(m => new EnrichedModelResponse(
-                    m.ModelId,
-                    m.DisplayName,
-                    p.Id,
-                    p.Name,
-                    m.IsReasoning,
-                    m.MaxInputTokens,
-                    m.MaxOutputTokens,
-                    m.DefaultTemperature,
-                    m.DefaultMaxTokens,
-                    m.DefaultReasoningEffort
-                )))
-            .ToList();
+                if (activeProviders.Count == 0)
+                {
+                    // Fall back to legacy model list
+                    var legacyResult = await GetAvailableModelsAsync(ct);
+                    if (legacyResult.IsError) return new List<EnrichedModelResponse>();
 
-        cache.Set(cacheKey, enriched, new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-            Size = 1
-        });
+                    return legacyResult.Value.Select(m => new EnrichedModelResponse(
+                        m, null, Guid.Empty, "Default", false, 128000, null,
+                        null, null, null
+                    )).ToList();
+                }
+
+                return activeProviders
+                    .SelectMany(p => p.Models
+                        .Where(m => m.IsActive)
+                        .Select(m => new EnrichedModelResponse(
+                            m.ModelId,
+                            m.DisplayName,
+                            p.Id,
+                            p.Name,
+                            m.IsReasoning,
+                            m.MaxInputTokens,
+                            m.MaxOutputTokens,
+                            m.DefaultTemperature,
+                            m.DefaultMaxTokens,
+                            m.DefaultReasoningEffort
+                        )))
+                    .ToList();
+            },
+            TenantCacheKeys.AiCacheTtl,
+            ct);
+
         return enriched;
     }
 
     public async Task<ErrorOr<List<string>>> GetAvailableModelsAsync(CancellationToken ct)
     {
-        const string cacheKey = "playground_available_models";
-
-        if (cache.TryGetValue(cacheKey, out List<string>? cached) && cached is not null)
-            return cached;
-
+        // Don't use GetOrCreateGlobalAsync — we must NOT cache error results.
+        // Transient OpenAI failures should not be cached for 5 minutes.
         try
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(TimeSpan.FromSeconds(10));
+            var cached = await cache.GetOrCreateGlobalAsync(
+                TenantCacheKeys.AvailableModelsKey,
+                async _ =>
+                {
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    cts.CancelAfter(TimeSpan.FromSeconds(10));
 
-            var client = agentFactory.GetOpenAIClient();
-            var modelClient = client.GetOpenAIModelClient();
-            var response = await modelClient.GetModelsAsync(cts.Token);
+                    var client = agentFactory.GetOpenAIClient();
+                    var modelClient = client.GetOpenAIModelClient();
+                    var response = await modelClient.GetModelsAsync(cts.Token);
 
-            var models = response.Value
-                .Select(m => m.Id)
-                .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+                    var result = response.Value
+                        .Select(m => m.Id)
+                        .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
 
-            // Filter to admin-whitelisted models if configured
-            var allowedModels = aiSettings.CurrentValue.AllowedModels;
-            if (!string.IsNullOrWhiteSpace(allowedModels))
-            {
-                var whitelist = new HashSet<string>(
-                    allowedModels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-                    StringComparer.OrdinalIgnoreCase);
-                models = models.Where(m => whitelist.Contains(m)).ToList();
-            }
+                    // Filter to admin-whitelisted models if configured
+                    var allowedModels = aiSettings.CurrentValue.AllowedModels;
+                    if (!string.IsNullOrWhiteSpace(allowedModels))
+                    {
+                        var whitelist = new HashSet<string>(
+                            allowedModels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                            StringComparer.OrdinalIgnoreCase);
+                        result = result.Where(m => whitelist.Contains(m)).ToList();
+                    }
 
-            cache.Set(cacheKey, models, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-                Size = 1
-            });
-            return models;
+                    return result;
+                },
+                TenantCacheKeys.AiCacheTtl,
+                ct);
+
+            return cached;
         }
         catch (OperationCanceledException)
         {
-            return Error.Failure("TIMEOUT", "Connection timed out fetching models.");
+            return Error.Failure("MODEL_FETCH_TIMEOUT", "Connection timed out fetching models.");
         }
         catch (Exception ex)
         {

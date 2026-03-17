@@ -26,6 +26,22 @@ services:
       retries: 5
       start_period: 15s
 
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    command: >-
+      valkey-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - valkeydata:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   clarive:
     container_name: clarive-app
     build:
@@ -40,6 +56,7 @@ services:
       # Infrastructure only — all other settings configured via Super Admin UI
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-clarive};Username=${POSTGRES_USER:-clarive};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}"
+      ConnectionStrings__Valkey: ${VALKEY_URL:-valkey:6379}
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in deploy/.env}
       Cors__AllowedOrigins__0: ${CORS_ORIGINS:-http://localhost:8080}
       App__FrontendUrl: ${CORS_ORIGINS:-http://localhost:8080}
@@ -57,7 +74,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      valkey:
+        condition: service_healthy
 
 volumes:
   pgdata:
   avatars:
+  valkeydata:

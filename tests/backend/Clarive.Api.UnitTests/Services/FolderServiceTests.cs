@@ -4,22 +4,26 @@ using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using FluentAssertions;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
 
-public class FolderServiceTests : IDisposable
+public class FolderServiceTests
 {
     private readonly IFolderRepository _folderRepo = Substitute.For<IFolderRepository>();
     private readonly IEntryRepository _entryRepo = Substitute.For<IEntryRepository>();
-    private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly TenantCacheService _cache;
     private readonly FolderService _sut;
 
     private static readonly Guid TenantId = Guid.NewGuid();
 
     public FolderServiceTests()
     {
+        var distributedCache = Substitute.For<IDistributedCache>();
+        _cache = new TenantCacheService(distributedCache, Substitute.For<ILogger<TenantCacheService>>());
+
         _folderRepo.CreateAsync(Arg.Any<Folder>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<Folder>());
 
@@ -27,12 +31,6 @@ public class FolderServiceTests : IDisposable
             .Returns(ci => ci.Arg<Folder>());
 
         _sut = new FolderService(_folderRepo, _entryRepo, _cache);
-    }
-
-    public void Dispose()
-    {
-        _cache.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     private static Folder MakeFolder(Guid? id = null, Guid? parentId = null) => new()

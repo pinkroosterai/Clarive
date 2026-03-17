@@ -15,6 +15,10 @@ services:
       POSTGRES_USER: clarive
       POSTGRES_PASSWORD: clarive
 
+  valkey:
+    ports:
+      - "6379:6379"
+
   clarive:
     image: clarive-backend-dev
     build:
@@ -35,6 +39,7 @@ services:
       App__FrontendUrl: http://localhost:8080
       AllowedHosts: "*"
       CONFIG_ENCRYPTION_KEY: "j71XleMO3XGcPGXmqdcucaLMVbrKP+LXUR0aGBGfjOo="
+      ConnectionStrings__Valkey: valkey:6379
     volumes:
       - ../src/backend:/app
       - /app/Clarive.Api/obj

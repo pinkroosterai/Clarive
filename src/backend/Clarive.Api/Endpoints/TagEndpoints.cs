@@ -4,7 +4,6 @@ using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Clarive.Api.Endpoints;
 
@@ -44,19 +43,19 @@ public static class TagEndpoints
     private static async Task<IResult> HandleList(
         HttpContext ctx,
         ITagRepository tagRepo,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
-        var cacheKey = TenantCacheKeys.WorkspaceTags(tenantId);
 
-        var tags = await cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SetOptions(TenantCacheKeys.WorkspaceTagsOptions);
-            return await tagRepo.GetAllWithCountsAsync(tenantId, ct);
-        });
+        var tags = await cache.GetOrCreateAsync(
+            TenantCacheKeys.WorkspaceTagsKey,
+            tenantId,
+            _ => tagRepo.GetAllWithCountsAsync(tenantId, ct),
+            TenantCacheKeys.WorkspaceTagsTtl,
+            ct);
 
-        var response = tags!.Select(t => new TagSummary(t.TagName, t.EntryCount)).ToList();
+        var response = tags.Select(t => new TagSummary(t.TagName, t.EntryCount)).ToList();
         return Results.Ok(response);
     }
 
@@ -65,7 +64,7 @@ public static class TagEndpoints
         HttpContext ctx,
         RenameTagRequest request,
         ITagRepository tagRepo,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
@@ -80,7 +79,7 @@ public static class TagEndpoints
             return Results.NoContent();
 
         await tagRepo.RenameAsync(tenantId, normalizedOld!, normalizedNew!, ct);
-        TenantCacheKeys.EvictTagData(cache, tenantId);
+        await TenantCacheKeys.EvictTagData(cache, tenantId);
 
         return Results.NoContent();
     }
@@ -89,14 +88,14 @@ public static class TagEndpoints
         string tagName,
         HttpContext ctx,
         ITagRepository tagRepo,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
         var normalized = NormalizeTagName(tagName);
 
         await tagRepo.DeleteAsync(tenantId, normalized!, ct);
-        TenantCacheKeys.EvictTagData(cache, tenantId);
+        await TenantCacheKeys.EvictTagData(cache, tenantId);
 
         return Results.NoContent();
     }

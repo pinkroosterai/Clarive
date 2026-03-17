@@ -1,7 +1,6 @@
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Services;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Clarive.Api.Endpoints;
 
@@ -26,14 +25,6 @@ public static class AiProviderEndpoints
         return group;
     }
 
-    private static void InvalidateModelCaches(HttpContext ctx)
-    {
-        var cache = ctx.RequestServices.GetRequiredService<IMemoryCache>();
-        cache.Remove("playground_enriched_models");
-        cache.Remove("playground_available_models");
-        cache.Remove("ai_providers_all");
-    }
-
     private static async Task<IResult> HandleGetAll(
         AiProviderService service, CancellationToken ct)
     {
@@ -45,6 +36,7 @@ public static class AiProviderEndpoints
         HttpContext ctx,
         CreateAiProviderRequest request,
         AiProviderService service,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         if (Validator.ValidateRequest(request) is { } err) return err;
@@ -53,7 +45,7 @@ public static class AiProviderEndpoints
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
-        InvalidateModelCaches(ctx);
+        await TenantCacheKeys.EvictAiData(cache);
         return Results.Created($"/api/super/ai-providers/{result.Value.Id}", result.Value);
     }
 
@@ -62,13 +54,14 @@ public static class AiProviderEndpoints
         HttpContext ctx,
         UpdateAiProviderRequest request,
         AiProviderService service,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var result = await service.UpdateAsync(id, request, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
-        InvalidateModelCaches(ctx);
+        await TenantCacheKeys.EvictAiData(cache);
         return Results.Ok(result.Value);
     }
 
@@ -76,13 +69,14 @@ public static class AiProviderEndpoints
         Guid id,
         HttpContext ctx,
         AiProviderService service,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var result = await service.DeleteAsync(id, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
-        InvalidateModelCaches(ctx);
+        await TenantCacheKeys.EvictAiData(cache);
         return Results.NoContent();
     }
 
@@ -117,6 +111,7 @@ public static class AiProviderEndpoints
         HttpContext ctx,
         AddAiProviderModelRequest request,
         AiProviderService service,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         if (Validator.ValidateRequest(request) is { } err) return err;
@@ -125,7 +120,7 @@ public static class AiProviderEndpoints
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
-        InvalidateModelCaches(ctx);
+        await TenantCacheKeys.EvictAiData(cache);
         return Results.Created($"/api/super/ai-providers/{id}/models/{result.Value.Id}", result.Value);
     }
 
@@ -134,13 +129,14 @@ public static class AiProviderEndpoints
         HttpContext ctx,
         UpdateAiProviderModelRequest request,
         AiProviderService service,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var result = await service.UpdateModelAsync(modelId, request, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
-        InvalidateModelCaches(ctx);
+        await TenantCacheKeys.EvictAiData(cache);
         return Results.Ok(result.Value);
     }
 
@@ -148,13 +144,14 @@ public static class AiProviderEndpoints
         Guid modelId,
         HttpContext ctx,
         AiProviderService service,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var result = await service.DeleteModelAsync(modelId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
-        InvalidateModelCaches(ctx);
+        await TenantCacheKeys.EvictAiData(cache);
         return Results.NoContent();
     }
 }

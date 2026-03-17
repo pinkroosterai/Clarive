@@ -3,7 +3,6 @@ using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
-using Microsoft.Extensions.Caching.Memory;
 using Clarive.Api.Auth;
 
 namespace Clarive.Api.Endpoints;
@@ -126,6 +125,7 @@ public static class ConfigEndpoints
         HttpContext ctx,
         IServiceConfigRepository configRepo,
         IEncryptionService encryption,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         key = Uri.UnescapeDataString(key);
@@ -177,12 +177,7 @@ public static class ConfigEndpoints
 
         // Invalidate playground model cache when AI config changes
         if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
-        {
-            var memoryCache = ctx.RequestServices.GetRequiredService<IMemoryCache>();
-            memoryCache.Remove("playground_available_models");
-            memoryCache.Remove("playground_enriched_models");
-            memoryCache.Remove("ai_providers_all");
-        }
+            await TenantCacheKeys.EvictAiData(cache);
 
         return Results.Ok(new { key, updated = true, requiresRestart = def.RequiresRestart });
     }
@@ -191,6 +186,7 @@ public static class ConfigEndpoints
         string key,
         HttpContext ctx,
         IServiceConfigRepository configRepo,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         key = Uri.UnescapeDataString(key);
@@ -205,12 +201,7 @@ public static class ConfigEndpoints
 
         // Invalidate playground model cache when AI config changes
         if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
-        {
-            var memoryCache = ctx.RequestServices.GetRequiredService<IMemoryCache>();
-            memoryCache.Remove("playground_available_models");
-            memoryCache.Remove("playground_enriched_models");
-            memoryCache.Remove("ai_providers_all");
-        }
+            await TenantCacheKeys.EvictAiData(cache);
 
         return Results.Ok(new { key, reset = true });
     }

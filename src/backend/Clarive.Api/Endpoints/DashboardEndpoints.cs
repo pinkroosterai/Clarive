@@ -2,7 +2,6 @@ using System.Text.Json;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
-using Microsoft.Extensions.Caching.Memory;
 using Clarive.Api.Auth;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
@@ -28,22 +27,24 @@ public static class DashboardEndpoints
         IFolderRepository folderRepo,
         IAuditLogRepository auditRepo,
         IFavoriteRepository favoriteRepo,
-        IMemoryCache cache,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
-        var cacheKey = TenantCacheKeys.DashboardStats(tenantId);
 
         // Cache aggregate stats (counts change infrequently relative to page views)
-        var stats = await cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SetOptions(TenantCacheKeys.DashboardStatsOptions);
-
-            var (total, published, drafts) = await entryRepo.GetStatsAsync(tenantId, ct);
-            var folderCount = await folderRepo.GetCountAsync(tenantId, ct);
-            return (total, published, drafts, folderCount);
-        });
+        var stats = await cache.GetOrCreateAsync(
+            TenantCacheKeys.DashboardStatsKey,
+            tenantId,
+            async _ =>
+            {
+                var (total, published, drafts) = await entryRepo.GetStatsAsync(tenantId, ct);
+                var folderCount = await folderRepo.GetCountAsync(tenantId, ct);
+                return new DashboardStatsCache(total, published, drafts, folderCount);
+            },
+            TenantCacheKeys.DashboardStatsTtl,
+            ct);
 
         // Recent data stays live — changes too frequently to cache
         var recentEntries = await entryRepo.GetRecentAsync(tenantId, 8, ct);
@@ -80,7 +81,9 @@ public static class DashboardEndpoints
         }
 
         return Results.Ok(new DashboardStatsResponse(
-            stats.total, stats.published, stats.drafts, stats.folderCount,
+            stats.Total, stats.Published, stats.Drafts, stats.FolderCount,
             recentEntries, recentActivity, favoriteEntries));
     }
+
+    private record DashboardStatsCache(int Total, int Published, int Drafts, int FolderCount);
 }
