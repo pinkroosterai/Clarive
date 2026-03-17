@@ -1,6 +1,8 @@
-import { Braces } from 'lucide-react';
+import { Braces, X } from 'lucide-react';
+import type { KeyboardEvent } from 'react';
 import { useEffect, useState } from 'react';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,7 +46,8 @@ export function VariableChipPopover({
   const [type, setType] = useState<FieldType>(field?.type ?? 'string');
   const [minVal, setMinVal] = useState(field?.min?.toString() ?? '');
   const [maxVal, setMaxVal] = useState(field?.max?.toString() ?? '');
-  const [enumValues, setEnumValues] = useState(field?.enumValues.join(', ') ?? '');
+  const [enumValuesArr, setEnumValuesArr] = useState<string[]>(field?.enumValues ?? []);
+  const [enumInput, setEnumInput] = useState('');
   const [defaultValue, setDefaultValue] = useState(field?.defaultValue ?? '');
   const [description, setDescription] = useState(field?.description ?? '');
 
@@ -54,21 +57,39 @@ export function VariableChipPopover({
     setType(field?.type ?? 'string');
     setMinVal(field?.min?.toString() ?? '');
     setMaxVal(field?.max?.toString() ?? '');
-    setEnumValues(field?.enumValues.join(', ') ?? '');
+    setEnumValuesArr(field?.enumValues ?? []);
+    setEnumInput('');
     setDefaultValue(field?.defaultValue ?? '');
     setDescription(field?.description ?? '');
   }, [field]);
+
+  const addEnumValue = (raw: string) => {
+    const val = raw.trim();
+    if (val && !enumValuesArr.includes(val)) {
+      setEnumValuesArr((prev) => [...prev, val]);
+    }
+    setEnumInput('');
+  };
+
+  const removeEnumValue = (val: string) => {
+    setEnumValuesArr((prev) => prev.filter((v) => v !== val));
+  };
+
+  const handleEnumKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addEnumValue(enumInput);
+    } else if (e.key === 'Backspace' && enumInput === '' && enumValuesArr.length > 0) {
+      setEnumValuesArr((prev) => prev.slice(0, -1));
+    }
+  };
 
   const handleApply = () => {
     let constraintStr = '';
     if ((type === 'int' || type === 'float') && minVal && maxVal) {
       constraintStr = `${minVal}-${maxVal}`;
-    } else if (type === 'enum' && enumValues.trim()) {
-      constraintStr = enumValues
-        .split(',')
-        .map((v) => v.trim())
-        .filter(Boolean)
-        .join(',');
+    } else if (type === 'enum' && enumValuesArr.length > 0) {
+      constraintStr = enumValuesArr.join(',');
     }
 
     const tagString = buildTagString({
@@ -152,13 +173,36 @@ export function VariableChipPopover({
 
           {type === 'enum' && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Values (comma-separated)</Label>
-              <Input
-                value={enumValues}
-                onChange={(e) => setEnumValues(e.target.value)}
-                placeholder="option1, option2, option3"
-                className="h-8 text-sm"
-              />
+              <Label className="text-xs">Values</Label>
+              <div className="rounded-md border border-border bg-background p-1.5">
+                {enumValuesArr.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-1.5">
+                    {enumValuesArr.map((val) => (
+                      <Badge
+                        key={val}
+                        variant="secondary"
+                        className="gap-0.5 pr-1 text-xs font-normal"
+                      >
+                        {val}
+                        <button
+                          type="button"
+                          onClick={() => removeEnumValue(val)}
+                          className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 transition-colors"
+                        >
+                          <X className="size-2.5" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <Input
+                  value={enumInput}
+                  onChange={(e) => setEnumInput(e.target.value)}
+                  onKeyDown={handleEnumKeyDown}
+                  placeholder={enumValuesArr.length === 0 ? 'Type a value + Enter' : 'Add more...'}
+                  className="h-7 border-0 bg-transparent p-0 px-1 text-sm shadow-none focus-visible:ring-0"
+                />
+              </div>
             </div>
           )}
 
