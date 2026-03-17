@@ -18,14 +18,6 @@ public class ModelResolutionService(
 {
     public async Task<ErrorOr<ResolvedModel>> ResolveProviderForModelAsync(string model, CancellationToken ct)
     {
-        // Check model is available
-        var availableResult = await GetAvailableModelsAsync(ct);
-        if (!availableResult.IsError &&
-            !availableResult.Value.Contains(model, StringComparer.OrdinalIgnoreCase))
-        {
-            return Error.Validation("INVALID_MODEL", $"Model '{model}' is not available.");
-        }
-
         // Resolve provider for this model (cached)
         var providers = await cache.GetOrCreateGlobalAsync(
             TenantCacheKeys.AiProvidersKey,
@@ -38,6 +30,17 @@ public class ModelResolutionService(
             .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
             .FirstOrDefault(x => x.Model.IsActive &&
                 x.Model.ModelId.Equals(model, StringComparison.OrdinalIgnoreCase));
+
+        // Check model is available: either configured in a provider, or in the legacy model list
+        if (providerMatch is null)
+        {
+            var availableResult = await GetAvailableModelsAsync(ct);
+            if (!availableResult.IsError &&
+                !availableResult.Value.Contains(model, StringComparer.OrdinalIgnoreCase))
+            {
+                return Error.Validation("INVALID_MODEL", $"Model '{model}' is not available.");
+            }
+        }
 
         IChatClient chatClient;
         var isTemperatureConfigurable = !(providerMatch?.Model.IsReasoning ?? false);

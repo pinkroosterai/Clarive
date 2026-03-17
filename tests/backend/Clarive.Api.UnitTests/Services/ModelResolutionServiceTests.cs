@@ -33,6 +33,7 @@ public class ModelResolutionServiceTests
             AllowedModels = ""
         });
         _encryption.IsAvailable.Returns(true);
+        _providerRepo.GetAllAsync(Arg.Any<CancellationToken>()).Returns(new List<AiProvider>());
 
         _sut = new ModelResolutionService(_providerRepo, _agentFactory, _encryption, _aiSettings, _cache, _logger);
     }
