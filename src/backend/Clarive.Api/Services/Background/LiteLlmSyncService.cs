@@ -39,7 +39,7 @@ public class LiteLlmSyncService(
         try
         {
             await registryCache.LoadFromFileAsync(CacheFilePath, ct);
-            if (registryCache.IsLoaded)
+            if (await registryCache.IsLoadedAsync(ct))
                 logger.LogInformation("Loaded LiteLLM registry from local cache file");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -61,7 +61,7 @@ public class LiteLlmSyncService(
             await registryCache.SaveToFileAsync(CacheFilePath, json, ct);
 
             // Load into memory
-            registryCache.LoadFromJson(json);
+            await registryCache.LoadFromJsonAsync(json, ct);
 
             // Sync existing models
             await SyncExistingModelsAsync(ct);
@@ -86,7 +86,7 @@ public class LiteLlmSyncService(
         {
             foreach (var model in provider.Models)
             {
-                var info = registryCache.TryGetModelInfo(provider.Name, model.ModelId);
+                var info = await registryCache.TryGetModelInfoAsync(provider.Name, model.ModelId, ct);
                 if (info is null) continue;
 
                 var changed = false;

@@ -1,34 +1,70 @@
 using System.Text.Json;
 using Clarive.Api.Services.Interfaces;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Clarive.Api.Services;
 
-public class LiteLlmRegistryCache(IMemoryCache cache, ILogger<LiteLlmRegistryCache> logger) : ILiteLlmRegistryCache
+public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegistryCache> logger) : ILiteLlmRegistryCache
 {
-    private const string CacheKey = "litellm_model_registry";
+    private const string CacheKey = "clarive:global:litellm_model_registry";
     private const decimal PerTokenToPerMillion = 1_000_000m;
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(25);
 
-    public bool IsLoaded => cache.TryGetValue(CacheKey, out _);
+    // In-memory deserialized registry to avoid repeated JSON parsing
+    // Refreshed when LoadFromJsonAsync is called or when cache read detects a change
+    private volatile Dictionary<string, LiteLlmModelInfo>? _localRegistry;
 
-    public LiteLlmModelInfo? TryGetModelInfo(string providerName, string modelId)
+    public async Task<bool> IsLoadedAsync(CancellationToken ct = default)
     {
-        if (!cache.TryGetValue(CacheKey, out Dictionary<string, LiteLlmModelInfo>? registry) || registry is null)
-            return null;
+        try
+        {
+            var data = await cache.GetStringAsync(CacheKey, ct);
+            return data is not null;
+        }
+        catch (OperationCanceledException) { throw; }
+        catch
+        {
+            return false;
+        }
+    }
 
-        // Try exact match: "provider/model-id"
-        var key = $"{providerName.ToLowerInvariant()}/{modelId}";
-        if (registry.TryGetValue(key, out var info))
-            return info;
+    public async Task<LiteLlmModelInfo?> TryGetModelInfoAsync(string providerName, string modelId, CancellationToken ct = default)
+    {
+        try
+        {
+            var registry = _localRegistry;
+            if (registry is null)
+            {
+                var json = await cache.GetStringAsync(CacheKey, ct);
+                if (json is null)
+                    return null;
 
-        // Try model-only fallback (some models have no provider prefix)
-        if (registry.TryGetValue(modelId, out info))
-            return info;
+                registry = JsonSerializer.Deserialize<Dictionary<string, LiteLlmModelInfo>>(json);
+                _localRegistry = registry;
+            }
+
+            if (registry is null)
+                return null;
+
+            // Try exact match: "provider/model-id"
+            var key = $"{providerName.ToLowerInvariant()}/{modelId}";
+            if (registry.TryGetValue(key, out var info))
+                return info;
+
+            // Try model-only fallback (some models have no provider prefix)
+            if (registry.TryGetValue(modelId, out info))
+                return info;
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to read LiteLLM registry from cache");
+        }
 
         return null;
     }
 
-    public void LoadFromJson(string json)
+    public async Task LoadFromJsonAsync(string json, CancellationToken ct = default)
     {
         using var doc = JsonDocument.Parse(json);
         var registry = new Dictionary<string, LiteLlmModelInfo>(StringComparer.OrdinalIgnoreCase);
@@ -52,11 +88,21 @@ public class LiteLlmRegistryCache(IMemoryCache cache, ILogger<LiteLlmRegistryCac
             }
         }
 
-        cache.Set(CacheKey, registry, new MemoryCacheEntryOptions
+        try
         {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(25),
-            Size = 1
-        });
+            var serialized = JsonSerializer.Serialize(registry);
+            await cache.SetStringAsync(CacheKey, serialized, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheTtl
+            }, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to store LiteLLM registry in distributed cache");
+        }
+
+        // Update local in-memory copy to avoid re-deserialization
+        _localRegistry = registry;
 
         logger.LogInformation("Loaded {Count} models into LiteLLM registry cache (skipped {Skipped})",
             registry.Count, skipped);
@@ -68,7 +114,7 @@ public class LiteLlmRegistryCache(IMemoryCache cache, ILogger<LiteLlmRegistryCac
             return;
 
         var json = await File.ReadAllTextAsync(path, ct);
-        LoadFromJson(json);
+        await LoadFromJsonAsync(json, ct);
     }
 
     public async Task SaveToFileAsync(string path, string rawJson, CancellationToken ct = default)
@@ -114,10 +160,6 @@ public class LiteLlmRegistryCache(IMemoryCache cache, ILogger<LiteLlmRegistryCac
         return prop.GetDecimal();
     }
 
-    /// <summary>
-    /// Reads a numeric JSON property as long. Handles plain integers, large numbers,
-    /// and scientific notation (e.g., 2e5) by parsing as double first.
-    /// </summary>
     private static long? GetLongProperty(JsonElement element, string propertyName)
     {
         if (!element.TryGetProperty(propertyName, out var prop))
@@ -126,11 +168,9 @@ public class LiteLlmRegistryCache(IMemoryCache cache, ILogger<LiteLlmRegistryCac
         if (prop.ValueKind != JsonValueKind.Number)
             return null;
 
-        // TryGetInt64 handles plain integer values efficiently
         if (prop.TryGetInt64(out var longValue))
             return longValue;
 
-        // Fall back to double for scientific notation (e.g., 1.048576e6)
         if (prop.TryGetDouble(out var doubleValue))
             return (long)doubleValue;
 

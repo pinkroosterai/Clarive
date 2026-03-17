@@ -10,9 +10,9 @@ public record LiteLlmModelInfo(
 
 public interface ILiteLlmRegistryCache
 {
-    LiteLlmModelInfo? TryGetModelInfo(string providerName, string modelId);
-    void LoadFromJson(string json);
+    Task<LiteLlmModelInfo?> TryGetModelInfoAsync(string providerName, string modelId, CancellationToken ct = default);
+    Task LoadFromJsonAsync(string json, CancellationToken ct = default);
     Task LoadFromFileAsync(string path, CancellationToken ct = default);
     Task SaveToFileAsync(string path, string rawJson, CancellationToken ct = default);
-    bool IsLoaded { get; }
+    Task<bool> IsLoadedAsync(CancellationToken ct = default);
 }

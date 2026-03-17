@@ -1,12 +1,15 @@
+using System.Text;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
 
 public class LiteLlmRegistryCacheTests
 {
+    private readonly IDistributedCache _distributedCache = Substitute.For<IDistributedCache>();
     private readonly LiteLlmRegistryCache _cache;
 
     private const string TestJson = """
@@ -71,15 +74,22 @@ public class LiteLlmRegistryCacheTests
 
     public LiteLlmRegistryCacheTests()
     {
-        var memoryCache = new MemoryCache(new MemoryCacheOptions());
-        _cache = new LiteLlmRegistryCache(memoryCache, NullLogger<LiteLlmRegistryCache>.Instance);
-        _cache.LoadFromJson(TestJson);
+        // Capture what's written to the distributed cache so reads return it
+        byte[]? stored = null;
+        _distributedCache.SetAsync(
+            Arg.Any<string>(), Arg.Any<byte[]>(), Arg.Any<DistributedCacheEntryOptions>(), Arg.Any<CancellationToken>())
+            .Returns(ci => { stored = ci.ArgAt<byte[]>(1); return Task.CompletedTask; });
+        _distributedCache.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(_ => stored);
+
+        _cache = new LiteLlmRegistryCache(_distributedCache, NullLogger<LiteLlmRegistryCache>.Instance);
+        _cache.LoadFromJsonAsync(TestJson).GetAwaiter().GetResult();
     }
 
     [Fact]
-    public void ExactMatch_ReturnsCorrectCosts()
+    public async Task ExactMatch_ReturnsCorrectCosts()
     {
-        var info = _cache.TryGetModelInfo("openai", "gpt-4o");
+        var info = await _cache.TryGetModelInfoAsync("openai", "gpt-4o");
 
         Assert.NotNull(info);
         Assert.Equal(2.5m, info.InputCostPerMillion);
@@ -89,9 +99,9 @@ public class LiteLlmRegistryCacheTests
     }
 
     [Fact]
-    public void ExactMatch_Anthropic_ReturnsCorrectValues()
+    public async Task ExactMatch_Anthropic_ReturnsCorrectValues()
     {
-        var info = _cache.TryGetModelInfo("anthropic", "claude-3-5-sonnet");
+        var info = await _cache.TryGetModelInfoAsync("anthropic", "claude-3-5-sonnet");
 
         Assert.NotNull(info);
         Assert.Equal(3m, info.InputCostPerMillion);
@@ -101,10 +111,9 @@ public class LiteLlmRegistryCacheTests
     }
 
     [Fact]
-    public void ModelOnlyFallback_WhenProviderDoesNotMatchPrefix()
+    public async Task ModelOnlyFallback_WhenProviderDoesNotMatchPrefix()
     {
-        // "gpt-4o-mini" exists as a top-level key without prefix
-        var info = _cache.TryGetModelInfo("SomeProvider", "gpt-4o-mini");
+        var info = await _cache.TryGetModelInfoAsync("SomeProvider", "gpt-4o-mini");
 
         Assert.NotNull(info);
         Assert.Equal(0.15m, info.InputCostPerMillion);
@@ -112,10 +121,9 @@ public class LiteLlmRegistryCacheTests
     }
 
     [Fact]
-    public void CostConversion_PerTokenToPerMillion()
+    public async Task CostConversion_PerTokenToPerMillion()
     {
-        // 2.5e-06 per token = 2.5 per million
-        var info = _cache.TryGetModelInfo("openai", "gpt-4o");
+        var info = await _cache.TryGetModelInfoAsync("openai", "gpt-4o");
 
         Assert.NotNull(info);
         Assert.Equal(0.0000025m * 1_000_000m, info.InputCostPerMillion);
@@ -123,9 +131,9 @@ public class LiteLlmRegistryCacheTests
     }
 
     [Fact]
-    public void MissingCostFields_ReturnsNullForCosts()
+    public async Task MissingCostFields_ReturnsNullForCosts()
     {
-        var info = _cache.TryGetModelInfo("custom", "no-cost-model");
+        var info = await _cache.TryGetModelInfoAsync("custom", "no-cost-model");
 
         Assert.NotNull(info);
         Assert.Null(info.InputCostPerMillion);
@@ -135,50 +143,51 @@ public class LiteLlmRegistryCacheTests
     }
 
     [Fact]
-    public void UnknownModel_ReturnsNull()
+    public async Task UnknownModel_ReturnsNull()
     {
-        var info = _cache.TryGetModelInfo("openai", "nonexistent-model");
+        var info = await _cache.TryGetModelInfoAsync("openai", "nonexistent-model");
 
         Assert.Null(info);
     }
 
     [Fact]
-    public void EmbeddingModels_AreExcluded()
+    public async Task EmbeddingModels_AreExcluded()
     {
-        // "text-embedding-3-small" has mode: "embedding" — should be filtered out
-        var info = _cache.TryGetModelInfo("openai", "text-embedding-3-small");
+        var info = await _cache.TryGetModelInfoAsync("openai", "text-embedding-3-small");
 
         Assert.Null(info);
     }
 
     [Fact]
-    public void CaseInsensitiveProviderMatching()
+    public async Task CaseInsensitiveProviderMatching()
     {
-        var info = _cache.TryGetModelInfo("OpenAI", "gpt-4o");
+        var info = await _cache.TryGetModelInfoAsync("OpenAI", "gpt-4o");
 
         Assert.NotNull(info);
         Assert.Equal(2.5m, info.InputCostPerMillion);
     }
 
     [Fact]
-    public void IsLoaded_ReturnsTrueAfterLoad()
+    public async Task IsLoadedAsync_ReturnsTrueAfterLoad()
     {
-        Assert.True(_cache.IsLoaded);
+        Assert.True(await _cache.IsLoadedAsync());
     }
 
     [Fact]
-    public void IsLoaded_ReturnsFalseBeforeLoad()
+    public async Task IsLoadedAsync_ReturnsFalseBeforeLoad()
     {
-        var emptyCache = new MemoryCache(new MemoryCacheOptions());
-        var cache = new LiteLlmRegistryCache(emptyCache, NullLogger<LiteLlmRegistryCache>.Instance);
+        var emptyDistributed = Substitute.For<IDistributedCache>();
+        emptyDistributed.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns((byte[]?)null);
+        var cache = new LiteLlmRegistryCache(emptyDistributed, NullLogger<LiteLlmRegistryCache>.Instance);
 
-        Assert.False(cache.IsLoaded);
+        Assert.False(await cache.IsLoadedAsync());
     }
 
     [Fact]
-    public void MaxTokenFields_MappedCorrectly()
+    public async Task MaxTokenFields_MappedCorrectly()
     {
-        var info = _cache.TryGetModelInfo("anthropic", "claude-3-5-sonnet");
+        var info = await _cache.TryGetModelInfoAsync("anthropic", "claude-3-5-sonnet");
 
         Assert.NotNull(info);
         Assert.Equal(200000L, info.MaxInputTokens);
@@ -186,10 +195,9 @@ public class LiteLlmRegistryCacheTests
     }
 
     [Fact]
-    public void ScientificNotation_MaxTokens_ParsedCorrectly()
+    public async Task ScientificNotation_MaxTokens_ParsedCorrectly()
     {
-        // "max_input_tokens": 2e5 should parse as 200000
-        var info = _cache.TryGetModelInfo("custom", "sci-notation-model");
+        var info = await _cache.TryGetModelInfoAsync("custom", "sci-notation-model");
 
         Assert.NotNull(info);
         Assert.Equal(200_000L, info.MaxInputTokens);
@@ -197,10 +205,9 @@ public class LiteLlmRegistryCacheTests
     }
 
     [Fact]
-    public void ScientificNotation_CostFields_ParsedCorrectly()
+    public async Task ScientificNotation_CostFields_ParsedCorrectly()
     {
-        // 1.5e-07 per token = 0.15 per million
-        var info = _cache.TryGetModelInfo("gemini", "gemini-2.5-flash");
+        var info = await _cache.TryGetModelInfoAsync("gemini", "gemini-2.5-flash");
 
         Assert.NotNull(info);
         Assert.Equal(0.15m, info.InputCostPerMillion);
@@ -210,37 +217,36 @@ public class LiteLlmRegistryCacheTests
     }
 
     [Fact]
-    public void LargeContextWindow_HandledAsLong()
+    public async Task LargeContextWindow_HandledAsLong()
     {
-        var info = _cache.TryGetModelInfo("gemini", "gemini-2.5-flash");
+        var info = await _cache.TryGetModelInfoAsync("gemini", "gemini-2.5-flash");
 
         Assert.NotNull(info);
         Assert.Equal(1_048_576L, info.MaxInputTokens);
     }
 
     [Fact]
-    public void SupportsReasoning_True_Parsed()
+    public async Task SupportsReasoning_True_Parsed()
     {
-        var info = _cache.TryGetModelInfo("gemini", "gemini-2.5-flash");
+        var info = await _cache.TryGetModelInfoAsync("gemini", "gemini-2.5-flash");
 
         Assert.NotNull(info);
         Assert.Equal(true, info.IsReasoning);
     }
 
     [Fact]
-    public void SupportsReasoning_False_Parsed()
+    public async Task SupportsReasoning_False_Parsed()
     {
-        var info = _cache.TryGetModelInfo("openai", "gpt-4o");
+        var info = await _cache.TryGetModelInfoAsync("openai", "gpt-4o");
 
         Assert.NotNull(info);
         Assert.Equal(false, info.IsReasoning);
     }
 
     [Fact]
-    public void SupportsReasoning_Missing_ReturnsNull()
+    public async Task SupportsReasoning_Missing_ReturnsNull()
     {
-        // no-cost-model has no supports_reasoning field
-        var info = _cache.TryGetModelInfo("custom", "no-cost-model");
+        var info = await _cache.TryGetModelInfoAsync("custom", "no-cost-model");
 
         Assert.NotNull(info);
         Assert.Null(info.IsReasoning);

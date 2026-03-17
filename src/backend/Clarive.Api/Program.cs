@@ -171,7 +171,6 @@ builder.Services.AddDbContext<ClariveDbContext>(options =>
 });
 
 // ── Caching ──
-builder.Services.AddMemoryCache(); // LiteLlmRegistryCache uses IMemoryCache directly
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Valkey");

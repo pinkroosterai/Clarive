@@ -303,6 +303,7 @@ public static partial class EntryEndpoints
         var (entry, published) = result.Value;
 
         await TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
 
         await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryPublished,
             "prompt_entry", entry.Id, entry.Title, $"Published version {published.Version}", ct);
@@ -457,6 +458,7 @@ public static partial class EntryEndpoints
         var entry = result.Value;
 
         await TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
 
         await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryDeleted,
             "prompt_entry", entryId, entry.Title, $"Permanently deleted '{entry.Title}'", ct);

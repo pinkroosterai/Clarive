@@ -3,11 +3,12 @@ using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
+using Clarive.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Repositories.EfCore;
 
-public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
+public class EfEntryRepository(ClariveDbContext db, TenantCacheService cache) : IEntryRepository
 {
     public async Task<(List<PromptEntry> Items, int TotalCount)> GetByFolderAsync(Guid tenantId, Guid? folderId, bool includeAll, EntryQueryOptions? options = null, CancellationToken ct = default)
     {
@@ -22,17 +23,14 @@ public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
             query = query.Where(e => EF.Functions.ILike(e.Title, $"%{options.Search}%"));
         if (string.Equals(options.Status, "draft", StringComparison.OrdinalIgnoreCase))
         {
-            var publishedEntryIds = db.PromptEntryVersions.AsNoTracking()
-                .Where(v => v.VersionState == VersionState.Published)
-                .Select(v => v.EntryId).Distinct();
-            query = query.Where(e => !publishedEntryIds.Contains(e.Id));
+            // Cached set of published entry IDs (5-min TTL) — avoids subquery on every browse
+            var publishedIds = await GetPublishedEntryIdsAsync(tenantId, ct);
+            query = query.Where(e => !publishedIds.Contains(e.Id));
         }
         else if (string.Equals(options.Status, "published", StringComparison.OrdinalIgnoreCase))
         {
-            var publishedEntryIds = db.PromptEntryVersions.AsNoTracking()
-                .Where(v => v.VersionState == VersionState.Published)
-                .Select(v => v.EntryId).Distinct();
-            query = query.Where(e => publishedEntryIds.Contains(e.Id));
+            var publishedIds = await GetPublishedEntryIdsAsync(tenantId, ct);
+            query = query.Where(e => publishedIds.Contains(e.Id));
         }
 
         IOrderedQueryable<PromptEntry> ordered = options.SortBy switch
@@ -287,4 +285,27 @@ public class EfEntryRepository(ClariveDbContext db) : IEntryRepository
         }).ToList();
     }
 
+    /// <summary>
+    /// Get cached set of published entry IDs for a tenant.
+    /// Uses client-side filtering via HashSet.Contains() instead of SQL subquery.
+    /// Trade-off: faster for small-to-medium sets (&lt;10k entries), avoids repeated subquery on every browse.
+    /// </summary>
+    private async Task<HashSet<Guid>> GetPublishedEntryIdsAsync(Guid tenantId, CancellationToken ct)
+    {
+        return await cache.GetOrCreateAsync(
+            TenantCacheKeys.PublishedEntryIdsKey,
+            tenantId,
+            async _ =>
+            {
+                var ids = await db.PromptEntryVersions.AsNoTracking()
+                    .Where(v => v.VersionState == VersionState.Published)
+                    .Join(db.PromptEntries.AsNoTracking().Where(e => e.TenantId == tenantId),
+                        v => v.EntryId, e => e.Id, (v, _) => v.EntryId)
+                    .Distinct()
+                    .ToListAsync(ct);
+                return ids.ToHashSet();
+            },
+            TenantCacheKeys.PublishedEntryIdsTtl,
+            ct);
+    }
 }

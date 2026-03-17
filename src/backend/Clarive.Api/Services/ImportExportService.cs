@@ -108,6 +108,7 @@ public class ImportExportService(
         await TenantCacheKeys.EvictFolderData(cache, tenantId);
         await TenantCacheKeys.EvictEntryData(cache, tenantId);
         await TenantCacheKeys.EvictTagData(cache, tenantId);
+        await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
 
         return new ImportResponse(createdEntries.Count, createdEntries);
     }

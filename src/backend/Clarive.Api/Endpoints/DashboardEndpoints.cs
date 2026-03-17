@@ -46,9 +46,21 @@ public static class DashboardEndpoints
             TenantCacheKeys.DashboardStatsTtl,
             ct);
 
-        // Recent data stays live — changes too frequently to cache
-        var recentEntries = await entryRepo.GetRecentAsync(tenantId, 8, ct);
-        var (auditEntries, _) = await auditRepo.GetPageAsync(tenantId, 1, 10, ct);
+        // Cache recent entries + audit log (1-min TTL, invalidated on entry mutations)
+        var recentData = await cache.GetOrCreateAsync(
+            TenantCacheKeys.RecentEntriesKey,
+            tenantId,
+            async _ =>
+            {
+                var entries = await entryRepo.GetRecentAsync(tenantId, 8, ct);
+                var (audit, _) = await auditRepo.GetPageAsync(tenantId, 1, 10, ct);
+                return new RecentDataCache(entries, audit);
+            },
+            TenantCacheKeys.RecentEntriesTtl,
+            ct);
+
+        var recentEntries = recentData.Entries;
+        var auditEntries = recentData.AuditEntries;
 
         var recentActivity = auditEntries.Select(a => new RecentActivityDto(
             a.Id,
@@ -86,4 +98,5 @@ public static class DashboardEndpoints
     }
 
     private record DashboardStatsCache(int Total, int Published, int Drafts, int FolderCount);
+    private record RecentDataCache(List<RecentEntryDto> Entries, List<AuditLogEntry> AuditEntries);
 }

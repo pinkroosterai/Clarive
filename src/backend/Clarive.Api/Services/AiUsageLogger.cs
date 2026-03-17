@@ -8,6 +8,7 @@ namespace Clarive.Api.Services;
 public class AiUsageLogger(
     IAiUsageLogRepository repo,
     IAiProviderRepository providerRepo,
+    TenantCacheService cache,
     ILogger<AiUsageLogger> logger) : IAiUsageLogger
 {
     public async Task LogAsync(
@@ -39,14 +40,14 @@ public class AiUsageLogger(
                 CreatedAt = DateTime.UtcNow
             };
 
-            // Look up cost rates from provider model config
+            // Look up cost rates from provider model config (cached 1 hour)
             var costRates = await LookupCostRatesAsync(model, provider, ct);
             if (costRates is not null)
             {
-                if (costRates.Value.InputCostPerMillion is not null)
-                    log.EstimatedInputCostUsd = inputTokens / 1_000_000m * costRates.Value.InputCostPerMillion.Value;
-                if (costRates.Value.OutputCostPerMillion is not null)
-                    log.EstimatedOutputCostUsd = outputTokens / 1_000_000m * costRates.Value.OutputCostPerMillion.Value;
+                if (costRates.InputCostPerMillion is not null)
+                    log.EstimatedInputCostUsd = inputTokens / 1_000_000m * costRates.InputCostPerMillion.Value;
+                if (costRates.OutputCostPerMillion is not null)
+                    log.EstimatedOutputCostUsd = outputTokens / 1_000_000m * costRates.OutputCostPerMillion.Value;
             }
 
             await repo.AddAsync(log, ct);
@@ -57,16 +58,27 @@ public class AiUsageLogger(
         }
     }
 
-    private async Task<(decimal? InputCostPerMillion, decimal? OutputCostPerMillion)?> LookupCostRatesAsync(
+    private async Task<ModelCostRates?> LookupCostRatesAsync(
         string model, string provider, CancellationToken ct)
     {
+        var cacheKey = TenantCacheKeys.FormatModelCostKey(provider, model);
         try
         {
-            return await providerRepo.GetModelCostAsync(provider, model, ct);
+            return await cache.GetOrCreateGlobalAsync(
+                cacheKey,
+                async _ =>
+                {
+                    var cost = await providerRepo.GetModelCostAsync(provider, model, ct);
+                    return cost is null ? null : new ModelCostRates(cost.Value.InputCostPerMillion, cost.Value.OutputCostPerMillion);
+                },
+                TenantCacheKeys.ModelCostTtl,
+                ct);
         }
         catch
         {
             return null; // Don't fail logging if cost lookup fails
         }
     }
+
+    private record ModelCostRates(decimal? InputCostPerMillion, decimal? OutputCostPerMillion);
 }

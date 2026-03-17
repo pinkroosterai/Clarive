@@ -168,7 +168,7 @@ public class AiProviderService(
         };
 
         // Auto-fill from LiteLLM registry cache
-        var info = liteLlmCache.TryGetModelInfo(provider.Name, request.ModelId);
+        var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, request.ModelId, ct);
         if (info is not null)
         {
             model.InputCostPerMillion ??= info.InputCostPerMillion;
