@@ -1,5 +1,5 @@
 import { Braces } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,17 @@ export function VariableChipPopover({
   const [enumValues, setEnumValues] = useState(field?.enumValues.join(', ') ?? '');
   const [defaultValue, setDefaultValue] = useState(field?.defaultValue ?? '');
   const [description, setDescription] = useState(field?.description ?? '');
+
+  // Sync local state when the field prop changes (popover stays mounted)
+  useEffect(() => {
+    setName(field?.name ?? 'variable');
+    setType(field?.type ?? 'string');
+    setMinVal(field?.min?.toString() ?? '');
+    setMaxVal(field?.max?.toString() ?? '');
+    setEnumValues(field?.enumValues.join(', ') ?? '');
+    setDefaultValue(field?.defaultValue ?? '');
+    setDescription(field?.description ?? '');
+  }, [field]);
 
   const handleApply = () => {
     let constraintStr = '';
