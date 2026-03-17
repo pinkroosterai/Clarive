@@ -149,6 +149,9 @@ public class AiProviderService(
         if (provider is null)
             return Error.NotFound("NOT_FOUND", "Provider not found.");
 
+        if (provider.Models.Any(m => m.ModelId == request.ModelId))
+            return Error.Conflict("DUPLICATE_MODEL", $"Model '{request.ModelId}' already exists for this provider.");
+
         var model = new AiProviderModel
         {
             Id = Guid.NewGuid(),

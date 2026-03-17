@@ -24,7 +24,7 @@ public static class ConfigEndpoints
         app.MapGet("/api/super/setup-status", HandleSetupStatus)
             .WithTags("Service Configuration")
             .AllowAnonymous()
-            .AddEndpointFilter(new CacheControlFilter(600));
+            .AddEndpointFilter(new CacheControlFilter(0));
 
         return group;
     }
