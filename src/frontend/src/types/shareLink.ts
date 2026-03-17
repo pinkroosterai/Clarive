@@ -1,6 +1,7 @@
 export interface ShareLinkInfo {
   id: string;
   entryId: string;
+  token: string;
   expiresAt: string | null;
   hasPassword: boolean;
   pinnedVersion: number | null;
@@ -9,9 +10,7 @@ export interface ShareLinkInfo {
   createdAt: string;
 }
 
-export interface ShareLinkCreated extends ShareLinkInfo {
-  token: string;
-}
+export type ShareLinkCreated = ShareLinkInfo;
 
 export interface CreateShareLinkRequest {
   expiresAt?: string | null;

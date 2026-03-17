@@ -71,6 +71,7 @@ public static class ShareLinkEndpoints
         {
             link.Id,
             link.EntryId,
+            link.Token,
             link.ExpiresAt,
             HasPassword = link.PasswordHash is not null,
             link.PinnedVersion,

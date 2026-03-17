@@ -148,7 +148,7 @@ public class ShareLinkTests : IntegrationTestBase
 
         // Access publicly (clear auth headers)
         Client.DefaultRequestHeaders.Authorization = null;
-        var response = await Client.GetAsync($"/share/{Uri.EscapeDataString(shareToken)}");
+        var response = await Client.GetAsync($"/api/share/{Uri.EscapeDataString(shareToken)}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.ReadJsonAsync();
@@ -160,7 +160,7 @@ public class ShareLinkTests : IntegrationTestBase
     {
         Client.DefaultRequestHeaders.Authorization = null;
 
-        var response = await Client.GetAsync("/share/sl_invalid-token-does-not-exist");
+        var response = await Client.GetAsync("/api/share/sl_invalid-token-does-not-exist");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -178,7 +178,7 @@ public class ShareLinkTests : IntegrationTestBase
 
         // Access without password — should get 403
         Client.DefaultRequestHeaders.Authorization = null;
-        var response = await Client.GetAsync($"/share/{Uri.EscapeDataString(shareToken)}");
+        var response = await Client.GetAsync($"/api/share/{Uri.EscapeDataString(shareToken)}");
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         var forbiddenBody = await response.ReadJsonAsync();
@@ -186,7 +186,7 @@ public class ShareLinkTests : IntegrationTestBase
 
         // Verify with correct password
         var (verifyResponse, verifyBody) = await Client.PostJsonAsync<JsonElement>(
-            $"/share/{Uri.EscapeDataString(shareToken)}/verify",
+            $"/api/share/{Uri.EscapeDataString(shareToken)}/verify",
             new { password = "secret123" });
 
         verifyResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -208,7 +208,7 @@ public class ShareLinkTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = null;
 
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
-            $"/share/{Uri.EscapeDataString(shareToken)}/verify",
+            $"/api/share/{Uri.EscapeDataString(shareToken)}/verify",
             new { password = "wrong-password" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -237,11 +237,11 @@ public class ShareLinkTests : IntegrationTestBase
 
         // Old token should be invalid
         Client.DefaultRequestHeaders.Authorization = null;
-        var oldResponse = await Client.GetAsync($"/share/{Uri.EscapeDataString(firstToken)}");
+        var oldResponse = await Client.GetAsync($"/api/share/{Uri.EscapeDataString(firstToken)}");
         oldResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         // New token should work
-        var newResponse = await Client.GetAsync($"/share/{Uri.EscapeDataString(secondToken)}");
+        var newResponse = await Client.GetAsync($"/api/share/{Uri.EscapeDataString(secondToken)}");
         newResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 

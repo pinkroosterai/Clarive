@@ -6,6 +6,7 @@ public class ShareLink : ITenantScoped
     public Guid TenantId { get; set; }
     public Guid EntryId { get; set; }
     public string TokenHash { get; set; } = "";
+    public string Token { get; set; } = "";
     public Guid CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ExpiresAt { get; set; }

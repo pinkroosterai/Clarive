@@ -92,6 +92,10 @@ Every prompt moves through **Draft → Published → Historical**. You get the r
 
 WYSIWYG Markdown editor built on Tiptap v3. Template variables (`{{like_this}}`) get highlighted inline as you type. Entries can hold multiple prompts with drag-and-drop reordering, plus a dedicated system message section.
 
+### Share Links
+
+Share any published prompt with a single URL — no account required. Optionally add a password or an expiration date. Recipients see a clean, read-only page with the prompt content and a one-click copy button. You can copy the link again later, regenerate it (invalidates the old URL), or revoke it entirely from the **Manage Share Link** dialog.
+
 ### Teams & Workspaces
 
 <p align="center">
@@ -121,6 +125,7 @@ nginx + the .NET API, managed by supervisor, all on port 8080. PostgreSQL runs o
 | Interactive playground | Yes | Yes | Yes | Yes |
 | Self-hosted (single container) | Yes | Yes (complex) | — | Yes |
 | Team RBAC & audit logs | Yes | Paid | Paid | Paid |
+| Public share links | Yes | — | — | — |
 | Public REST API | Yes | Yes | Yes | Yes |
 | MIT license | Yes | MIT (EE) | — | MIT (EE) |
 | LLM observability / tracing | — | Yes | Yes | Yes |

@@ -16,6 +16,7 @@ import {
   Keyboard,
   Settings,
   Globe,
+  Share2,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -467,6 +468,60 @@ const sectionGroups: SectionGroup[] = [
           Drag entries between folders in the library view. Drag folders to reorganize your
           structure. Drop onto a folder to move inside it — folders expand automatically when you
           hover during a drag.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'share-links',
+    icon: Share2,
+    title: 'Share Links',
+    searchText: 'share link public read-only access password protect expiration copy revoke regenerate manage share link viewer token',
+    content: (
+      <div className="space-y-3">
+        <p>
+          Share a read-only view of any published prompt with anyone — no account required.
+          Open an entry and click <strong>Share Link</strong> in the Actions sidebar to create one.
+        </p>
+        <h4 className="text-sm font-semibold text-foreground">Creating a Share Link</h4>
+        <ul className="list-disc list-inside space-y-1">
+          <li>
+            Optionally set an <strong>expiration date</strong> so the link stops working
+            automatically.
+          </li>
+          <li>
+            Optionally add a <strong>password</strong> (minimum 8 characters). Visitors will
+            need to enter it before viewing.
+          </li>
+          <li>
+            Click <strong>Create Share Link</strong> to generate the URL. Copy it and share
+            with anyone.
+          </li>
+        </ul>
+        <h4 className="text-sm font-semibold text-foreground">Managing an Existing Link</h4>
+        <p>
+          Once a link is active, the button changes to <strong>Manage Share Link</strong>. From
+          there you can:
+        </p>
+        <ul className="list-disc list-inside space-y-1">
+          <li>
+            <strong>Copy Link</strong> — copy the existing URL to share again without
+            invalidating it.
+          </li>
+          <li>
+            <strong>Regenerate</strong> — create a new URL. The old link stops working
+            immediately.
+          </li>
+          <li>
+            <strong>Revoke</strong> — permanently remove the share link. The public page will
+            show &quot;Link Not Found.&quot;
+          </li>
+        </ul>
+        <h4 className="text-sm font-semibold text-foreground">What Visitors See</h4>
+        <p>
+          Visitors see a clean, read-only page with the prompt title, version number, system
+          message (if any), and all prompt content. They can copy everything to their clipboard
+          with one click. Template variables are shown as metadata but not editable.
         </p>
       </div>
     ),

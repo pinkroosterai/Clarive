@@ -8,7 +8,7 @@ public static class PublicShareEndpoints
 {
     public static RouteGroupBuilder MapPublicShareEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/share")
+        var group = app.MapGroup("/api/share")
             .WithTags("Public Share")
             .AllowAnonymous()
             .RequireRateLimiting("auth");

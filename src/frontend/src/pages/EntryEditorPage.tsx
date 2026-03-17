@@ -37,6 +37,8 @@ import { useEditorState } from '@/hooks/useEditorState';
 import { findFolderName } from '@/lib/folderUtils';
 import { entryService, folderService } from '@/services';
 import * as favoriteService from '@/services/api/favoriteService';
+import { getShareLink } from '@/services/api/shareLinkService';
+import { ApiError } from '@/services/api/apiClient';
 import { useAuthStore } from '@/store/authStore';
 
 const EntryEditorPage = () => {
@@ -167,6 +169,17 @@ const EntryEditorPage = () => {
   const handleToggleFavorite = useCallback(() => {
     favoriteMutation.mutate(isFavorited);
   }, [favoriteMutation, isFavorited]);
+
+  // ── Share link status ──
+  const shareLinkQuery = useQuery({
+    queryKey: ['share-link', entryId],
+    queryFn: () => getShareLink(entryId!),
+    enabled: !!entryId,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && error.status === 404) return false;
+      return failureCount < 2;
+    },
+  });
 
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);
@@ -376,6 +389,7 @@ const EntryEditorPage = () => {
     onDeleteDraft: () => deleteDraftMutation.mutate(),
     isDeletingDraft: deleteDraftMutation.isPending,
     onShare: !isReadOnly && currentUser?.role !== 'viewer' ? () => setShareDialogOpen(true) : undefined,
+    hasShareLink: !!shareLinkQuery.data && !shareLinkQuery.error,
   } as const;
 
   const isAiRunning = mutations.isGeneratingSystemMessage || mutations.isDecomposing;

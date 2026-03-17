@@ -22,12 +22,12 @@ export async function revokeShareLink(entryId: string): Promise<void> {
 }
 
 export async function getPublicShare(token: string): Promise<SharedEntry> {
-  return api.get<SharedEntry>(`/share/${encodeURIComponent(token)}`);
+  return api.get<SharedEntry>(`/api/share/${encodeURIComponent(token)}`);
 }
 
 export async function verifySharePassword(
   token: string,
   password: string
 ): Promise<SharedEntry> {
-  return api.post<SharedEntry>(`/share/${encodeURIComponent(token)}/verify`, { password });
+  return api.post<SharedEntry>(`/api/share/${encodeURIComponent(token)}/verify`, { password });
 }

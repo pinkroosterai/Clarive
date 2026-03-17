@@ -69,25 +69,25 @@ describe('revokeShareLink', () => {
 });
 
 describe('getPublicShare', () => {
-  it('calls GET /share/{token} with encoded token', async () => {
+  it('calls GET /api/share/{token} with encoded token', async () => {
     const response = { entryId: 'e1', title: 'Test', version: 1, prompts: [] };
     mockApi.get.mockResolvedValue(response);
 
     const result = await getPublicShare('sl_abc+def');
 
-    expect(mockApi.get).toHaveBeenCalledWith('/share/sl_abc%2Bdef');
+    expect(mockApi.get).toHaveBeenCalledWith('/api/share/sl_abc%2Bdef');
     expect(result).toEqual(response);
   });
 });
 
 describe('verifySharePassword', () => {
-  it('calls POST /share/{token}/verify with password body', async () => {
+  it('calls POST /api/share/{token}/verify with password body', async () => {
     const response = { entryId: 'e1', title: 'Test', version: 1, prompts: [] };
     mockApi.post.mockResolvedValue(response);
 
     const result = await verifySharePassword('sl_token', 'my-password');
 
-    expect(mockApi.post).toHaveBeenCalledWith('/share/sl_token/verify', {
+    expect(mockApi.post).toHaveBeenCalledWith('/api/share/sl_token/verify', {
       password: 'my-password',
     });
     expect(result).toEqual(response);

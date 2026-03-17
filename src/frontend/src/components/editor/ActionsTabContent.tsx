@@ -68,6 +68,7 @@ export interface ActionsTabContentProps {
   onDeleteDraft?: () => void;
   isDeletingDraft?: boolean;
   onShare?: () => void;
+  hasShareLink?: boolean;
 }
 
 export function ActionsTabContent({
@@ -95,6 +96,7 @@ export function ActionsTabContent({
   onDeleteDraft,
   isDeletingDraft,
   onShare,
+  hasShareLink,
 }: ActionsTabContentProps) {
   const aiEnabled = useAiEnabled();
   const hasDraft = versions.some((v) => v.versionState === 'draft');
@@ -318,7 +320,7 @@ export function ActionsTabContent({
               onClick={onShare}
             >
               <Share2 className="size-4" />
-              Share Link
+              {hasShareLink ? 'Manage Share Link' : 'Share Link'}
             </Button>
           </ActionGroup>
         </>

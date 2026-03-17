@@ -36,6 +36,7 @@ export interface EditorActionPanelProps {
   onDeleteDraft?: () => void;
   isDeletingDraft?: boolean;
   onShare?: () => void;
+  hasShareLink?: boolean;
 }
 
 export function EditorActionPanel({
@@ -66,6 +67,7 @@ export function EditorActionPanel({
   onDeleteDraft,
   isDeletingDraft,
   onShare,
+  hasShareLink,
 }: EditorActionPanelProps) {
   const [activeTab, setActiveTab] = useState('actions');
 
@@ -130,6 +132,7 @@ export function EditorActionPanel({
             onDeleteDraft={onDeleteDraft}
             isDeletingDraft={isDeletingDraft}
             onShare={onShare}
+            hasShareLink={hasShareLink}
           />
         </TabsContent>
 

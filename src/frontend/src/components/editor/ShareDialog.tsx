@@ -76,10 +76,10 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
     createMutation.mutate(req);
   }, [useExpiry, expiresAt, usePassword, password, createMutation]);
 
-  const handleCopy = useCallback(async () => {
-    const token = createdToken;
-    if (!token) return;
-    const url = `${window.location.origin}/share/${encodeURIComponent(token)}`;
+  const handleCopy = useCallback(async (token?: string) => {
+    const t = token ?? createdToken;
+    if (!t) return;
+    const url = `${window.location.origin}/share/${encodeURIComponent(t)}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success('Link copied to clipboard');
@@ -101,7 +101,7 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Link className="h-4 w-4" />
-            Share Link
+            {hasLink ? 'Manage Share Link' : 'Share Link'}
           </DialogTitle>
         </DialogHeader>
 
@@ -144,29 +144,40 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="space-y-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  handleCreate();
-                }}
-                disabled={createMutation.isPending}
-                className="flex-1"
+                onClick={() => handleCopy(existingLink.token)}
+                className="w-full"
               >
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                Regenerate
+                <Copy className="h-3.5 w-3.5 mr-1.5" />
+                Copy Link
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => revokeMutation.mutate()}
-                disabled={revokeMutation.isPending}
-                className="flex-1"
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                Revoke
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleCreate();
+                  }}
+                  disabled={createMutation.isPending}
+                  className="flex-1"
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  Regenerate
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => revokeMutation.mutate()}
+                  disabled={revokeMutation.isPending}
+                  className="flex-1"
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  Revoke
+                </Button>
+              </div>
             </div>
           </div>
         ) : createdToken ? (
@@ -179,7 +190,7 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
                   value={shareUrl ?? ''}
                   className="text-xs font-mono"
                 />
-                <Button variant="outline" size="icon" onClick={handleCopy}>
+                <Button variant="outline" size="icon" onClick={() => handleCopy()}>
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>

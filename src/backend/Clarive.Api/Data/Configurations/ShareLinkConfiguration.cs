@@ -15,6 +15,7 @@ public class ShareLinkConfiguration : IEntityTypeConfiguration<ShareLink>
         builder.Property(s => s.TenantId).HasColumnName("tenant_id").IsRequired();
         builder.Property(s => s.EntryId).HasColumnName("entry_id").IsRequired();
         builder.Property(s => s.TokenHash).HasColumnName("token_hash").IsRequired();
+        builder.Property(s => s.Token).HasColumnName("token").IsRequired();
         builder.Property(s => s.CreatedBy).HasColumnName("created_by").IsRequired();
         builder.Property(s => s.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(s => s.ExpiresAt).HasColumnName("expires_at");

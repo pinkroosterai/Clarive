@@ -51,6 +51,7 @@ public class ShareLinkService(
             TenantId = tenantId,
             EntryId = entryId,
             TokenHash = tokenHash,
+            Token = rawToken,
             CreatedBy = userId,
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = expiresAt,
