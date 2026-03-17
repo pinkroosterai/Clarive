@@ -90,9 +90,11 @@ describe('EditorActionPanel', () => {
     expect(btn).toBeDisabled();
   });
 
-  it('renders folder name', () => {
-    renderPanel({ folderName: 'Test Folder' });
-    expect(screen.getByText('Test Folder')).toBeInTheDocument();
+  it('renders all three tab triggers', () => {
+    renderPanel();
+    expect(screen.getByRole('tab', { name: /actions/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /details/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /versions/i })).toBeInTheDocument();
   });
 
   it('shows discard changes when dirty', () => {

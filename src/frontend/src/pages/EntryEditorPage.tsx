@@ -404,24 +404,24 @@ const EntryEditorPage = () => {
   if (isMobile) {
     return (
       <div className="p-4">
-        <EditorAiOverlay isVisible={isAiRunning} label={aiLabel} onCancel={() => window.location.reload()} />
+        <EditorAiOverlay
+          isVisible={isAiRunning}
+          label={aiLabel}
+          onCancel={() => window.location.reload()}
+        />
         {readOnlyBanner && <div className="mb-4">{readOnlyBanner}</div>}
         <Tabs defaultValue="editor">
           <TabsList className="w-full">
             <TabsTrigger value="editor" className="flex-1">
               Editor
             </TabsTrigger>
-            <TabsTrigger value="versions" className="flex-1">
-              Versions
-            </TabsTrigger>
-            <TabsTrigger value="actions" className="flex-1">
-              Actions
+            <TabsTrigger value="panel" className="flex-1">
+              Panel
             </TabsTrigger>
           </TabsList>
           <TabsContent value="editor">{editorContent}</TabsContent>
-          <TabsContent value="versions">{versionPanel}</TabsContent>
-          <TabsContent value="actions">
-            <EditorActionPanel {...sharedActionProps} />
+          <TabsContent value="panel">
+            <EditorActionPanel {...sharedActionProps} versionPanel={versionPanel} />
           </TabsContent>
         </Tabs>
         {dialogs}
@@ -432,7 +432,11 @@ const EntryEditorPage = () => {
   // ── Desktop layout ──
   return (
     <div className="grid h-full grid-cols-[minmax(0,1fr)_300px] gap-0">
-      <EditorAiOverlay isVisible={isAiRunning} label={aiLabel} onCancel={() => window.location.reload()} />
+      <EditorAiOverlay
+        isVisible={isAiRunning}
+        label={aiLabel}
+        onCancel={() => window.location.reload()}
+      />
       <ScrollArea className="p-6">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -443,12 +447,12 @@ const EntryEditorPage = () => {
         </motion.div>
       </ScrollArea>
 
-      <ScrollArea
-        className="bg-surface border-l border-border-subtle p-4"
+      <div
+        className="bg-surface border-l border-border-subtle p-4 overflow-hidden"
         data-tour="editor-actions"
       >
         <EditorActionPanel {...sharedActionProps} versionPanel={versionPanel} />
-      </ScrollArea>
+      </div>
 
       {dialogs}
     </div>
