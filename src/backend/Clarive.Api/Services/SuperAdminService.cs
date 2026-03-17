@@ -170,17 +170,16 @@ public class SuperAdminService(
         if (user is null)
             return false;
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-
-        var memberships = await db.TenantMemberships
-            .IgnoreQueryFilters()
-            .Where(m => m.UserId == userId)
-            .ToListAsync(ct);
-        db.TenantMemberships.RemoveRange(memberships);
-        db.Users.Remove(user);
-        await db.SaveChangesAsync(ct);
-
-        await tx.CommitAsync(ct);
+        await db.Database.InTransactionAsync(async () =>
+        {
+            var memberships = await db.TenantMemberships
+                .IgnoreQueryFilters()
+                .Where(m => m.UserId == userId)
+                .ToListAsync(ct);
+            db.TenantMemberships.RemoveRange(memberships);
+            db.Users.Remove(user);
+            await db.SaveChangesAsync(ct);
+        }, ct);
 
         return true;
     }

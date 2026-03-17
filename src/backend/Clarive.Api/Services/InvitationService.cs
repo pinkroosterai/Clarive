@@ -126,21 +126,22 @@ public class InvitationService(
             return Error.Conflict("ALREADY_MEMBER", "You are already a member of this workspace.");
         }
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-
-        var membership = await membershipRepo.CreateAsync(new TenantMembership
+        var membership = await db.Database.InTransactionAsync(async () =>
         {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            TenantId = invitation.TenantId,
-            Role = invitation.Role,
-            IsPersonal = false,
-            JoinedAt = DateTime.UtcNow
+            var m = await membershipRepo.CreateAsync(new TenantMembership
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                TenantId = invitation.TenantId,
+                Role = invitation.Role,
+                IsPersonal = false,
+                JoinedAt = DateTime.UtcNow
+            }, ct);
+
+            await invitationRepo.DeleteCrossTenantsAsync(invitationId, ct);
+
+            return m;
         }, ct);
-
-        await invitationRepo.DeleteCrossTenantsAsync(invitationId, ct);
-
-        await tx.CommitAsync(ct);
 
         var tenant = await tenantRepo.GetByIdAsync(invitation.TenantId, ct);
         var memberCount = (await membershipRepo.GetByTenantIdAsync(invitation.TenantId, ct)).Count;

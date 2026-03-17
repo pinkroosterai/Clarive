@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Clarive.Api.Auth;
 using Clarive.Api.Data;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Results;
@@ -38,41 +39,40 @@ public class AccountService(
         if (await userRepo.GetByEmailAsync(email, ct) is not null)
             return null;
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-
         try
         {
-            var isFirstUser = !await userRepo.AnyUsersExistAsync(ct);
-            var emailProvider = configuration["Email:Provider"] ?? "none";
-            var skipVerification = isFirstUser
-                || emailProvider.Equals("none", StringComparison.OrdinalIgnoreCase);
-
-            var (user, tenant) = await CreateUserWithPersonalWorkspaceAsync(
-                email.Trim().ToLowerInvariant(), name.Trim(),
-                passwordHash: passwordHasher.Hash(password),
-                googleId: null, emailVerified: skipVerification,
-                isSuperUser: isFirstUser, ct);
-
-            // Skip verification token when auto-verified (first user or no email provider)
-            string? rawVerify = null;
-            if (!skipVerification)
+            return await db.Database.InTransactionAsync(async () =>
             {
-                (rawVerify, _) = jwtService.GenerateRefreshToken();
-                await tokenRepo.CreateVerificationTokenAsync(new EmailVerificationToken
+                var isFirstUser = !await userRepo.AnyUsersExistAsync(ct);
+                var emailProvider = configuration["Email:Provider"] ?? "none";
+                var skipVerification = isFirstUser
+                    || emailProvider.Equals("none", StringComparison.OrdinalIgnoreCase);
+
+                var (user, tenant) = await CreateUserWithPersonalWorkspaceAsync(
+                    email.Trim().ToLowerInvariant(), name.Trim(),
+                    passwordHash: passwordHasher.Hash(password),
+                    googleId: null, emailVerified: skipVerification,
+                    isSuperUser: isFirstUser, ct);
+
+                // Skip verification token when auto-verified (first user or no email provider)
+                string? rawVerify = null;
+                if (!skipVerification)
                 {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    TokenHash = JwtService.HashRefreshToken(rawVerify),
-                    ExpiresAt = DateTime.UtcNow.AddHours(24),
-                    CreatedAt = DateTime.UtcNow
-                }, ct);
-            }
+                    (rawVerify, _) = jwtService.GenerateRefreshToken();
+                    await tokenRepo.CreateVerificationTokenAsync(new EmailVerificationToken
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id,
+                        TokenHash = JwtService.HashRefreshToken(rawVerify),
+                        ExpiresAt = DateTime.UtcNow.AddHours(24),
+                        CreatedAt = DateTime.UtcNow
+                    }, ct);
+                }
 
-            var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
+                var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
 
-            await tx.CommitAsync(ct);
-
-            return new RegisterResult(user, tenant, rawVerify, accessToken, rawRefresh, refreshTokenId);
+                return (RegisterResult?)new RegisterResult(user, tenant, rawVerify, accessToken, rawRefresh, refreshTokenId);
+            }, ct);
         }
         catch (DbUpdateException)
         {
@@ -103,18 +103,17 @@ public class AccountService(
         }
 
         // 3. New user — create tenant + user (no password, email auto-verified)
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        return await db.Database.InTransactionAsync(async () =>
+        {
+            (user, _) = await CreateUserWithPersonalWorkspaceAsync(
+                googleUser.Email.Trim().ToLowerInvariant(), googleUser.Name,
+                passwordHash: null, googleId: googleUser.GoogleId,
+                emailVerified: true, ct: ct);
 
-        (user, _) = await CreateUserWithPersonalWorkspaceAsync(
-            googleUser.Email.Trim().ToLowerInvariant(), googleUser.Name,
-            passwordHash: null, googleId: googleUser.GoogleId,
-            emailVerified: true, ct: ct);
+            var (at, rr, rtId) = await IssueTokensAsync(user, ct);
 
-        var (at, rr, rtId) = await IssueTokensAsync(user, ct);
-
-        await tx.CommitAsync(ct);
-
-        return new GoogleAuthLoginResult(user, at, rr, rtId, true);
+            return new GoogleAuthLoginResult(user, at, rr, rtId, true);
+        }, ct);
     }
 
     public async Task<RefreshResult?> RefreshTokensAsync(string refreshToken, CancellationToken ct)
@@ -181,62 +180,61 @@ public class AccountService(
         if (await userRepo.GetByEmailAsync(invitation.Email, ct) is not null)
             return null;
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-
-        // Create user in the invited workspace
-        var user = await userRepo.CreateAsync(new User
+        return await db.Database.InTransactionAsync(async () =>
         {
-            Id = Guid.NewGuid(),
-            TenantId = invitation.TenantId,
-            Email = invitation.Email,
-            Name = name.Trim(),
-            PasswordHash = passwordHasher.Hash(password),
-            Role = invitation.Role,
-            EmailVerified = true,
-            CreatedAt = DateTime.UtcNow
+            // Create user in the invited workspace
+            var user = await userRepo.CreateAsync(new User
+            {
+                Id = Guid.NewGuid(),
+                TenantId = invitation.TenantId,
+                Email = invitation.Email,
+                Name = name.Trim(),
+                PasswordHash = passwordHasher.Hash(password),
+                Role = invitation.Role,
+                EmailVerified = true,
+                CreatedAt = DateTime.UtcNow
+            }, ct);
+
+            // Create personal workspace
+            var personalTenant = await tenantRepo.CreateAsync(new Tenant
+            {
+                Id = Guid.NewGuid(),
+                Name = $"{name.Trim()}'s workspace",
+                OwnerId = user.Id,
+                CreatedAt = DateTime.UtcNow
+            }, ct);
+
+            // Create personal workspace membership
+            await membershipRepo.CreateAsync(new TenantMembership
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TenantId = personalTenant.Id,
+                Role = UserRole.Admin,
+                IsPersonal = true,
+                JoinedAt = DateTime.UtcNow
+            }, ct);
+
+            // Create invited workspace membership
+            await membershipRepo.CreateAsync(new TenantMembership
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TenantId = invitation.TenantId,
+                Role = invitation.Role,
+                IsPersonal = false,
+                JoinedAt = DateTime.UtcNow
+            }, ct);
+
+            // Seed starter templates in personal workspace
+            await onboardingSeeder.SeedStarterTemplatesAsync(personalTenant.Id, user.Id, ct);
+
+            await invitationRepo.DeleteAsync(invitation.TenantId, invitation.Id, ct);
+
+            var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
+
+            return (InvitationAcceptResult?)new InvitationAcceptResult(user, accessToken, rawRefresh, refreshTokenId);
         }, ct);
-
-        // Create personal workspace
-        var personalTenant = await tenantRepo.CreateAsync(new Tenant
-        {
-            Id = Guid.NewGuid(),
-            Name = $"{name.Trim()}'s workspace",
-            OwnerId = user.Id,
-            CreatedAt = DateTime.UtcNow
-        }, ct);
-
-        // Create personal workspace membership
-        await membershipRepo.CreateAsync(new TenantMembership
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TenantId = personalTenant.Id,
-            Role = UserRole.Admin,
-            IsPersonal = true,
-            JoinedAt = DateTime.UtcNow
-        }, ct);
-
-        // Create invited workspace membership
-        await membershipRepo.CreateAsync(new TenantMembership
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TenantId = invitation.TenantId,
-            Role = invitation.Role,
-            IsPersonal = false,
-            JoinedAt = DateTime.UtcNow
-        }, ct);
-
-        // Seed starter templates in personal workspace
-        await onboardingSeeder.SeedStarterTemplatesAsync(personalTenant.Id, user.Id, ct);
-
-        await invitationRepo.DeleteAsync(invitation.TenantId, invitation.Id, ct);
-
-        var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
-
-        await tx.CommitAsync(ct);
-
-        return new InvitationAcceptResult(user, accessToken, rawRefresh, refreshTokenId);
     }
 
     // ── Private helpers ──

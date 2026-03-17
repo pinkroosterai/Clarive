@@ -124,31 +124,30 @@ public class UserManagementService(
         if (currentUser is null)
             return DomainErrors.CurrentUserNotFound;
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-
-        // Update User.Role for both users
-        currentUser.Role = UserRole.Editor;
-        await userRepo.UpdateAsync(currentUser, ct);
-
-        targetUser.Role = UserRole.Admin;
-        await userRepo.UpdateAsync(targetUser, ct);
-
-        // Dual-write: update TenantMembership roles
-        var currentMembership = await membershipRepo.GetAsync(currentUserId, tenantId, ct);
-        if (currentMembership is not null)
+        await db.Database.InTransactionAsync(async () =>
         {
-            currentMembership.Role = UserRole.Editor;
-            await membershipRepo.UpdateAsync(currentMembership, ct);
-        }
+            // Update User.Role for both users
+            currentUser.Role = UserRole.Editor;
+            await userRepo.UpdateAsync(currentUser, ct);
 
-        var targetMembership = await membershipRepo.GetAsync(targetUserId, tenantId, ct);
-        if (targetMembership is not null)
-        {
-            targetMembership.Role = UserRole.Admin;
-            await membershipRepo.UpdateAsync(targetMembership, ct);
-        }
+            targetUser.Role = UserRole.Admin;
+            await userRepo.UpdateAsync(targetUser, ct);
 
-        await tx.CommitAsync(ct);
+            // Dual-write: update TenantMembership roles
+            var currentMembership = await membershipRepo.GetAsync(currentUserId, tenantId, ct);
+            if (currentMembership is not null)
+            {
+                currentMembership.Role = UserRole.Editor;
+                await membershipRepo.UpdateAsync(currentMembership, ct);
+            }
+
+            var targetMembership = await membershipRepo.GetAsync(targetUserId, tenantId, ct);
+            if (targetMembership is not null)
+            {
+                targetMembership.Role = UserRole.Admin;
+                await membershipRepo.UpdateAsync(targetMembership, ct);
+            }
+        }, ct);
 
         return new TransferOwnershipResult(currentUser, targetUser);
     }

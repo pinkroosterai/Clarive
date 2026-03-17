@@ -1,4 +1,5 @@
 using Clarive.Api.Data;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
@@ -51,59 +52,58 @@ public class ImportExportService(
         var batchEntries = new List<PromptEntry>();
         var batchVersions = new List<PromptEntryVersion>();
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-
-        foreach (var item in entryList)
+        await db.Database.InTransactionAsync(async () =>
         {
-            if (item is not Dictionary<object, object> raw) continue;
-
-            var title = raw.TryGetValue("title", out var t) ? t?.ToString() ?? "Untitled" : "Untitled";
-            var systemMessage = raw.TryGetValue("systemMessage", out var sm) ? sm?.ToString() : null;
-            var folderName = raw.TryGetValue("folder", out var fn) ? fn?.ToString() : null;
-
-            var folderId = await ResolveImportFolderAsync(folderName, tenantId, folderCache, ct);
-            var prompts = ParseImportPrompts(raw);
-
-            var entry = new PromptEntry
+            foreach (var item in entryList)
             {
-                Id = Guid.NewGuid(),
-                TenantId = tenantId,
-                Title = title,
-                FolderId = folderId,
-                IsTrashed = false,
-                CreatedBy = userId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            batchEntries.Add(entry);
+                if (item is not Dictionary<object, object> raw) continue;
 
-            var version = new PromptEntryVersion
+                var title = raw.TryGetValue("title", out var t) ? t?.ToString() ?? "Untitled" : "Untitled";
+                var systemMessage = raw.TryGetValue("systemMessage", out var sm) ? sm?.ToString() : null;
+                var folderName = raw.TryGetValue("folder", out var fn) ? fn?.ToString() : null;
+
+                var folderId = await ResolveImportFolderAsync(folderName, tenantId, folderCache, ct);
+                var prompts = ParseImportPrompts(raw);
+
+                var entry = new PromptEntry
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Title = title,
+                    FolderId = folderId,
+                    IsTrashed = false,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                batchEntries.Add(entry);
+
+                var version = new PromptEntryVersion
+                {
+                    Id = Guid.NewGuid(),
+                    EntryId = entry.Id,
+                    Version = 1,
+                    VersionState = VersionState.Draft,
+                    SystemMessage = systemMessage,
+                    Prompts = prompts,
+                    CreatedAt = DateTime.UtcNow
+                };
+                batchVersions.Add(version);
+
+                createdEntries.Add(PromptEntrySummary.FromEntryAndVersion(entry, version));
+            }
+
+            await entryRepo.CreateBatchAsync(batchEntries, batchVersions, ct);
+
+            // Import tags
+            for (var i = 0; i < batchEntries.Count; i++)
             {
-                Id = Guid.NewGuid(),
-                EntryId = entry.Id,
-                Version = 1,
-                VersionState = VersionState.Draft,
-                SystemMessage = systemMessage,
-                Prompts = prompts,
-                CreatedAt = DateTime.UtcNow
-            };
-            batchVersions.Add(version);
-
-            createdEntries.Add(PromptEntrySummary.FromEntryAndVersion(entry, version));
-        }
-
-        await entryRepo.CreateBatchAsync(batchEntries, batchVersions, ct);
-
-        // Import tags
-        for (var i = 0; i < batchEntries.Count; i++)
-        {
-            if (entryList[i] is not Dictionary<object, object> rawItem) continue;
-            var importTags = ParseImportTags(rawItem);
-            if (importTags.Count > 0)
-                await tagRepo.AddAsync(tenantId, batchEntries[i].Id, importTags, ct);
-        }
-
-        await tx.CommitAsync(ct);
+                if (entryList[i] is not Dictionary<object, object> rawItem) continue;
+                var importTags = ParseImportTags(rawItem);
+                if (importTags.Count > 0)
+                    await tagRepo.AddAsync(tenantId, batchEntries[i].Id, importTags, ct);
+            }
+        }, ct);
 
         await TenantCacheKeys.EvictFolderData(cache, tenantId);
         await TenantCacheKeys.EvictEntryData(cache, tenantId);
