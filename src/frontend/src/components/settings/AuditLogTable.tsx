@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Info, ScrollText } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/ui/badge';
@@ -84,6 +85,11 @@ export default function AuditLogTable() {
           icon={ScrollText}
           title="No audit log entries"
           description="Activity in your workspace will appear here."
+          actions={
+            <Link to="/help#account-settings" className="text-xs text-foreground-muted underline hover:text-foreground">
+              Learn more
+            </Link>
+          }
         />
       ) : (
         <TooltipProvider>

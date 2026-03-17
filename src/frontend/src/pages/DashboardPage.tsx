@@ -4,6 +4,7 @@ import { FileText, Globe, PenLine, FolderOpen, LayoutDashboard } from 'lucide-re
 import { useCallback, useEffect } from 'react';
 
 import { EmptyState } from '@/components/common/EmptyState';
+import { HelpLink } from '@/components/common/HelpLink';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { FavoritesList } from '@/components/dashboard/FavoritesList';
 import { RecentEntriesList } from '@/components/dashboard/RecentEntriesList';
@@ -135,7 +136,10 @@ function GreetingHero({ name, subtitle }: { name?: string; subtitle: string }) {
       <div className="absolute top-2 right-12 size-20 rounded-full bg-primary/8 blur-2xl" />
       <div className="absolute bottom-1 left-16 size-14 rounded-full bg-primary/6 blur-xl" />
       <div className="relative">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{greeting}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{greeting}</h1>
+          <HelpLink section="getting-started" />
+        </div>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

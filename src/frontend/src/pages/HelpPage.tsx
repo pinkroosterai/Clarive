@@ -3,7 +3,10 @@ import {
   Rocket,
   FileText,
   Wand2,
+  FlaskConical,
   Braces,
+  Search,
+  Star,
   FolderTree,
   Users,
   Wrench,
@@ -12,7 +15,8 @@ import {
   Settings,
   Globe,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import {
   Accordion,
@@ -70,6 +74,12 @@ const sections = [
             automatically.
           </li>
         </ul>
+        <h4 className="text-sm font-semibold text-foreground">Guided Tour</h4>
+        <p>
+          New accounts see an interactive guided tour on first login that walks through the
+          dashboard, sidebar navigation, entry editor, and key features. The tour highlights each
+          area with step-by-step explanations so you can get oriented quickly.
+        </p>
       </div>
     ),
   },
@@ -83,7 +93,10 @@ const sections = [
         <p>
           Each entry has a <strong>title</strong>, an optional <strong>system message</strong>{' '}
           (instructions for the AI), and one or more <strong>prompt cards</strong> in the rich-text
-          editor. Save, publish, and AI tools live in the action panel on the right.
+          editor. The right sidebar is organized into three tabs:{' '}
+          <strong>Actions</strong> (save, publish, AI tools),{' '}
+          <strong>Details</strong> (tags, metadata, folder, activity), and{' '}
+          <strong>Versions</strong> (history, diff, restore).
         </p>
         <h4 className="text-sm font-semibold text-foreground">Prompt Chains</h4>
         <p>
@@ -113,14 +126,15 @@ const sections = [
         </ul>
         <h4 className="text-sm font-semibold text-foreground">Versioning</h4>
         <p>
-          Every publish creates a new version. Use the version history panel to browse past
-          versions, compare any two side-by-side with a diff view, or restore a historical version
-          as a new draft.
+          Every publish creates a new version. Open the <strong>Versions</strong> tab in the
+          sidebar to browse past versions, compare any two side-by-side with a diff view, or
+          restore a historical version as a new draft. You can also delete a draft to revert to
+          the published version.
         </p>
         <h4 className="text-sm font-semibold text-foreground">AI Tools</h4>
         <ul className="list-disc list-inside space-y-1">
           <li>
-            <strong>Enhance with AI</strong> — analyze and improve your current prompt.
+            <strong>AI Enhance</strong> — analyze and improve your current prompt.
           </li>
           <li>
             <strong>Generate System Message</strong> — create a system message from your prompt
@@ -129,6 +143,10 @@ const sections = [
           <li>
             <strong>Decompose to Chain</strong> — split a single prompt into a multi-step chain
             (available for single-prompt entries).
+          </li>
+          <li>
+            <strong>Test Prompt</strong> — run your prompt in the playground to see the AI
+            response.
           </li>
         </ul>
       </div>
@@ -160,8 +178,7 @@ const sections = [
                 for complex tasks.
               </li>
               <li>
-                <strong>Web research</strong> — searches the web for context to improve accuracy
-                (requires Tavily configuration).
+                <strong>Web research</strong> — searches the web for context to improve accuracy.
               </li>
             </ul>
           </li>
@@ -177,9 +194,67 @@ const sections = [
         </ol>
         <h4 className="text-sm font-semibold text-foreground">Enhancing Existing Entries</h4>
         <p>
-          Open any entry in the editor and click <strong>Enhance with AI</strong>. The wizard
-          analyzes your current prompt, shows quality scores, and lets you refine before saving the
+          Open any entry in the editor and click <strong>AI Enhance</strong>. The wizard analyzes
+          your current prompt, shows quality scores, and lets you refine before saving the
           improvements back.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'playground',
+    icon: FlaskConical,
+    title: 'Playground',
+    content: (
+      <div className="space-y-3">
+        <h4 className="text-sm font-semibold text-foreground">Testing Your Prompts</h4>
+        <p>
+          The Playground lets you run any published entry against a live AI model and see the
+          response in real time. Open it from the <strong>Test Prompt</strong> button in the
+          editor&apos;s Actions tab, or navigate directly to an entry&apos;s test page.
+        </p>
+        <h4 className="text-sm font-semibold text-foreground">Toolbar Controls</h4>
+        <ul className="list-disc list-inside space-y-1">
+          <li>
+            <strong>Model</strong> — pick from available models, grouped by provider. Selecting a
+            model auto-fills its default temperature, max tokens, and reasoning settings.
+          </li>
+          <li>
+            <strong>Temperature</strong> — controls randomness (0 = deterministic, 2 = very
+            creative). Adjustable in 0.1 increments. Hidden for reasoning models.
+          </li>
+          <li>
+            <strong>Max Tokens</strong> — limits the response length. Defaults come from the model
+            configuration.
+          </li>
+          <li>
+            <strong>Reasoning Effort</strong> — appears for reasoning models. Choose Low, Medium,
+            High, or Extra High.
+          </li>
+          <li>
+            <strong>Show Thinking</strong> — toggle to display the model&apos;s reasoning process
+            alongside the final response.
+          </li>
+        </ul>
+        <h4 className="text-sm font-semibold text-foreground">Running a Test</h4>
+        <p>
+          Click the <strong>Run</strong> button (or press{' '}
+          <Kbd>Ctrl</Kbd> + <Kbd>Enter</Kbd>) to start. The response streams in
+          token by token with a live elapsed-time counter and token estimate. For prompt chains,
+          numbered step indicators show progress through each prompt. Press <Kbd>Esc</Kbd> or
+          click <strong>Stop</strong> to abort mid-stream.
+        </p>
+        <p>
+          If the entry has template variables, a form appears to fill in values before running.
+          Variable values persist across reruns so you can iterate without re-entering them.
+        </p>
+        <h4 className="text-sm font-semibold text-foreground">History & Comparison</h4>
+        <p>
+          Toggle the history sidebar to see past test runs with their model, temperature, and
+          timestamp. Expand any run to read its full response. Use the <strong>pin</strong> button
+          to keep a run visible for side-by-side comparison with the current result, or{' '}
+          <strong>rerun</strong> to load that run&apos;s parameters and execute again immediately.
+          Hover over any response to copy it.
         </p>
       </div>
     ),
@@ -190,11 +265,22 @@ const sections = [
     title: 'Templates & Variables',
     content: (
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-foreground">Template Syntax</h4>
+        <h4 className="text-sm font-semibold text-foreground">What Are Template Variables?</h4>
         <p>
-          Double curly braces define variables in your prompts — placeholders that get replaced with
-          actual values at runtime. Clarive detects and highlights them in the editor automatically.
+          Variables turn prompts into reusable templates. Wrap any word in double curly braces
+          — <Code>{'{{topic}}'}</Code> — and it becomes a placeholder that gets filled in
+          before the prompt runs. Clarive highlights variables in the editor so they stand out.
         </p>
+
+        <h4 className="text-sm font-semibold text-foreground">Adding & Editing Variables</h4>
+        <p>
+          You can type variables directly, or click the{' '}
+          <strong>{'{ }'} button</strong> in the top-right corner of any prompt card to insert one.
+          Either way, <strong>click any highlighted variable</strong> to open a popover where you
+          can set its name, type, constraints, default value, and description — no syntax to
+          memorize.
+        </p>
+
         <h4 className="text-sm font-semibold text-foreground">Variable Types</h4>
         <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
           <table className="w-full text-xs font-mono">
@@ -214,35 +300,110 @@ const sections = [
               <tr>
                 <td className="p-2">int</td>
                 <td className="p-2">{'{{count|int:1-100}}'}</td>
-                <td className="p-2 font-sans">Integer with range</td>
+                <td className="p-2 font-sans">Integer with min/max range</td>
               </tr>
               <tr>
                 <td className="p-2">float</td>
                 <td className="p-2">{'{{temp|float:0-1.5}}'}</td>
-                <td className="p-2 font-sans">Decimal with range</td>
+                <td className="p-2 font-sans">Decimal with min/max range</td>
               </tr>
               <tr>
                 <td className="p-2">enum</td>
                 <td className="p-2">{'{{tone|enum:formal,casual}}'}</td>
-                <td className="p-2 font-sans">Dropdown select</td>
+                <td className="p-2 font-sans">Dropdown with fixed options</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-foreground-muted">
-          Variable names can contain letters, digits, and underscores. The first occurrence of a
-          variable name determines its type.
+
+        <h4 className="text-sm font-semibold text-foreground">Defaults & Descriptions</h4>
+        <p>
+          Variables can carry a default value and a description for whoever fills in the template.
+          Add them after the constraints, separated by colons:
         </p>
-        <h4 className="text-sm font-semibold text-foreground">Example</h4>
         <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle">
-          Write a {'{{tone|enum:formal,casual}}'} email to {'{{recipient}}'} about {'{{topic}}'},
-          limited to {'{{wordCount|int:50-500}}'} words.
+          {'{{tone|enum:formal,casual:formal:The writing style}}'}
         </p>
+        <p>
+          The default pre-fills the form field. The description shows as a hint underneath it.
+          Both are optional — skip them and the variable works the same as before.
+        </p>
+
+        <h4 className="text-sm font-semibold text-foreground">Full Syntax</h4>
+        <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle">
+          {'{{name|type:constraints:default:description}}'}
+        </p>
+        <p className="text-xs text-foreground-muted">
+          Everything after the name is optional. Variable names can contain letters, digits, and
+          underscores. If a name appears in multiple prompts, the first occurrence sets the type.
+        </p>
+
         <h4 className="text-sm font-semibold text-foreground">Template Form</h4>
         <p>
-          When your prompt contains variables, a collapsible <strong>Template</strong> section
-          appears below the editor. Fill in values and click <strong>Preview</strong> to see the
-          rendered output.
+          When your prompt contains variables, a <strong>Template Variables</strong> section
+          appears below the editor with a form field for each one. Default values are pre-filled,
+          descriptions show as hints, and you can click <strong>Preview</strong> to see the
+          rendered output with your values substituted in.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'library',
+    icon: Search,
+    title: 'Library & Search',
+    content: (
+      <div className="space-y-3">
+        <h4 className="text-sm font-semibold text-foreground">Browsing Your Library</h4>
+        <p>
+          The library shows all entries in your workspace as a responsive grid — one column on
+          mobile, two on tablet, three on desktop. Click any entry card to open it in the editor.
+        </p>
+        <h4 className="text-sm font-semibold text-foreground">Searching</h4>
+        <p>
+          Type in the search bar to filter entries by title. Results update as you type with a
+          short delay. The result count shows inline when filters are active.
+        </p>
+        <h4 className="text-sm font-semibold text-foreground">Filtering & Sorting</h4>
+        <ul className="list-disc list-inside space-y-1">
+          <li>
+            <strong>Status</strong> — filter by All, Draft, or Published.
+          </li>
+          <li>
+            <strong>Sort</strong> — order by Recent (default), Alphabetical, or Oldest.
+          </li>
+          <li>
+            <strong>Tags</strong> — select one or more tags to filter. When two or more tags are
+            selected, a toggle appears to switch between <strong>Any</strong> (entries matching at
+            least one tag) and <strong>All</strong> (entries matching every selected tag).
+          </li>
+        </ul>
+        <h4 className="text-sm font-semibold text-foreground">Pagination</h4>
+        <p>
+          The library shows 50 entries per page. Use the Previous/Next buttons at the bottom to
+          navigate. Changing any filter resets you to the first page.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'favorites',
+    icon: Star,
+    title: 'Favorites',
+    content: (
+      <div className="space-y-3">
+        <h4 className="text-sm font-semibold text-foreground">Starring Entries</h4>
+        <p>
+          Click the <strong>star icon</strong> on any entry card in the library to mark it as a
+          favorite. Click again to remove it. Starred entries appear in the{' '}
+          <strong>Favorites</strong> section on your dashboard for quick access, along with a
+          timestamp showing when you favorited them.
+        </p>
+        <h4 className="text-sm font-semibold text-foreground">Where Favorites Appear</h4>
+        <p>
+          The dashboard shows a dedicated Favorites panel when you have starred entries. Each
+          favorite is a clickable link that opens the entry directly. You can also unstar entries
+          from the dashboard by clicking the star icon there.
         </p>
       </div>
     ),
@@ -665,18 +826,88 @@ const sections = [
         </p>
         <h4 className="text-sm font-semibold text-foreground">Sessions</h4>
         <p>
-          View your active sessions. See something you don&apos;t recognize? Revoke it to sign out
-          that device immediately.
+          View all active sessions under <strong>Settings &gt; Profile</strong>. Each session shows
+          the browser name, operating system, IP address, and when it was created. Your current
+          session is marked with a green <strong>Current</strong> badge and cannot be revoked.
         </p>
+        <ul className="list-disc list-inside space-y-1">
+          <li>
+            Click the <strong>trash icon</strong> on any other session to revoke it individually.
+          </li>
+          <li>
+            Use <strong>Revoke All Others</strong> to sign out every session except the one
+            you&apos;re using right now.
+          </li>
+        </ul>
         <h4 className="text-sm font-semibold text-foreground">Import & Export</h4>
         <p>
-          Export your entries as a backup or import from a file. Useful for migrating between
-          workspaces or keeping local backups.
+          Back up your work or migrate entries between workspaces using YAML files.
         </p>
+        <ul className="list-disc list-inside space-y-1">
+          <li>
+            <strong>Export All Entries</strong> — downloads every entry in the workspace as a
+            single <Code>.yaml</Code> file named{' '}
+            <Code>clarive-export-YYYY-MM-DD.yaml</Code>.
+          </li>
+          <li>
+            <strong>Export Folder</strong> — opens a folder picker so you can export just one
+            folder&apos;s entries.
+          </li>
+          <li>
+            <strong>Import</strong> — drag and drop a <Code>.yaml</Code> or{' '}
+            <Code>.yml</Code> file, or click to browse. Imported entries are created as{' '}
+            <strong>drafts</strong> in the workspace root. The file name and size are shown before
+            you confirm.
+          </li>
+        </ul>
         <h4 className="text-sm font-semibold text-foreground">Audit Log</h4>
         <p>
-          Admins can view the audit log to see who did what — entry edits, member invitations,
-          settings changes.
+          Admins can view a timeline of workspace activity. Each entry shows the timestamp, user,
+          action, entity, and optional details. Logs are retained for <strong>30 days</strong> and
+          paginated at 20 entries per page.
+        </p>
+        <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border-subtle">
+                <th className="text-left p-2 font-semibold text-foreground">Event</th>
+                <th className="text-left p-2 font-semibold text-foreground">Meaning</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              <tr>
+                <td className="p-2 font-mono">entry_created</td>
+                <td className="p-2">A new entry was created</td>
+              </tr>
+              <tr>
+                <td className="p-2 font-mono">entry_updated</td>
+                <td className="p-2">An entry was edited</td>
+              </tr>
+              <tr>
+                <td className="p-2 font-mono">entry_published</td>
+                <td className="p-2">An entry was published</td>
+              </tr>
+              <tr>
+                <td className="p-2 font-mono">entry_trashed</td>
+                <td className="p-2">An entry was moved to trash</td>
+              </tr>
+              <tr>
+                <td className="p-2 font-mono">entry_restored</td>
+                <td className="p-2">An entry was restored from trash</td>
+              </tr>
+              <tr>
+                <td className="p-2 font-mono">entry_deleted</td>
+                <td className="p-2">An entry was permanently deleted</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h4 className="text-sm font-semibold text-foreground">Appearance</h4>
+        <p>
+          Click the theme icon in the top-right corner of the page to cycle between{' '}
+          <strong>Light</strong> (sun icon), <strong>Dark</strong> (moon icon), and{' '}
+          <strong>System</strong> (monitor icon) modes. System mode follows your operating
+          system&apos;s preference. Your choice is saved automatically.
         </p>
         <h4 className="text-sm font-semibold text-foreground">Account Deletion</h4>
         <p>
@@ -689,9 +920,22 @@ const sections = [
 ];
 
 export default function HelpPage() {
+  const location = useLocation();
+  const [openSections, setOpenSections] = useState<string[]>([]);
+
   useEffect(() => {
     document.title = 'Clarive — Help';
   }, []);
+
+  useEffect(() => {
+    const hash = location.hash.replace('#', '');
+    if (hash && sections.some((s) => s.id === hash)) {
+      setOpenSections((prev) => (prev.includes(hash) ? prev : [...prev, hash]));
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, [location.hash]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -705,9 +949,9 @@ export default function HelpPage() {
         </div>
       </div>
 
-      <Accordion type="multiple" className="w-full">
+      <Accordion type="multiple" value={openSections} onValueChange={setOpenSections} className="w-full">
         {sections.map((section) => (
-          <AccordionItem key={section.id} value={section.id}>
+          <AccordionItem key={section.id} value={section.id} id={section.id}>
             <AccordionTrigger className="hover:no-underline">
               <span className="flex items-center">
                 <SectionIcon icon={section.icon} />

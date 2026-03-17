@@ -3,9 +3,11 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Trash2, Undo2, FolderOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
+import { HelpLink } from '@/components/common/HelpLink';
 import { TrashPreviewSheet } from '@/components/library/TrashPreviewSheet';
 import {
   AlertDialog,
@@ -159,7 +161,10 @@ const TrashPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Trash</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold tracking-tight">Trash</h1>
+        <HelpLink section="trash" />
+      </div>
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
@@ -222,6 +227,11 @@ const TrashPage = () => {
           icon={Trash2}
           title="Trash is empty"
           description="Items you delete will appear here for 30 days before permanent removal."
+          actions={
+            <Link to="/help#trash" className="text-xs text-foreground-muted underline hover:text-foreground">
+              Learn more
+            </Link>
+          }
         />
       )}
 

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Copy, Key, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
@@ -124,6 +125,11 @@ export default function ApiKeyPanel() {
           icon={Key}
           title="No API keys yet"
           description="Create one to get started with external integrations."
+          actions={
+            <Link to="/help#api-keys" className="text-xs text-foreground-muted underline hover:text-foreground">
+              Learn more
+            </Link>
+          }
         />
       ) : (
         <div className="bg-surface rounded-xl elevation-1 border border-border-subtle overflow-clip">

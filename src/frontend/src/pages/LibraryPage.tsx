@@ -10,10 +10,11 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useMemo, useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
+import { HelpLink } from '@/components/common/HelpLink';
 import { EntryCard } from '@/components/library/EntryCard';
 import { TagFilter } from '@/components/library/TagFilter';
 import { Button } from '@/components/ui/button';
@@ -214,7 +215,10 @@ export default function LibraryPage() {
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
+          <HelpLink section="library" />
+        </div>
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
@@ -299,14 +303,28 @@ export default function LibraryPage() {
             icon={FolderOpen}
             title="This folder is empty"
             description="Create a new entry or move existing entries to this folder."
-            actions={emptyStateActions}
+            actions={
+              <>
+                {emptyStateActions}
+                <Link to="/help#folders" className="text-xs text-foreground-muted underline hover:text-foreground">
+                  Learn more about folders
+                </Link>
+              </>
+            }
           />
         ) : (
           <EmptyState
             icon={FileText}
             title="No prompts yet"
             description="Create your first prompt entry or use the AI wizard to get started."
-            actions={emptyStateActions}
+            actions={
+              <>
+                {emptyStateActions}
+                <Link to="/help#getting-started" className="text-xs text-foreground-muted underline hover:text-foreground">
+                  Learn more
+                </Link>
+              </>
+            }
           />
         )
       ) : filtered.length === 0 ? (

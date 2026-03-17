@@ -4,6 +4,7 @@ import { Users, Key, ScrollText, ArrowLeftRight, UserCircle, Wrench } from 'luci
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import AccountDeletionSection from '@/components/settings/AccountDeletionSection';
 import ApiKeyPanel from '@/components/settings/ApiKeyPanel';
 import AuditLogTable from '@/components/settings/AuditLogTable';
@@ -50,7 +51,10 @@ const SettingsPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <HelpLink section="account-settings" />
+      </div>
 
       <Tabs
         value={activeTab}
