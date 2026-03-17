@@ -1,6 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
+import { execSync } from 'child_process';
+
+function getAppVersion(): string {
+  // Prefer APP_VERSION env var (set by Docker build-arg)
+  if (process.env.APP_VERSION) return process.env.APP_VERSION;
+  // Fall back to git describe for local dev
+  try {
+    return execSync('git describe --tags --always', { encoding: 'utf-8' }).trim();
+  } catch {
+    return 'dev';
+  }
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -23,6 +35,9 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: isProd ? 'hidden' : false,
+    },
+    define: {
+      __APP_VERSION__: JSON.stringify(getAppVersion()),
     },
     plugins: [react()],
     resolve: {

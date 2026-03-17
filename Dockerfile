@@ -22,6 +22,8 @@ RUN dotnet publish Clarive.Api/Clarive.Api.csproj \
 
 # ── Stage: frontend-build ────────────────────────────────────
 FROM node:20-alpine AS frontend-build
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION}
 WORKDIR /app
 COPY src/frontend/package.json src/frontend/package-lock.json ./
 RUN npm ci --ignore-scripts
