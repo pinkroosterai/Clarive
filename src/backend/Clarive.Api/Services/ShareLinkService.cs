@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Clarive.Api.Auth;
 using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
@@ -120,7 +121,6 @@ public class ShareLinkService(
 
     private async Task<ErrorOr<SharedEntryResult>> ResolveEntryForLink(ShareLink link, CancellationToken ct)
     {
-        // Increment access count (fire-and-forget style, non-blocking)
         await shareLinkRepo.IncrementAccessCountAsync(link.Id, ct);
 
         // Resolve version: pinned or latest published

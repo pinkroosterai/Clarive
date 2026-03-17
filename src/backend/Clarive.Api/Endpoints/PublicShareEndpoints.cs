@@ -1,4 +1,5 @@
 using Clarive.Api.Helpers;
+using Clarive.Api.Models.Requests;
 using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Endpoints;
@@ -17,8 +18,6 @@ public static class PublicShareEndpoints
 
         return group;
     }
-
-    private record VerifyPasswordRequest(string Password);
 
     private static async Task<IResult> HandleGet(
         string token,
@@ -49,7 +48,7 @@ public static class PublicShareEndpoints
     private static async Task<IResult> HandleVerify(
         string token,
         HttpContext ctx,
-        VerifyPasswordRequest request,
+        VerifySharePasswordRequest request,
         IShareLinkService shareLinkService,
         CancellationToken ct)
     {

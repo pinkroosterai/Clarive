@@ -1,5 +1,6 @@
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
+using Clarive.Api.Models.Requests;
 using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Endpoints;
@@ -19,8 +20,6 @@ public static class ShareLinkEndpoints
         return group;
     }
 
-    private record CreateShareLinkRequest(DateTime? ExpiresAt = null, string? Password = null, int? PinnedVersion = null);
-
     private static async Task<IResult> HandleCreate(
         Guid entryId,
         HttpContext ctx,
@@ -30,6 +29,9 @@ public static class ShareLinkEndpoints
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
+
+        if (request.Password is not null && request.Password.Length < 8)
+            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Share link password must be at least 8 characters.");
 
         var result = await shareLinkService.CreateAsync(
             tenantId, entryId, userId,

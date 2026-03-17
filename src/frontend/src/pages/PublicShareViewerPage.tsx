@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Copy, Lock, AlertTriangle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,34 +23,30 @@ export default function PublicShareViewerPage() {
   const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-  const [loaded, setLoaded] = useState(false);
 
-  const loadEntry = useCallback(async () => {
+  useEffect(() => {
     if (!token) return;
-    try {
-      const entry = await getPublicShare(token);
-      setState({ kind: 'loaded', entry });
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 403) {
-          setState({ kind: 'password' });
-        } else if (err.status === 410) {
-          setState({ kind: 'expired' });
-        } else if (err.status === 404) {
-          setState({ kind: 'notfound' });
+    (async () => {
+      try {
+        const entry = await getPublicShare(token);
+        setState({ kind: 'loaded', entry });
+      } catch (err) {
+        if (err instanceof ApiError) {
+          if (err.status === 403) {
+            setState({ kind: 'password' });
+          } else if (err.status === 410) {
+            setState({ kind: 'expired' });
+          } else if (err.status === 404) {
+            setState({ kind: 'notfound' });
+          } else {
+            setState({ kind: 'error', message: err.message });
+          }
         } else {
-          setState({ kind: 'error', message: err.message });
+          setState({ kind: 'error', message: 'Something went wrong' });
         }
-      } else {
-        setState({ kind: 'error', message: 'Something went wrong' });
       }
-    }
+    })();
   }, [token]);
-
-  if (!loaded) {
-    setLoaded(true);
-    loadEntry();
-  }
 
   const handleVerifyPassword = async () => {
     if (!token || !password) return;
@@ -70,7 +66,7 @@ export default function PublicShareViewerPage() {
     }
   };
 
-  const handleCopyAll = useCallback(() => {
+  const handleCopyAll = useCallback(async () => {
     if (state.kind !== 'loaded') return;
     const { entry } = state;
     const parts: string[] = [];
@@ -78,8 +74,12 @@ export default function PublicShareViewerPage() {
     entry.prompts.forEach((p) => {
       parts.push(p.content);
     });
-    navigator.clipboard.writeText(parts.join('\n\n'));
-    toast.success('Copied to clipboard');
+    try {
+      await navigator.clipboard.writeText(parts.join('\n\n'));
+      toast.success('Copied to clipboard');
+    } catch {
+      toast.error('Failed to copy to clipboard');
+    }
   }, [state]);
 
   return (

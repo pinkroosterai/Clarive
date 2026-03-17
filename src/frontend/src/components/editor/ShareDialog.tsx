@@ -80,8 +80,12 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
     const token = createdToken;
     if (!token) return;
     const url = `${window.location.origin}/share/${encodeURIComponent(token)}`;
-    await navigator.clipboard.writeText(url);
-    toast.success('Link copied to clipboard');
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard');
+    } catch {
+      toast.error('Failed to copy to clipboard');
+    }
   }, [createdToken]);
 
   const existingLink = linkQuery.data;
@@ -248,13 +252,16 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                {password.length > 0 && password.length < 8 && (
+                  <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+                )}
               )}
             </div>
 
             <Button
               className="w-full"
               onClick={handleCreate}
-              disabled={createMutation.isPending || (usePassword && !password)}
+              disabled={createMutation.isPending || (usePassword && password.length < 8)}
             >
               {createMutation.isPending ? 'Creating...' : 'Create Share Link'}
             </Button>
