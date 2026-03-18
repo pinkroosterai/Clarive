@@ -322,7 +322,7 @@ const PlaygroundPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full -m-4">
       {/* ── Top bar ── */}
       <PlaygroundToolbar
         entryId={entryId}
