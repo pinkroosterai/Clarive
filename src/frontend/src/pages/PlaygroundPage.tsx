@@ -314,7 +314,8 @@ const PlaygroundPage = () => {
           copiedIndex={copiedIndex}
           handleRun={handleRun}
           handleCopy={handleCopy}
-          judgeScores={pinnedRun ? pinnedRun.judgeScores ?? null : lastJudgeScores}
+          pinnedJudgeScores={pinnedRun?.judgeScores ?? null}
+          currentJudgeScores={lastJudgeScores}
         />
 
         {/* ── History sidebar ── */}
