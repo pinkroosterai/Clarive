@@ -290,6 +290,7 @@ export default function PlaygroundResultsArea({
 
   // ── Keyboard navigation for pinned runs ──
   const comparisonRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const handleComparisonKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (pinnedRuns.length <= 1) return;
@@ -303,6 +304,15 @@ export default function PlaygroundResultsArea({
     },
     [pinnedRuns.length, setActiveCarouselIndex]
   );
+
+  // Scroll active pin column into view when index changes
+  useEffect(() => {
+    if (!scrollContainerRef.current) return;
+    const target = scrollContainerRef.current.querySelector(
+      `[data-pin-index="${clampedPinIndex}"]`
+    );
+    target?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [clampedPinIndex]);
 
   return (
     <div className="flex-1 p-6">
@@ -445,16 +455,20 @@ export default function PlaygroundResultsArea({
             // Build columns: optional current run + all pinned runs (equal peers)
             const totalColumns = (hasCurrentRun ? 1 : 0) + pinnedRuns.length;
             const needsScroll = totalColumns > 2;
+            const colClass = needsScroll ? 'flex-1 shrink-0 space-y-3' : 'flex-1 min-w-0 space-y-3';
 
             return (
-              <div className={needsScroll ? 'overflow-x-auto' : ''}>
+              <div
+                ref={scrollContainerRef}
+                className={needsScroll ? 'overflow-x-auto overflow-y-hidden' : ''}
+              >
                 <div
                   className="flex gap-4"
-                  style={needsScroll ? { width: `${totalColumns * 50}%` } : undefined}
+                  style={needsScroll ? { minWidth: `${totalColumns * 50}%` } : undefined}
                 >
                   {/* Current run column */}
                   {hasCurrentRun && (
-                    <div className="flex-1 min-w-0 space-y-3">
+                    <div className={colClass}>
                       <div className="text-xs font-medium text-foreground-muted flex items-center gap-1.5">
                         {isStreaming && <Loader2 className="size-3 animate-spin" />}
                         <span>Current Run</span>
@@ -507,14 +521,7 @@ export default function PlaygroundResultsArea({
 
                   {/* Pinned run columns — all equal peers */}
                   {pinnedRuns.map((run, pinIndex) => (
-                    <div
-                      key={run.id}
-                      className={`flex-1 min-w-0 space-y-3 ${
-                        pinIndex === clampedPinIndex
-                          ? 'ring-2 ring-primary/20 rounded-lg p-2 -m-2'
-                          : ''
-                      }`}
-                    >
+                    <div key={run.id} data-pin-index={pinIndex} className={colClass}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
                           <Pin className="size-3 text-primary" />
