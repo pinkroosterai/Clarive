@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -172,12 +172,18 @@ const PlaygroundPage = () => {
       prev.some((r) => r.id === run.id) ? removePinFromList(prev, run.id) : addPinToList(prev, run)
     );
   }, []);
+  const clearAllPins = useCallback(() => setPinnedRuns([]), []);
   const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
   const [isFillingTemplateFields, setIsFillingTemplateFields] = useState(false);
 
-  // Reset carousel index when pins change
+  // Reset carousel index when pins change + notify when all cleared
+  const prevPinCountRef = useRef(0);
   useEffect(() => {
     setActiveCarouselIndex(0);
+    if (prevPinCountRef.current > 0 && pinnedRuns.length === 0) {
+      toast.info('Comparison cleared');
+    }
+    prevPinCountRef.current = pinnedRuns.length;
   }, [pinnedRuns.length]);
 
   // ── Queries ──
@@ -374,6 +380,7 @@ const PlaygroundPage = () => {
           setFieldValues={setFieldValues}
           pinnedRuns={pinnedRuns}
           onUnpin={removePin}
+          onClearAllPins={clearAllPins}
           activeCarouselIndex={activeCarouselIndex}
           setActiveCarouselIndex={setActiveCarouselIndex}
           expandedStepInputs={expandedStepInputs}

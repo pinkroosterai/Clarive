@@ -10,6 +10,7 @@ import {
   Pin,
   PinOff,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { useState, useEffect, type RefObject } from 'react';
 
@@ -90,6 +91,7 @@ function ScoreBadgeBar({
   referenceRunId,
   carouselOffset,
   currentRunScore,
+  onClearAll,
 }: {
   pinnedRuns: TestRunResponse[];
   activeCarouselIndex: number;
@@ -97,6 +99,7 @@ function ScoreBadgeBar({
   referenceRunId: string | null;
   carouselOffset: number; // number of pinnedRuns entries before carousel starts (0 or 1)
   currentRunScore?: number | null; // show a "Current Run" pill when set (even if null)
+  onClearAll?: () => void;
 }) {
   const showCurrentPill = currentRunScore !== undefined;
   const currentColor = currentRunScore != null ? scoreColor(currentRunScore) : null;
@@ -147,6 +150,16 @@ function ScoreBadgeBar({
           </button>
         );
       })}
+      {onClearAll && pinnedRuns.length > 1 && (
+        <button
+          onClick={onClearAll}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] text-foreground-muted hover:text-foreground hover:bg-elevated/80 transition-colors"
+          aria-label="Clear all pinned runs"
+        >
+          <X className="size-3" />
+          Clear
+        </button>
+      )}
     </div>
   );
 }
@@ -217,6 +230,7 @@ interface PlaygroundResultsAreaProps {
   // Comparison state
   pinnedRuns: TestRunResponse[];
   onUnpin: (runId: string) => void;
+  onClearAllPins: () => void;
   activeCarouselIndex: number;
   setActiveCarouselIndex: React.Dispatch<React.SetStateAction<number>>;
   // UI state
@@ -256,6 +270,7 @@ export default function PlaygroundResultsArea({
   setFieldValues,
   pinnedRuns,
   onUnpin,
+  onClearAllPins,
   activeCarouselIndex,
   setActiveCarouselIndex,
   expandedStepInputs,
@@ -418,6 +433,7 @@ export default function PlaygroundResultsArea({
             referenceRunId={referenceRun?.id ?? null}
             carouselOffset={referenceRun ? 1 : 0}
             currentRunScore={hasCurrentRun ? (currentJudgeScores?.averageScore ?? null) : undefined}
+            onClearAll={onClearAllPins}
           />
 
           {/* Column headers */}
@@ -742,11 +758,21 @@ export default function PlaygroundResultsArea({
               : 'text-destructive bg-destructive/10'
           }`}
         >
-          <span>
-            {isRateLimitError(error) && rateLimitCountdown > 0
-              ? `Rate limit reached — you can try again in ${rateLimitCountdown}s`
-              : mapPlaygroundError(error)}
-          </span>
+          <div className="flex-1">
+            <span>
+              {isRateLimitError(error) && rateLimitCountdown > 0
+                ? `Rate limit reached — you can try again in ${rateLimitCountdown}s`
+                : mapPlaygroundError(error)}
+            </span>
+            {isRateLimitError(error) && rateLimitCountdown > 0 && (
+              <div className="mt-2 h-1 rounded-full bg-warning-border/30 overflow-hidden">
+                <div
+                  className="h-full bg-warning-text/60 rounded-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${((60 - rateLimitCountdown) / 60) * 100}%` }}
+                />
+              </div>
+            )}
+          </div>
           <Button
             variant="outline"
             size="sm"
