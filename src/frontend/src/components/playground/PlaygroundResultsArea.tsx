@@ -328,7 +328,7 @@ export default function PlaygroundResultsArea({
   }, [clampedPinIndex]);
 
   return (
-    <div className="flex-1 p-6">
+    <div className="flex-1 p-6 overflow-x-hidden min-w-0">
       {/* Template variables (collapsible) */}
       {templateFields.length > 0 &&
         (() => {
@@ -525,7 +525,7 @@ export default function PlaygroundResultsArea({
 
                   {/* ── Row 2: Response content (stretches to tallest) ── */}
                   {hasCurrentRun && (
-                    <div className="space-y-3 self-start">
+                    <div className="space-y-3 self-start min-w-0">
                       {showPrompts && (
                         <PromptSection
                           systemMessage={null}
