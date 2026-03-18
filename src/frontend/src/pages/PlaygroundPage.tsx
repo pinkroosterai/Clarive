@@ -373,7 +373,7 @@ const PlaygroundPage = () => {
       />
 
       {/* ── Main content ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-y-auto overflow-x-hidden">
         {/* Response area */}
         <PlaygroundResultsArea
           prompts={prompts}

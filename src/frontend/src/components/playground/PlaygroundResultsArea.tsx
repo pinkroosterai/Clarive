@@ -334,7 +334,7 @@ export default function PlaygroundResultsArea({
   }, [clampedPinIndex]);
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto overflow-x-hidden min-w-0">
+    <div className="flex-1 p-6 min-w-0">
       {/* Template variables (collapsible) */}
       {templateFields.length > 0 &&
         (() => {
@@ -928,9 +928,9 @@ export default function PlaygroundResultsArea({
         </div>
       )}
 
-      {/* Sticky run summary bar — always visible at the bottom */}
+      {/* Run summary bar */}
       {!isStreaming && hasResponses && (elapsedSeconds > 0 || lastTokens) && (
-        <div className="sticky bottom-0 -mx-6 px-6 py-2 bg-surface/90 backdrop-blur-sm border-t border-border-subtle flex items-center gap-4 text-xs text-foreground-muted">
+        <div className="flex items-center gap-4 text-xs text-foreground-muted mt-4 pt-3 border-t border-border-subtle">
           {elapsedSeconds > 0 && <span>{elapsedSeconds}s</span>}
           {lastTokens?.input != null && (
             <span>{lastTokens.input.toLocaleString()} input</span>
