@@ -15,7 +15,9 @@ public record TestRunResponse(
     OutputEvaluation? JudgeScores = null,
     List<TestRunPromptResponse>? Reasoning = null,
     string? RenderedSystemMessage = null,
-    List<TestRunPromptResponse>? RenderedPrompts = null
+    List<TestRunPromptResponse>? RenderedPrompts = null,
+    int? VersionNumber = null,
+    string? VersionLabel = null
 );
 
 public record TestRunPromptResponse(
@@ -35,5 +37,7 @@ public record TestStreamResult(
     long? InputTokens,
     long? OutputTokens,
     string? Reasoning,
-    OutputEvaluation? JudgeScores = null
+    OutputEvaluation? JudgeScores = null,
+    int? VersionNumber = null,
+    string? VersionLabel = null
 );

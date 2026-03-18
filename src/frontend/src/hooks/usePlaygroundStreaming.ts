@@ -75,6 +75,7 @@ export function usePlaygroundStreaming({
   } | null>(null);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
   const [lastJudgeScores, setLastJudgeScores] = useState<Evaluation | null>(null);
+  const [lastVersionLabel, setLastVersionLabel] = useState<string | null>(null);
   const [isJudging, setIsJudging] = useState(false);
 
   // ── Scroll refs ──
@@ -157,6 +158,7 @@ export function usePlaygroundStreaming({
     setLastTokens(null);
     setLastRunId(null);
     setLastJudgeScores(null);
+    setLastVersionLabel(null);
     setIsJudging(false);
     setElapsedSeconds(0);
     setApproxOutputTokens(0);
@@ -214,6 +216,7 @@ export function usePlaygroundStreaming({
       }
       setLastRunId(result.runId);
       setLastJudgeScores(result.judgeScores ?? null);
+      setLastVersionLabel(result.versionLabel ?? null);
       setIsJudging(false);
 
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
@@ -278,6 +281,7 @@ export function usePlaygroundStreaming({
     lastTokens,
     lastRunId,
     lastJudgeScores,
+    lastVersionLabel,
     isJudging,
     hasResponses,
     currentPromptIndex,

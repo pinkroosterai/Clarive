@@ -29,6 +29,9 @@ public class PlaygroundRun : ITenantScoped
     [Column(TypeName = "jsonb")]
     public string? RenderedPrompts { get; set; }
 
+    public int? VersionNumber { get; set; }
+    public string? VersionLabel { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public PromptEntry Entry { get; set; } = null!;

@@ -219,6 +219,10 @@ public class PlaygroundService(
         }
 
         // Persist the run
+        var versionLabel = version.VersionState == VersionState.Draft
+            ? "Draft"
+            : $"v{version.Version}";
+
         var run = new PlaygroundRun
         {
             Id = Guid.NewGuid(),
@@ -237,6 +241,8 @@ public class PlaygroundService(
                 : null,
             RenderedSystemMessage = renderedSystemMessage,
             RenderedPrompts = JsonSerializer.Serialize(renderedPromptTexts, JsonOptions),
+            VersionNumber = version.Version,
+            VersionLabel = versionLabel,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -252,7 +258,8 @@ public class PlaygroundService(
         var fullReasoning = reasoningPerPrompt.Count > 0
             ? string.Join("\n\n", reasoningPerPrompt.Select(r => r.Content))
             : null;
-        return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens, fullReasoning);
+        return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens, fullReasoning,
+            VersionNumber: version.Version, VersionLabel: versionLabel);
     }
 
     public async Task<ErrorOr<OutputEvaluation>> JudgePlaygroundRunAsync(

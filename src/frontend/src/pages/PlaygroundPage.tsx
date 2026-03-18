@@ -131,6 +131,7 @@ const PlaygroundPage = () => {
     approxOutputTokens,
     lastTokens,
     lastJudgeScores,
+    lastVersionLabel,
     isJudging,
     hasResponses,
     currentPromptIndex,
@@ -390,6 +391,7 @@ const PlaygroundPage = () => {
           handleCopy={handleCopy}
           currentJudgeScores={lastJudgeScores}
           isJudging={isJudging}
+          currentVersionLabel={lastVersionLabel}
           onFillTemplateFields={templateFields.length > 0 ? handleFillTemplateFields : undefined}
           isFillingTemplateFields={isFillingTemplateFields}
         />

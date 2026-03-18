@@ -58,7 +58,9 @@ public class PlaygroundRunService(IPlaygroundRunRepository runRepo) : IPlaygroun
             r.RenderedSystemMessage,
             !string.IsNullOrEmpty(r.RenderedPrompts)
                 ? JsonSerializer.Deserialize<List<TestRunPromptResponse>>(r.RenderedPrompts, JsonOptions)
-                : null
+                : null,
+            r.VersionNumber,
+            r.VersionLabel
         )).ToList();
     }
 }

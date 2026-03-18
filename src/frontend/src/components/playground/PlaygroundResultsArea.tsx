@@ -2,8 +2,6 @@ import {
   Play,
   Square,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Check,
   Loader2,
@@ -12,7 +10,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { useState, useEffect, type RefObject } from 'react';
+import { useState, useEffect, useRef, useCallback, type RefObject } from 'react';
 
 import CopyButton from './CopyButton';
 import ReasoningBlock from './ReasoningBlock';
@@ -22,7 +20,6 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import {
   Select,
   SelectContent,
@@ -30,10 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { scoreColor } from '@/components/wizard/scoreUtils';
 import { getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { renderTemplate } from '@/lib/templateRenderer';
-import { scoreColor } from '@/components/wizard/scoreUtils';
 import type {
   TestRunResponse,
   TestRunPromptResponse,
@@ -86,19 +84,17 @@ function JudgeScorePanel({ scores }: { scores: Evaluation }) {
 
 function ScoreBadgeBar({
   pinnedRuns,
-  activeCarouselIndex,
+  activePinIndex,
   onSelectIndex,
-  referenceRunId,
-  carouselOffset,
   currentRunScore,
+  currentRunVersionLabel,
   onClearAll,
 }: {
   pinnedRuns: TestRunResponse[];
-  activeCarouselIndex: number;
-  onSelectIndex: (carouselIndex: number) => void;
-  referenceRunId: string | null;
-  carouselOffset: number; // number of pinnedRuns entries before carousel starts (0 or 1)
-  currentRunScore?: number | null; // show a "Current Run" pill when set (even if null)
+  activePinIndex: number;
+  onSelectIndex: (index: number) => void;
+  currentRunScore?: number | null;
+  currentRunVersionLabel?: string | null;
   onClearAll?: () => void;
 }) {
   const showCurrentPill = currentRunScore !== undefined;
@@ -108,6 +104,11 @@ function ScoreBadgeBar({
       {showCurrentPill && (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-primary/10 border border-primary/30">
           <span className="font-medium">Current Run</span>
+          {currentRunVersionLabel && (
+            <span className="text-[10px] font-medium text-foreground-muted">
+              {currentRunVersionLabel}
+            </span>
+          )}
           {currentRunScore != null && (
             <span className={`font-bold tabular-nums ${currentColor?.text ?? ''}`}>
               {currentRunScore.toFixed(1)}
@@ -116,32 +117,27 @@ function ScoreBadgeBar({
         </span>
       )}
       {pinnedRuns.map((run, i) => {
-        const isReference = run.id === referenceRunId;
-        const carouselIndex = i - carouselOffset;
-        const isActive = !isReference && carouselIndex === activeCarouselIndex;
+        const isActive = i === activePinIndex;
         const score = run.judgeScores?.averageScore;
         const color = score !== undefined ? scoreColor(score) : null;
         return (
           <button
             key={run.id}
-            onClick={() => {
-              if (!isReference) onSelectIndex(carouselIndex);
-            }}
+            onClick={() => onSelectIndex(i)}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all duration-150 ${
-              isReference
-                ? 'bg-primary/10 border border-primary/30 cursor-default'
-                : isActive
-                  ? 'bg-elevated ring-2 ring-primary cursor-pointer'
-                  : 'bg-elevated hover:bg-elevated/80 cursor-pointer'
+              isActive
+                ? 'bg-elevated ring-2 ring-primary cursor-pointer'
+                : 'bg-elevated hover:bg-elevated/80 cursor-pointer'
             }`}
-            title={isReference ? 'Reference run' : `View: ${run.model}`}
-            aria-label={
-              isReference
-                ? `Reference: ${run.model}${score !== undefined ? `, score ${score.toFixed(1)}` : ''}`
-                : `View ${run.model}${score !== undefined ? `, score ${score.toFixed(1)}` : ''}`
-            }
+            title={`View: ${run.model}`}
+            aria-label={`View ${run.model}${score !== undefined ? `, score ${score.toFixed(1)}` : ''}`}
           >
             <span className="truncate max-w-[100px] font-medium">{run.model}</span>
+            {run.versionLabel && (
+              <span className="text-[10px] font-medium text-foreground-muted">
+                {run.versionLabel}
+              </span>
+            )}
             {score !== undefined && (
               <span className={`font-bold tabular-nums ${color?.text ?? ''}`}>
                 {score.toFixed(1)}
@@ -243,6 +239,8 @@ interface PlaygroundResultsAreaProps {
   // Judge
   currentJudgeScores: Evaluation | null;
   isJudging: boolean;
+  // Version
+  currentVersionLabel: string | null;
   // Fill template fields
   onFillTemplateFields?: () => void;
   isFillingTemplateFields?: boolean;
@@ -280,42 +278,31 @@ export default function PlaygroundResultsArea({
   handleCopy,
   currentJudgeScores,
   isJudging,
+  currentVersionLabel,
   onFillTemplateFields,
   isFillingTemplateFields,
 }: PlaygroundResultsAreaProps) {
   const hasPins = pinnedRuns.length > 0;
   const [showPrompts, setShowPrompts] = useState(false);
 
-  // ── Carousel logic: reference column + navigable carousel ──
-  // When current run exists: left = current run, carousel = all pins
-  // When no current run: left = first pin (reference), carousel = remaining pins
   const hasCurrentRun = hasResponses || isStreaming;
-  const referenceRun = !hasCurrentRun && hasPins ? pinnedRuns[0] : null;
-  const carouselRuns = !hasCurrentRun && hasPins ? pinnedRuns.slice(1) : pinnedRuns;
-  const clampedIndex = Math.min(activeCarouselIndex, Math.max(carouselRuns.length - 1, 0));
-  const activeRun = carouselRuns[clampedIndex] ?? null;
+  const clampedPinIndex = Math.min(activeCarouselIndex, Math.max(pinnedRuns.length - 1, 0));
 
-  const judgeScores =
-    (hasPins ? (referenceRun?.judgeScores ?? pinnedRuns[0]?.judgeScores) : null) ??
-    currentJudgeScores;
-
-  // ── Keyboard navigation for carousel ──
-  useEffect(() => {
-    if (!hasPins || carouselRuns.length <= 1) return;
-    const handler = (e: KeyboardEvent) => {
-      const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  // ── Keyboard navigation for pinned runs ──
+  const comparisonRef = useRef<HTMLDivElement>(null);
+  const handleComparisonKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (pinnedRuns.length <= 1) return;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         setActiveCarouselIndex((prev) => Math.max(prev - 1, 0));
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
-        setActiveCarouselIndex((prev) => Math.min(prev + 1, carouselRuns.length - 1));
+        setActiveCarouselIndex((prev) => Math.min(prev + 1, pinnedRuns.length - 1));
       }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [hasPins, carouselRuns.length, setActiveCarouselIndex]);
+    },
+    [pinnedRuns.length, setActiveCarouselIndex]
+  );
 
   return (
     <div className="flex-1 p-6">
@@ -422,99 +409,29 @@ export default function PlaygroundResultsArea({
           );
         })()}
 
-      {/* Comparison layout — diff-view carousel */}
-      {hasPins && (referenceRun || hasCurrentRun) && activeRun && (
-        <div className="mb-6 space-y-3">
+      {/* ── Comparison layout — all pins shown side-by-side ── */}
+      {hasPins && (
+        <div
+          ref={comparisonRef}
+          className="mb-6 space-y-3 outline-none"
+          tabIndex={0}
+          onKeyDown={handleComparisonKeyDown}
+          aria-label={`Pinned run comparison. ${pinnedRuns.length > 1 ? 'Use left and right arrow keys to navigate.' : ''}`}
+          role="region"
+        >
           {/* Score badge bar */}
           <ScoreBadgeBar
             pinnedRuns={pinnedRuns}
-            activeCarouselIndex={clampedIndex}
+            activePinIndex={clampedPinIndex}
             onSelectIndex={setActiveCarouselIndex}
-            referenceRunId={referenceRun?.id ?? null}
-            carouselOffset={referenceRun ? 1 : 0}
             currentRunScore={hasCurrentRun ? (currentJudgeScores?.averageScore ?? null) : undefined}
+            currentRunVersionLabel={hasCurrentRun ? currentVersionLabel : undefined}
             onClearAll={onClearAllPins}
           />
 
-          {/* Column headers */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Left column header (reference) */}
-            <div className="text-xs font-medium text-foreground-muted">
-              {hasCurrentRun ? (
-                <span className="flex items-center gap-1.5">
-                  {isStreaming && <Loader2 className="size-3 animate-spin" />}
-                  Current Run
-                </span>
-              ) : referenceRun ? (
-                <span className="flex items-center gap-1.5">
-                  <Pin className="size-3 text-primary" />
-                  {referenceRun.model}
-                  <span className="text-foreground-muted/60">
-                    t={referenceRun.temperature.toFixed(1)}
-                  </span>
-                </span>
-              ) : null}
-            </div>
-            {/* Right column header (carousel) */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
-                <Pin className="size-3 text-primary" />
-                <span className="font-medium">{activeRun.model}</span>
-                <span>t={activeRun.temperature.toFixed(1)}</span>
-                <span>{new Date(activeRun.createdAt).toLocaleString()}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                {carouselRuns.length > 1 && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => setActiveCarouselIndex((prev) => Math.max(prev - 1, 0))}
-                      disabled={clampedIndex === 0}
-                      aria-label="Previous pinned run"
-                    >
-                      <ChevronLeft className="size-3.5" />
-                    </Button>
-                    <span className="text-xs text-foreground-muted tabular-nums">
-                      {clampedIndex + 1}/{carouselRuns.length}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() =>
-                        setActiveCarouselIndex((prev) =>
-                          Math.min(prev + 1, carouselRuns.length - 1)
-                        )
-                      }
-                      disabled={clampedIndex === carouselRuns.length - 1}
-                      aria-label="Next pinned run"
-                    >
-                      <ChevronRight className="size-3.5" />
-                    </Button>
-                  </>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-1.5"
-                  onClick={() => onUnpin(activeRun.id)}
-                  title="Unpin"
-                  aria-label={`Unpin ${activeRun.model}`}
-                >
-                  <PinOff className="size-3 text-primary" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
           {/* Show prompt toggle */}
-          {(activeRun.renderedPrompts ||
-            activeRun.renderedSystemMessage ||
-            referenceRun?.renderedPrompts ||
-            referenceRun?.renderedSystemMessage ||
-            hasCurrentRun) && (
+          {(hasCurrentRun ||
+            pinnedRuns.some((r) => r.renderedPrompts || r.renderedSystemMessage)) && (
             <button
               onClick={() => setShowPrompts((p) => !p)}
               className="text-xs text-foreground-muted hover:text-foreground transition-colors"
@@ -523,210 +440,173 @@ export default function PlaygroundResultsArea({
             </button>
           )}
 
-          {/* Collapsible prompt sections */}
-          {showPrompts && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                {hasCurrentRun ? (
-                  <PromptSection
-                    systemMessage={null}
-                    renderedPrompts={prompts.map((p, i) => ({
-                      promptIndex: i,
-                      content: renderTemplate(p.content, fieldValues),
-                    }))}
-                  />
-                ) : (
-                  <PromptSection
-                    systemMessage={referenceRun?.renderedSystemMessage}
-                    renderedPrompts={referenceRun?.renderedPrompts}
-                  />
-                )}
-              </div>
-              <div className="animate-fade-in">
-                <PromptSection
-                  systemMessage={activeRun.renderedSystemMessage}
-                  renderedPrompts={activeRun.renderedPrompts}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Prompt response rows */}
-          {prompts.map((_p, i) => {
-            // Left column: current run response or reference pin response
-            const leftResponse = hasCurrentRun
-              ? streamedResponses[i]
-              : referenceRun?.responses.find((r: TestRunPromptResponse) => r.promptIndex === i)
-                  ?.content;
-            const leftReasoning = hasCurrentRun
-              ? streamedReasoning[i]
-              : referenceRun?.reasoning?.find((r) => r.promptIndex === i)?.content;
-            // Right column: active carousel run response
-            const rightResponse = activeRun.responses.find(
-              (r: TestRunPromptResponse) => r.promptIndex === i
-            );
-            const rightReasoning = activeRun.reasoning?.find((r) => r.promptIndex === i)?.content;
+          {/* Scrollable column container */}
+          {(() => {
+            // Build columns: optional current run + all pinned runs (equal peers)
+            const totalColumns = (hasCurrentRun ? 1 : 0) + pinnedRuns.length;
+            const needsScroll = totalColumns > 2;
 
             return (
-              <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  {prompts.length > 1 && (
-                    <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+              <div className={needsScroll ? 'overflow-x-auto' : ''}>
+                <div
+                  className="flex gap-4"
+                  style={needsScroll ? { width: `${totalColumns * 50}%` } : undefined}
+                >
+                  {/* Current run column */}
+                  {hasCurrentRun && (
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div className="text-xs font-medium text-foreground-muted flex items-center gap-1.5">
+                        {isStreaming && <Loader2 className="size-3 animate-spin" />}
+                        <span>Current Run</span>
+                      </div>
+                      {showPrompts && (
+                        <PromptSection
+                          systemMessage={null}
+                          renderedPrompts={prompts.map((p, i) => ({
+                            promptIndex: i,
+                            content: renderTemplate(p.content, fieldValues),
+                          }))}
+                        />
+                      )}
+                      {prompts.map((_p, i) => (
+                        <div key={i}>
+                          {prompts.length > 1 && (
+                            <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                          )}
+                          {streamedReasoning[i] && (
+                            <ReasoningBlock
+                              reasoning={streamedReasoning[i]}
+                              isStreaming={isStreaming}
+                            />
+                          )}
+                          <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                            {streamedResponses[i] !== undefined ? (
+                              <LLMResponseBlock
+                                output={streamedResponses[i]}
+                                isStreaming={isStreaming}
+                              />
+                            ) : (
+                              <span className="text-xs text-foreground-muted">—</span>
+                            )}
+                            {streamedResponses[i] && !isStreaming && (
+                              <CopyButton
+                                text={streamedResponses[i]}
+                                index={2000 + i}
+                                copiedIndex={copiedIndex}
+                                onCopy={handleCopy}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {!isStreaming && currentJudgeScores && (
+                        <JudgeScorePanel scores={currentJudgeScores} />
+                      )}
+                    </div>
                   )}
-                  {leftReasoning && (
-                    <ReasoningBlock
-                      reasoning={leftReasoning}
-                      isStreaming={hasCurrentRun && isStreaming}
-                    />
-                  )}
-                  <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                    {leftResponse !== undefined ? (
-                      <LLMResponseBlock
-                        output={leftResponse}
-                        isStreaming={hasCurrentRun && isStreaming}
-                      />
-                    ) : (
-                      <span className="text-xs text-foreground-muted">—</span>
-                    )}
-                    {leftResponse && !(hasCurrentRun && isStreaming) && (
-                      <CopyButton
-                        text={leftResponse}
-                        index={2000 + i}
-                        copiedIndex={copiedIndex}
-                        onCopy={handleCopy}
-                      />
-                    )}
-                  </div>
-                </div>
-                <div key={activeRun.id} className="animate-fade-in">
-                  {prompts.length > 1 && (
-                    <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                  )}
-                  {rightReasoning && <ReasoningBlock reasoning={rightReasoning} />}
-                  <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                    {rightResponse ? (
-                      <LLMResponseBlock output={rightResponse.content} isStreaming={false} />
-                    ) : (
-                      <span className="text-xs text-foreground-muted">—</span>
-                    )}
-                    {rightResponse && (
-                      <CopyButton
-                        text={rightResponse.content}
-                        index={3000 + i}
-                        copiedIndex={copiedIndex}
-                        onCopy={handleCopy}
-                      />
-                    )}
-                  </div>
+
+                  {/* Pinned run columns — all equal peers */}
+                  {pinnedRuns.map((run, pinIndex) => (
+                    <div
+                      key={run.id}
+                      className={`flex-1 min-w-0 space-y-3 ${
+                        pinIndex === clampedPinIndex
+                          ? 'ring-2 ring-primary/20 rounded-lg p-2 -m-2'
+                          : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+                          <Pin className="size-3 text-primary" />
+                          <span className="font-medium">{run.model}</span>
+                          {run.versionLabel && (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-elevated">
+                              {run.versionLabel}
+                            </span>
+                          )}
+                          <span className="text-foreground-muted/60">
+                            t={run.temperature.toFixed(1)}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5"
+                          onClick={() => onUnpin(run.id)}
+                          title="Unpin"
+                          aria-label={`Unpin ${run.model}`}
+                        >
+                          <PinOff className="size-3 text-primary" />
+                        </Button>
+                      </div>
+                      <div className="text-[10px] text-foreground-muted">
+                        {new Date(run.createdAt).toLocaleString()}
+                      </div>
+                      {showPrompts && (
+                        <PromptSection
+                          systemMessage={run.renderedSystemMessage}
+                          renderedPrompts={run.renderedPrompts}
+                        />
+                      )}
+                      {prompts.map((_p, i) => {
+                        const response = run.responses.find(
+                          (r: TestRunPromptResponse) => r.promptIndex === i
+                        );
+                        const reasoning = run.reasoning?.find((r) => r.promptIndex === i)?.content;
+                        return (
+                          <div key={i}>
+                            {prompts.length > 1 && (
+                              <div className="text-xs text-foreground-muted mb-2">
+                                Prompt {i + 1}
+                              </div>
+                            )}
+                            {reasoning && <ReasoningBlock reasoning={reasoning} />}
+                            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                              {response ? (
+                                <LLMResponseBlock output={response.content} isStreaming={false} />
+                              ) : (
+                                <span className="text-xs text-foreground-muted">—</span>
+                              )}
+                              {response && (
+                                <CopyButton
+                                  text={response.content}
+                                  index={3000 + pinIndex * 100 + i}
+                                  copiedIndex={copiedIndex}
+                                  onCopy={handleCopy}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {run.judgeScores && <JudgeScorePanel scores={run.judgeScores} />}
+                    </div>
+                  ))}
                 </div>
               </div>
             );
-          })}
+          })()}
 
-          {/* Judge scores */}
-          {((hasCurrentRun && !isStreaming && currentJudgeScores) ||
-            referenceRun?.judgeScores ||
-            activeRun.judgeScores) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                {hasCurrentRun
-                  ? !isStreaming &&
-                    currentJudgeScores && <JudgeScorePanel scores={currentJudgeScores} />
-                  : referenceRun?.judgeScores && (
-                      <JudgeScorePanel scores={referenceRun.judgeScores} />
-                    )}
-              </div>
-              <div key={activeRun.id} className="animate-fade-in">
-                {activeRun.judgeScores && <JudgeScorePanel scores={activeRun.judgeScores} />}
-              </div>
-            </div>
-          )}
-
-          {/* Dot indicators */}
-          {carouselRuns.length > 1 && (
+          {/* Navigation hint for scrollable layouts */}
+          {pinnedRuns.length > 1 && (
             <div className="flex items-center justify-center gap-1.5 pt-1">
-              {carouselRuns.map((_, i) => (
+              {pinnedRuns.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveCarouselIndex(i)}
                   className={`size-2 rounded-full transition-colors ${
-                    i === clampedIndex
+                    i === clampedPinIndex
                       ? 'bg-primary'
                       : 'bg-border-subtle hover:bg-foreground-muted/40'
                   }`}
                   aria-label={`View pinned run ${i + 1}`}
                 />
               ))}
+              <span className="text-[10px] text-foreground-muted/50 ml-1.5 hidden sm:inline">
+                ← →
+              </span>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Pins with no carousel target (single pin, no current run) */}
-      {hasPins && !hasCurrentRun && pinnedRuns.length === 1 && (
-        <div className="mb-6 space-y-3">
-          <ScoreBadgeBar
-            pinnedRuns={pinnedRuns}
-            activeCarouselIndex={0}
-            onSelectIndex={() => {}}
-            referenceRunId={pinnedRuns[0].id}
-            carouselOffset={1}
-          />
-          <div className="text-xs font-medium text-foreground-muted flex items-center gap-1.5">
-            <Pin className="size-3 text-primary" />
-            {pinnedRuns[0].model}
-            <span className="text-foreground-muted/60">
-              t={pinnedRuns[0].temperature.toFixed(1)}
-            </span>
-            <span className="ml-auto">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-1.5"
-                onClick={() => onUnpin(pinnedRuns[0].id)}
-                title="Unpin"
-                aria-label={`Unpin ${pinnedRuns[0].model}`}
-              >
-                <PinOff className="size-3 text-primary" />
-              </Button>
-            </span>
-          </div>
-          {(pinnedRuns[0].renderedPrompts || pinnedRuns[0].renderedSystemMessage) && (
-            <button
-              onClick={() => setShowPrompts((p) => !p)}
-              className="text-xs text-foreground-muted hover:text-foreground transition-colors"
-            >
-              {showPrompts ? 'Hide prompts' : 'Show prompts'}
-            </button>
-          )}
-          {showPrompts && (
-            <PromptSection
-              systemMessage={pinnedRuns[0].renderedSystemMessage}
-              renderedPrompts={pinnedRuns[0].renderedPrompts}
-            />
-          )}
-          {prompts.map((_p, i) => {
-            const response = pinnedRuns[0].responses.find(
-              (r: TestRunPromptResponse) => r.promptIndex === i
-            );
-            const pinReasoning = pinnedRuns[0].reasoning?.find((r) => r.promptIndex === i)?.content;
-            return (
-              <div key={i}>
-                {prompts.length > 1 && (
-                  <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                )}
-                {pinReasoning && <ReasoningBlock reasoning={pinReasoning} />}
-                <div className="rounded-lg border border-border-subtle bg-surface p-4">
-                  {response ? (
-                    <LLMResponseBlock output={response.content} isStreaming={false} />
-                  ) : (
-                    <span className="text-xs text-foreground-muted">—</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          {pinnedRuns[0].judgeScores && <JudgeScorePanel scores={pinnedRuns[0].judgeScores} />}
         </div>
       )}
 
@@ -973,7 +853,7 @@ export default function PlaygroundResultsArea({
       )}
 
       {/* Judging indicator */}
-      {isJudging && !judgeScores && (
+      {isJudging && !currentJudgeScores && (
         <div className="flex items-center gap-2 text-xs text-foreground-muted mt-4 pt-3 border-t border-border-subtle">
           <Loader2 className="size-3.5 animate-spin text-primary" />
           <span>Evaluating output quality...</span>
@@ -981,8 +861,8 @@ export default function PlaygroundResultsArea({
       )}
 
       {/* Judge output quality (non-comparison mode) */}
-      {!hasPins && !isStreaming && hasResponses && judgeScores && (
-        <JudgeScorePanel scores={judgeScores} />
+      {!hasPins && !isStreaming && hasResponses && currentJudgeScores && (
+        <JudgeScorePanel scores={currentJudgeScores} />
       )}
 
       {/* Token count + elapsed time */}

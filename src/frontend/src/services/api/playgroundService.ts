@@ -18,6 +18,8 @@ export interface TestStreamResult {
   outputTokens: number | null;
   reasoning: string | null;
   judgeScores: Evaluation | null;
+  versionNumber: number | null;
+  versionLabel: string | null;
 }
 
 export interface TestRunResponse {
@@ -34,6 +36,8 @@ export interface TestRunResponse {
   reasoning?: TestRunPromptResponse[] | null;
   renderedSystemMessage?: string | null;
   renderedPrompts?: TestRunPromptResponse[] | null;
+  versionNumber?: number | null;
+  versionLabel?: string | null;
 }
 
 export interface Evaluation {
