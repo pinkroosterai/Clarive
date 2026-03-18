@@ -342,8 +342,8 @@ export default function PlaygroundResultsArea({
           return (
             <Collapsible defaultOpen open={missingCount > 0 ? true : undefined} className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-foreground-muted">
-                  <ChevronDown className="size-3.5" />
+                <CollapsibleTrigger className="group flex items-center gap-2 text-xs font-medium text-foreground-muted">
+                  <ChevronDown className="size-3.5 transition-transform duration-200 group-data-[state=closed]:-rotate-90" />
                   Template Variables ({templateFields.length})
                   {missingCount > 0 && (
                     <span className="px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">
