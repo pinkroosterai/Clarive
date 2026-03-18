@@ -102,6 +102,7 @@ function ScoreBadgeBar({
   currentRunScore,
   currentRunVersionLabel,
   onClearAll,
+  onScrollToCurrent,
 }: {
   pinnedRuns: TestRunResponse[];
   activePinIndex: number;
@@ -109,13 +110,18 @@ function ScoreBadgeBar({
   currentRunScore?: number | null;
   currentRunVersionLabel?: string | null;
   onClearAll?: () => void;
+  onScrollToCurrent?: () => void;
 }) {
   const showCurrentPill = currentRunScore !== undefined;
   const currentColor = currentRunScore != null ? scoreColor(currentRunScore) : null;
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {showCurrentPill && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-primary/10 border border-primary/30">
+        <button
+          onClick={onScrollToCurrent}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors cursor-pointer"
+          title="Scroll to current run"
+        >
           <span className="font-medium">Current Run</span>
           {currentRunVersionLabel && (
             <span className="text-[10px] font-medium text-foreground-muted">
@@ -127,7 +133,7 @@ function ScoreBadgeBar({
               {currentRunScore.toFixed(1)}
             </span>
           )}
-        </span>
+        </button>
       )}
       {pinnedRuns.map((run, i) => {
         const isActive = i === activePinIndex;
@@ -450,6 +456,9 @@ export default function PlaygroundResultsArea({
             currentRunScore={hasCurrentRun ? (currentJudgeScores?.averageScore ?? null) : undefined}
             currentRunVersionLabel={hasCurrentRun ? currentVersionLabel : undefined}
             onClearAll={onClearAllPins}
+            onScrollToCurrent={() => {
+              scrollContainerRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+            }}
           />
 
           {/* Show prompt toggle */}
@@ -906,23 +915,6 @@ export default function PlaygroundResultsArea({
         <JudgeScorePanel scores={currentJudgeScores} />
       )}
 
-      {/* Token count + elapsed time */}
-      {!isStreaming && hasResponses && (
-        <div className="flex items-center gap-4 text-xs text-foreground-muted mt-4">
-          {elapsedSeconds > 0 && <span>{elapsedSeconds}s</span>}
-          {lastTokens && (
-            <>
-              {lastTokens.input != null && (
-                <span>{lastTokens.input.toLocaleString()} input tokens</span>
-              )}
-              {lastTokens.output != null && (
-                <span>{lastTokens.output.toLocaleString()} output tokens</span>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
       {/* Empty state */}
       {!hasResponses && !error && (
         <div
@@ -932,6 +924,27 @@ export default function PlaygroundResultsArea({
           <p className="text-sm">Click Run to test your prompt</p>
           {isChain && (
             <p className="text-xs mt-1">{prompts.length} prompts will execute sequentially</p>
+          )}
+        </div>
+      )}
+
+      {/* Sticky run summary bar — always visible at the bottom */}
+      {!isStreaming && hasResponses && (elapsedSeconds > 0 || lastTokens) && (
+        <div className="sticky bottom-0 -mx-6 px-6 py-2 bg-surface/90 backdrop-blur-sm border-t border-border-subtle flex items-center gap-4 text-xs text-foreground-muted">
+          {elapsedSeconds > 0 && <span>{elapsedSeconds}s</span>}
+          {lastTokens?.input != null && (
+            <span>{lastTokens.input.toLocaleString()} input</span>
+          )}
+          {lastTokens?.output != null && (
+            <span>{lastTokens.output.toLocaleString()} output</span>
+          )}
+          {!hasPins && currentJudgeScores && (
+            <>
+              <span className="text-border-subtle">·</span>
+              <span className={scoreColor(currentJudgeScores.averageScore).text}>
+                {currentJudgeScores.averageScore.toFixed(1)}/10
+              </span>
+            </>
           )}
         </div>
       )}
