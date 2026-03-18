@@ -467,7 +467,7 @@ const EntryEditorPage = () => {
       </ScrollArea>
 
       <div
-        className="bg-surface border-l border-border-subtle p-4 overflow-hidden"
+        className="bg-surface border-l border-border-subtle p-4 h-full overflow-hidden"
         data-tour="editor-actions"
       >
         <EditorActionPanel {...sharedActionProps} versionPanel={versionPanel} />
