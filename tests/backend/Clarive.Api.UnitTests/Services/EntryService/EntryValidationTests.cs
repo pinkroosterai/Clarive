@@ -1,104 +1,113 @@
 using FluentAssertions;
 using Clarive.Api.Models.Requests;
+using MiniValidation;
+using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services.EntryService;
 
 public class EntryValidationTests : EntryServiceTestBase
 {
-    // ── ValidateCreateRequest ────────────────────────────────────
+    // ── Data Annotation validation (MiniValidation) ──────────────
 
     [Fact]
-    public void ValidateCreate_NullTitle_ReturnsError()
+    public void CreateRequest_NullTitle_FailsValidation()
     {
         var request = new CreateEntryRequest(null!, null, [new PromptInput("hi")], null);
 
-        Sut.ValidateCreateRequest(request).Should().Be("Title is required.");
+        MiniValidator.TryValidate(request, out var errors).Should().BeFalse();
+        errors.Should().ContainKey(nameof(CreateEntryRequest.Title));
     }
 
     [Fact]
-    public void ValidateCreate_WhitespaceTitle_ReturnsError()
-    {
-        var request = new CreateEntryRequest("   ", null, [new PromptInput("hi")], null);
-
-        Sut.ValidateCreateRequest(request).Should().Be("Title is required.");
-    }
-
-    [Fact]
-    public void ValidateCreate_TitleTooLong_ReturnsError()
+    public void CreateRequest_TitleTooLong_FailsValidation()
     {
         var longTitle = new string('A', 501);
         var request = new CreateEntryRequest(longTitle, null, [new PromptInput("hi")], null);
 
-        Sut.ValidateCreateRequest(request).Should().Be("Title must be 500 characters or fewer.");
+        MiniValidator.TryValidate(request, out var errors).Should().BeFalse();
+        errors.Should().ContainKey(nameof(CreateEntryRequest.Title));
     }
 
     [Fact]
-    public void ValidateCreate_NullPrompts_ReturnsError()
+    public void CreateRequest_NullPrompts_FailsValidation()
     {
         var request = new CreateEntryRequest("Title", null, null!, null);
 
-        Sut.ValidateCreateRequest(request).Should().Be("At least one prompt is required.");
+        MiniValidator.TryValidate(request, out var errors).Should().BeFalse();
+        errors.Should().ContainKey(nameof(CreateEntryRequest.Prompts));
     }
 
     [Fact]
-    public void ValidateCreate_EmptyPrompts_ReturnsError()
+    public void CreateRequest_EmptyPrompts_FailsValidation()
     {
         var request = new CreateEntryRequest("Title", null, [], null);
 
-        Sut.ValidateCreateRequest(request).Should().Be("At least one prompt is required.");
+        MiniValidator.TryValidate(request, out var errors).Should().BeFalse();
+        errors.Should().ContainKey(nameof(CreateEntryRequest.Prompts));
     }
 
     [Fact]
-    public void ValidateCreate_OversizedContent_ReturnsError()
+    public void CreateRequest_TitleExactly500Chars_PassesValidation()
+    {
+        var request = new CreateEntryRequest(new string('a', 500), null, [new PromptInput("hi")], null);
+
+        MiniValidator.TryValidate(request, out _).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CreateRequest_ValidRequest_PassesValidation()
+    {
+        var request = ValidCreateRequest();
+
+        MiniValidator.TryValidate(request, out _).Should().BeTrue();
+    }
+
+    [Fact]
+    public void UpdateRequest_TitleTooLong_FailsValidation()
+    {
+        var request = new UpdateEntryRequest(new string('A', 501), null, null);
+
+        MiniValidator.TryValidate(request, out var errors).Should().BeFalse();
+        errors.Should().ContainKey(nameof(UpdateEntryRequest.Title));
+    }
+
+    [Fact]
+    public void UpdateRequest_ValidRequest_PassesValidation()
+    {
+        var request = ValidUpdateRequest();
+
+        MiniValidator.TryValidate(request, out _).Should().BeTrue();
+    }
+
+    // ── Prompt content length validation (service layer) ─────────
+
+    [Fact]
+    public async Task CreateEntryAsync_OversizedContent_ReturnsValidationError()
     {
         var huge = new string('X', 100_001);
         var request = new CreateEntryRequest("Title", null, [new PromptInput(huge)], null);
 
-        Sut.ValidateCreateRequest(request).Should()
-            .Contain("exceeds maximum length");
+        var result = await Sut.CreateEntryAsync(TenantId, UserId, request, CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("VALIDATION_ERROR");
+        result.FirstError.Description.Should().Contain("exceeds maximum length");
     }
 
     [Fact]
-    public void ValidateCreate_TitleExactly500Chars_ReturnsNull()
-    {
-        var request = new CreateEntryRequest(new string('a', 500), null, [new PromptInput("hi")], null);
-
-        Sut.ValidateCreateRequest(request).Should().BeNull();
-    }
-
-    [Fact]
-    public void ValidateCreate_ValidRequest_ReturnsNull()
-    {
-        var request = ValidCreateRequest();
-
-        Sut.ValidateCreateRequest(request).Should().BeNull();
-    }
-
-    // ── ValidateUpdateRequest ────────────────────────────────────
-
-    [Fact]
-    public void ValidateUpdate_TitleTooLong_ReturnsError()
-    {
-        var request = new UpdateEntryRequest(new string('A', 501), null, null);
-
-        Sut.ValidateUpdateRequest(request).Should().Be("Title must be 500 characters or fewer.");
-    }
-
-    [Fact]
-    public void ValidateUpdate_OversizedContent_ReturnsError()
+    public async Task UpdateEntryAsync_OversizedContent_ReturnsValidationError()
     {
         var huge = new string('X', 100_001);
+        var entry = MakeEntry();
+        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(entry);
+
         var request = new UpdateEntryRequest(null, null, [new PromptInput(huge)]);
 
-        Sut.ValidateUpdateRequest(request).Should()
-            .Contain("exceeds maximum length");
-    }
+        var result = await Sut.UpdateEntryAsync(TenantId, entry.Id, request, CancellationToken.None);
 
-    [Fact]
-    public void ValidateUpdate_ValidRequest_ReturnsNull()
-    {
-        var request = ValidUpdateRequest();
-
-        Sut.ValidateUpdateRequest(request).Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("VALIDATION_ERROR");
+        result.FirstError.Description.Should().Contain("exceeds maximum length");
     }
 }

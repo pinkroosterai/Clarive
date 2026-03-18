@@ -5,6 +5,7 @@ using Clarive.Api.Models.Responses;
 using Clarive.Api.Services.Interfaces;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
+using Clarive.Api.Services;
 
 namespace Clarive.Api.Endpoints;
 
@@ -177,9 +178,7 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var error = entryService.ValidateCreateRequest(request);
-        if (error is not null)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", error);
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         var result = await entryService.CreateEntryAsync(tenantId, userId, request, ct);
         if (result.IsError)
@@ -208,9 +207,7 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var error = entryService.ValidateUpdateRequest(request);
-        if (error is not null)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", error);
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         var result = await entryService.UpdateEntryAsync(tenantId, entryId, request, ct);
         if (result.IsError)

@@ -59,9 +59,6 @@ public interface IEntryService
     Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> GetPublishedEntryAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default);
 
-    string? ValidateCreateRequest(CreateEntryRequest request);
-    string? ValidateUpdateRequest(UpdateEntryRequest request);
-
     // Activity
     Task<ErrorOr<EntryActivityResponse>> GetEntryActivityAsync(
         Guid tenantId, Guid entryId, int page, int pageSize, CancellationToken ct = default);

@@ -27,6 +27,9 @@ public partial class EntryService(
     public async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion Version)>> CreateEntryAsync(
         Guid tenantId, Guid userId, CreateEntryRequest request, CancellationToken ct)
     {
+        if (ValidatePromptContentLength(request.Prompts) is { } contentErr)
+            return contentErr;
+
         if (request.FolderId is not null && await folderRepo.GetByIdAsync(tenantId, request.FolderId.Value, ct) is null)
             return DomainErrors.FolderNotFound;
 
@@ -66,6 +69,9 @@ public partial class EntryService(
     public async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion WorkingVersion)>> UpdateEntryAsync(
         Guid tenantId, Guid entryId, UpdateEntryRequest request, CancellationToken ct)
     {
+        if (request.Prompts is not null && ValidatePromptContentLength(request.Prompts) is { } contentErr)
+            return contentErr;
+
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
             return DomainErrors.EntryNotFound;
@@ -500,26 +506,6 @@ public partial class EntryService(
         };
     }
 
-    public string? ValidateCreateRequest(CreateEntryRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.Title))
-            return "Title is required.";
-        if (request.Title.Trim().Length > 500)
-            return "Title must be 500 characters or fewer.";
-        if (request.Prompts is null || request.Prompts.Count == 0)
-            return "At least one prompt is required.";
-        return ValidatePromptContentLength(request.Prompts);
-    }
-
-    public string? ValidateUpdateRequest(UpdateEntryRequest request)
-    {
-        if (request.Title is not null && request.Title.Trim().Length > 500)
-            return "Title must be 500 characters or fewer.";
-        if (request.Prompts is not null)
-            return ValidatePromptContentLength(request.Prompts);
-        return null;
-    }
-
     // ── Activity ──
 
     [GeneratedRegex(@"v(?:ersion\s+)?(\d+)")]
@@ -634,12 +620,13 @@ public partial class EntryService(
         return Result.Success;
     }
 
-    private static string? ValidatePromptContentLength(List<PromptInput> prompts)
+    private static Error? ValidatePromptContentLength(List<PromptInput> prompts)
     {
         for (var i = 0; i < prompts.Count; i++)
         {
             if (prompts[i].Content.Length > MaxPromptContentLength)
-                return $"Prompt #{i + 1} content exceeds maximum length of {MaxPromptContentLength:N0} characters.";
+                return Error.Validation("VALIDATION_ERROR",
+                    $"Prompt #{i + 1} content exceeds maximum length of {MaxPromptContentLength:N0} characters.");
         }
         return null;
     }
