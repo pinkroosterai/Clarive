@@ -1,6 +1,7 @@
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Services;
+using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Endpoints;
 
@@ -26,7 +27,7 @@ public static class AiProviderEndpoints
     }
 
     private static async Task<IResult> HandleGetAll(
-        AiProviderService service, CancellationToken ct)
+        IAiProviderService service, CancellationToken ct)
     {
         var providers = await service.GetAllAsync(ct);
         return Results.Ok(providers);
@@ -35,7 +36,7 @@ public static class AiProviderEndpoints
     private static async Task<IResult> HandleCreate(
         HttpContext ctx,
         CreateAiProviderRequest request,
-        AiProviderService service,
+        IAiProviderService service,
         TenantCacheService cache,
         CancellationToken ct)
     {
@@ -53,7 +54,7 @@ public static class AiProviderEndpoints
         Guid id,
         HttpContext ctx,
         UpdateAiProviderRequest request,
-        AiProviderService service,
+        IAiProviderService service,
         TenantCacheService cache,
         CancellationToken ct)
     {
@@ -68,7 +69,7 @@ public static class AiProviderEndpoints
     private static async Task<IResult> HandleDelete(
         Guid id,
         HttpContext ctx,
-        AiProviderService service,
+        IAiProviderService service,
         TenantCacheService cache,
         CancellationToken ct)
     {
@@ -83,7 +84,7 @@ public static class AiProviderEndpoints
     private static async Task<IResult> HandleFetchModels(
         Guid id,
         HttpContext ctx,
-        AiProviderService service,
+        IAiProviderService service,
         CancellationToken ct)
     {
         var result = await service.FetchModelsAsync(id, ct);
@@ -96,7 +97,7 @@ public static class AiProviderEndpoints
     private static async Task<IResult> HandleValidate(
         Guid id,
         HttpContext ctx,
-        AiProviderService service,
+        IAiProviderService service,
         CancellationToken ct)
     {
         var result = await service.ValidateAsync(id, ct);
@@ -110,7 +111,7 @@ public static class AiProviderEndpoints
         Guid id,
         HttpContext ctx,
         AddAiProviderModelRequest request,
-        AiProviderService service,
+        IAiProviderService service,
         TenantCacheService cache,
         CancellationToken ct)
     {
@@ -128,7 +129,7 @@ public static class AiProviderEndpoints
         Guid modelId,
         HttpContext ctx,
         UpdateAiProviderModelRequest request,
-        AiProviderService service,
+        IAiProviderService service,
         TenantCacheService cache,
         CancellationToken ct)
     {
@@ -143,7 +144,7 @@ public static class AiProviderEndpoints
     private static async Task<IResult> HandleDeleteModel(
         Guid modelId,
         HttpContext ctx,
-        AiProviderService service,
+        IAiProviderService service,
         TenantCacheService cache,
         CancellationToken ct)
     {

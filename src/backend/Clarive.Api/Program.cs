@@ -256,7 +256,7 @@ builder.Services.AddScoped<IModelResolutionService, ModelResolutionService>();
 builder.Services.AddScoped<IPlaygroundRunService, PlaygroundRunService>();
 builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
 builder.Services.AddScoped<IPlaygroundService, PlaygroundService>();
-builder.Services.AddScoped<AiProviderService>();
+builder.Services.AddScoped<IAiProviderService, AiProviderService>();
 builder.Services.AddScoped<IAiUsageLogger, AiUsageLogger>();
 builder.Services.AddScoped<IShareLinkService, ShareLinkService>();
 builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));

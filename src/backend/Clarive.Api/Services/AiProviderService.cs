@@ -15,7 +15,7 @@ public class AiProviderService(
     IAiProviderRepository repo,
     IEncryptionService encryption,
     ILiteLlmRegistryCache liteLlmCache,
-    ILogger<AiProviderService> logger)
+    ILogger<AiProviderService> logger) : IAiProviderService
 {
     private static readonly HashSet<string> ValidReasoningEfforts = new(StringComparer.OrdinalIgnoreCase)
         { "low", "medium", "high", "extra-high" };
