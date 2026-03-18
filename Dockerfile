@@ -28,7 +28,8 @@ ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION}
 WORKDIR /app
 COPY src/frontend/package.json src/frontend/package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --ignore-scripts
 COPY src/frontend/ .
 RUN npm run build
 
