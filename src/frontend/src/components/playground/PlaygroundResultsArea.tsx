@@ -334,7 +334,7 @@ export default function PlaygroundResultsArea({
   }, [clampedPinIndex]);
 
   return (
-    <div className="flex-1 p-6 overflow-x-hidden min-w-0">
+    <div className="flex-1 p-6 overflow-y-auto overflow-x-hidden min-w-0">
       {/* Template variables (collapsible) */}
       {templateFields.length > 0 &&
         (() => {
