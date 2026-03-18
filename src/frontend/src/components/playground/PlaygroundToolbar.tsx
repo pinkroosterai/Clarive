@@ -202,7 +202,7 @@ export default function PlaygroundToolbar({
   );
 
   return (
-    <div className="sticky top-0 z-10 border-b border-border-subtle bg-surface px-3 sm:px-6 py-3 overflow-hidden">
+    <div className="sticky top-0 z-10 border-b border-border-subtle bg-surface px-3 sm:px-6 py-3">
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Back + title */}
         <Button

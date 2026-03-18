@@ -918,7 +918,7 @@ export default function PlaygroundResultsArea({
       {/* Empty state */}
       {!hasResponses && !error && (
         <div
-          className={`flex flex-col items-center justify-center py-8 text-foreground-muted transition-opacity duration-200 ${isStreaming ? 'opacity-0' : 'opacity-100'}`}
+          className={`flex flex-col items-center justify-center py-20 text-foreground-muted transition-opacity duration-200 ${isStreaming ? 'opacity-0' : 'opacity-100'}`}
         >
           <Play className="size-10 mb-4 opacity-20" />
           <p className="text-sm">Click Run to test your prompt</p>
