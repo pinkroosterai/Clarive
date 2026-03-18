@@ -41,6 +41,13 @@ public interface IAiGenerationService
         Guid tenantId, Guid userId, Guid entryId, CancellationToken ct = default);
 
     /// <summary>
+    /// Generates contextually relevant example values for an entry's template fields.
+    /// Returns error if entry not found or has no template fields.
+    /// </summary>
+    Task<ErrorOr<Dictionary<string, string>>> FillTemplateFieldsAsync(
+        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct = default);
+
+    /// <summary>
     /// Validates and decomposes a single-prompt entry into a chain in a single atomic operation.
     /// Returns error on validation failure. Throws on orchestrator failure.
     /// </summary>

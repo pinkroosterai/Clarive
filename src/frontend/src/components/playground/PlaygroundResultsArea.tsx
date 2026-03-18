@@ -1,4 +1,4 @@
-import { Play, Square, ChevronDown, Copy, Check, Loader2, Pin, PinOff } from 'lucide-react';
+import { Play, Square, ChevronDown, Copy, Check, Loader2, Pin, PinOff, Sparkles } from 'lucide-react';
 import type { RefObject } from 'react';
 
 import CopyButton from './CopyButton';
@@ -104,6 +104,9 @@ interface PlaygroundResultsAreaProps {
   pinnedJudgeScores: Evaluation | null;
   currentJudgeScores: Evaluation | null;
   isJudging: boolean;
+  // Fill template fields
+  onFillTemplateFields?: () => void;
+  isFillingTemplateFields?: boolean;
 }
 
 export default function PlaygroundResultsArea({
@@ -136,6 +139,8 @@ export default function PlaygroundResultsArea({
   pinnedJudgeScores,
   currentJudgeScores,
   isJudging,
+  onFillTemplateFields,
+  isFillingTemplateFields,
 }: PlaygroundResultsAreaProps) {
   const judgeScores = pinnedJudgeScores ?? currentJudgeScores;
   return (
@@ -143,10 +148,28 @@ export default function PlaygroundResultsArea({
       {/* Template variables (collapsible) */}
       {templateFields.length > 0 && (
         <Collapsible defaultOpen className="mb-6">
-          <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-foreground-muted mb-2">
-            <ChevronDown className="size-3.5" />
-            Template Variables ({templateFields.length})
-          </CollapsibleTrigger>
+          <div className="flex items-center justify-between mb-2">
+            <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-foreground-muted">
+              <ChevronDown className="size-3.5" />
+              Template Variables ({templateFields.length})
+            </CollapsibleTrigger>
+            {onFillTemplateFields && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs gap-1"
+                onClick={onFillTemplateFields}
+                disabled={isFillingTemplateFields}
+              >
+                {isFillingTemplateFields ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3" />
+                )}
+                Fill with examples
+              </Button>
+            )}
+          </div>
           <CollapsibleContent>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {templateFields.map((field) => {

@@ -127,6 +127,9 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     public AIAgent CreateDecomposeAgent()
         => CreateDefaultAgent(AgentInstructions.Decompose, "PromptDecomposer");
 
+    public AIAgent CreateFillTemplateFieldsAgent()
+        => CreateDefaultAgent(AgentInstructions.FillTemplateFields, "TemplateFieldFiller");
+
     public AIAgent CreatePlaygroundJudgeAgent()
         => CreateDefaultAgent(AgentInstructions.PlaygroundJudge, "PlaygroundJudge");
 

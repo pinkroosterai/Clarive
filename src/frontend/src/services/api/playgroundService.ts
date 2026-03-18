@@ -114,3 +114,13 @@ export async function getEnrichedModels(): Promise<EnrichedModel[]> {
   return res.models;
 }
 
+export async function fillTemplateFields(
+  entryId: string
+): Promise<Record<string, string>> {
+  const res = await api.post<{ values: Record<string, string> }>(
+    '/api/ai/fill-template-fields',
+    { entryId }
+  );
+  return res.values;
+}
+
