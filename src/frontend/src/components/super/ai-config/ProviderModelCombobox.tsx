@@ -96,7 +96,6 @@ export default function ProviderModelCombobox({
                           isReasoning={m.isReasoning}
                           supportsFunctionCalling={m.supportsFunctionCalling}
                           supportsResponseSchema={m.supportsResponseSchema}
-                          compact
                         />
                       </CommandItem>
                     );

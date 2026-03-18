@@ -130,10 +130,6 @@ export default function ProviderCardExpanded({
                           isReasoning={m.isReasoning}
                           supportsFunctionCalling={m.supportsFunctionCalling}
                           supportsResponseSchema={m.supportsResponseSchema}
-                          maxInputTokens={m.maxInputTokens}
-                          maxOutputTokens={m.maxOutputTokens}
-                          inputCostPerMillion={m.inputCostPerMillion}
-                          outputCostPerMillion={m.outputCostPerMillion}
                         />
                       </CommandItem>
                     ))}
