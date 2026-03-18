@@ -450,83 +450,36 @@ export default function PlaygroundResultsArea({
             </button>
           )}
 
-          {/* Scrollable column container */}
+          {/* Grid column container — rows align headers, responses, and scores */}
           {(() => {
             // Build columns: optional current run + all pinned runs (equal peers)
             const totalColumns = (hasCurrentRun ? 1 : 0) + pinnedRuns.length;
             const needsScroll = totalColumns > 2;
-            const colClass = needsScroll ? 'flex-1 shrink-0 space-y-3' : 'flex-1 min-w-0 space-y-3';
 
             return (
               <div
                 ref={scrollContainerRef}
                 className={needsScroll ? 'overflow-x-auto overflow-y-hidden' : ''}
               >
+                {/* 3-row grid: [header] [responses] [scores] — each row stretches to tallest cell */}
                 <div
-                  className="flex gap-4"
-                  style={needsScroll ? { minWidth: `${totalColumns * 50}%` } : undefined}
+                  className="grid gap-x-4 gap-y-3"
+                  style={{
+                    gridTemplateColumns: needsScroll
+                      ? `repeat(${totalColumns}, minmax(50%, 1fr))`
+                      : `repeat(${totalColumns}, minmax(0, 1fr))`,
+                    gridTemplateRows: 'auto 1fr auto',
+                  }}
                 >
-                  {/* Current run column */}
+                  {/* ── Row 1: Column headers ── */}
                   {hasCurrentRun && (
-                    <div className={colClass}>
-                      <div className="text-xs font-medium text-foreground-muted flex items-center gap-1.5">
-                        {isStreaming && <Loader2 className="size-3 animate-spin" />}
-                        <span>Current Run</span>
-                      </div>
-                      {showPrompts && (
-                        <PromptSection
-                          systemMessage={null}
-                          renderedPrompts={prompts.map((p, i) => ({
-                            promptIndex: i,
-                            content: renderTemplate(p.content, fieldValues),
-                          }))}
-                        />
-                      )}
-                      {/* Scrollable response area — capped height so scores align across columns */}
-                      <div className="max-h-[60vh] overflow-y-auto rounded-lg">
-                        <div className="space-y-3">
-                          {prompts.map((_p, i) => (
-                            <div key={i}>
-                              {prompts.length > 1 && (
-                                <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                              )}
-                              {streamedReasoning[i] && (
-                                <ReasoningBlock
-                                  reasoning={streamedReasoning[i]}
-                                  isStreaming={isStreaming}
-                                />
-                              )}
-                              <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                                {streamedResponses[i] !== undefined ? (
-                                  <LLMResponseBlock
-                                    output={streamedResponses[i]}
-                                    isStreaming={isStreaming}
-                                  />
-                                ) : (
-                                  <span className="text-xs text-foreground-muted">—</span>
-                                )}
-                                {streamedResponses[i] && !isStreaming && (
-                                  <CopyButton
-                                    text={streamedResponses[i]}
-                                    index={2000 + i}
-                                    copiedIndex={copiedIndex}
-                                    onCopy={handleCopy}
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      {!isStreaming && currentJudgeScores && (
-                        <JudgeScorePanel scores={currentJudgeScores} />
-                      )}
+                    <div className="text-xs font-medium text-foreground-muted flex items-center gap-1.5">
+                      {isStreaming && <Loader2 className="size-3 animate-spin" />}
+                      <span>Current Run</span>
                     </div>
                   )}
-
-                  {/* Pinned run columns — all equal peers */}
                   {pinnedRuns.map((run, pinIndex) => (
-                    <div key={run.id} data-pin-index={pinIndex} className={colClass}>
+                    <div key={`header-${run.id}`} data-pin-index={pinIndex}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
                           <Pin className="size-3 text-primary" />
@@ -554,48 +507,106 @@ export default function PlaygroundResultsArea({
                       <div className="text-[10px] text-foreground-muted">
                         {new Date(run.createdAt).toLocaleString()}
                       </div>
+                    </div>
+                  ))}
+
+                  {/* ── Row 2: Response content (stretches to tallest) ── */}
+                  {hasCurrentRun && (
+                    <div className="space-y-3 self-start">
+                      {showPrompts && (
+                        <PromptSection
+                          systemMessage={null}
+                          renderedPrompts={prompts.map((p, i) => ({
+                            promptIndex: i,
+                            content: renderTemplate(p.content, fieldValues),
+                          }))}
+                        />
+                      )}
+                      {prompts.map((_p, i) => (
+                        <div key={i}>
+                          {prompts.length > 1 && (
+                            <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                          )}
+                          {streamedReasoning[i] && (
+                            <ReasoningBlock
+                              reasoning={streamedReasoning[i]}
+                              isStreaming={isStreaming}
+                            />
+                          )}
+                          <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                            {streamedResponses[i] !== undefined ? (
+                              <LLMResponseBlock
+                                output={streamedResponses[i]}
+                                isStreaming={isStreaming}
+                              />
+                            ) : (
+                              <span className="text-xs text-foreground-muted">—</span>
+                            )}
+                            {streamedResponses[i] && !isStreaming && (
+                              <CopyButton
+                                text={streamedResponses[i]}
+                                index={2000 + i}
+                                copiedIndex={copiedIndex}
+                                onCopy={handleCopy}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {pinnedRuns.map((run, pinIndex) => (
+                    <div key={`content-${run.id}`} className="space-y-3 self-start">
                       {showPrompts && (
                         <PromptSection
                           systemMessage={run.renderedSystemMessage}
                           renderedPrompts={run.renderedPrompts}
                         />
                       )}
-                      {/* Scrollable response area — capped height so scores align across columns */}
-                      <div className="max-h-[60vh] overflow-y-auto rounded-lg">
-                        <div className="space-y-3">
-                          {prompts.map((_p, i) => {
-                            const response = run.responses.find(
-                              (r: TestRunPromptResponse) => r.promptIndex === i
-                            );
-                            const reasoning = run.reasoning?.find((r) => r.promptIndex === i)?.content;
-                            return (
-                              <div key={i}>
-                                {prompts.length > 1 && (
-                                  <div className="text-xs text-foreground-muted mb-2">
-                                    Prompt {i + 1}
-                                  </div>
-                                )}
-                                {reasoning && <ReasoningBlock reasoning={reasoning} />}
-                                <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                                  {response ? (
-                                    <LLMResponseBlock output={response.content} isStreaming={false} />
-                                  ) : (
-                                    <span className="text-xs text-foreground-muted">—</span>
-                                  )}
-                                  {response && (
-                                    <CopyButton
-                                      text={response.content}
-                                      index={3000 + pinIndex * 100 + i}
-                                      copiedIndex={copiedIndex}
-                                      onCopy={handleCopy}
-                                    />
-                                  )}
-                                </div>
+                      {prompts.map((_p, i) => {
+                        const response = run.responses.find(
+                          (r: TestRunPromptResponse) => r.promptIndex === i
+                        );
+                        const reasoning = run.reasoning?.find((r) => r.promptIndex === i)?.content;
+                        return (
+                          <div key={i}>
+                            {prompts.length > 1 && (
+                              <div className="text-xs text-foreground-muted mb-2">
+                                Prompt {i + 1}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                            )}
+                            {reasoning && <ReasoningBlock reasoning={reasoning} />}
+                            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                              {response ? (
+                                <LLMResponseBlock output={response.content} isStreaming={false} />
+                              ) : (
+                                <span className="text-xs text-foreground-muted">—</span>
+                              )}
+                              {response && (
+                                <CopyButton
+                                  text={response.content}
+                                  index={3000 + pinIndex * 100 + i}
+                                  copiedIndex={copiedIndex}
+                                  onCopy={handleCopy}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+
+                  {/* ── Row 3: Judge scores (aligned across columns) ── */}
+                  {hasCurrentRun && (
+                    <div className="self-start">
+                      {!isStreaming && currentJudgeScores && (
+                        <JudgeScorePanel scores={currentJudgeScores} />
+                      )}
+                    </div>
+                  )}
+                  {pinnedRuns.map((run) => (
+                    <div key={`scores-${run.id}`} className="self-start">
                       {run.judgeScores && <JudgeScorePanel scores={run.judgeScores} />}
                     </div>
                   ))}
