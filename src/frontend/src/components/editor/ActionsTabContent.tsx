@@ -282,7 +282,7 @@ export function ActionsTabContent({
                   <Button
                     variant="outline"
                     className="w-full gap-2 hover:border-primary/30 transition-all"
-                    disabled={isPublishing || !hasDraft}
+                    disabled={isPublishing || !hasDraft || hasEmptyTitle}
                   >
                     <Upload className="size-4" />
                     Publish
@@ -298,7 +298,11 @@ export function ActionsTabContent({
               </TooltipTrigger>
             </AlertDialogTrigger>
             <TooltipContent side="left">
-              {hasDraft ? <kbd className="text-xs">Ctrl+Enter</kbd> : 'No draft to publish'}
+              {hasEmptyTitle
+                ? 'Title is required to publish'
+                : hasDraft
+                  ? <kbd className="text-xs">Ctrl+Enter</kbd>
+                  : 'No draft to publish'}
             </TooltipContent>
           </Tooltip>
           <AlertDialogContent>

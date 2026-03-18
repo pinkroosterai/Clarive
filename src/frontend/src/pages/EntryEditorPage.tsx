@@ -122,6 +122,10 @@ const EntryEditorPage = () => {
   const [showEmptyPublishWarning, setShowEmptyPublishWarning] = useState(false);
   const handlePublishWithCheck = useCallback(() => {
     if (!hasDraft) return;
+    if (!editor.localEntry?.title?.trim()) {
+      toast.error('Title is required to publish');
+      return;
+    }
     const allEmpty = editor.localEntry?.prompts?.every((p) => !p.content?.trim());
     if (allEmpty) {
       setShowEmptyPublishWarning(true);
