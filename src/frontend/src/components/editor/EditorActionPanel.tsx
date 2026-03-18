@@ -87,7 +87,7 @@ export function EditorActionPanel({
         <TabsList className="w-full shrink-0">
           <TabsTrigger value="actions" className="flex-1 gap-1.5 text-xs">
             Actions
-            {(isDirty || (hasDraft && !isDirty)) && !isReadOnly && (
+            {isDirty && !isReadOnly && (
               <span className="relative flex size-2">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-primary" />

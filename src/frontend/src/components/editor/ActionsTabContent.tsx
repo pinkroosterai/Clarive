@@ -4,6 +4,7 @@ import {
   Upload,
   Sparkles,
   Wand2,
+  Workflow,
   RotateCcw,
   Trash2,
   Undo2,
@@ -128,7 +129,7 @@ export function ActionsTabContent({
   return (
     <div className="space-y-4">
       <ActionGroup label="Edit">
-        <div className="flex gap-1">
+        <div className="inline-flex items-center gap-0.5 rounded-md border border-border-subtle p-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -136,7 +137,7 @@ export function ActionsTabContent({
                 size="icon"
                 onClick={onUndo}
                 disabled={!canUndo}
-                className="size-9"
+                className="size-8"
                 aria-label="Undo"
               >
                 <Undo2 className="size-4" />
@@ -153,7 +154,7 @@ export function ActionsTabContent({
                 size="icon"
                 onClick={onRedo}
                 disabled={!canRedo}
-                className="size-9"
+                className="size-8"
                 aria-label="Redo"
               >
                 <Redo2 className="size-4" />
@@ -382,7 +383,7 @@ export function ActionsTabContent({
                     className="w-full gap-2 hover:border-primary/30 transition-all"
                     disabled={isDecomposing || !aiEnabled}
                   >
-                    <Wand2 className="size-4" />
+                    <Workflow className="size-4" />
                     {isDecomposing ? 'Decomposing\u2026' : 'Decompose to Chain'}
                   </Button>
                 </AlertDialogTrigger>
