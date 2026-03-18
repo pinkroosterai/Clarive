@@ -90,6 +90,24 @@ const PlaygroundPage = () => {
     }
   }, [fieldValues, storageKey]);
 
+  // Pre-fill defaults for fields without stored values
+  useEffect(() => {
+    if (templateFields.length === 0) return;
+    const updates: Record<string, string> = {};
+    for (const field of templateFields) {
+      if (!fieldValues[field.name]) {
+        if (field.defaultValue) {
+          updates[field.name] = field.defaultValue;
+        } else if (field.min !== null) {
+          updates[field.name] = String(field.min);
+        }
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      setFieldValues((prev) => ({ ...prev, ...updates }));
+    }
+  }, [templateFields]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Streaming (delegated to hook) ──
   const {
     isStreaming,

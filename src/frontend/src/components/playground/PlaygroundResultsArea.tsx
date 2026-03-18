@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import {
   Select,
   SelectContent,
@@ -197,6 +198,24 @@ export default function PlaygroundResultsArea({
                           ))}
                         </SelectContent>
                       </Select>
+                    ) : (field.type === 'int' || field.type === 'float') &&
+                      field.min !== null &&
+                      field.max !== null ? (
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          min={field.min}
+                          max={field.max}
+                          step={field.type === 'int' ? 1 : 0.01}
+                          value={[Number(fieldValues[field.name]) || field.min]}
+                          onValueChange={([v]) =>
+                            setFieldValues((prev) => ({ ...prev, [field.name]: String(v) }))
+                          }
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-foreground-muted tabular-nums w-10 text-right">
+                          {fieldValues[field.name] || field.min}
+                        </span>
+                      </div>
                     ) : (
                       <Input
                         value={fieldValues[field.name] || ''}

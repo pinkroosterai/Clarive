@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import {
   Select,
   SelectContent,
@@ -186,6 +187,9 @@ export function UnifiedTemplateForm({ prompts, isReadOnly }: UnifiedTemplateForm
         } else if (field.defaultValue) {
           // Pre-fill with default
           next[field.name] = field.defaultValue;
+        } else if (field.min !== null) {
+          // Pre-fill ranged numeric fields with min
+          next[field.name] = String(field.min);
         }
       }
       // Only update if actually changed
@@ -253,6 +257,23 @@ export function UnifiedTemplateForm({ prompts, isReadOnly }: UnifiedTemplateForm
                           ))}
                         </SelectContent>
                       </Select>
+                    ) : (field.type === 'int' || field.type === 'float') &&
+                      field.min !== null &&
+                      field.max !== null ? (
+                      <div className="flex items-center gap-3">
+                        <Slider
+                          min={field.min}
+                          max={field.max}
+                          step={field.type === 'int' ? 1 : 0.01}
+                          value={[Number(value) || field.min]}
+                          onValueChange={([v]) => updateValue(field.name, String(v))}
+                          disabled={isReadOnly}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-foreground-muted tabular-nums w-12 text-right">
+                          {value || field.min}
+                        </span>
+                      </div>
                     ) : (
                       <Input
                         type={field.type === 'string' ? 'text' : 'number'}
