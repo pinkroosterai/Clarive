@@ -89,15 +89,29 @@ function ScoreBadgeBar({
   onSelectIndex,
   referenceRunId,
   carouselOffset,
+  currentRunScore,
 }: {
   pinnedRuns: TestRunResponse[];
   activeCarouselIndex: number;
   onSelectIndex: (carouselIndex: number) => void;
   referenceRunId: string | null;
   carouselOffset: number; // number of pinnedRuns entries before carousel starts (0 or 1)
+  currentRunScore?: number | null; // show a "Current Run" pill when set (even if null)
 }) {
+  const showCurrentPill = currentRunScore !== undefined;
+  const currentColor = currentRunScore != null ? scoreColor(currentRunScore) : null;
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      {showCurrentPill && (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-primary/10 border border-primary/30">
+          <span className="font-medium">Current Run</span>
+          {currentRunScore != null && (
+            <span className={`font-bold tabular-nums ${currentColor?.text ?? ''}`}>
+              {currentRunScore.toFixed(1)}
+            </span>
+          )}
+        </span>
+      )}
       {pinnedRuns.map((run, i) => {
         const isReference = run.id === referenceRunId;
         const carouselIndex = i - carouselOffset;
@@ -343,6 +357,7 @@ export default function PlaygroundResultsArea({
             onSelectIndex={setActiveCarouselIndex}
             referenceRunId={referenceRun?.id ?? null}
             carouselOffset={referenceRun ? 1 : 0}
+            currentRunScore={hasCurrentRun ? (currentJudgeScores?.averageScore ?? null) : undefined}
           />
 
           {/* Column headers */}
