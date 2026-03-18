@@ -1,12 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import PlaygroundHistorySidebar from '@/components/playground/PlaygroundHistorySidebar';
 import PlaygroundResultsArea from '@/components/playground/PlaygroundResultsArea';
 import PlaygroundToolbar from '@/components/playground/PlaygroundToolbar';
 import { safeSessionGet } from '@/components/playground/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
@@ -237,6 +247,16 @@ const PlaygroundPage = () => {
     onAbort: handleAbort,
   });
 
+  // ── Navigation guard while streaming ──
+  const blocker = useBlocker(isStreaming);
+
+  useEffect(() => {
+    if (!isStreaming) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isStreaming]);
+
   const modelsByProvider = useMemo(
     () =>
       enrichedModels.reduce<Record<string, EnrichedModel[]>>((acc, m) => {
@@ -372,6 +392,29 @@ const PlaygroundPage = () => {
           />
         )}
       </div>
+
+      {/* ── Navigation guard dialog ── */}
+      <AlertDialog open={blocker.state === 'blocked'}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Test in progress</AlertDialogTitle>
+            <AlertDialogDescription>
+              A test is currently running. Leaving will stop the generation and discard the response.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleAbort();
+                blocker.proceed?.();
+              }}
+            >
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
