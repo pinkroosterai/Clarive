@@ -154,9 +154,6 @@ const PlaygroundPage = () => {
   const [expandedStepInputs, setExpandedStepInputs] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  // ── Rerun ──
-  const [pendingRerun, setPendingRerun] = useState(false);
-
   // ── History + comparison ──
   const [showHistory, setShowHistory] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
@@ -222,7 +219,7 @@ const PlaygroundPage = () => {
       if (run.templateFieldValues) {
         setFieldValues(run.templateFieldValues);
       }
-      setPendingRerun(true);
+      toast.success('Parameters loaded from history');
     },
     [enrichedModels]
   );
@@ -230,14 +227,6 @@ const PlaygroundPage = () => {
   const model = selectedModel?.modelId ?? '';
   const hasValidationErrors =
     templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
-
-  // ── Auto-execute rerun ──
-  useEffect(() => {
-    if (pendingRerun) {
-      setPendingRerun(false);
-      void handleRun();
-    }
-  }, [pendingRerun, handleRun]);
 
   // ── Keyboard shortcuts ──
   usePlaygroundKeyboardShortcuts({

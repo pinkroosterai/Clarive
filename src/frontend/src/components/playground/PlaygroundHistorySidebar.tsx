@@ -4,7 +4,7 @@ import {
   ChevronRight,
   Copy,
   Check,
-  RotateCcw,
+  ArrowDownToLine,
   Loader2,
   Pin,
   PinOff,
@@ -114,7 +114,7 @@ export default function PlaygroundHistorySidebar({
                     onClick={() => handleRerun(run)}
                     title="Load parameters"
                   >
-                    <RotateCcw className="size-3" />
+                    <ArrowDownToLine className="size-3" />
                   </Button>
                 </div>
                 <div className="text-xs text-foreground-muted flex items-center gap-2">
