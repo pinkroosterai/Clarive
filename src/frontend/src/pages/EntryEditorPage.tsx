@@ -187,21 +187,22 @@ const EntryEditorPage = () => {
     favoriteMutation.mutate(isFavorited);
   }, [favoriteMutation, isFavorited]);
 
-  // ── Share link status ──
+  // ── Dialog states ──
+  const [diffOpen, setDiffOpen] = useState(false);
+  const [folderPickerOpen, setFolderPickerOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+
+  // ── Share link status (deferred until dialog opens to avoid 404 on unshared entries) ──
+  const [shareDialogEverOpened, setShareDialogEverOpened] = useState(false);
   const shareLinkQuery = useQuery({
     queryKey: ['share-link', entryId],
     queryFn: () => getShareLink(entryId!),
-    enabled: !!entryId,
+    enabled: !!entryId && shareDialogEverOpened,
     retry: (failureCount, error) => {
       if (error instanceof ApiError && error.status === 404) return false;
       return failureCount < 2;
     },
   });
-
-  // ── Dialog states ──
-  const [diffOpen, setDiffOpen] = useState(false);
-  const [folderPickerOpen, setFolderPickerOpen] = useState(false);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const aiEnabled = useAiEnabled();
 
   const folderName = editor.localEntry
@@ -406,7 +407,12 @@ const EntryEditorPage = () => {
     onDeleteDraft: () => deleteDraftMutation.mutate(),
     isDeletingDraft: deleteDraftMutation.isPending,
     onShare:
-      !isReadOnly && currentUser?.role !== 'viewer' ? () => setShareDialogOpen(true) : undefined,
+      !isReadOnly && currentUser?.role !== 'viewer'
+        ? () => {
+            setShareDialogEverOpened(true);
+            setShareDialogOpen(true);
+          }
+        : undefined,
     hasShareLink: !!shareLinkQuery.data && !shareLinkQuery.error,
     hasEmptyTitle: !localEntry.title?.trim(),
   } as const;
