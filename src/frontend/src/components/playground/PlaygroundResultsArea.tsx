@@ -1,5 +1,15 @@
-import { Play, Square, ChevronDown, Copy, Check, Loader2, Pin, PinOff, Sparkles } from 'lucide-react';
-import type { RefObject } from 'react';
+import {
+  Play,
+  Square,
+  ChevronDown,
+  Copy,
+  Check,
+  Loader2,
+  Pin,
+  PinOff,
+  Sparkles,
+} from 'lucide-react';
+import { useCallback, useRef, type RefObject } from 'react';
 
 import CopyButton from './CopyButton';
 import ReasoningBlock from './ReasoningBlock';
@@ -21,7 +31,11 @@ import { getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { renderTemplate } from '@/lib/templateRenderer';
 import { scoreColor } from '@/components/wizard/scoreUtils';
-import type { TestRunResponse, TestRunPromptResponse, Evaluation } from '@/services/api/playgroundService';
+import type {
+  TestRunResponse,
+  TestRunPromptResponse,
+  Evaluation,
+} from '@/services/api/playgroundService';
 import type { TemplateField } from '@/types';
 
 interface Prompt {
@@ -33,9 +47,7 @@ function JudgeScorePanel({ scores }: { scores: Evaluation }) {
     <div className="mt-4 pt-3 border-t border-border-subtle space-y-2">
       <div className="flex items-center gap-2">
         <div className="flex items-center justify-center size-8 rounded-full border-2 border-primary">
-          <span className="text-xs font-bold text-primary">
-            {scores.averageScore.toFixed(1)}
-          </span>
+          <span className="text-xs font-bold text-primary">{scores.averageScore.toFixed(1)}</span>
         </div>
         <span className="text-xs text-foreground-muted">Output Quality</span>
       </div>
@@ -52,9 +64,7 @@ function JudgeScorePanel({ scores }: { scores: Evaluation }) {
                     style={{ width: `${(entry.score / 10) * 100}%` }}
                   />
                 </div>
-                <span className={`text-xs font-medium w-4 text-right ${text}`}>
-                  {entry.score}
-                </span>
+                <span className={`text-xs font-medium w-4 text-right ${text}`}>{entry.score}</span>
               </div>
               {entry.feedback && (
                 <p className="text-[11px] text-foreground-muted pl-[calc(5rem+0.5rem)] leading-snug">
@@ -67,6 +77,19 @@ function JudgeScorePanel({ scores }: { scores: Evaluation }) {
       </div>
     </div>
   );
+}
+
+// ── Comparison layout helpers ──
+
+const PINNED_COL_MIN_WIDTH = 350; // px
+const FROZEN_COL_CLASS = 'shrink-0 w-[calc(50%-0.5rem)] min-w-[300px]';
+
+function pinnedScrollStyle(count: number): React.CSSProperties | undefined {
+  return count > 1 ? { minWidth: `${count * PINNED_COL_MIN_WIDTH}px` } : undefined;
+}
+
+function pinnedItemClass(count: number): string {
+  return count === 1 ? 'flex-1' : `shrink-0 min-w-[${PINNED_COL_MIN_WIDTH}px]`;
 }
 
 interface PlaygroundResultsAreaProps {
@@ -92,8 +115,8 @@ interface PlaygroundResultsAreaProps {
   fieldValues: Record<string, string>;
   setFieldValues: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   // Comparison state
-  pinnedRun: TestRunResponse | null;
-  setPinnedRun: (run: TestRunResponse | null) => void;
+  pinnedRuns: TestRunResponse[];
+  onUnpin: (runId: string) => void;
   // UI state
   expandedStepInputs: Set<number>;
   setExpandedStepInputs: React.Dispatch<React.SetStateAction<Set<number>>>;
@@ -102,7 +125,6 @@ interface PlaygroundResultsAreaProps {
   handleRun: () => void;
   handleCopy: (text: string, index: number) => Promise<void>;
   // Judge
-  pinnedJudgeScores: Evaluation | null;
   currentJudgeScores: Evaluation | null;
   isJudging: boolean;
   // Fill template fields
@@ -130,20 +152,42 @@ export default function PlaygroundResultsArea({
   templateFields,
   fieldValues,
   setFieldValues,
-  pinnedRun,
-  setPinnedRun,
+  pinnedRuns,
+  onUnpin,
   expandedStepInputs,
   setExpandedStepInputs,
   copiedIndex,
   handleRun,
   handleCopy,
-  pinnedJudgeScores,
   currentJudgeScores,
   isJudging,
   onFillTemplateFields,
   isFillingTemplateFields,
 }: PlaygroundResultsAreaProps) {
-  const judgeScores = pinnedJudgeScores ?? currentJudgeScores;
+  const hasPins = pinnedRuns.length > 0;
+  const judgeScores = (hasPins ? pinnedRuns[0]?.judgeScores : null) ?? currentJudgeScores;
+
+  // ── Synchronized horizontal scroll across pinned-run containers ──
+  const scrollRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isSyncing = useRef(false);
+
+  const syncScroll = useCallback((sourceIndex: number) => {
+    if (isSyncing.current) return;
+    isSyncing.current = true;
+    const scrollLeft = scrollRefs.current[sourceIndex]?.scrollLeft ?? 0;
+    scrollRefs.current.forEach((el, i) => {
+      if (el && i !== sourceIndex) el.scrollLeft = scrollLeft;
+    });
+    isSyncing.current = false;
+  }, []);
+
+  const setScrollRef = useCallback(
+    (index: number) => (el: HTMLDivElement | null) => {
+      scrollRefs.current[index] = el;
+    },
+    []
+  );
+
   return (
     <div className="flex-1 p-6">
       {/* Template variables (collapsible) */}
@@ -236,51 +280,58 @@ export default function PlaygroundResultsArea({
         </Collapsible>
       )}
 
-      {/* Comparison layout */}
-      {pinnedRun && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-xs text-foreground-muted">
-              <Pin className="size-3.5 text-primary" />
-              <span className="font-medium">Pinned: {pinnedRun.model}</span>
-              <span>t={pinnedRun.temperature.toFixed(1)}</span>
-              <span>{new Date(pinnedRun.createdAt).toLocaleString()}</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => setPinnedRun(null)}
-            >
-              <PinOff className="size-3 mr-1" />
-              Unpin
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {/* Column headers — current on left, pinned on right */}
-            <div className="grid grid-cols-2 gap-4">
+      {/* Comparison layout — frozen current run + scrollable pinned runs */}
+      {pinnedRuns.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {/* Column headers */}
+          <div className="flex gap-4">
+            <div className={FROZEN_COL_CLASS}>
               <div className="text-xs font-medium text-foreground-muted">
                 <span className="flex items-center gap-1.5">
                   {isStreaming && <Loader2 className="size-3 animate-spin" />}
-                  {isStreaming
-                    ? 'Current Run'
-                    : hasResponses
-                      ? 'Current Run'
-                      : 'Run a new test to compare'}
+                  {isStreaming || hasResponses ? 'Current Run' : 'Run a new test to compare'}
                 </span>
               </div>
-              <div className="text-xs font-medium text-foreground-muted">Pinned Run</div>
             </div>
-            {/* Paired prompt rows — each row aligns current + pinned at the same height */}
-            {prompts.map((_p, i) => {
-              const pinnedResponse = pinnedRun.responses.find(
-                (r: TestRunPromptResponse) => r.promptIndex === i,
-              );
-              const currentResponse = streamedResponses[i];
-              return (
-                <div key={i} className="grid grid-cols-2 gap-4">
-                  {/* Current response (left) */}
-                  <div className="rounded-lg border border-border-subtle bg-surface p-4">
+            <div
+              className="flex-1 overflow-x-auto"
+              ref={setScrollRef(0)}
+              onScroll={() => syncScroll(0)}
+            >
+              <div className="flex gap-4" style={pinnedScrollStyle(pinnedRuns.length)}>
+                {pinnedRuns.map((run) => (
+                  <div key={run.id} className={pinnedItemClass(pinnedRuns.length)}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-foreground-muted">
+                        <Pin className="size-3.5 text-primary" />
+                        <span className="font-medium">{run.model}</span>
+                        <span>t={run.temperature.toFixed(1)}</span>
+                        <span>{new Date(run.createdAt).toLocaleString()}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-1.5"
+                        onClick={() => onUnpin(run.id)}
+                        title="Unpin"
+                      >
+                        <PinOff className="size-3 text-primary" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Prompt response rows */}
+          {prompts.map((_p, i) => {
+            const currentResponse = streamedResponses[i];
+            const scrollIndex = i + 1; // 0 is headers
+            return (
+              <div key={i} className="flex gap-4">
+                <div className={FROZEN_COL_CLASS}>
+                  <div className="rounded-lg border border-border-subtle bg-surface p-4 h-full">
                     {prompts.length > 1 && (
                       <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                     )}
@@ -290,39 +341,71 @@ export default function PlaygroundResultsArea({
                       <span className="text-xs text-foreground-muted">—</span>
                     )}
                   </div>
-                  {/* Pinned response (right) */}
-                  <div className="rounded-lg border border-border-subtle bg-surface p-4">
-                    {prompts.length > 1 && (
-                      <div className="text-xs text-foreground-muted mb-2">
-                        Prompt {i + 1}
-                      </div>
-                    )}
-                    {pinnedResponse ? (
-                      <LLMResponseBlock output={pinnedResponse.content} isStreaming={false} />
-                    ) : (
-                      <span className="text-xs text-foreground-muted">—</span>
-                    )}
+                </div>
+                <div
+                  className="flex-1 overflow-x-auto"
+                  ref={setScrollRef(scrollIndex)}
+                  onScroll={() => syncScroll(scrollIndex)}
+                >
+                  <div className="flex gap-4" style={pinnedScrollStyle(pinnedRuns.length)}>
+                    {pinnedRuns.map((run) => {
+                      const pinnedResponse = run.responses.find(
+                        (r: TestRunPromptResponse) => r.promptIndex === i
+                      );
+                      return (
+                        <div key={run.id} className={pinnedItemClass(pinnedRuns.length)}>
+                          <div className="rounded-lg border border-border-subtle bg-surface p-4 h-full">
+                            {prompts.length > 1 && (
+                              <div className="text-xs text-foreground-muted mb-2">
+                                Prompt {i + 1}
+                              </div>
+                            )}
+                            {pinnedResponse ? (
+                              <LLMResponseBlock
+                                output={pinnedResponse.content}
+                                isStreaming={false}
+                              />
+                            ) : (
+                              <span className="text-xs text-foreground-muted">—</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
-            {/* Judge scores — aligned row (current left, pinned right) */}
-            {(pinnedJudgeScores || (!isStreaming && currentJudgeScores)) && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  {!isStreaming && currentJudgeScores && (
-                    <JudgeScorePanel scores={currentJudgeScores} />
-                  )}
-                </div>
-                <div>{pinnedJudgeScores && <JudgeScorePanel scores={pinnedJudgeScores} />}</div>
               </div>
-            )}
-          </div>
+            );
+          })}
+
+          {/* Judge scores row */}
+          {(pinnedRuns.some((r) => r.judgeScores) || (!isStreaming && currentJudgeScores)) && (
+            <div className="flex gap-4">
+              <div className={FROZEN_COL_CLASS}>
+                {!isStreaming && currentJudgeScores && (
+                  <JudgeScorePanel scores={currentJudgeScores} />
+                )}
+              </div>
+              <div
+                className="flex-1 overflow-x-auto"
+                ref={setScrollRef(prompts.length + 1)}
+                onScroll={() => syncScroll(prompts.length + 1)}
+              >
+                <div className="flex gap-4" style={pinnedScrollStyle(pinnedRuns.length)}>
+                  {pinnedRuns.map((run) => (
+                    <div key={run.id} className={pinnedItemClass(pinnedRuns.length)}>
+                      {run.judgeScores && <JudgeScorePanel scores={run.judgeScores} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Streaming indicator (non-comparison mode) */}
-      {!pinnedRun && isStreaming && (
+      {!hasPins && isStreaming && (
         <div
           ref={responseAreaRef}
           className="flex items-center gap-2 text-sm text-foreground-muted mb-4"
@@ -383,7 +466,7 @@ export default function PlaygroundResultsArea({
       )}
 
       {/* ── Chain view (multi-prompt) — hidden when comparing ── */}
-      {!pinnedRun && isChain && (hasResponses || isStreaming) && (
+      {!hasPins && isChain && (hasResponses || isStreaming) && (
         <div className="space-y-0">
           {prompts.map((prompt, i) => {
             const response = streamedResponses[i];
@@ -490,7 +573,7 @@ export default function PlaygroundResultsArea({
       )}
 
       {/* Copy all for chains */}
-      {!pinnedRun && !isStreaming && isChain && responseCount >= 2 && (
+      {!hasPins && !isStreaming && isChain && responseCount >= 2 && (
         <div className="flex justify-end mt-2">
           <Button
             variant="ghost"
@@ -513,7 +596,7 @@ export default function PlaygroundResultsArea({
       )}
 
       {/* ── Single prompt view — hidden when comparing ── */}
-      {!pinnedRun && !isChain && (hasResponses || isStreaming) && (
+      {!hasPins && !isChain && (hasResponses || isStreaming) && (
         <div className="space-y-3">
           {prompts.map((_prompt, i) => {
             const response = streamedResponses[i];
@@ -570,7 +653,7 @@ export default function PlaygroundResultsArea({
       )}
 
       {/* Judge output quality (non-comparison mode) */}
-      {!pinnedRun && !isStreaming && hasResponses && judgeScores && (
+      {!hasPins && !isStreaming && hasResponses && judgeScores && (
         <JudgeScorePanel scores={judgeScores} />
       )}
 

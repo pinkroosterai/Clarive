@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import PlaygroundHistorySidebar from '@/components/playground/PlaygroundHistorySidebar';
 import PlaygroundResultsArea from '@/components/playground/PlaygroundResultsArea';
 import PlaygroundToolbar from '@/components/playground/PlaygroundToolbar';
-import { safeSessionGet } from '@/components/playground/utils';
+import { safeSessionGet, addPinToList, removePinFromList } from '@/components/playground/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -157,7 +157,21 @@ const PlaygroundPage = () => {
   // ── History + comparison ──
   const [showHistory, setShowHistory] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  const [pinnedRun, setPinnedRun] = useState<TestRunResponse | null>(null);
+  const [pinnedRuns, setPinnedRuns] = useState<TestRunResponse[]>([]);
+
+  const addPin = useCallback((run: TestRunResponse) => {
+    setPinnedRuns((prev) => addPinToList(prev, run));
+  }, []);
+
+  const removePin = useCallback((runId: string) => {
+    setPinnedRuns((prev) => removePinFromList(prev, runId));
+  }, []);
+
+  const togglePin = useCallback((run: TestRunResponse) => {
+    setPinnedRuns((prev) =>
+      prev.some((r) => r.id === run.id) ? removePinFromList(prev, run.id) : addPinToList(prev, run)
+    );
+  }, []);
   const [isFillingTemplateFields, setIsFillingTemplateFields] = useState(false);
 
   // ── Queries ──
@@ -241,7 +255,9 @@ const PlaygroundPage = () => {
 
   useEffect(() => {
     if (!isStreaming) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isStreaming]);
@@ -350,14 +366,13 @@ const PlaygroundPage = () => {
           templateFields={templateFields}
           fieldValues={fieldValues}
           setFieldValues={setFieldValues}
-          pinnedRun={pinnedRun}
-          setPinnedRun={setPinnedRun}
+          pinnedRuns={pinnedRuns}
+          onUnpin={removePin}
           expandedStepInputs={expandedStepInputs}
           setExpandedStepInputs={setExpandedStepInputs}
           copiedIndex={copiedIndex}
           handleRun={handleRun}
           handleCopy={handleCopy}
-          pinnedJudgeScores={pinnedRun?.judgeScores ?? null}
           currentJudgeScores={lastJudgeScores}
           isJudging={isJudging}
           onFillTemplateFields={templateFields.length > 0 ? handleFillTemplateFields : undefined}
@@ -380,8 +395,8 @@ const PlaygroundPage = () => {
                 elapsedSeconds={elapsedSeconds}
                 expandedRunId={expandedRunId}
                 setExpandedRunId={setExpandedRunId}
-                pinnedRun={pinnedRun}
-                setPinnedRun={setPinnedRun}
+                pinnedRuns={pinnedRuns}
+                onTogglePin={togglePin}
                 copiedIndex={copiedIndex}
                 handleRerun={handleRerun}
                 handleCopy={handleCopy}
@@ -397,7 +412,8 @@ const PlaygroundPage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Test in progress</AlertDialogTitle>
             <AlertDialogDescription>
-              A test is currently running. Leaving will stop the generation and discard the response.
+              A test is currently running. Leaving will stop the generation and discard the
+              response.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
