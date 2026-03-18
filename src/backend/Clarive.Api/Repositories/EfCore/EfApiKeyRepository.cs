@@ -37,4 +37,13 @@ public class EfApiKeyRepository(ClariveDbContext db) : IApiKeyRepository
         await db.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task TouchLastUsedAsync(Guid keyId, CancellationToken ct = default)
+    {
+        await db.ApiKeys.IgnoreQueryFilters()
+            .Where(k => k.Id == keyId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(k => k.LastUsedAt, DateTime.UtcNow)
+                .SetProperty(k => k.UsageCount, k => k.UsageCount + 1), ct);
+    }
 }

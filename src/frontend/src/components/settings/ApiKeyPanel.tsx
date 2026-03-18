@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Copy, Key, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -143,6 +143,8 @@ export default function ApiKeyPanel() {
                   <TableHead>Name</TableHead>
                   <TableHead>Key</TableHead>
                   <TableHead>Created</TableHead>
+                  <TableHead>Last Used</TableHead>
+                  <TableHead className="text-right">Requests</TableHead>
                   <TableHead className="w-[60px]" />
                 </TableRow>
               </TableHeader>
@@ -157,6 +159,14 @@ export default function ApiKeyPanel() {
                     </TableCell>
                     <TableCell className="text-foreground-muted text-sm">
                       {format(new Date(k.createdAt), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="text-foreground-muted text-sm">
+                      {k.lastUsedAt
+                        ? formatDistanceToNow(new Date(k.lastUsedAt), { addSuffix: true })
+                        : 'Never'}
+                    </TableCell>
+                    <TableCell className="text-foreground-muted text-sm text-right tabular-nums">
+                      {k.usageCount.toLocaleString()}
                     </TableCell>
                     <TableCell>
                       <Button

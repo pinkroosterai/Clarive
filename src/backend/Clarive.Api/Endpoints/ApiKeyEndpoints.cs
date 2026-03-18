@@ -33,7 +33,7 @@ public static class ApiKeyEndpoints
         // Return with prefix only — never expose full key or hash
         var response = keys.Select(k => new
         {
-            k.Id, k.Name, Key = k.KeyPrefix, k.CreatedAt
+            k.Id, k.Name, Key = k.KeyPrefix, k.CreatedAt, k.LastUsedAt, k.UsageCount
         }).ToList();
         return Results.Ok(response);
     }
@@ -69,7 +69,7 @@ public static class ApiKeyEndpoints
 
         // Return full key only on creation — never again
         return Results.Created($"/api/api-keys/{apiKey.Id}",
-            new ApiKeyCreated(apiKey.Id, apiKey.Name, rawKey, prefix, apiKey.CreatedAt));
+            new ApiKeyCreated(apiKey.Id, apiKey.Name, rawKey, prefix, apiKey.CreatedAt, apiKey.LastUsedAt, apiKey.UsageCount));
     }
 
     private static async Task<IResult> HandleDelete(

@@ -94,6 +94,8 @@ export interface ApiKey {
   name: string;
   keyPrefix: string;
   createdAt: string;
+  lastUsedAt: string | null;
+  usageCount: number;
   /** Only present immediately after creation — the full key cannot be retrieved again. */
   fullKey?: string;
 }

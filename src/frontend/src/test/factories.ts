@@ -182,6 +182,8 @@ export function createApiKey(overrides?: Partial<ApiKey>): ApiKey {
     name: 'Test Key',
     keyPrefix: 'cl_abc1',
     createdAt: '2026-01-01T00:00:00Z',
+    lastUsedAt: null,
+    usageCount: 0,
     ...overrides,
   };
 }

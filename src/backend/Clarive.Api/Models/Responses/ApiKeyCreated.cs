@@ -1,3 +1,3 @@
 namespace Clarive.Api.Models.Responses;
 
-public record ApiKeyCreated(Guid Id, string Name, string Key, string Prefix, DateTime CreatedAt);
+public record ApiKeyCreated(Guid Id, string Name, string Key, string Prefix, DateTime CreatedAt, DateTime? LastUsedAt, long UsageCount);

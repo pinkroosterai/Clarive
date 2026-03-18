@@ -11,7 +11,8 @@ public class ApiKeyAuthHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    IApiKeyRepository keyRepo)
+    IApiKeyRepository keyRepo,
+    IServiceScopeFactory scopeFactory)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     public const string SchemeName = "ApiKey";
@@ -38,6 +39,22 @@ public class ApiKeyAuthHandler(
                 Request.Path, Context.Connection.RemoteIpAddress);
             return AuthenticateResult.Fail("Invalid API key.");
         }
+
+        // Fire-and-forget: update last-used timestamp in a new scope (the request-scoped
+        // DbContext may be disposed before this completes)
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var repo = scope.ServiceProvider.GetRequiredService<IApiKeyRepository>();
+                await repo.TouchLastUsedAsync(apiKey.Id, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to update LastUsedAt for API key {ApiKeyId}", apiKey.Id);
+            }
+        });
 
         var claims = new[]
         {

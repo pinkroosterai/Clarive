@@ -9,4 +9,5 @@ public interface IApiKeyRepository
     Task<ApiKey?> GetByHashAsync(string keyHash, CancellationToken ct = default);
     Task<ApiKey> CreateAsync(ApiKey key, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid tenantId, Guid keyId, CancellationToken ct = default);
+    Task TouchLastUsedAsync(Guid keyId, CancellationToken ct = default);
 }
