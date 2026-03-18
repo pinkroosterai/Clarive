@@ -23,8 +23,9 @@ deploy/.env.example
 .playwright-mcp
 claudedocs
 
-# Documentation & metadata
+# Documentation & metadata (keep api-reference.yaml for OpenAPI serving)
 docs
+!docs/api-reference.yaml
 *.md
 LICENSE
 Makefile
