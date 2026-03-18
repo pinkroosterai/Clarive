@@ -31,6 +31,7 @@ public static class AiGenerationEndpoints
         group.MapPost("/enhance", HandleEnhance);
         group.MapPost("/generate-system-message", HandleGenerateSystemMessage);
         group.MapPost("/decompose", HandleDecompose);
+        group.MapPost("/fill-template-fields", HandleFillTemplateFields);
 
         return group;
     }
@@ -223,6 +224,24 @@ public static class AiGenerationEndpoints
             return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
         return Results.Ok(new DecomposeResponse(result.Value));
+    }
+
+    // ── Fill template fields (no SSE — fast single-turn) ──
+
+    private static async Task<IResult> HandleFillTemplateFields(
+        HttpContext ctx,
+        FillTemplateFieldsRequest request,
+        IAiGenerationService aiService,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var result = await aiService.FillTemplateFieldsAsync(tenantId, userId, request.EntryId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
+
+        return Results.Ok(new FillTemplateFieldsResponse(result.Value));
     }
 
     private static GeneratePromptResponse ToResponse(AiGenerationResult result) =>

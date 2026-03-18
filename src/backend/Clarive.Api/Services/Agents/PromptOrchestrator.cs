@@ -212,6 +212,18 @@ public class PromptOrchestrator : IPromptOrchestrator
         return new AgentResult<string>(response.Result.SystemMessage, response.Usage);
     }
 
+    public async Task<AgentResult<Dictionary<string, string>>> FillTemplateFieldsAsync(
+        List<TemplateFieldInfo> fields, List<PromptInput> prompts, string? systemMessage,
+        CancellationToken ct = default)
+    {
+        var agent = _factory.CreateFillTemplateFieldsAgent();
+        var task = TaskBuilder.BuildFillTemplateFieldsTask(prompts, systemMessage, fields);
+
+        var response = await agent.RunAsync<TemplateFieldValuesOutput>(task, cancellationToken: ct);
+
+        return new AgentResult<Dictionary<string, string>>(response.Result.Values, response.Usage);
+    }
+
     public async Task<AgentResult<List<PromptInput>>> DecomposeAsync(
         string promptContent, bool isTemplate, string? systemMessage,
         CancellationToken ct = default)
@@ -307,5 +319,11 @@ public class PromptOrchestrator : IPromptOrchestrator
     {
         [Description("3-5 ordered prompt steps that decompose the original prompt")]
         public List<PromptMessage> Steps { get; set; } = [];
+    }
+
+    internal class TemplateFieldValuesOutput
+    {
+        [Description("Mapping of template field names to generated example values")]
+        public Dictionary<string, string> Values { get; set; } = new();
     }
 }

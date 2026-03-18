@@ -222,4 +222,14 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             new("Step 3: Execute and deliver")
         }));
     }
+
+    public Task<AgentResult<Dictionary<string, string>>> FillTemplateFieldsAsync(
+        List<TemplateFieldInfo> fields, List<PromptInput> prompts, string? systemMessage = null,
+        CancellationToken ct = default)
+    {
+        var values = fields.ToDictionary(
+            f => f.Name,
+            f => f.EnumValues is { Count: > 0 } ? f.EnumValues[0] : $"example-{f.Name}");
+        return Task.FromResult(new AgentResult<Dictionary<string, string>>(values));
+    }
 }
