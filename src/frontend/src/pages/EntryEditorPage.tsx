@@ -118,6 +118,18 @@ const EntryEditorPage = () => {
     onError: () => toast.error('Failed to delete draft'),
   });
 
+  // ── Empty-content publish warning ──
+  const [showEmptyPublishWarning, setShowEmptyPublishWarning] = useState(false);
+  const handlePublishWithCheck = useCallback(() => {
+    if (!hasDraft) return;
+    const allEmpty = editor.localEntry?.prompts?.every((p) => !p.content?.trim());
+    if (allEmpty) {
+      setShowEmptyPublishWarning(true);
+    } else {
+      mutations.handlePublish();
+    }
+  }, [hasDraft, editor.localEntry, mutations]);
+
   useEditorKeyboardShortcuts({
     isReadOnly,
     onSave: mutations.handleSave,
@@ -137,18 +149,6 @@ const EntryEditorPage = () => {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isAiRunningEarly]);
-
-  // ── Empty-content publish warning ──
-  const [showEmptyPublishWarning, setShowEmptyPublishWarning] = useState(false);
-  const handlePublishWithCheck = useCallback(() => {
-    if (!hasDraft) return;
-    const allEmpty = editor.localEntry?.prompts?.every((p) => !p.content?.trim());
-    if (allEmpty) {
-      setShowEmptyPublishWarning(true);
-    } else {
-      mutations.handlePublish();
-    }
-  }, [hasDraft, editor.localEntry, mutations]);
 
   // ── Favorite toggle ──
   const isFavorited = entryData?.isFavorited ?? false;
