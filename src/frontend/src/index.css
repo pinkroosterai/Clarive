@@ -4,15 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide scrollbar track while keeping scroll functionality */
-.no-scrollbar {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
-}
-
 /* Clarive Design System
    Light + Dark mode. All colors HSL. Indigo accent brand.
    Dark mode activated via .dark class on <html>. */
