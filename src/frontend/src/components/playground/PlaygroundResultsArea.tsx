@@ -569,7 +569,7 @@ export default function PlaygroundResultsArea({
 
             return (
               <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                <div>
                   {prompts.length > 1 && (
                     <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                   )}
@@ -579,44 +579,45 @@ export default function PlaygroundResultsArea({
                       isStreaming={hasCurrentRun && isStreaming}
                     />
                   )}
-                  {leftResponse !== undefined ? (
-                    <LLMResponseBlock
-                      output={leftResponse}
-                      isStreaming={hasCurrentRun && isStreaming}
-                    />
-                  ) : (
-                    <span className="text-xs text-foreground-muted">—</span>
-                  )}
-                  {leftResponse && !(hasCurrentRun && isStreaming) && (
-                    <CopyButton
-                      text={leftResponse}
-                      index={2000 + i}
-                      copiedIndex={copiedIndex}
-                      onCopy={handleCopy}
-                    />
-                  )}
+                  <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                    {leftResponse !== undefined ? (
+                      <LLMResponseBlock
+                        output={leftResponse}
+                        isStreaming={hasCurrentRun && isStreaming}
+                      />
+                    ) : (
+                      <span className="text-xs text-foreground-muted">—</span>
+                    )}
+                    {leftResponse && !(hasCurrentRun && isStreaming) && (
+                      <CopyButton
+                        text={leftResponse}
+                        index={2000 + i}
+                        copiedIndex={copiedIndex}
+                        onCopy={handleCopy}
+                      />
+                    )}
+                  </div>
                 </div>
-                <div
-                  key={activeRun.id}
-                  className="relative group rounded-lg border border-border-subtle bg-surface p-4 animate-fade-in"
-                >
+                <div key={activeRun.id} className="animate-fade-in">
                   {prompts.length > 1 && (
                     <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                   )}
                   {rightReasoning && <ReasoningBlock reasoning={rightReasoning} />}
-                  {rightResponse ? (
-                    <LLMResponseBlock output={rightResponse.content} isStreaming={false} />
-                  ) : (
-                    <span className="text-xs text-foreground-muted">—</span>
-                  )}
-                  {rightResponse && (
-                    <CopyButton
-                      text={rightResponse.content}
-                      index={3000 + i}
-                      copiedIndex={copiedIndex}
-                      onCopy={handleCopy}
-                    />
-                  )}
+                  <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                    {rightResponse ? (
+                      <LLMResponseBlock output={rightResponse.content} isStreaming={false} />
+                    ) : (
+                      <span className="text-xs text-foreground-muted">—</span>
+                    )}
+                    {rightResponse && (
+                      <CopyButton
+                        text={rightResponse.content}
+                        index={3000 + i}
+                        copiedIndex={copiedIndex}
+                        onCopy={handleCopy}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -710,16 +711,18 @@ export default function PlaygroundResultsArea({
             );
             const pinReasoning = pinnedRuns[0].reasoning?.find((r) => r.promptIndex === i)?.content;
             return (
-              <div key={i} className="rounded-lg border border-border-subtle bg-surface p-4">
+              <div key={i}>
                 {prompts.length > 1 && (
                   <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                 )}
                 {pinReasoning && <ReasoningBlock reasoning={pinReasoning} />}
-                {response ? (
-                  <LLMResponseBlock output={response.content} isStreaming={false} />
-                ) : (
-                  <span className="text-xs text-foreground-muted">—</span>
-                )}
+                <div className="rounded-lg border border-border-subtle bg-surface p-4">
+                  {response ? (
+                    <LLMResponseBlock output={response.content} isStreaming={false} />
+                  ) : (
+                    <span className="text-xs text-foreground-muted">—</span>
+                  )}
+                </div>
               </div>
             );
           })}
