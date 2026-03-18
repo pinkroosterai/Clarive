@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -344,30 +345,41 @@ const EntryEditorPage = () => {
 
   const editorContent = (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
           {versionBadge}
           {unsavedIndicator}
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-              onClick={handleToggleFavorite}
-              disabled={favoriteMutation.isPending}
-            >
-              <Star
-                className={`size-4.5 transition-colors ${isFavorited ? 'fill-yellow-500 text-yellow-500' : 'text-foreground-muted hover:text-yellow-500'}`}
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-          </TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <Input
+              value={localEntry.title}
+              onChange={(e) => editor.handleChange({ title: e.target.value })}
+              disabled={isReadOnly}
+              placeholder="Entry title"
+              className="text-2xl font-bold h-14 border-transparent bg-transparent px-0 shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-primary/40 rounded-none transition-colors"
+            />
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-9 shrink-0"
+                aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                onClick={handleToggleFavorite}
+                disabled={favoriteMutation.isPending}
+              >
+                <Star
+                  className={`size-5 transition-colors ${isFavorited ? 'fill-yellow-500 text-yellow-500' : 'text-foreground-muted hover:text-yellow-500'}`}
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
       {readOnlyBanner}
       {editor.showEditNotice && (
@@ -376,7 +388,7 @@ const EntryEditorPage = () => {
           remains active until you publish the draft.
         </div>
       )}
-      <PromptEditor key={editor.discardVersion} entry={localEntry} onChange={editor.handleChange} isReadOnly={isReadOnly} />
+      <PromptEditor key={editor.discardVersion} entry={localEntry} onChange={editor.handleChange} isReadOnly={isReadOnly} hideTitleInput />
     </div>
   );
 

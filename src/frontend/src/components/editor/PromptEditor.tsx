@@ -14,13 +14,14 @@ interface PromptEditorProps {
   entry: PromptEntry;
   onChange: (updated: Partial<PromptEntry>, options?: { force?: boolean }) => void;
   isReadOnly: boolean;
+  hideTitleInput?: boolean;
 }
 
 function generateLocalId() {
   return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export function PromptEditor({ entry, onChange, isReadOnly }: PromptEditorProps) {
+export function PromptEditor({ entry, onChange, isReadOnly, hideTitleInput }: PromptEditorProps) {
   const sortedPrompts = useMemo(
     () => [...entry.prompts].sort((a, b) => a.order - b.order),
     [entry.prompts]
@@ -73,13 +74,15 @@ export function PromptEditor({ entry, onChange, isReadOnly }: PromptEditorProps)
 
   return (
     <div className="space-y-6" data-tour="prompt-editor">
-      <Input
-        value={entry.title}
-        onChange={(e) => onChange({ title: e.target.value })}
-        disabled={isReadOnly}
-        placeholder="Entry title"
-        className="text-lg font-semibold h-12 border-transparent bg-transparent px-0 shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-primary/40 rounded-none transition-colors"
-      />
+      {!hideTitleInput && (
+        <Input
+          value={entry.title}
+          onChange={(e) => onChange({ title: e.target.value })}
+          disabled={isReadOnly}
+          placeholder="Entry title"
+          className="text-2xl font-bold h-14 border-transparent bg-transparent px-0 shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-primary/40 rounded-none transition-colors"
+        />
+      )}
 
       <SystemMessageSection
         systemMessage={entry.systemMessage}
