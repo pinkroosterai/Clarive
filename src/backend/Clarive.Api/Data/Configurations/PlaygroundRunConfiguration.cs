@@ -23,6 +23,8 @@ public class PlaygroundRunConfiguration : IEntityTypeConfiguration<PlaygroundRun
         builder.Property(r => r.Responses).HasColumnName("responses")
             .HasColumnType("jsonb")
             .IsRequired();
+        builder.Property(r => r.Reasoning).HasColumnName("reasoning")
+            .HasColumnType("jsonb");
         builder.Property(r => r.RenderedSystemMessage).HasColumnName("rendered_system_message")
             .HasColumnType("text");
         builder.Property(r => r.RenderedPrompts).HasColumnName("rendered_prompts")

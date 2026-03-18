@@ -558,16 +558,27 @@ export default function PlaygroundResultsArea({
               ? streamedResponses[i]
               : referenceRun?.responses.find((r: TestRunPromptResponse) => r.promptIndex === i)
                   ?.content;
+            const leftReasoning = hasCurrentRun
+              ? streamedReasoning[i]
+              : referenceRun?.reasoning?.find((r) => r.promptIndex === i)?.content;
             // Right column: active carousel run response
             const rightResponse = activeRun.responses.find(
               (r: TestRunPromptResponse) => r.promptIndex === i
             );
+            const rightReasoning = activeRun.reasoning?.find((r) => r.promptIndex === i)?.content;
 
             return (
               <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
                   {prompts.length > 1 && (
                     <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                  )}
+                  {leftReasoning && (
+                    <ReasoningBlock
+                      reasoning={leftReasoning}
+                      defaultOpen={false}
+                      isStreaming={hasCurrentRun && isStreaming}
+                    />
                   )}
                   {leftResponse !== undefined ? (
                     <LLMResponseBlock
@@ -592,6 +603,9 @@ export default function PlaygroundResultsArea({
                 >
                   {prompts.length > 1 && (
                     <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                  )}
+                  {rightReasoning && (
+                    <ReasoningBlock reasoning={rightReasoning} defaultOpen={false} />
                   )}
                   {rightResponse ? (
                     <LLMResponseBlock output={rightResponse.content} isStreaming={false} />
@@ -697,11 +711,13 @@ export default function PlaygroundResultsArea({
             const response = pinnedRuns[0].responses.find(
               (r: TestRunPromptResponse) => r.promptIndex === i
             );
+            const pinReasoning = pinnedRuns[0].reasoning?.find((r) => r.promptIndex === i)?.content;
             return (
               <div key={i} className="rounded-lg border border-border-subtle bg-surface p-4">
                 {prompts.length > 1 && (
                   <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                 )}
+                {pinReasoning && <ReasoningBlock reasoning={pinReasoning} defaultOpen={false} />}
                 {response ? (
                   <LLMResponseBlock output={response.content} isStreaming={false} />
                 ) : (

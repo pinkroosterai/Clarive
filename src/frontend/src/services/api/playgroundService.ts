@@ -31,6 +31,7 @@ export interface TestRunResponse {
   outputTokens: number | null;
   createdAt: string;
   judgeScores?: Evaluation | null;
+  reasoning?: TestRunPromptResponse[] | null;
   renderedSystemMessage?: string | null;
   renderedPrompts?: TestRunPromptResponse[] | null;
 }

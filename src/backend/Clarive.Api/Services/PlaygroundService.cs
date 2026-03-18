@@ -80,6 +80,7 @@ public class PlaygroundService(
 
         var responses = new List<TestRunPromptResponse>();
         var reasoningText = new StringBuilder();
+        var reasoningPerPrompt = new List<TestRunPromptResponse>();
         long? totalInputTokens = null;
         long? totalOutputTokens = null;
 
@@ -205,6 +206,9 @@ public class PlaygroundService(
 
                 var fullResponse = responseText.ToString();
                 responses.Add(new TestRunPromptResponse(i, fullResponse));
+                if (reasoningText.Length > 0)
+                    reasoningPerPrompt.Add(new TestRunPromptResponse(i, reasoningText.ToString()));
+                reasoningText.Clear();
                 conversationMessages.Add(new ChatMessage(ChatRole.Assistant, fullResponse));
             }
         }
@@ -228,6 +232,9 @@ public class PlaygroundService(
                 ? JsonSerializer.Serialize(fields, JsonOptions)
                 : null,
             Responses = JsonSerializer.Serialize(responses, JsonOptions),
+            Reasoning = reasoningPerPrompt.Count > 0
+                ? JsonSerializer.Serialize(reasoningPerPrompt, JsonOptions)
+                : null,
             RenderedSystemMessage = renderedSystemMessage,
             RenderedPrompts = JsonSerializer.Serialize(renderedPromptTexts, JsonOptions),
             CreatedAt = DateTime.UtcNow
@@ -242,7 +249,9 @@ public class PlaygroundService(
             totalInputTokens ?? 0, totalOutputTokens ?? 0,
             sw.ElapsedMilliseconds, entryId, ct);
 
-        var fullReasoning = reasoningText.Length > 0 ? reasoningText.ToString() : null;
+        var fullReasoning = reasoningPerPrompt.Count > 0
+            ? string.Join("\n\n", reasoningPerPrompt.Select(r => r.Content))
+            : null;
         return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens, fullReasoning);
     }
 
