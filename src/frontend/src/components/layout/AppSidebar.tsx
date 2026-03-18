@@ -1,4 +1,12 @@
-import { Plus, Trash2, Settings, ShieldAlert, LayoutDashboard, CircleHelp } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  Settings,
+  ShieldAlert,
+  LayoutDashboard,
+  CircleHelp,
+  Library,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { InvitationNotificationBell } from './InvitationNotificationBell';
@@ -56,6 +64,18 @@ export function AppSidebar() {
             >
               <Plus className="size-4" />
               <span>New Entry</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem className="hidden group-data-[collapsible=icon]:block">
+            <SidebarMenuButton asChild tooltip="All Prompts">
+              <NavLink
+                to="/library"
+                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-sidebar-primary"
+                className="transition-colors duration-150"
+              >
+                <Library className="size-4" />
+                <span>All Prompts</span>
+              </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
