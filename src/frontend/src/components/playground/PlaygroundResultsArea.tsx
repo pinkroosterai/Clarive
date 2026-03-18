@@ -403,7 +403,7 @@ export default function PlaygroundResultsArea({
           />
 
           {/* Column headers */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Left column header (reference) */}
             <div className="text-xs font-medium text-foreground-muted">
               {hasCurrentRun ? (
@@ -488,7 +488,7 @@ export default function PlaygroundResultsArea({
 
           {/* Collapsible prompt sections */}
           {showPrompts && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 {hasCurrentRun ? (
                   <PromptSection
@@ -527,8 +527,8 @@ export default function PlaygroundResultsArea({
             );
 
             return (
-              <div key={i} className="grid grid-cols-2 gap-4">
-                <div className="rounded-lg border border-border-subtle bg-surface p-4">
+              <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
                   {prompts.length > 1 && (
                     <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                   )}
@@ -540,10 +540,18 @@ export default function PlaygroundResultsArea({
                   ) : (
                     <span className="text-xs text-foreground-muted">—</span>
                   )}
+                  {leftResponse && !(hasCurrentRun && isStreaming) && (
+                    <CopyButton
+                      text={leftResponse}
+                      index={2000 + i}
+                      copiedIndex={copiedIndex}
+                      onCopy={handleCopy}
+                    />
+                  )}
                 </div>
                 <div
                   key={activeRun.id}
-                  className="rounded-lg border border-border-subtle bg-surface p-4 animate-fade-in"
+                  className="relative group rounded-lg border border-border-subtle bg-surface p-4 animate-fade-in"
                 >
                   {prompts.length > 1 && (
                     <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
@@ -552,6 +560,14 @@ export default function PlaygroundResultsArea({
                     <LLMResponseBlock output={rightResponse.content} isStreaming={false} />
                   ) : (
                     <span className="text-xs text-foreground-muted">—</span>
+                  )}
+                  {rightResponse && (
+                    <CopyButton
+                      text={rightResponse.content}
+                      index={3000 + i}
+                      copiedIndex={copiedIndex}
+                      onCopy={handleCopy}
+                    />
                   )}
                 </div>
               </div>
@@ -562,7 +578,7 @@ export default function PlaygroundResultsArea({
           {((hasCurrentRun && !isStreaming && currentJudgeScores) ||
             referenceRun?.judgeScores ||
             activeRun.judgeScores) && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 {hasCurrentRun
                   ? !isStreaming &&
