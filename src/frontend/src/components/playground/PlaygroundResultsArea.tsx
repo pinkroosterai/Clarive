@@ -334,10 +334,7 @@ export default function PlaygroundResultsArea({
   }, [clampedPinIndex]);
 
   return (
-    <div
-      className="flex-1 p-6 min-w-0 overflow-y-auto overflow-x-hidden"
-      style={{ scrollbarWidth: 'none' }}
-    >
+    <div className="flex-1 p-6 min-w-0 overflow-y-auto overflow-x-hidden no-scrollbar">
       {/* Template variables (collapsible) */}
       {templateFields.length > 0 &&
         (() => {
