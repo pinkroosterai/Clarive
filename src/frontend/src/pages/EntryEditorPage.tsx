@@ -444,7 +444,7 @@ const EntryEditorPage = () => {
         <EditorAiOverlay
           isVisible={isAiRunning}
           label={aiLabel}
-          onCancel={() => window.location.reload()}
+          onCancel={mutations.handleCancelAiOperation}
         />
         {readOnlyBanner && <div className="mb-4">{readOnlyBanner}</div>}
         <Tabs defaultValue="editor">
@@ -472,7 +472,7 @@ const EntryEditorPage = () => {
       <EditorAiOverlay
         isVisible={isAiRunning}
         label={aiLabel}
-        onCancel={() => window.location.reload()}
+        onCancel={mutations.handleCancelAiOperation}
       />
       <ScrollArea className="p-6">
         <motion.div

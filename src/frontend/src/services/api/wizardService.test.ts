@@ -334,7 +334,7 @@ describe('generateSystemMessage', () => {
 
     expect(mockApi.post).toHaveBeenCalledWith('/api/ai/generate-system-message', {
       entryId: 'entry-99',
-    });
+    }, undefined);
     expect(result).toBe('You are an expert coding assistant.');
   });
 
@@ -367,7 +367,7 @@ describe('decomposeToChain', () => {
 
     expect(mockApi.post).toHaveBeenCalledWith('/api/ai/decompose', {
       entryId: 'entry-77',
-    });
+    }, undefined);
     expect(result).toHaveLength(3);
   });
 

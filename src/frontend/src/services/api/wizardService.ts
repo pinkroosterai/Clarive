@@ -136,17 +136,25 @@ export async function enhanceEntry(
   return toWizardResult(res);
 }
 
-export async function generateSystemMessage(entryId: string): Promise<string> {
-  const res = await api.post<{ systemMessage: string }>('/api/ai/generate-system-message', {
-    entryId,
-  });
+export async function generateSystemMessage(
+  entryId: string,
+  options?: { signal?: AbortSignal }
+): Promise<string> {
+  const res = await api.post<{ systemMessage: string }>(
+    '/api/ai/generate-system-message',
+    { entryId },
+    options
+  );
   return res.systemMessage;
 }
 
-export async function decomposeToChain(entryId: string): Promise<Prompt[]> {
+export async function decomposeToChain(
+  entryId: string,
+  options?: { signal?: AbortSignal }
+): Promise<Prompt[]> {
   const res = await api.post<{
     prompts: Array<{ content: string }>;
-  }>('/api/ai/decompose', { entryId });
+  }>('/api/ai/decompose', { entryId }, options);
 
   return res.prompts.map((p, i) => ({
     id: `decomposed-${i}`,

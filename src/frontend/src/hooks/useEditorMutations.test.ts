@@ -121,7 +121,9 @@ describe('useEditorMutations', () => {
       await result.current.handleGenerateSystemMessage();
     });
 
-    expect(mockGenerateSystemMessage).toHaveBeenCalledWith(opts.entryId);
+    expect(mockGenerateSystemMessage).toHaveBeenCalledWith(opts.entryId, {
+      signal: expect.any(AbortSignal),
+    });
     expect(opts.handleChange).toHaveBeenCalledWith(
       { systemMessage: 'Generated system message' },
       { force: true }
@@ -141,7 +143,9 @@ describe('useEditorMutations', () => {
       await result.current.handleDecomposeToChain();
     });
 
-    expect(mockDecomposeToChain).toHaveBeenCalledWith(opts.entryId);
+    expect(mockDecomposeToChain).toHaveBeenCalledWith(opts.entryId, {
+      signal: expect.any(AbortSignal),
+    });
     expect(opts.handleChange).toHaveBeenCalledWith({ prompts: decomposed }, { force: true });
   });
 

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useCallback, type RefObject } from 'react';
+import { useState, useCallback, useRef, type RefObject } from 'react';
 import { toast } from 'sonner';
 
 import { handleApiError } from '@/lib/handleApiError';
@@ -66,34 +66,55 @@ export function useEditorMutations({
     publishMutation.mutate();
   }, [publishMutation]);
 
-  // AI actions
+  // AI actions with AbortController support
   const [isGeneratingSystemMessage, setIsGeneratingSystemMessage] = useState(false);
   const [isDecomposing, setIsDecomposing] = useState(false);
+  const aiAbortControllerRef = useRef<AbortController | null>(null);
+
+  const handleCancelAiOperation = useCallback(() => {
+    aiAbortControllerRef.current?.abort();
+    aiAbortControllerRef.current = null;
+    setIsGeneratingSystemMessage(false);
+    setIsDecomposing(false);
+    toast.info('AI operation cancelled');
+  }, []);
 
   const handleGenerateSystemMessage = useCallback(async () => {
     if (!entryId || !localEntryRef.current?.prompts[0]?.content) return;
+    const controller = new AbortController();
+    aiAbortControllerRef.current = controller;
     setIsGeneratingSystemMessage(true);
     try {
-      const result = await wizardService.generateSystemMessage(entryId);
+      const result = await wizardService.generateSystemMessage(entryId, {
+        signal: controller.signal,
+      });
       handleChange({ systemMessage: result }, { force: true });
       toast.success('System message generated');
     } catch (err) {
+      if (controller.signal.aborted) return;
       handleApiError(err, { title: 'Failed to generate system message' });
     } finally {
+      aiAbortControllerRef.current = null;
       setIsGeneratingSystemMessage(false);
     }
   }, [entryId, handleChange, localEntryRef]);
 
   const handleDecomposeToChain = useCallback(async () => {
     if (!entryId || !localEntryRef.current?.prompts[0]) return;
+    const controller = new AbortController();
+    aiAbortControllerRef.current = controller;
     setIsDecomposing(true);
     try {
-      const result = await wizardService.decomposeToChain(entryId);
+      const result = await wizardService.decomposeToChain(entryId, {
+        signal: controller.signal,
+      });
       handleChange({ prompts: result }, { force: true });
       toast.success(`Prompt decomposed into ${result.length} steps`);
     } catch (err) {
+      if (controller.signal.aborted) return;
       handleApiError(err, { title: 'Failed to decompose prompt' });
     } finally {
+      aiAbortControllerRef.current = null;
       setIsDecomposing(false);
     }
   }, [entryId, handleChange, localEntryRef]);
@@ -108,5 +129,6 @@ export function useEditorMutations({
     handleGenerateSystemMessage,
     isDecomposing,
     handleDecomposeToChain,
+    handleCancelAiOperation,
   };
 }
