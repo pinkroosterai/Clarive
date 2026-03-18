@@ -482,37 +482,42 @@ export default function PlaygroundResultsArea({
                           }))}
                         />
                       )}
-                      {prompts.map((_p, i) => (
-                        <div key={i}>
-                          {prompts.length > 1 && (
-                            <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                          )}
-                          {streamedReasoning[i] && (
-                            <ReasoningBlock
-                              reasoning={streamedReasoning[i]}
-                              isStreaming={isStreaming}
-                            />
-                          )}
-                          <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                            {streamedResponses[i] !== undefined ? (
-                              <LLMResponseBlock
-                                output={streamedResponses[i]}
-                                isStreaming={isStreaming}
-                              />
-                            ) : (
-                              <span className="text-xs text-foreground-muted">—</span>
-                            )}
-                            {streamedResponses[i] && !isStreaming && (
-                              <CopyButton
-                                text={streamedResponses[i]}
-                                index={2000 + i}
-                                copiedIndex={copiedIndex}
-                                onCopy={handleCopy}
-                              />
-                            )}
-                          </div>
+                      {/* Scrollable response area — capped height so scores align across columns */}
+                      <div className="max-h-[60vh] overflow-y-auto rounded-lg">
+                        <div className="space-y-3">
+                          {prompts.map((_p, i) => (
+                            <div key={i}>
+                              {prompts.length > 1 && (
+                                <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                              )}
+                              {streamedReasoning[i] && (
+                                <ReasoningBlock
+                                  reasoning={streamedReasoning[i]}
+                                  isStreaming={isStreaming}
+                                />
+                              )}
+                              <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                                {streamedResponses[i] !== undefined ? (
+                                  <LLMResponseBlock
+                                    output={streamedResponses[i]}
+                                    isStreaming={isStreaming}
+                                  />
+                                ) : (
+                                  <span className="text-xs text-foreground-muted">—</span>
+                                )}
+                                {streamedResponses[i] && !isStreaming && (
+                                  <CopyButton
+                                    text={streamedResponses[i]}
+                                    index={2000 + i}
+                                    copiedIndex={copiedIndex}
+                                    onCopy={handleCopy}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
                       {!isStreaming && currentJudgeScores && (
                         <JudgeScorePanel scores={currentJudgeScores} />
                       )}
@@ -555,37 +560,42 @@ export default function PlaygroundResultsArea({
                           renderedPrompts={run.renderedPrompts}
                         />
                       )}
-                      {prompts.map((_p, i) => {
-                        const response = run.responses.find(
-                          (r: TestRunPromptResponse) => r.promptIndex === i
-                        );
-                        const reasoning = run.reasoning?.find((r) => r.promptIndex === i)?.content;
-                        return (
-                          <div key={i}>
-                            {prompts.length > 1 && (
-                              <div className="text-xs text-foreground-muted mb-2">
-                                Prompt {i + 1}
+                      {/* Scrollable response area — capped height so scores align across columns */}
+                      <div className="max-h-[60vh] overflow-y-auto rounded-lg">
+                        <div className="space-y-3">
+                          {prompts.map((_p, i) => {
+                            const response = run.responses.find(
+                              (r: TestRunPromptResponse) => r.promptIndex === i
+                            );
+                            const reasoning = run.reasoning?.find((r) => r.promptIndex === i)?.content;
+                            return (
+                              <div key={i}>
+                                {prompts.length > 1 && (
+                                  <div className="text-xs text-foreground-muted mb-2">
+                                    Prompt {i + 1}
+                                  </div>
+                                )}
+                                {reasoning && <ReasoningBlock reasoning={reasoning} />}
+                                <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                                  {response ? (
+                                    <LLMResponseBlock output={response.content} isStreaming={false} />
+                                  ) : (
+                                    <span className="text-xs text-foreground-muted">—</span>
+                                  )}
+                                  {response && (
+                                    <CopyButton
+                                      text={response.content}
+                                      index={3000 + pinIndex * 100 + i}
+                                      copiedIndex={copiedIndex}
+                                      onCopy={handleCopy}
+                                    />
+                                  )}
+                                </div>
                               </div>
-                            )}
-                            {reasoning && <ReasoningBlock reasoning={reasoning} />}
-                            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                              {response ? (
-                                <LLMResponseBlock output={response.content} isStreaming={false} />
-                              ) : (
-                                <span className="text-xs text-foreground-muted">—</span>
-                              )}
-                              {response && (
-                                <CopyButton
-                                  text={response.content}
-                                  index={3000 + pinIndex * 100 + i}
-                                  copiedIndex={copiedIndex}
-                                  onCopy={handleCopy}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      </div>
                       {run.judgeScores && <JudgeScorePanel scores={run.judgeScores} />}
                     </div>
                   ))}
