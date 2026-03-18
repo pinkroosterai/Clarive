@@ -45,6 +45,9 @@ interface PlaygroundToolbarProps {
   onModelChange: (model: EnrichedModel) => void;
 }
 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+const modKey = isMac ? '⌘' : 'Ctrl';
+
 export default function PlaygroundToolbar({
   entryId,
   entryTitle,
@@ -232,7 +235,7 @@ export default function PlaygroundToolbar({
               size="sm"
               onClick={handleRun}
               disabled={!model || hasValidationErrors}
-              title={hasValidationErrors ? 'Fill all template fields to run' : 'Run (⌘+Enter)'}
+              title={hasValidationErrors ? 'Fill all template fields to run' : `Run (${modKey}+Enter)`}
             >
               <Play className="size-3 mr-1.5" />
               Run
