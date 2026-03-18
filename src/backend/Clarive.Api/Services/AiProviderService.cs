@@ -119,6 +119,10 @@ public class AiProviderService(
             var models = new List<FetchedModelItem>();
             foreach (var m in response.Value.OrderBy(m => m.Id, StringComparer.OrdinalIgnoreCase))
             {
+                // Skip known non-chat models (embeddings, audio, image generation, etc.)
+                if (liteLlmCache.IsKnownNonChatModel(provider.Name, m.Id))
+                    continue;
+
                 var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, m.Id, ct);
                 models.Add(new FetchedModelItem(
                     m.Id,

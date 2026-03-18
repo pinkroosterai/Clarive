@@ -13,6 +13,7 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
     // In-memory deserialized registry to avoid repeated JSON parsing
     // Refreshed when LoadFromJsonAsync is called or when cache read detects a change
     private volatile Dictionary<string, LiteLlmModelInfo>? _localRegistry;
+    private volatile HashSet<string>? _nonChatModels;
 
     public async Task<bool> IsLoadedAsync(CancellationToken ct = default)
     {
@@ -64,10 +65,20 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
         return null;
     }
 
+    public bool IsKnownNonChatModel(string providerName, string modelId)
+    {
+        var nonChat = _nonChatModels;
+        if (nonChat is null) return false;
+
+        var key = $"{providerName.ToLowerInvariant()}/{modelId}";
+        return nonChat.Contains(key) || nonChat.Contains(modelId);
+    }
+
     public async Task LoadFromJsonAsync(string json, CancellationToken ct = default)
     {
         using var doc = JsonDocument.Parse(json);
         var registry = new Dictionary<string, LiteLlmModelInfo>(StringComparer.OrdinalIgnoreCase);
+        var nonChat = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var skipped = 0;
 
         foreach (var prop in doc.RootElement.EnumerateObject())
@@ -77,6 +88,13 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
 
             try
             {
+                // Track non-chat models so callers can filter them out
+                if (prop.Value.TryGetProperty("mode", out var modeEl) &&
+                    modeEl.GetString() is string modeStr && modeStr != "chat")
+                {
+                    nonChat.Add(prop.Name);
+                }
+
                 var entry = ParseEntry(prop.Value);
                 if (entry is not null)
                     registry[prop.Name] = entry;
@@ -101,8 +119,9 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
             logger.LogWarning(ex, "Failed to store LiteLLM registry in distributed cache");
         }
 
-        // Update local in-memory copy to avoid re-deserialization
+        // Update local in-memory copies
         _localRegistry = registry;
+        _nonChatModels = nonChat;
 
         logger.LogInformation("Loaded {Count} models into LiteLLM registry cache (skipped {Skipped})",
             registry.Count, skipped);
