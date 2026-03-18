@@ -173,17 +173,17 @@ const PlaygroundPage = () => {
   }, []);
 
   const handleFillTemplateFields = useCallback(async () => {
-    if (!id) return;
+    if (!entryId) return;
     setIsFillingTemplateFields(true);
     try {
-      const values = await fillTemplateFields(id);
+      const values = await fillTemplateFields(entryId);
       setFieldValues(values);
     } catch {
       toast.error('Failed to generate example values');
     } finally {
       setIsFillingTemplateFields(false);
     }
-  }, [id]);
+  }, [entryId]);
 
   const handleRerun = useCallback(
     (run: TestRunResponse) => {
