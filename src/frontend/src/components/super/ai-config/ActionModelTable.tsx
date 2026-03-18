@@ -97,6 +97,14 @@ export default function ActionModelTable({
         </div>
       )}
 
+      {/* Capability hint */}
+      {hasModels && agentCapableModels.length < providerModels.length && (
+        <p className="text-xs text-foreground-muted">
+          Only models with function calling and structured response support are shown.
+          Add models with these capabilities in Providers &amp; Models to see more options.
+        </p>
+      )}
+
       {/* Quick Setup */}
       {hasModels && (
         <div className="flex items-center gap-2">
