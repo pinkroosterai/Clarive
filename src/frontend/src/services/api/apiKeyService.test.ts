@@ -42,12 +42,20 @@ describe('getApiKeysList', () => {
         name: 'Production Key',
         key: 'cl_abc123',
         createdAt: '2026-01-01T00:00:00Z',
+        expiresAt: '2027-01-01T00:00:00Z',
+        lastUsedAt: null,
+        usageCount: 0,
+        isExpired: false,
       },
       {
         id: 'k2',
         name: 'Dev Key',
         key: 'cl_xyz789',
         createdAt: '2026-02-01T00:00:00Z',
+        expiresAt: null,
+        lastUsedAt: '2026-03-01T00:00:00Z',
+        usageCount: 42,
+        isExpired: false,
       },
     ];
     mockApi.get.mockResolvedValue(apiItems);
@@ -60,12 +68,20 @@ describe('getApiKeysList', () => {
       name: 'Production Key',
       keyPrefix: 'cl_abc123',
       createdAt: '2026-01-01T00:00:00Z',
+      expiresAt: '2027-01-01T00:00:00Z',
+      lastUsedAt: null,
+      usageCount: 0,
+      isExpired: false,
     });
     expect(result[1]).toEqual({
       id: 'k2',
       name: 'Dev Key',
       keyPrefix: 'cl_xyz789',
       createdAt: '2026-02-01T00:00:00Z',
+      expiresAt: null,
+      lastUsedAt: '2026-03-01T00:00:00Z',
+      usageCount: 42,
+      isExpired: false,
     });
   });
 
@@ -81,20 +97,24 @@ describe('getApiKeysList', () => {
 // ── createApiKey ──
 
 describe('createApiKey', () => {
-  it('calls POST /api/api-keys with name', async () => {
+  it('calls POST /api/api-keys with name and expiresAt', async () => {
     const apiRes = {
       id: 'k-new',
       name: 'New Key',
       key: 'cl_full_key_value_here',
       prefix: 'cl_full',
       createdAt: '2026-03-01T00:00:00Z',
+      expiresAt: '2026-06-01T00:00:00Z',
+      lastUsedAt: null,
+      usageCount: 0,
     };
     mockApi.post.mockResolvedValue(apiRes);
 
-    await createApiKey('New Key');
+    await createApiKey('New Key', '2026-06-01T00:00:00Z');
 
     expect(mockApi.post).toHaveBeenCalledWith('/api/api-keys', {
       name: 'New Key',
+      expiresAt: '2026-06-01T00:00:00Z',
     });
   });
 
@@ -105,6 +125,9 @@ describe('createApiKey', () => {
       key: 'cl_abc123def456ghi789',
       prefix: 'cl_abc1',
       createdAt: '2026-03-01T00:00:00Z',
+      expiresAt: null,
+      lastUsedAt: null,
+      usageCount: 0,
     };
     mockApi.post.mockResolvedValue(apiRes);
 
@@ -115,6 +138,10 @@ describe('createApiKey', () => {
       name: 'My Key',
       keyPrefix: 'cl_abc1',
       createdAt: '2026-03-01T00:00:00Z',
+      expiresAt: null,
+      lastUsedAt: null,
+      usageCount: 0,
+      isExpired: false,
       fullKey: 'cl_abc123def456ghi789',
     });
   });
@@ -126,6 +153,9 @@ describe('createApiKey', () => {
       key: 'cl_the_full_secret_key',
       prefix: 'cl_the_',
       createdAt: '2026-01-01T00:00:00Z',
+      expiresAt: null,
+      lastUsedAt: null,
+      usageCount: 0,
     };
     mockApi.post.mockResolvedValue(apiRes);
 

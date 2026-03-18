@@ -40,6 +40,13 @@ public class ApiKeyAuthHandler(
             return AuthenticateResult.Fail("Invalid API key.");
         }
 
+        if (apiKey.ExpiresAt.HasValue && apiKey.ExpiresAt.Value < DateTime.UtcNow)
+        {
+            Logger.LogWarning("API key auth failed: expired key {ApiKeyId} on {Path} from {ClientIp}",
+                apiKey.Id, Request.Path, Context.Connection.RemoteIpAddress);
+            return AuthenticateResult.Fail("API key has expired.");
+        }
+
         // Fire-and-forget: update last-used timestamp in a new scope (the request-scoped
         // DbContext may be disposed before this completes)
         _ = Task.Run(async () =>

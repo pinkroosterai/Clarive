@@ -33,7 +33,8 @@ public static class ApiKeyEndpoints
         // Return with prefix only — never expose full key or hash
         var response = keys.Select(k => new
         {
-            k.Id, k.Name, Key = k.KeyPrefix, k.CreatedAt, k.LastUsedAt, k.UsageCount
+            k.Id, k.Name, Key = k.KeyPrefix, k.CreatedAt, k.ExpiresAt, k.LastUsedAt, k.UsageCount,
+            IsExpired = k.ExpiresAt.HasValue && k.ExpiresAt.Value < DateTime.UtcNow
         }).ToList();
         return Results.Ok(response);
     }
@@ -52,6 +53,9 @@ public static class ApiKeyEndpoints
         if (request.Name.Trim().Length > MaxApiKeyNameLength)
             return ctx.ErrorResult(422, "VALIDATION_ERROR", $"Name must be {MaxApiKeyNameLength} characters or fewer.");
 
+        if (request.ExpiresAt.HasValue && request.ExpiresAt.Value.ToUniversalTime() <= DateTime.UtcNow)
+            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Expiry date must be in the future.");
+
         // Generate the key: cl_ + 32 random hex chars
         var rawKey = $"cl_{Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLower()}";
         var keyHash = HashKey(rawKey);
@@ -64,12 +68,13 @@ public static class ApiKeyEndpoints
             Name = request.Name.Trim(),
             KeyHash = keyHash,
             KeyPrefix = prefix,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = request.ExpiresAt?.ToUniversalTime()
         }, ct);
 
         // Return full key only on creation — never again
         return Results.Created($"/api/api-keys/{apiKey.Id}",
-            new ApiKeyCreated(apiKey.Id, apiKey.Name, rawKey, prefix, apiKey.CreatedAt, apiKey.LastUsedAt, apiKey.UsageCount));
+            new ApiKeyCreated(apiKey.Id, apiKey.Name, rawKey, prefix, apiKey.CreatedAt, apiKey.ExpiresAt, apiKey.LastUsedAt, apiKey.UsageCount));
     }
 
     private static async Task<IResult> HandleDelete(

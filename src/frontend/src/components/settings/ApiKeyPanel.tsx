@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, formatDistanceToNow } from 'date-fns';
+import { addDays, addMonths, format, formatDistanceToNow } from 'date-fns';
 import { Copy, Key, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -26,6 +26,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -41,12 +48,34 @@ import { apiKeyNameSchema } from '@/lib/validationSchemas';
 import { apiKeyService } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 
+const EXPIRY_OPTIONS = [
+  { value: 'never', label: 'No expiration' },
+  { value: '30d', label: '30 days' },
+  { value: '60d', label: '60 days' },
+  { value: '90d', label: '90 days' },
+  { value: '6m', label: '6 months' },
+  { value: '1y', label: '1 year' },
+] as const;
+
+function computeExpiresAt(option: string): string | undefined {
+  const now = new Date();
+  switch (option) {
+    case '30d': return addDays(now, 30).toISOString();
+    case '60d': return addDays(now, 60).toISOString();
+    case '90d': return addDays(now, 90).toISOString();
+    case '6m': return addMonths(now, 6).toISOString();
+    case '1y': return addMonths(now, 12).toISOString();
+    default: return undefined;
+  }
+}
+
 export default function ApiKeyPanel() {
   const currentUser = useAuthStore((s) => s.currentUser);
   const queryClient = useQueryClient();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [keyName, setKeyName] = useState('');
+  const [expiry, setExpiry] = useState('never');
   const [nameError, setNameError] = useState<string | null>(null);
   const [createdKey, setCreatedKey] = useState<{ fullKey: string; name: string } | null>(null);
 
@@ -58,12 +87,14 @@ export default function ApiKeyPanel() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (name: string) => apiKeyService.createApiKey(name),
+    mutationFn: ({ name, expiresAt }: { name: string; expiresAt?: string }) =>
+      apiKeyService.createApiKey(name, expiresAt),
     onSuccess: (result) => {
       if (result.fullKey) {
         setCreatedKey({ fullKey: result.fullKey, name: result.name });
       }
       setKeyName('');
+      setExpiry('never');
       queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
     },
     onError: (err: unknown) => handleApiError(err, { title: 'Failed to create API key' }),
@@ -91,6 +122,7 @@ export default function ApiKeyPanel() {
     setCreateOpen(false);
     setCreatedKey(null);
     setKeyName('');
+    setExpiry('never');
     setNameError(null);
   };
 
@@ -143,6 +175,7 @@ export default function ApiKeyPanel() {
                   <TableHead>Name</TableHead>
                   <TableHead>Key</TableHead>
                   <TableHead>Created</TableHead>
+                  <TableHead>Expires</TableHead>
                   <TableHead>Last Used</TableHead>
                   <TableHead className="text-right">Requests</TableHead>
                   <TableHead className="w-[60px]" />
@@ -150,8 +183,15 @@ export default function ApiKeyPanel() {
               </TableHeader>
               <TableBody>
                 {keys.map((k) => (
-                  <TableRow key={k.id}>
-                    <TableCell className="font-medium">{k.name}</TableCell>
+                  <TableRow key={k.id} className={k.isExpired ? 'opacity-60' : undefined}>
+                    <TableCell className="font-medium">
+                      <span className="flex items-center gap-2">
+                        {k.name}
+                        {k.isExpired && (
+                          <span className="text-xs text-destructive font-normal">Expired</span>
+                        )}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <span className="font-mono text-sm text-foreground-muted bg-elevated rounded px-2 py-1">
                         {k.keyPrefix}
@@ -159,6 +199,13 @@ export default function ApiKeyPanel() {
                     </TableCell>
                     <TableCell className="text-foreground-muted text-sm">
                       {format(new Date(k.createdAt), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="text-foreground-muted text-sm">
+                      {k.expiresAt
+                        ? k.isExpired
+                          ? format(new Date(k.expiresAt), 'MMM d, yyyy')
+                          : formatDistanceToNow(new Date(k.expiresAt), { addSuffix: true })
+                        : 'Never'}
                     </TableCell>
                     <TableCell className="text-foreground-muted text-sm">
                       {k.lastUsedAt
@@ -228,6 +275,21 @@ export default function ApiKeyPanel() {
                 maxLength={100}
               />
               {nameError && <p className="text-xs text-destructive">{nameError}</p>}
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Expiration</label>
+                <Select value={expiry} onValueChange={setExpiry}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPIRY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
 
@@ -243,7 +305,10 @@ export default function ApiKeyPanel() {
                     setNameError(result.error.issues[0]?.message ?? 'Invalid name');
                     return;
                   }
-                  createMutation.mutate(keyName.trim());
+                  createMutation.mutate({
+                    name: keyName.trim(),
+                    expiresAt: computeExpiresAt(expiry),
+                  });
                 }}
               >
                 {createMutation.isPending ? 'Creating…' : 'Create'}
