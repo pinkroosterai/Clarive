@@ -1,17 +1,25 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Clarive.Api.Data;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
+using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
 
 namespace Clarive.Api.Services;
 
-public class EntryService(
+public partial class EntryService(
     IEntryRepository entryRepo,
     IFolderRepository folderRepo,
+    ITagRepository tagRepo,
+    IFavoriteRepository favoriteRepo,
+    IUserRepository userRepo,
+    IAuditLogRepository auditRepo,
+    TenantCacheService cache,
     ClariveDbContext db) : IEntryService
 {
     private const int MaxPromptContentLength = 100_000;
@@ -48,6 +56,8 @@ public class EntryService(
                 Prompts = prompts,
                 CreatedAt = now
             }, ct);
+
+            await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
             return ((PromptEntry Entry, PromptEntryVersion Version))(entry, version);
         }, ct);
@@ -131,6 +141,9 @@ public class EntryService(
 
             entry.UpdatedAt = now;
             await entryRepo.UpdateAsync(entry, ct);
+
+            await TenantCacheKeys.EvictEntryData(cache, tenantId);
+            await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
 
             return (entry, draft);
         }, ct);
@@ -259,6 +272,8 @@ public class EntryService(
             entry.UpdatedAt = DateTime.UtcNow;
             await entryRepo.UpdateAsync(entry, ct);
 
+            await TenantCacheKeys.EvictEntryData(cache, tenantId);
+
             return entry;
         }, ct);
     }
@@ -278,6 +293,8 @@ public class EntryService(
             entry.UpdatedAt = DateTime.UtcNow;
             await entryRepo.UpdateAsync(entry, ct);
 
+            await TenantCacheKeys.EvictEntryData(cache, tenantId);
+
             return entry;
         }, ct);
     }
@@ -295,6 +312,10 @@ public class EntryService(
         {
             await entryRepo.DeleteAsync(tenantId, entryId, ct);
         }, ct);
+
+        await TenantCacheKeys.EvictEntryData(cache, tenantId);
+        await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
+
         return entry;
     }
 
@@ -310,6 +331,173 @@ public class EntryService(
             return DomainErrors.NoPublishedVersion;
 
         return (entry, published);
+    }
+
+    // ── List/read operations ──
+
+    public async Task<ErrorOr<(List<PromptEntrySummary> Summaries, int TotalCount)>> ListEntriesAsync(
+        Guid tenantId, Guid userId, Guid? folderId, bool includeAll,
+        string? tags, string? tagMode, int page, int pageSize,
+        string? search, string? status, string? sortBy, CancellationToken ct)
+    {
+        IQueryable<Guid>? filteredEntryIds = null;
+        if (!string.IsNullOrWhiteSpace(tags))
+        {
+            var tagList = tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(t => t.ToLowerInvariant())
+                .Distinct()
+                .ToList();
+
+            if (tagList.Count > 0)
+            {
+                var matchAll = string.Equals(tagMode, "and", StringComparison.OrdinalIgnoreCase);
+                filteredEntryIds = tagRepo.GetEntryIdsByTagsQuery(tenantId, tagList, matchAll);
+            }
+        }
+
+        var (entries, totalCount) = await entryRepo.GetByFolderAsync(tenantId, folderId, includeAll,
+            new EntryQueryOptions(Page: page, PageSize: pageSize, Search: search, Status: status, SortBy: sortBy, FilteredEntryIds: filteredEntryIds), ct);
+        var summaries = await BuildSummariesBatchAsync(entries, tenantId, userId, ct);
+        return (summaries, totalCount);
+    }
+
+    public async Task<ErrorOr<(List<PromptEntrySummary> Summaries, int TotalCount)>> ListTrashedEntriesAsync(
+        Guid tenantId, Guid userId, int page, int pageSize, CancellationToken ct)
+    {
+        var (entries, totalCount) = await entryRepo.GetTrashedAsync(tenantId, page, pageSize, ct);
+        var summaries = await BuildSummariesBatchAsync(entries, tenantId, userId, ct);
+        return (summaries, totalCount);
+    }
+
+    public async Task<ErrorOr<object>> GetEntryDetailAsync(
+        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        if (version is null)
+            return DomainErrors.VersionNotFound;
+
+        var isFavorited = await favoriteRepo.ExistsAsync(tenantId, userId, entryId, ct);
+        return await BuildFullResponseAsync(entry, version, tenantId, isFavorited, ct);
+    }
+
+    public async Task<ErrorOr<List<VersionInfo>>> GetVersionHistoryAsync(
+        Guid tenantId, Guid entryId, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        var versions = await entryRepo.GetVersionHistoryAsync(tenantId, entryId, ct);
+
+        var publisherIds = versions
+            .Where(v => v.PublishedBy.HasValue)
+            .Select(v => v.PublishedBy!.Value)
+            .Distinct();
+        var publisherMap = await userRepo.GetByIdsAsync(tenantId, publisherIds, ct);
+
+        var versionInfos = versions.Select(v => new VersionInfo(
+            v.Version,
+            v.VersionState.ToString().ToLower(),
+            v.PublishedAt,
+            v.PublishedBy.HasValue && publisherMap.TryGetValue(v.PublishedBy.Value, out var pub) ? pub.Name : null
+        )).ToList();
+
+        return versionInfos;
+    }
+
+    public async Task<ErrorOr<object>> GetVersionDetailAsync(
+        Guid tenantId, Guid entryId, int version, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        var ver = await entryRepo.GetVersionAsync(tenantId, entryId, version, ct);
+        if (ver is null)
+            return DomainErrors.VersionNotFound;
+
+        return await BuildFullResponseAsync(entry, ver, tenantId, false, ct);
+    }
+
+    public async Task<ErrorOr<object>> BuildEntryResponseAsync(
+        PromptEntry entry, PromptEntryVersion version, Guid tenantId, bool isFavorited, CancellationToken ct)
+    {
+        return await BuildFullResponseAsync(entry, version, tenantId, isFavorited, ct);
+    }
+
+    public async Task<ErrorOr<PromptEntryVersion>> GetWorkingVersionAsync(
+        Guid tenantId, Guid entryId, CancellationToken ct)
+    {
+        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        if (version is null)
+            return DomainErrors.VersionNotFound;
+        return version;
+    }
+
+    private async Task<List<PromptEntrySummary>> BuildSummariesBatchAsync(
+        List<PromptEntry> entries, Guid tenantId, Guid userId, CancellationToken ct)
+    {
+        var entryIds = entries.Select(e => e.Id).ToList();
+        var workingVersions = await entryRepo.GetWorkingVersionsBatchAsync(tenantId, entryIds, ct);
+        var tagsByEntry = await tagRepo.GetByEntryIdsBatchAsync(tenantId, entryIds, ct);
+        var favoritedIds = await favoriteRepo.GetFavoritedEntryIdsAsync(tenantId, userId, entryIds, ct);
+
+        return entries.Select(entry =>
+        {
+            workingVersions.TryGetValue(entry.Id, out var version);
+            tagsByEntry.TryGetValue(entry.Id, out var entryTags);
+            return PromptEntrySummary.FromEntryAndVersion(entry, version, entryTags, favoritedIds.Contains(entry.Id));
+        }).ToList();
+    }
+
+    private async Task<object> BuildFullResponseAsync(
+        PromptEntry entry, PromptEntryVersion version, Guid tenantId, bool isFavorited, CancellationToken ct)
+    {
+        var userIds = new HashSet<Guid> { entry.CreatedBy };
+        if (version.PublishedBy.HasValue) userIds.Add(version.PublishedBy.Value);
+        var users = await userRepo.GetByIdsAsync(tenantId, userIds, ct);
+
+        var creatorName = users.TryGetValue(entry.CreatedBy, out var creator) ? creator.Name : null;
+        var publisherName = version.PublishedBy.HasValue && users.TryGetValue(version.PublishedBy.Value, out var publisher)
+            ? publisher.Name : null;
+
+        return new
+        {
+            entry.Id,
+            entry.Title,
+            version.SystemMessage,
+            Prompts = version.Prompts.OrderBy(p => p.Order).Select(p => new
+            {
+                p.Id,
+                p.Content,
+                p.Order,
+                p.IsTemplate,
+                TemplateFields = p.TemplateFields.Select(tf => new
+                {
+                    tf.Id,
+                    tf.Name,
+                    tf.Type,
+                    tf.EnumValues,
+                    tf.DefaultValue,
+                    tf.Min,
+                    tf.Max
+                })
+            }),
+            entry.FolderId,
+            version.Version,
+            VersionState = version.VersionState.ToString().ToLower(),
+            entry.IsTrashed,
+            entry.CreatedAt,
+            entry.UpdatedAt,
+            CreatedBy = creatorName ?? entry.CreatedBy.ToString(),
+            version.PublishedAt,
+            PublishedBy = publisherName,
+            IsFavorited = isFavorited
+        };
     }
 
     public string? ValidateCreateRequest(CreateEntryRequest request)
@@ -330,6 +518,120 @@ public class EntryService(
         if (request.Prompts is not null)
             return ValidatePromptContentLength(request.Prompts);
         return null;
+    }
+
+    // ── Activity ──
+
+    [GeneratedRegex(@"v(?:ersion\s+)?(\d+)")]
+    private static partial Regex VersionPattern();
+
+    public async Task<ErrorOr<EntryActivityResponse>> GetEntryActivityAsync(
+        Guid tenantId, Guid entryId, int page, int pageSize, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        var (entries, total) = await auditRepo.GetByEntityIdAsync(tenantId, entryId, page, pageSize, ct);
+
+        var items = entries.Select(a =>
+        {
+            int? version = null;
+            if (a.Details is not null)
+            {
+                var match = VersionPattern().Match(a.Details);
+                if (match.Success && int.TryParse(match.Groups[1].Value, out var v))
+                    version = v;
+            }
+
+            return new EntryActivityItem(
+                a.Id,
+                JsonNamingPolicy.SnakeCaseLower.ConvertName(a.Action.ToString()),
+                a.UserName,
+                a.Details,
+                version,
+                a.Timestamp);
+        }).ToList();
+
+        return new EntryActivityResponse(items, total, page, pageSize);
+    }
+
+    // ── Favorite operations ──
+
+    public async Task<ErrorOr<Success>> FavoriteEntryAsync(Guid tenantId, Guid userId, Guid entryId, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        if (await favoriteRepo.ExistsAsync(tenantId, userId, entryId, ct))
+            return Result.Success;
+
+        await favoriteRepo.AddAsync(new EntryFavorite
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            UserId = userId,
+            EntryId = entryId,
+            CreatedAt = DateTime.UtcNow
+        }, ct);
+
+        return Result.Success;
+    }
+
+    public async Task<ErrorOr<Success>> UnfavoriteEntryAsync(Guid tenantId, Guid userId, Guid entryId, CancellationToken ct)
+    {
+        await favoriteRepo.RemoveAsync(tenantId, userId, entryId, ct);
+        return Result.Success;
+    }
+
+    // ── Tag operations ──
+
+    private const int MaxTagNameLength = 50;
+
+    public async Task<ErrorOr<List<string>>> GetEntryTagsAsync(Guid tenantId, Guid entryId, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        return await tagRepo.GetByEntryIdAsync(tenantId, entryId, ct);
+    }
+
+    public async Task<ErrorOr<List<string>>> AddEntryTagsAsync(Guid tenantId, Guid entryId, List<string> tagNames, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        if (tagNames is null || tagNames.Count == 0)
+            return Error.Validation("VALIDATION_ERROR", "At least one tag is required.");
+
+        var normalized = new List<string>();
+        foreach (var tag in tagNames)
+        {
+            var name = tag.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(name) || name.Length > MaxTagNameLength || !TagValidation.TagNamePattern().IsMatch(name))
+                return Error.Validation("VALIDATION_ERROR", $"Invalid tag name: '{tag}'. Tags can only contain lowercase letters, numbers, hyphens, and spaces.");
+            normalized.Add(name);
+        }
+
+        await tagRepo.AddAsync(tenantId, entryId, normalized.Distinct().ToList(), ct);
+        await TenantCacheKeys.EvictTagData(cache, tenantId);
+
+        return await tagRepo.GetByEntryIdAsync(tenantId, entryId, ct);
+    }
+
+    public async Task<ErrorOr<Success>> RemoveEntryTagAsync(Guid tenantId, Guid entryId, string tagName, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        await tagRepo.RemoveAsync(tenantId, entryId, tagName.Trim().ToLowerInvariant(), ct);
+        await TenantCacheKeys.EvictTagData(cache, tenantId);
+
+        return Result.Success;
     }
 
     private static string? ValidatePromptContentLength(List<PromptInput> prompts)

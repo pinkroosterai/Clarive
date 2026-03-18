@@ -6,6 +6,9 @@ using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Repositories.Interfaces;
+using Clarive.Api.Services;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 
 namespace Clarive.Api.UnitTests.Services.EntryService;
 
@@ -13,6 +16,11 @@ public abstract class EntryServiceTestBase : IDisposable
 {
     protected readonly IEntryRepository EntryRepo = Substitute.For<IEntryRepository>();
     protected readonly IFolderRepository FolderRepo = Substitute.For<IFolderRepository>();
+    protected readonly ITagRepository TagRepo = Substitute.For<ITagRepository>();
+    protected readonly IFavoriteRepository FavoriteRepo = Substitute.For<IFavoriteRepository>();
+    protected readonly IUserRepository UserRepo = Substitute.For<IUserRepository>();
+    protected readonly IAuditLogRepository AuditRepo = Substitute.For<IAuditLogRepository>();
+    protected readonly TenantCacheService Cache;
     protected readonly ClariveDbContext Db;
     protected readonly Api.Services.EntryService Sut;
 
@@ -28,7 +36,10 @@ public abstract class EntryServiceTestBase : IDisposable
             .Options;
 
         Db = new ClariveDbContext(options);
-        Sut = new Api.Services.EntryService(EntryRepo, FolderRepo, Db);
+        Cache = new TenantCacheService(
+            Substitute.For<IDistributedCache>(),
+            Substitute.For<ILogger<TenantCacheService>>());
+        Sut = new Api.Services.EntryService(EntryRepo, FolderRepo, TagRepo, FavoriteRepo, UserRepo, AuditRepo, Cache, Db);
 
         // Default: CreateAsync / CreateVersionAsync return whatever is passed in
         EntryRepo.CreateAsync(Arg.Any<PromptEntry>(), Arg.Any<CancellationToken>())
