@@ -27,7 +27,7 @@ export function usePlaygroundKeyboardShortcuts({
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         const tag = (e.target as HTMLElement)?.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if (tag === 'TEXTAREA') return;
         if (!isStreaming && canRun) {
           e.preventDefault();
           onRunRef.current();
