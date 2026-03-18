@@ -16,4 +16,10 @@ window.__CLARIVE_CONFIG__ = {
 };
 JSEOF
 
-exec supervisord -c /etc/supervisor/conf.d/clarive.conf
+# Start nginx in the background (serves static files + proxies /api/ to dotnet)
+nginx
+
+# Run dotnet as the foreground process (PID 1 — receives SIGTERM for graceful shutdown)
+# Docker Compose restart policy handles container-level restarts if dotnet crashes
+export ASPNETCORE_URLS='http://+:5000'
+exec dotnet /app/Clarive.Api.dll

@@ -15,9 +15,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
 WORKDIR /src
 COPY src/backend/Clarive.Api/Clarive.Api.csproj Clarive.Api/
-RUN dotnet restore Clarive.Api/Clarive.Api.csproj
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet restore Clarive.Api/Clarive.Api.csproj
 COPY src/backend/ .
-RUN dotnet publish Clarive.Api/Clarive.Api.csproj \
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet publish Clarive.Api/Clarive.Api.csproj \
     -c Release -o /app/publish
 
 # ── Stage: frontend-build ────────────────────────────────────
@@ -51,9 +53,13 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 # ── Stage: production ────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS production
 
-# Install nginx and supervisord
-RUN apk add --no-cache nginx supervisor && \
-    mkdir -p /var/log/supervisor /run/nginx /usr/share/nginx/html /etc/nginx/snippets && \
+# Disable ICU globalization libraries (~28-30MB savings) — Clarive uses English only
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true
+ENV ASPNETCORE_URLS=http://+:5000
+
+# Install nginx (no supervisord — entrypoint manages processes directly)
+RUN apk add --no-cache nginx && \
+    mkdir -p /run/nginx /usr/share/nginx/html /etc/nginx/snippets && \
     # Create app user
     addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 --ingroup appgroup appuser && \
@@ -64,7 +70,6 @@ RUN apk add --no-cache nginx supervisor && \
     chown -R appuser:appgroup /var/log/nginx && \
     chown -R appuser:appgroup /run/nginx && \
     chown -R appuser:appgroup /usr/share/nginx/html && \
-    chown -R appuser:appgroup /var/log/supervisor && \
     # Nginx pid
     touch /run/nginx/nginx.pid && \
     chown appuser:appgroup /run/nginx/nginx.pid
@@ -80,7 +85,6 @@ COPY --from=frontend-build --chown=appuser:appgroup /app/dist /usr/share/nginx/h
 # Copy unified config files
 COPY --chown=appuser:appgroup deploy/unified/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --chown=appuser:appgroup deploy/unified/nginx.conf /etc/nginx/http.d/default.conf
-COPY --chown=appuser:appgroup deploy/unified/supervisord.conf /etc/supervisor/conf.d/clarive.conf
 COPY --chown=appuser:appgroup deploy/unified/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 

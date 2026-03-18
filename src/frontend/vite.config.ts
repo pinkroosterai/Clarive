@@ -15,9 +15,7 @@ function getAppVersion(): string {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  const isProd = mode === 'production';
-
+export default defineConfig(() => {
   return {
     server: {
       host: '::',
@@ -34,7 +32,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      sourcemap: isProd ? 'hidden' : false,
+      sourcemap: false,
     },
     define: {
       __APP_VERSION__: JSON.stringify(getAppVersion()),
