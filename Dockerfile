@@ -80,6 +80,9 @@ WORKDIR /app
 # Copy backend
 COPY --from=backend-build --chown=appuser:appgroup /app/publish .
 
+# Copy API reference
+COPY --chown=appuser:appgroup docs/api-reference.yaml ./docs/api-reference.yaml
+
 # Copy frontend
 COPY --from=frontend-build --chown=appuser:appgroup /app/dist /usr/share/nginx/html
 

@@ -7,7 +7,10 @@ public record PublicPromptEntry(
     string Title,
     string? SystemMessage,
     int Version,
-    List<PublicPrompt> Prompts
+    List<PublicPrompt> Prompts,
+    List<string> Tags,
+    DateTime UpdatedAt,
+    DateTime? PublishedAt
 );
 
 public record PublicPrompt(
@@ -15,4 +18,18 @@ public record PublicPrompt(
     int Order,
     bool IsTemplate,
     List<TemplateField>? TemplateFields
+);
+
+public record PublicEntrySummary(
+    Guid Id,
+    string Title,
+    int Version,
+    bool HasSystemMessage,
+    bool IsTemplate,
+    bool IsChain,
+    int PromptCount,
+    string? FirstPromptPreview,
+    List<string> Tags,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
 );
