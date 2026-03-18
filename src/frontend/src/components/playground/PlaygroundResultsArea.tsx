@@ -215,9 +215,8 @@ export default function PlaygroundResultsArea({
             </Button>
           </div>
           <div className="space-y-3">
-            {/* Column headers */}
+            {/* Column headers — current on left, pinned on right */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-xs font-medium text-foreground-muted">Pinned Run</div>
               <div className="text-xs font-medium text-foreground-muted">
                 <span className="flex items-center gap-1.5">
                   {isStreaming && <Loader2 className="size-3 animate-spin" />}
@@ -228,8 +227,9 @@ export default function PlaygroundResultsArea({
                       : 'Run a new test to compare'}
                 </span>
               </div>
+              <div className="text-xs font-medium text-foreground-muted">Pinned Run</div>
             </div>
-            {/* Paired prompt rows — each row aligns pinned + current at the same height */}
+            {/* Paired prompt rows — each row aligns current + pinned at the same height */}
             {prompts.map((_p, i) => {
               const pinnedResponse = pinnedRun.responses.find(
                 (r: TestRunPromptResponse) => r.promptIndex === i,
@@ -237,7 +237,18 @@ export default function PlaygroundResultsArea({
               const currentResponse = streamedResponses[i];
               return (
                 <div key={i} className="grid grid-cols-2 gap-4">
-                  {/* Pinned response */}
+                  {/* Current response (left) */}
+                  <div className="rounded-lg border border-border-subtle bg-surface p-4">
+                    {prompts.length > 1 && (
+                      <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                    )}
+                    {currentResponse !== undefined ? (
+                      <LLMResponseBlock output={currentResponse} isStreaming={isStreaming} />
+                    ) : (
+                      <span className="text-xs text-foreground-muted">—</span>
+                    )}
+                  </div>
+                  {/* Pinned response (right) */}
                   <div className="rounded-lg border border-border-subtle bg-surface p-4">
                     {prompts.length > 1 && (
                       <div className="text-xs text-foreground-muted mb-2">
@@ -250,29 +261,18 @@ export default function PlaygroundResultsArea({
                       <span className="text-xs text-foreground-muted">—</span>
                     )}
                   </div>
-                  {/* Current response */}
-                  <div className="rounded-lg border border-border-subtle bg-surface p-4">
-                    {prompts.length > 1 && (
-                      <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                    )}
-                    {currentResponse !== undefined ? (
-                      <LLMResponseBlock output={currentResponse} isStreaming={isStreaming} />
-                    ) : (
-                      <span className="text-xs text-foreground-muted">—</span>
-                    )}
-                  </div>
                 </div>
               );
             })}
-            {/* Judge scores — aligned row */}
+            {/* Judge scores — aligned row (current left, pinned right) */}
             {(pinnedJudgeScores || (!isStreaming && currentJudgeScores)) && (
               <div className="grid grid-cols-2 gap-4">
-                <div>{pinnedJudgeScores && <JudgeScorePanel scores={pinnedJudgeScores} />}</div>
                 <div>
                   {!isStreaming && currentJudgeScores && (
                     <JudgeScorePanel scores={currentJudgeScores} />
                   )}
                 </div>
+                <div>{pinnedJudgeScores && <JudgeScorePanel scores={pinnedJudgeScores} />}</div>
               </div>
             )}
           </div>
