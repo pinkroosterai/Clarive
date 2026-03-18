@@ -104,6 +104,7 @@ public static class PlaygroundEndpoints
             else
             {
                 var testResult = result.Value;
+                await sse.WriteChunkAsync(new TestStreamChunk(-1, "", "judging"), ct);
                 var judgeResult = await playground.JudgePlaygroundRunAsync(
                     tenantId, userId, entryId, testResult.RunId, ct);
                 var finalResult = testResult with

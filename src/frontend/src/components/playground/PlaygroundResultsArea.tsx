@@ -103,6 +103,7 @@ interface PlaygroundResultsAreaProps {
   // Judge
   pinnedJudgeScores: Evaluation | null;
   currentJudgeScores: Evaluation | null;
+  isJudging: boolean;
 }
 
 export default function PlaygroundResultsArea({
@@ -134,6 +135,7 @@ export default function PlaygroundResultsArea({
   handleCopy,
   pinnedJudgeScores,
   currentJudgeScores,
+  isJudging,
 }: PlaygroundResultsAreaProps) {
   const judgeScores = pinnedJudgeScores ?? currentJudgeScores;
   return (
@@ -498,6 +500,14 @@ export default function PlaygroundResultsArea({
         <div className="flex items-center gap-2 text-xs text-foreground-muted mt-2 pt-2 border-t border-dashed border-border-subtle">
           <Square className="size-3" />
           <span>Generation stopped</span>
+        </div>
+      )}
+
+      {/* Judging indicator */}
+      {isJudging && !judgeScores && (
+        <div className="flex items-center gap-2 text-xs text-foreground-muted mt-4 pt-3 border-t border-border-subtle">
+          <Loader2 className="size-3.5 animate-spin text-primary" />
+          <span>Evaluating output quality...</span>
         </div>
       )}
 

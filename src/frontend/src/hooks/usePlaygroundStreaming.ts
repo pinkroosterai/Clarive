@@ -75,6 +75,7 @@ export function usePlaygroundStreaming({
   } | null>(null);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
   const [lastJudgeScores, setLastJudgeScores] = useState<Evaluation | null>(null);
+  const [isJudging, setIsJudging] = useState(false);
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
@@ -149,6 +150,7 @@ export function usePlaygroundStreaming({
     setLastTokens(null);
     setLastRunId(null);
     setLastJudgeScores(null);
+    setIsJudging(false);
     setElapsedSeconds(0);
     setApproxOutputTokens(0);
     streamedTextLengthRef.current = 0;
@@ -179,6 +181,10 @@ export function usePlaygroundStreaming({
             firstTokenRef.current = true;
             setFirstTokenReceived(true);
           }
+          if (chunk.type === 'judging') {
+            setIsJudging(true);
+            return;
+          }
           if (!chunk.text) return;
           if (chunk.type === 'reasoning') {
             setStreamedReasoning((prev) => ({
@@ -201,6 +207,7 @@ export function usePlaygroundStreaming({
       }
       setLastRunId(result.runId);
       setLastJudgeScores(result.judgeScores ?? null);
+      setIsJudging(false);
 
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
     } catch (err) {
@@ -264,6 +271,7 @@ export function usePlaygroundStreaming({
     lastTokens,
     lastRunId,
     lastJudgeScores,
+    isJudging,
     hasResponses,
     currentPromptIndex,
     responseCount,

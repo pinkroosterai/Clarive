@@ -102,6 +102,7 @@ const PlaygroundPage = () => {
     approxOutputTokens,
     lastTokens,
     lastJudgeScores,
+    isJudging,
     hasResponses,
     currentPromptIndex,
     responseCount,
@@ -316,6 +317,7 @@ const PlaygroundPage = () => {
           handleCopy={handleCopy}
           pinnedJudgeScores={pinnedRun?.judgeScores ?? null}
           currentJudgeScores={lastJudgeScores}
+          isJudging={isJudging}
         />
 
         {/* ── History sidebar ── */}
