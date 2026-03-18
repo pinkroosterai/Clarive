@@ -346,7 +346,7 @@ export function ActionsTabContent({
           <ActionGroup label="AI Tools">
             <Tooltip>
               <TooltipTrigger asChild>
-                <span>
+                <div>
                   <Button
                     variant="outline"
                     className="w-full gap-2 hover:border-primary/30 transition-all"
@@ -356,7 +356,7 @@ export function ActionsTabContent({
                     <Sparkles className="size-4" />
                     AI Enhance
                   </Button>
-                </span>
+                </div>
               </TooltipTrigger>
               {!aiEnabled && (
                 <TooltipContent side="left">AI features are not configured</TooltipContent>
@@ -406,7 +406,7 @@ export function ActionsTabContent({
             {onTest && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span>
+                  <div>
                     <Button
                       variant="outline"
                       className="w-full gap-2 hover:border-primary/30 transition-all"
@@ -416,7 +416,7 @@ export function ActionsTabContent({
                       <Play className="size-4" />
                       Test Prompt
                     </Button>
-                  </span>
+                  </div>
                 </TooltipTrigger>
                 {!aiEnabled && (
                   <TooltipContent side="left">AI features are not configured</TooltipContent>

@@ -108,7 +108,7 @@ export function EditorActionPanel({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="actions" className="flex-1 overflow-y-auto pt-4">
+        <TabsContent value="actions" className="flex-1 overflow-y-auto overflow-x-hidden pt-4">
           <ActionsTabContent
             isDirty={isDirty}
             isReadOnly={isReadOnly}
