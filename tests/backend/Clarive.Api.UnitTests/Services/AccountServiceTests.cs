@@ -82,14 +82,15 @@ public class AccountServiceTests : IDisposable
     // ── Register ──
 
     [Fact]
-    public async Task RegisterAsync_DuplicateEmail_ReturnsNull()
+    public async Task RegisterAsync_DuplicateEmail_ReturnsConflict()
     {
         _userRepo.GetByEmailAsync("existing@test.com", Arg.Any<CancellationToken>())
             .Returns(new User { Email = "existing@test.com" });
 
         var result = await _sut.RegisterAsync("existing@test.com", "Test", "Password1!", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("EMAIL_ALREADY_EXISTS");
     }
 
     [Fact]
@@ -102,12 +103,12 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.RegisterAsync("first@test.com", "First User", "Password1!", default);
 
-        result.Should().NotBeNull();
-        result!.User.IsSuperUser.Should().BeTrue();
-        result.User.EmailVerified.Should().BeTrue();
-        result.RawVerificationToken.Should().BeNull();
-        result.AccessToken.Should().NotBeNullOrEmpty();
-        result.RawRefreshToken.Should().StartWith("rt_");
+        result.IsError.Should().BeFalse();
+        result.Value.User.IsSuperUser.Should().BeTrue();
+        result.Value.User.EmailVerified.Should().BeTrue();
+        result.Value.RawVerificationToken.Should().BeNull();
+        result.Value.AccessToken.Should().NotBeNullOrEmpty();
+        result.Value.RawRefreshToken.Should().StartWith("rt_");
     }
 
     [Fact]
@@ -120,10 +121,10 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.RegisterAsync("second@test.com", "Second", "Password1!", default);
 
-        result.Should().NotBeNull();
-        result!.User.IsSuperUser.Should().BeFalse();
-        result.User.EmailVerified.Should().BeTrue();
-        result.RawVerificationToken.Should().BeNull();
+        result.IsError.Should().BeFalse();
+        result.Value.User.IsSuperUser.Should().BeFalse();
+        result.Value.User.EmailVerified.Should().BeTrue();
+        result.Value.RawVerificationToken.Should().BeNull();
     }
 
     [Fact]
@@ -149,8 +150,8 @@ public class AccountServiceTests : IDisposable
 
         var result = await sut.RegisterAsync("verify@test.com", "Verify", "Password1!", default);
 
-        result.Should().NotBeNull();
-        result!.RawVerificationToken.Should().NotBeNullOrEmpty();
+        result.IsError.Should().BeFalse();
+        result.Value.RawVerificationToken.Should().NotBeNullOrEmpty();
         await _tokenRepo.Received(1).CreateVerificationTokenAsync(
             Arg.Any<EmailVerificationToken>(), Arg.Any<CancellationToken>());
     }
@@ -165,9 +166,9 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.RegisterAsync("new@test.com", "New User", "Password1!", default);
 
-        result.Should().NotBeNull();
-        result!.PersonalWorkspace.Should().NotBeNull();
-        result.PersonalWorkspace.Name.Should().Contain("New User");
+        result.IsError.Should().BeFalse();
+        result.Value.PersonalWorkspace.Should().NotBeNull();
+        result.Value.PersonalWorkspace.Name.Should().Contain("New User");
         await _onboardingSeeder.Received(1).SeedStarterTemplatesAsync(
             Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
@@ -185,14 +186,15 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.LoginWithGoogleAsync("token", default);
 
-        result.User.Should().BeSameAs(user);
-        result.IsNewUser.Should().BeFalse();
-        result.AccessToken.Should().NotBeNullOrEmpty();
-        result.RawRefreshToken.Should().StartWith("rt_");
+        result.IsError.Should().BeFalse();
+        result.Value.User.Should().BeSameAs(user);
+        result.Value.IsNewUser.Should().BeFalse();
+        result.Value.AccessToken.Should().NotBeNullOrEmpty();
+        result.Value.RawRefreshToken.Should().StartWith("rt_");
     }
 
     [Fact]
-    public async Task LoginWithGoogleAsync_ExistingEmail_NoGoogleId_Throws()
+    public async Task LoginWithGoogleAsync_ExistingEmail_NoGoogleId_ReturnsConflict()
     {
         _googleAuth.ValidateIdTokenAsync("token", Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(new GoogleUserInfo("google123", "existing@test.com", "User"));
@@ -201,10 +203,10 @@ public class AccountServiceTests : IDisposable
         _userRepo.GetByEmailAsync("existing@test.com", Arg.Any<CancellationToken>())
             .Returns(new User { Email = "existing@test.com" });
 
-        var act = () => _sut.LoginWithGoogleAsync("token", default);
+        var result = await _sut.LoginWithGoogleAsync("token", default);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*already exists*");
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("EMAIL_CONFLICT");
     }
 
     [Fact]
@@ -219,27 +221,29 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.LoginWithGoogleAsync("token", default);
 
-        result.IsNewUser.Should().BeTrue();
-        result.User.GoogleId.Should().Be("google123");
-        result.User.EmailVerified.Should().BeTrue();
-        result.AccessToken.Should().NotBeNullOrEmpty();
+        result.IsError.Should().BeFalse();
+        result.Value.IsNewUser.Should().BeTrue();
+        result.Value.User.GoogleId.Should().Be("google123");
+        result.Value.User.EmailVerified.Should().BeTrue();
+        result.Value.AccessToken.Should().NotBeNullOrEmpty();
     }
 
     // ── Login ──
 
     [Fact]
-    public async Task LoginAsync_InvalidCredentials_ReturnsNull()
+    public async Task LoginAsync_InvalidCredentials_ReturnsUnauthorized()
     {
         _userRepo.GetByEmailAsync("user@test.com", Arg.Any<CancellationToken>())
             .Returns((User?)null);
 
         var result = await _sut.LoginAsync("user@test.com", "password", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("INVALID_CREDENTIALS");
     }
 
     [Fact]
-    public async Task LoginAsync_WrongPassword_ReturnsNull()
+    public async Task LoginAsync_WrongPassword_ReturnsUnauthorized()
     {
         _userRepo.GetByEmailAsync("user@test.com", Arg.Any<CancellationToken>())
             .Returns(new User
@@ -253,7 +257,8 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.LoginAsync("user@test.com", "wrong-password", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("INVALID_CREDENTIALS");
     }
 
     [Fact]
@@ -273,10 +278,10 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.LoginAsync("user@test.com", "Password1!", default);
 
-        result.Should().NotBeNull();
-        result!.User.Email.Should().Be("user@test.com");
-        result.AccessToken.Should().NotBeNullOrEmpty();
-        result.RawRefreshToken.Should().StartWith("rt_");
+        result.IsError.Should().BeFalse();
+        result.Value.User.Email.Should().Be("user@test.com");
+        result.Value.AccessToken.Should().NotBeNullOrEmpty();
+        result.Value.RawRefreshToken.Should().StartWith("rt_");
         await _refreshTokenRepo.Received(1).CreateAsync(
             Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
     }
@@ -284,18 +289,19 @@ public class AccountServiceTests : IDisposable
     // ── Refresh Tokens ──
 
     [Fact]
-    public async Task RefreshTokensAsync_MissingToken_ReturnsNull()
+    public async Task RefreshTokensAsync_MissingToken_ReturnsUnauthorized()
     {
         _refreshTokenRepo.GetByHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((RefreshToken?)null);
 
         var result = await _sut.RefreshTokensAsync("rt_invalid", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("INVALID_REFRESH_TOKEN");
     }
 
     [Fact]
-    public async Task RefreshTokensAsync_RevokedToken_ReturnsNull()
+    public async Task RefreshTokensAsync_RevokedToken_ReturnsUnauthorized()
     {
         _refreshTokenRepo.GetByHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new RefreshToken
@@ -307,11 +313,12 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.RefreshTokensAsync("rt_revoked", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("INVALID_REFRESH_TOKEN");
     }
 
     [Fact]
-    public async Task RefreshTokensAsync_ExpiredToken_ReturnsNull()
+    public async Task RefreshTokensAsync_ExpiredToken_ReturnsUnauthorized()
     {
         _refreshTokenRepo.GetByHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new RefreshToken
@@ -322,7 +329,8 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.RefreshTokensAsync("rt_expired", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("INVALID_REFRESH_TOKEN");
     }
 
     [Fact]
@@ -360,9 +368,9 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.RefreshTokensAsync("rt_valid", default);
 
-        result.Should().NotBeNull();
-        result!.AccessToken.Should().NotBeNullOrEmpty();
-        result.RawRefreshToken.Should().StartWith("rt_");
+        result.IsError.Should().BeFalse();
+        result.Value.AccessToken.Should().NotBeNullOrEmpty();
+        result.Value.RawRefreshToken.Should().StartWith("rt_");
         await _refreshTokenRepo.Received(1).RevokeAsync(oldTokenId, Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
         await _refreshTokenRepo.Received(1).CreateAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
     }
@@ -411,7 +419,7 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.RefreshTokensAsync("rt_valid", default);
 
-        result.Should().NotBeNull();
+        result.IsError.Should().BeFalse();
         user.TenantId.Should().Be(personalTenantId);
         await _userRepo.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
     }
@@ -451,7 +459,7 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.RefreshTokensAsync("rt_valid", default);
 
-        result.Should().NotBeNull();
+        result.IsError.Should().BeFalse();
         user.Role.Should().Be(UserRole.Admin);
         await _userRepo.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
     }
@@ -459,7 +467,7 @@ public class AccountServiceTests : IDisposable
     // ── Accept Invitation ──
 
     [Fact]
-    public async Task AcceptInvitationAsync_ExpiredInvitation_ReturnsNull()
+    public async Task AcceptInvitationAsync_ExpiredInvitation_ReturnsNotFound()
     {
         _invitationRepo.GetByTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new Invitation
@@ -470,22 +478,24 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.AcceptInvitationAsync("inv_token", "User", "Password1!", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("INVALID_INVITATION");
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_MissingInvitation_ReturnsNull()
+    public async Task AcceptInvitationAsync_MissingInvitation_ReturnsNotFound()
     {
         _invitationRepo.GetByTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((Invitation?)null);
 
         var result = await _sut.AcceptInvitationAsync("inv_token", "User", "Password1!", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("INVALID_INVITATION");
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_EmailAlreadyRegistered_ReturnsNull()
+    public async Task AcceptInvitationAsync_EmailAlreadyRegistered_ReturnsConflict()
     {
         _invitationRepo.GetByTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new Invitation
@@ -500,7 +510,8 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.AcceptInvitationAsync("inv_token", "User", "Password1!", default);
 
-        result.Should().BeNull();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("EMAIL_ALREADY_EXISTS");
     }
 
     [Fact]
@@ -521,11 +532,11 @@ public class AccountServiceTests : IDisposable
 
         var result = await _sut.AcceptInvitationAsync("inv_token", "Invited User", "Password1!", default);
 
-        result.Should().NotBeNull();
-        result!.User.Email.Should().Be("invited@test.com");
-        result.User.Role.Should().Be(UserRole.Editor);
-        result.AccessToken.Should().NotBeNullOrEmpty();
-        result.RawRefreshToken.Should().StartWith("rt_");
+        result.IsError.Should().BeFalse();
+        result.Value.User.Email.Should().Be("invited@test.com");
+        result.Value.User.Role.Should().Be(UserRole.Editor);
+        result.Value.AccessToken.Should().NotBeNullOrEmpty();
+        result.Value.RawRefreshToken.Should().StartWith("rt_");
 
         // Should create 2 memberships: personal + invited workspace
         await _membershipRepo.Received(2).CreateAsync(

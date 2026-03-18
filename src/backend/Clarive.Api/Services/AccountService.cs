@@ -7,6 +7,7 @@ using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Results;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
+using ErrorOr;
 
 namespace Clarive.Api.Services;
 
@@ -24,20 +25,20 @@ public class AccountService(
     IConfiguration configuration,
     ClariveDbContext db) : IAccountService
 {
-    public async Task<LoginResult?> LoginAsync(string email, string password, CancellationToken ct)
+    public async Task<ErrorOr<LoginResult>> LoginAsync(string email, string password, CancellationToken ct)
     {
         var user = await userRepo.GetByEmailAsync(email, ct);
         if (user is null || user.PasswordHash is null || !passwordHasher.Verify(password, user.PasswordHash))
-            return null;
+            return Error.Unauthorized("INVALID_CREDENTIALS", "Email or password is incorrect.");
 
         var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
         return new LoginResult(user, accessToken, rawRefresh, refreshTokenId);
     }
 
-    public async Task<RegisterResult?> RegisterAsync(string email, string name, string password, CancellationToken ct)
+    public async Task<ErrorOr<RegisterResult>> RegisterAsync(string email, string name, string password, CancellationToken ct)
     {
         if (await userRepo.GetByEmailAsync(email, ct) is not null)
-            return null;
+            return Error.Conflict("EMAIL_ALREADY_EXISTS", "A user with this email already exists.");
 
         try
         {
@@ -71,19 +72,27 @@ public class AccountService(
 
                 var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
 
-                return (RegisterResult?)new RegisterResult(user, tenant, rawVerify, accessToken, rawRefresh, refreshTokenId);
+                return (ErrorOr<RegisterResult>)new RegisterResult(user, tenant, rawVerify, accessToken, rawRefresh, refreshTokenId);
             }, ct);
         }
         catch (DbUpdateException)
         {
             // Unique constraint violation on email — concurrent registration won the race
-            return null;
+            return Error.Conflict("CONCURRENT_REGISTRATION", "Unable to create account. Please try again.");
         }
     }
 
-    public async Task<GoogleAuthLoginResult> LoginWithGoogleAsync(string idToken, string? nonce = null, CancellationToken ct = default)
+    public async Task<ErrorOr<GoogleAuthLoginResult>> LoginWithGoogleAsync(string idToken, string? nonce = null, CancellationToken ct = default)
     {
-        var googleUser = await googleAuthService.ValidateIdTokenAsync(idToken, nonce, ct);
+        GoogleUserInfo googleUser;
+        try
+        {
+            googleUser = await googleAuthService.ValidateIdTokenAsync(idToken, nonce, ct);
+        }
+        catch (Exception)
+        {
+            return Error.Unauthorized("INVALID_GOOGLE_TOKEN", "Google ID token is invalid or expired.");
+        }
 
         // 1. Find by GoogleId — existing linked account
         var user = await userRepo.GetByGoogleIdAsync(googleUser.GoogleId, ct);
@@ -97,7 +106,7 @@ public class AccountService(
         user = await userRepo.GetByEmailAsync(googleUser.Email, ct);
         if (user is not null)
         {
-            throw new InvalidOperationException(
+            return Error.Conflict("EMAIL_CONFLICT",
                 "An account with this email already exists. " +
                 "Please log in with your password and link Google from Settings.");
         }
@@ -112,21 +121,21 @@ public class AccountService(
 
             var (at, rr, rtId) = await IssueTokensAsync(user, ct);
 
-            return new GoogleAuthLoginResult(user, at, rr, rtId, true);
+            return (ErrorOr<GoogleAuthLoginResult>)new GoogleAuthLoginResult(user, at, rr, rtId, true);
         }, ct);
     }
 
-    public async Task<RefreshResult?> RefreshTokensAsync(string refreshToken, CancellationToken ct)
+    public async Task<ErrorOr<RefreshResult>> RefreshTokensAsync(string refreshToken, CancellationToken ct)
     {
         var tokenHash = JwtService.HashRefreshToken(refreshToken);
         var existing = await refreshTokenRepo.GetByHashAsync(tokenHash, ct);
 
         if (existing is null || existing.RevokedAt is not null || existing.ExpiresAt < DateTime.UtcNow)
-            return null;
+            return Error.Unauthorized("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired.");
 
         var user = await userRepo.GetByIdCrossTenantsAsync(existing.UserId, ct);
         if (user is null)
-            return null;
+            return Error.Unauthorized("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired.");
 
         // Validate user still has membership in their active workspace
         var activeMembership = await membershipRepo.GetAsync(user.Id, user.TenantId, ct);
@@ -136,7 +145,7 @@ public class AccountService(
             var memberships = await membershipRepo.GetByUserIdAsync(user.Id, ct);
             var personal = memberships.FirstOrDefault(m => m.IsPersonal);
             if (personal is null)
-                return null;
+                return Error.Unauthorized("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired.");
 
             user.TenantId = personal.TenantId;
             user.Role = personal.Role;
@@ -168,17 +177,17 @@ public class AccountService(
         return new RefreshResult(user, accessToken, rawRefresh, newTokenId);
     }
 
-    public async Task<InvitationAcceptResult?> AcceptInvitationAsync(
+    public async Task<ErrorOr<InvitationAcceptResult>> AcceptInvitationAsync(
         string invitationToken, string name, string password, CancellationToken ct)
     {
         var tokenHash = JwtService.HashRefreshToken(invitationToken);
         var invitation = await invitationRepo.GetByTokenHashAsync(tokenHash, ct);
 
         if (invitation is null || invitation.ExpiresAt <= DateTime.UtcNow)
-            return null;
+            return Error.NotFound("INVALID_INVITATION", "This invitation is invalid or has expired.");
 
         if (await userRepo.GetByEmailAsync(invitation.Email, ct) is not null)
-            return null;
+            return Error.Conflict("EMAIL_ALREADY_EXISTS", "A user with this email already exists.");
 
         return await db.Database.InTransactionAsync(async () =>
         {
@@ -233,7 +242,7 @@ public class AccountService(
 
             var (accessToken, rawRefresh, refreshTokenId) = await IssueTokensAsync(user, ct);
 
-            return (InvitationAcceptResult?)new InvitationAcceptResult(user, accessToken, rawRefresh, refreshTokenId);
+            return (ErrorOr<InvitationAcceptResult>)new InvitationAcceptResult(user, accessToken, rawRefresh, refreshTokenId);
         }, ct);
     }
 

@@ -36,7 +36,7 @@ public class AuthRegisterTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Register_DuplicateEmail_Returns422()
+    public async Task Register_DuplicateEmail_Returns409()
     {
         var response = await Client.PostAsJsonAsync("/api/auth/register", new
         {
@@ -45,7 +45,7 @@ public class AuthRegisterTests : IntegrationTestBase
             name = "Duplicate User"
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]

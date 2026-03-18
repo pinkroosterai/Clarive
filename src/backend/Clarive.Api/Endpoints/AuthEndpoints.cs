@@ -2,7 +2,6 @@ using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Models.Results;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
@@ -98,13 +97,13 @@ public static class AuthEndpoints
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Email and password are required.");
 
         var result = await accountService.LoginAsync(request.Email, request.Password, ct);
-        if (result is null)
-            return ctx.ErrorResult(401, "INVALID_CREDENTIALS", "Email or password is incorrect.");
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.RefreshTokenId, ct);
+        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.Value.User.Id, result.Value.RefreshTokenId, ct);
 
-        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Ok(new AuthResponse(result.AccessToken, result.RawRefreshToken, ToUserDto(result.User), workspaces));
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.Value.User.Id, ct);
+        return Results.Ok(new AuthResponse(result.Value.AccessToken, result.Value.RawRefreshToken, ToUserDto(result.Value.User), workspaces));
     }
 
     private static async Task<IResult> HandleRegister(
@@ -128,23 +127,23 @@ public static class AuthEndpoints
             return ctx.ErrorResult(403, "REGISTRATION_DISABLED", "New account registration is currently disabled.");
 
         var result = await accountService.RegisterAsync(request.Email, request.Name, request.Password, ct);
-        if (result is null)
-            return ctx.ErrorResult(422, "REGISTRATION_FAILED", "Unable to create account. Please try again or contact support.");
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.RefreshTokenId, ct);
+        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.Value.User.Id, result.Value.RefreshTokenId, ct);
 
         // Send verification email (fire-and-forget) — skip for first user (auto-verified super admin)
-        if (result.RawVerificationToken is not null)
+        if (result.Value.RawVerificationToken is not null)
         {
-            var verifyUrl = $"{appSettings.Value.FrontendUrl}/verify-email?token={result.RawVerificationToken}";
+            var verifyUrl = $"{appSettings.Value.FrontendUrl}/verify-email?token={result.Value.RawVerificationToken}";
             var emailLogger = loggerFactory.CreateLogger("AuthEndpoints");
-            _ = emailService.SendVerificationEmailAsync(result.User.Email, result.User.Name, verifyUrl, CancellationToken.None)
-                .ContinueWith(t => emailLogger.LogWarning(t.Exception, "Failed to send verification email to {Email}", result.User.Email),
+            _ = emailService.SendVerificationEmailAsync(result.Value.User.Email, result.Value.User.Name, verifyUrl, CancellationToken.None)
+                .ContinueWith(t => emailLogger.LogWarning(t.Exception, "Failed to send verification email to {Email}", result.Value.User.Email),
                     TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Created("/api/auth/me", new AuthResponse(result.AccessToken, result.RawRefreshToken, ToUserDto(result.User), workspaces));
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.Value.User.Id, ct);
+        return Results.Created("/api/auth/me", new AuthResponse(result.Value.AccessToken, result.Value.RawRefreshToken, ToUserDto(result.Value.User), workspaces));
     }
 
     private static async Task<IResult> HandleRefresh(
@@ -160,13 +159,13 @@ public static class AuthEndpoints
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Refresh token is required.");
 
         var result = await accountService.RefreshTokensAsync(request.RefreshToken, ct);
-        if (result is null)
-            return ctx.ErrorResult(401, "INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired.");
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.NewRefreshTokenId, ct);
+        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.Value.User.Id, result.Value.NewRefreshTokenId, ct);
 
-        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Ok(new AuthResponse(result.AccessToken, result.RawRefreshToken, ToUserDto(result.User), workspaces));
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.Value.User.Id, ct);
+        return Results.Ok(new AuthResponse(result.Value.AccessToken, result.Value.RawRefreshToken, ToUserDto(result.Value.User), workspaces));
     }
 
     private static async Task<IResult> HandleVerifyEmail(
@@ -262,20 +261,14 @@ public static class AuthEndpoints
             }
         }
 
-        GoogleAuthLoginResult result;
-        try
-        {
-            result = await accountService.LoginWithGoogleAsync(request.IdToken, request.Nonce, ct);
-        }
-        catch (Exception)
-        {
-            return ctx.ErrorResult(401, "INVALID_GOOGLE_TOKEN", "Google ID token is invalid or expired.");
-        }
+        var result = await accountService.LoginWithGoogleAsync(request.IdToken, request.Nonce, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.RefreshTokenId, ct);
+        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.Value.User.Id, result.Value.RefreshTokenId, ct);
 
-        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Ok(new { token = result.AccessToken, refreshToken = result.RawRefreshToken, user = ToUserDto(result.User), isNewUser = result.IsNewUser, workspaces });
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.Value.User.Id, ct);
+        return Results.Ok(new { token = result.Value.AccessToken, refreshToken = result.Value.RawRefreshToken, user = ToUserDto(result.Value.User), isNewUser = result.Value.IsNewUser, workspaces });
     }
 
     private static async Task<IResult> HandleSetupStatus(

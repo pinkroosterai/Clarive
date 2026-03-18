@@ -114,16 +114,16 @@ public static class InvitationEndpoints
         if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         var result = await accountService.AcceptInvitationAsync(token, request.Name, request.Password, ct);
-        if (result is null)
-            return ctx.ErrorResult(404, "INVITATION_NOT_FOUND", "This invitation is invalid or has expired.");
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
 
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.User.Id, result.RefreshTokenId, ct);
+        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.Value.User.Id, result.Value.RefreshTokenId, ct);
 
-        await auditLogger.SafeLogAsync(result.User.TenantId, result.User.Id, result.User.Name, AuditAction.InvitationAccepted,
-            "invitation", Guid.Empty, result.User.Email, $"{result.User.Name} accepted invitation", ct);
+        await auditLogger.SafeLogAsync(result.Value.User.TenantId, result.Value.User.Id, result.Value.User.Name, AuditAction.InvitationAccepted,
+            "invitation", Guid.Empty, result.Value.User.Email, $"{result.Value.User.Name} accepted invitation", ct);
 
-        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.User.Id, ct);
-        return Results.Created($"/api/auth/me", new AuthResponse(result.AccessToken, result.RawRefreshToken, ToUserDto(result.User), workspaces));
+        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.Value.User.Id, ct);
+        return Results.Created($"/api/auth/me", new AuthResponse(result.Value.AccessToken, result.Value.RawRefreshToken, ToUserDto(result.Value.User), workspaces));
     }
 
     private static async Task<IResult> HandleResend(
