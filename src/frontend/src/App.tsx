@@ -1,9 +1,16 @@
 /* eslint-disable import/order -- @/ alias misclassified as external by eslint-plugin-import */
 import { QueryClientProvider } from '@tanstack/react-query';
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import {
+  createBrowserRouter,
+  Navigate,
+  Outlet,
+  RouterProvider,
+  useLocation,
+  useRouteError,
+} from 'react-router-dom';
 
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { ErrorBoundary, PageErrorFallback } from '@/components/common/ErrorBoundary';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import SuperRoute from '@/components/common/SuperRoute';
@@ -16,34 +23,24 @@ import MaintenancePage from '@/pages/MaintenancePage';
 import RegisterPage from '@/pages/RegisterPage';
 import { getSetupStatus } from '@/services/api/authService';
 import { getSystemStatus } from '@/services/api/superService';
-
-// Lazy loaded pages
-const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
-const EntryEditorPage = lazy(() => import('@/pages/EntryEditorPage'));
-const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
-const NewEntryPage = lazy(() => import('@/pages/NewEntryPage'));
-const WizardPage = lazy(() => import('@/pages/WizardPage'));
-const EnhanceWizardPage = lazy(() => import('@/pages/EnhanceWizardPage'));
-const PlaygroundPage = lazy(() => import('@/pages/PlaygroundPage'));
-const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
-const TrashPage = lazy(() => import('@/pages/TrashPage'));
-const NotFound = lazy(() => import('@/pages/NotFound'));
-const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
-const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
-const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'));
-const AcceptInvitationPage = lazy(() => import('@/pages/AcceptInvitationPage'));
-const GoogleCallbackPage = lazy(() => import('@/pages/GoogleCallbackPage'));
-const TermsPage = lazy(() => import('@/pages/TermsPage'));
-const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
-const WorkspaceSelectorPage = lazy(() => import('@/pages/WorkspaceSelectorPage'));
-const SuperDashboardPage = lazy(() => import('@/pages/SuperDashboardPage'));
-const HelpPage = lazy(() => import('@/pages/HelpPage'));
-const SetupPage = lazy(() => import('@/pages/SetupPage'));
-const PublicShareViewerPage = lazy(() => import('@/pages/PublicShareViewerPage'));
-const SetupWizardPage = lazy(() => import('@/pages/SetupWizardPage'));
 import { useAuthStore } from '@/store/authStore';
 
-function SetupGuard({ children }: { children: React.ReactNode }) {
+// Route-level error boundary (scoped to individual routes)
+function RouteErrorBoundary() {
+  const error = useRouteError();
+  return (
+    <PageErrorFallback
+      error={error instanceof Error ? error : new Error(String(error))}
+      resetError={() => window.location.reload()}
+    />
+  );
+}
+
+// Helper for lazy route loading
+const lazy = (importFn: () => Promise<{ default: React.ComponentType }>) =>
+  () => importFn().then((m) => ({ Component: m.default }));
+
+function SetupGuard() {
   const location = useLocation();
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
   const [allowRegistration, setAllowRegistration] = useState(true);
@@ -74,10 +71,10 @@ function SetupGuard({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 }
 
-function MaintenanceGuard({ children }: { children: React.ReactNode }) {
+function MaintenanceGuard() {
   const maintenanceMode = useAuthStore((s) => s.maintenanceMode);
   const setMaintenanceMode = useAuthStore((s) => s.setMaintenanceMode);
   const currentUser = useAuthStore((s) => s.currentUser);
@@ -98,69 +95,77 @@ function MaintenanceGuard({ children }: { children: React.ReactNode }) {
     return <MaintenancePage />;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 }
+
+const router = createBrowserRouter([
+  {
+    // Root layout: MaintenanceGuard → SetupGuard → child routes
+    element: <ErrorBoundary><MaintenanceGuard /></ErrorBoundary>,
+    children: [
+      {
+        element: <SetupGuard />,
+        children: [
+          // Setup route
+          { path: '/setup', lazy: lazy(() => import('@/pages/SetupPage')) },
+
+          // Public routes
+          { path: '/login', element: <LoginPage /> },
+          { path: '/register', element: <RegisterPage /> },
+          { path: '/forgot-password', lazy: lazy(() => import('@/pages/ForgotPasswordPage')) },
+          { path: '/reset-password', lazy: lazy(() => import('@/pages/ResetPasswordPage')) },
+          { path: '/verify-email', lazy: lazy(() => import('@/pages/VerifyEmailPage')) },
+          { path: '/invite/accept', lazy: lazy(() => import('@/pages/AcceptInvitationPage')) },
+          { path: '/auth/google/callback', lazy: lazy(() => import('@/pages/GoogleCallbackPage')) },
+          { path: '/terms', lazy: lazy(() => import('@/pages/TermsPage')) },
+          { path: '/privacy', lazy: lazy(() => import('@/pages/PrivacyPage')) },
+          { path: '/share/:token', lazy: lazy(() => import('@/pages/PublicShareViewerPage')) },
+
+          // Super admin routes
+          {
+            element: <SuperRoute />,
+            errorElement: <RouteErrorBoundary />,
+            children: [
+              { path: '/super', lazy: lazy(() => import('@/pages/SuperDashboardPage')) },
+              { path: '/setup-wizard', lazy: lazy(() => import('@/pages/SetupWizardPage')) },
+            ],
+          },
+
+          // Protected routes
+          {
+            element: <ProtectedRoute />,
+            errorElement: <RouteErrorBoundary />,
+            children: [
+              { path: '/', lazy: lazy(() => import('@/pages/DashboardPage')) },
+              { path: '/select-workspace', lazy: lazy(() => import('@/pages/WorkspaceSelectorPage')) },
+              { path: '/library', lazy: lazy(() => import('@/pages/LibraryPage')) },
+              { path: '/library/folder/:folderId', lazy: lazy(() => import('@/pages/LibraryPage')) },
+              { path: '/entry/new', lazy: lazy(() => import('@/pages/NewEntryPage')) },
+              { path: '/entry/new/wizard', lazy: lazy(() => import('@/pages/WizardPage')) },
+              { path: '/entry/:entryId/enhance', lazy: lazy(() => import('@/pages/EnhanceWizardPage')) },
+              { path: '/entry/:entryId/test', lazy: lazy(() => import('@/pages/PlaygroundPage')) },
+              { path: '/entry/:entryId', lazy: lazy(() => import('@/pages/EntryEditorPage')) },
+              { path: '/entry/:entryId/version/:version', lazy: lazy(() => import('@/pages/EntryEditorPage')) },
+              { path: '/settings', lazy: lazy(() => import('@/pages/SettingsPage')) },
+              { path: '/trash', lazy: lazy(() => import('@/pages/TrashPage')) },
+              { path: '/help', lazy: lazy(() => import('@/pages/HelpPage')) },
+            ],
+          },
+
+          // Catch-all
+          { path: '*', lazy: lazy(() => import('@/pages/NotFound')) },
+        ],
+      },
+    ],
+  },
+]);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
         <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingSpinner />}>
-              <MaintenanceGuard>
-                <SetupGuard>
-                  <Routes>
-                    {/* Setup route */}
-                    <Route path="/setup" element={<SetupPage />} />
-
-                    {/* Public routes */}
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                    <Route path="/reset-password" element={<ResetPasswordPage />} />
-                    <Route path="/verify-email" element={<VerifyEmailPage />} />
-                    <Route path="/invite/accept" element={<AcceptInvitationPage />} />
-                    <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
-                    <Route path="/terms" element={<TermsPage />} />
-                    <Route path="/privacy" element={<PrivacyPage />} />
-                    <Route path="/share/:token" element={<PublicShareViewerPage />} />
-
-                    {/* Super admin routes */}
-                    <Route element={<SuperRoute />}>
-                      <Route path="/super" element={<SuperDashboardPage />} />
-                      <Route path="/setup-wizard" element={<SetupWizardPage />} />
-                    </Route>
-
-                    {/* Protected routes */}
-                    <Route element={<ProtectedRoute />}>
-                      <Route path="/" element={<DashboardPage />} />
-                      <Route path="/select-workspace" element={<WorkspaceSelectorPage />} />
-                      <Route path="/library" element={<LibraryPage />} />
-                      <Route path="/library/folder/:folderId" element={<LibraryPage />} />
-                      <Route path="/entry/new" element={<NewEntryPage />} />
-                      <Route path="/entry/new/wizard" element={<WizardPage />} />
-                      <Route path="/entry/:entryId/enhance" element={<EnhanceWizardPage />} />
-                      <Route path="/entry/:entryId/test" element={<PlaygroundPage />} />
-                      <Route path="/entry/:entryId" element={<EntryEditorPage />} />
-                      <Route
-                        path="/entry/:entryId/version/:version"
-                        element={<EntryEditorPage />}
-                      />
-                      <Route path="/settings" element={<SettingsPage />} />
-                      <Route path="/trash" element={<TrashPage />} />
-                      <Route path="/help" element={<HelpPage />} />
-                    </Route>
-
-                    {/* Catch-all */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </SetupGuard>
-              </MaintenanceGuard>
-            </Suspense>
-          </ErrorBoundary>
-        </BrowserRouter>
+        <RouterProvider router={router} fallbackElement={<LoadingSpinner />} />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

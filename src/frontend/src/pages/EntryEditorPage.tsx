@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
@@ -138,23 +138,8 @@ const EntryEditorPage = () => {
     onRedo: editor.handleRedo,
   });
 
-  // ── Navigation guard for unsaved changes (in-app links) ──
-  useEffect(() => {
-    if (!editor.isDirty) return;
-    const handleLinkClick = (e: MouseEvent) => {
-      const anchor = (e.target as HTMLElement).closest('a[href]');
-      if (!anchor || anchor.getAttribute('target') === '_blank') return;
-      const href = anchor.getAttribute('href');
-      if (!href || href.startsWith('http')) return;
-      e.preventDefault();
-      e.stopPropagation();
-      if (window.confirm('You have unsaved changes that will be lost if you leave.')) {
-        window.location.href = href;
-      }
-    };
-    document.addEventListener('click', handleLinkClick, true);
-    return () => document.removeEventListener('click', handleLinkClick, true);
-  }, [editor.isDirty]);
+  // ── Navigation guard for unsaved changes ──
+  const blocker = useBlocker(editor.isDirty);
 
   // Warn before closing/refreshing during AI operations
   const isAiRunningEarly = mutations.isGeneratingSystemMessage || mutations.isDecomposing;
@@ -527,6 +512,21 @@ const EntryEditorPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Unsaved changes navigation guard */}
+      <AlertDialog open={blocker.state === 'blocked'}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes that will be lost if you leave.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={() => blocker.proceed?.()}>Leave</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
