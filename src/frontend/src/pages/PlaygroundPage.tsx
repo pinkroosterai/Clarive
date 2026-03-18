@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -45,19 +45,6 @@ const PlaygroundPage = () => {
 
   useEffect(() => {
     document.title = 'Clarive — Test Prompt';
-  }, []);
-
-  // Strip the AppShell wrapper's overflow-auto and p-4 so the playground
-  // fills edge-to-edge with no page-level scrollbar. Restored on unmount.
-  useLayoutEffect(() => {
-    const el = document.querySelector<HTMLElement>('.overflow-auto.p-4');
-    if (!el) return;
-    el.classList.remove('overflow-auto', 'p-4');
-    el.classList.add('overflow-hidden');
-    return () => {
-      el.classList.add('overflow-auto', 'p-4');
-      el.classList.remove('overflow-hidden');
-    };
   }, []);
 
   useEffect(() => {
@@ -335,7 +322,7 @@ const PlaygroundPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* ── Top bar ── */}
       <PlaygroundToolbar
         entryId={entryId}
@@ -370,7 +357,7 @@ const PlaygroundPage = () => {
       />
 
       {/* ── Main content ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0">
         {/* Response area */}
         <PlaygroundResultsArea
           prompts={prompts}
@@ -417,7 +404,7 @@ const PlaygroundPage = () => {
               className="fixed inset-0 z-30 bg-black/30 md:hidden"
               onClick={() => setShowHistory(false)}
             />
-            <div className="fixed inset-y-0 right-0 z-40 w-full sm:w-80 md:relative md:inset-auto md:z-auto">
+            <div className="fixed inset-y-0 right-0 z-40 w-full sm:w-80 md:sticky md:top-0 md:inset-auto md:z-auto md:h-[calc(100vh-3.5rem)] md:shrink-0">
               <PlaygroundHistorySidebar
                 testRuns={testRuns}
                 isStreaming={isStreaming}
