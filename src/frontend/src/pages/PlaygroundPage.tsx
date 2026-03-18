@@ -404,7 +404,7 @@ const PlaygroundPage = () => {
               className="fixed inset-0 z-30 bg-black/30 md:hidden"
               onClick={() => setShowHistory(false)}
             />
-            <div className="fixed inset-y-0 right-0 z-40 w-80 md:relative md:inset-auto md:z-auto">
+            <div className="fixed inset-y-0 right-0 z-40 w-full sm:w-80 md:relative md:inset-auto md:z-auto">
               <PlaygroundHistorySidebar
                 testRuns={testRuns}
                 isStreaming={isStreaming}
