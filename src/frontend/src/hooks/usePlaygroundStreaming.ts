@@ -73,6 +73,7 @@ export function usePlaygroundStreaming({
     input: number | null;
     output: number | null;
   } | null>(null);
+  const [lastRunId, setLastRunId] = useState<string | null>(null);
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
@@ -145,6 +146,7 @@ export function usePlaygroundStreaming({
       rateLimitTimerRef.current = null;
     }
     setLastTokens(null);
+    setLastRunId(null);
     setElapsedSeconds(0);
     setApproxOutputTokens(0);
     streamedTextLengthRef.current = 0;
@@ -195,6 +197,7 @@ export function usePlaygroundStreaming({
       if (result.inputTokens != null || result.outputTokens != null) {
         setLastTokens({ input: result.inputTokens, output: result.outputTokens });
       }
+      setLastRunId(result.runId);
 
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
     } catch (err) {
@@ -256,6 +259,7 @@ export function usePlaygroundStreaming({
     elapsedSeconds,
     approxOutputTokens,
     lastTokens,
+    lastRunId,
     hasResponses,
     currentPromptIndex,
     responseCount,

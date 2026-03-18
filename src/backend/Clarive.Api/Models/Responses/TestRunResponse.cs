@@ -1,3 +1,5 @@
+using Clarive.Api.Models.Agents;
+
 namespace Clarive.Api.Models.Responses;
 
 public record TestRunResponse(
@@ -9,7 +11,8 @@ public record TestRunResponse(
     List<TestRunPromptResponse> Responses,
     long? InputTokens,
     long? OutputTokens,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    OutputEvaluation? JudgeScores = null
 );
 
 public record TestRunPromptResponse(

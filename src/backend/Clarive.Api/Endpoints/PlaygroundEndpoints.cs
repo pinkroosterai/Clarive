@@ -20,6 +20,10 @@ public static class PlaygroundEndpoints
             .RequireRateLimiting("auth")
             .AddEndpointFilter(AiConfiguredFilter);
 
+        group.MapPost("/entries/{entryId:guid}/runs/{runId:guid}/judge", HandleJudgeRun)
+            .RequireRateLimiting("auth")
+            .AddEndpointFilter(AiConfiguredFilter);
+
         group.MapGet("/ai/models", HandleGetModels)
             .AddEndpointFilter(AiConfiguredFilter);
 
@@ -100,6 +104,27 @@ public static class PlaygroundEndpoints
         }
 
         return Results.Empty;
+    }
+
+    // ── Judge Run ──
+
+    private static async Task<IResult> HandleJudgeRun(
+        Guid entryId,
+        Guid runId,
+        HttpContext ctx,
+        IPlaygroundService playground,
+        CancellationToken ct)
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var result = await playground.JudgePlaygroundRunAsync(
+            tenantId, userId, entryId, runId, ct);
+
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Run", runId.ToString());
+
+        return Results.Ok(result.Value);
     }
 
     // ── Get Test Runs ──

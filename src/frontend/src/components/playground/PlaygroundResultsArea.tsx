@@ -19,7 +19,8 @@ import {
 import { getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { renderTemplate } from '@/lib/templateRenderer';
-import type { TestRunResponse, TestRunPromptResponse } from '@/services/api/playgroundService';
+import { scoreColor } from '@/components/wizard/scoreUtils';
+import type { TestRunResponse, TestRunPromptResponse, Evaluation } from '@/services/api/playgroundService';
 import type { TemplateField } from '@/types';
 
 interface Prompt {
@@ -58,6 +59,11 @@ interface PlaygroundResultsAreaProps {
   // Handlers
   handleRun: () => void;
   handleCopy: (text: string, index: number) => Promise<void>;
+  // Judge
+  judgeScores: Evaluation | null;
+  isJudging: boolean;
+  onRequestJudge: () => void;
+  canJudge: boolean;
 }
 
 export default function PlaygroundResultsArea({
@@ -87,6 +93,10 @@ export default function PlaygroundResultsArea({
   copiedIndex,
   handleRun,
   handleCopy,
+  judgeScores,
+  isJudging,
+  onRequestJudge,
+  canJudge,
 }: PlaygroundResultsAreaProps) {
   return (
     <div className="flex-1 p-6">
@@ -448,6 +458,68 @@ export default function PlaygroundResultsArea({
         <div className="flex items-center gap-2 text-xs text-foreground-muted mt-2 pt-2 border-t border-dashed border-border-subtle">
           <Square className="size-3" />
           <span>Generation stopped</span>
+        </div>
+      )}
+
+      {/* Judge output quality */}
+      {!isStreaming && hasResponses && judgeScores && (
+        <div className="mt-6 pt-4 border-t border-border-subtle space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">Output Quality</h3>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-center size-12 rounded-full border-2 border-primary">
+              <span className="text-sm font-bold text-primary">
+                {judgeScores.averageScore.toFixed(1)}
+              </span>
+            </div>
+            <span className="text-xs text-foreground-muted">Average score across 5 dimensions</span>
+          </div>
+          <div className="space-y-2">
+            {Object.entries(judgeScores.dimensions).map(([dim, entry]) => {
+              const { bar, text } = scoreColor(entry.score);
+              return (
+                <div key={dim} className="space-y-0.5">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-foreground-muted w-24 shrink-0">{dim}</span>
+                    <div className="flex-1 h-2 rounded-full bg-elevated">
+                      <div
+                        className={`h-2 rounded-full ${bar}`}
+                        style={{ width: `${(entry.score / 10) * 100}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium w-5 text-right ${text}`}>
+                      {entry.score}
+                    </span>
+                  </div>
+                  {entry.feedback && (
+                    <p className="text-xs text-foreground-muted pl-[calc(6rem+0.75rem)] leading-snug">
+                      {entry.feedback}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Judge button */}
+      {!isStreaming && hasResponses && !judgeScores && canJudge && (
+        <div className="mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRequestJudge}
+            disabled={isJudging}
+          >
+            {isJudging ? (
+              <>
+                <Loader2 className="size-3.5 mr-1.5 animate-spin" />
+                Evaluating...
+              </>
+            ) : (
+              'Evaluate Output'
+            )}
+          </Button>
         </div>
       )}
 

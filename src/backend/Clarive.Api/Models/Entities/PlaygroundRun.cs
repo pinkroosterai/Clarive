@@ -18,6 +18,9 @@ public class PlaygroundRun : ITenantScoped
     [Column(TypeName = "jsonb")]
     public string Responses { get; set; } = "[]";
 
+    [Column(TypeName = "jsonb")]
+    public string? JudgeScores { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public PromptEntry Entry { get; set; } = null!;

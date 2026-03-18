@@ -1,3 +1,4 @@
+using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using ErrorOr;
@@ -13,4 +14,11 @@ public interface IPlaygroundService
         TestEntryRequest request,
         CancellationToken ct,
         Func<TestStreamChunk, Task>? onChunk = null);
+
+    Task<ErrorOr<OutputEvaluation>> JudgePlaygroundRunAsync(
+        Guid tenantId,
+        Guid userId,
+        Guid entryId,
+        Guid runId,
+        CancellationToken ct);
 }

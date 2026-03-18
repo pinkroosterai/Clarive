@@ -13,6 +13,7 @@ import {
 import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { scoreColor } from '@/components/wizard/scoreUtils';
 import type {
   TestRunResponse,
   TestRunPromptResponse,
@@ -84,6 +85,14 @@ export default function PlaygroundHistorySidebar({
                       <ChevronRight className="size-3" />
                     )}
                     <span className="font-mono">{run.model}</span>
+                    {run.judgeScores && (
+                      <span
+                        className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-elevated ${scoreColor(run.judgeScores.averageScore).text}`}
+                        title={`Quality: ${run.judgeScores.averageScore.toFixed(1)}/10`}
+                      >
+                        {run.judgeScores.averageScore.toFixed(1)}
+                      </span>
+                    )}
                   </button>
                   <Button
                     size="sm"

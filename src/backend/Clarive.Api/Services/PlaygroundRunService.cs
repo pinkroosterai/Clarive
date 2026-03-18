@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
@@ -23,6 +24,16 @@ public class PlaygroundRunService(IPlaygroundRunRepository runRepo) : IPlaygroun
         return saved;
     }
 
+    public async Task<PlaygroundRun?> GetByIdAsync(Guid runId, CancellationToken ct)
+    {
+        return await runRepo.GetByIdAsync(runId, ct);
+    }
+
+    public async Task UpdateRunAsync(PlaygroundRun run, CancellationToken ct)
+    {
+        await runRepo.UpdateAsync(run, ct);
+    }
+
     public async Task<List<TestRunResponse>> GetRunsAsync(Guid entryId, CancellationToken ct)
     {
         var runs = await runRepo.GetByEntryIdAsync(entryId, DefaultHistoryLimit, ct);
@@ -37,7 +48,10 @@ public class PlaygroundRunService(IPlaygroundRunRepository runRepo) : IPlaygroun
                 : null,
             JsonSerializer.Deserialize<List<TestRunPromptResponse>>(r.Responses, JsonOptions) ?? [],
             null, null, // Token counts not stored in historical runs
-            r.CreatedAt
+            r.CreatedAt,
+            !string.IsNullOrEmpty(r.JudgeScores)
+                ? JsonSerializer.Deserialize<OutputEvaluation>(r.JudgeScores, JsonOptions)
+                : null
         )).ToList();
     }
 }

@@ -7,6 +7,17 @@ namespace Clarive.Api.Repositories.EfCore;
 
 public class EfPlaygroundRunRepository(ClariveDbContext db) : IPlaygroundRunRepository
 {
+    public async Task<PlaygroundRun?> GetByIdAsync(Guid runId, CancellationToken ct = default)
+    {
+        return await db.PlaygroundRuns.FirstOrDefaultAsync(r => r.Id == runId, ct);
+    }
+
+    public async Task UpdateAsync(PlaygroundRun run, CancellationToken ct = default)
+    {
+        db.PlaygroundRuns.Update(run);
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task<List<PlaygroundRun>> GetByEntryIdAsync(Guid entryId, int limit, CancellationToken ct = default)
     {
         return await db.PlaygroundRuns

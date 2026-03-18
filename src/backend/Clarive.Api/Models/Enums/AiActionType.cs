@@ -7,5 +7,6 @@ public enum AiActionType
     Evaluation,
     Clarification,
     SystemMessage,
-    Decomposition
+    Decomposition,
+    PlaygroundJudge
 }

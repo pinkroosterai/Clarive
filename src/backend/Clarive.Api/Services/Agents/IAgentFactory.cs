@@ -16,6 +16,7 @@ public interface IAgentFactory
     AIAgent CreateClarificationAgent();
     AIAgent CreateSystemMessageAgent();
     AIAgent CreateDecomposeAgent();
+    AIAgent CreatePlaygroundJudgeAgent();
     IChatClient CreateChatClient(string model);
     IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model, AiApiMode apiMode = AiApiMode.ResponsesApi);
     OpenAI.OpenAIClient GetOpenAIClient();

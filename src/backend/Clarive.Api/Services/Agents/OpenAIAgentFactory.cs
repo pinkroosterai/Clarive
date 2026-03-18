@@ -127,6 +127,9 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     public AIAgent CreateDecomposeAgent()
         => CreateDefaultAgent(AgentInstructions.Decompose, "PromptDecomposer");
 
+    public AIAgent CreatePlaygroundJudgeAgent()
+        => CreateDefaultAgent(AgentInstructions.PlaygroundJudge, "PlaygroundJudge");
+
     private ChatClientAgent CreateDefaultAgent(string instructions, string name)
     {
         _lock.EnterReadLock();

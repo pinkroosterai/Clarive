@@ -204,6 +204,44 @@ public static class TaskBuilder
         return string.Join("\n", parts);
     }
 
+    public static string BuildPlaygroundJudgeTask(
+        string? systemMessage,
+        List<Models.Requests.PromptInput> prompts,
+        List<Models.Responses.TestRunPromptResponse> responses,
+        string modelName)
+    {
+        var sections = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(systemMessage))
+            sections.Add($"[System Message]\n{systemMessage}");
+
+        for (var i = 0; i < prompts.Count; i++)
+        {
+            var prompt = prompts[i];
+            var label = prompt.IsTemplate ? $"[Prompt {i + 1} - Template]" : $"[Prompt {i + 1}]";
+            sections.Add($"{label}\n{prompt.Content}");
+        }
+
+        var promptsText = string.Join("\n\n", sections);
+
+        var responseSections = responses
+            .OrderBy(r => r.PromptIndex)
+            .Select(r => $"[Response {r.PromptIndex + 1}]\n{r.Content}");
+        var responsesText = string.Join("\n\n", responseSections);
+
+        return $"""
+            Evaluate the quality of the following LLM output.
+
+            Original prompt(s):
+            {promptsText}
+
+            Model response ({modelName}):
+            {responsesText}
+
+            Judge the response quality across all dimensions.
+            """;
+    }
+
     public static string FormatPromptsAsText(PromptSet prompts)
     {
         var sections = new List<string>();

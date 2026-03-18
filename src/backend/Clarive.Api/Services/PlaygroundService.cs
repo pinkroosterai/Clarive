@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Clarive.Api.Helpers;
+using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
@@ -19,6 +20,7 @@ public class PlaygroundService(
     IEntryRepository entryRepo,
     IModelResolutionService modelResolution,
     IPlaygroundRunService runService,
+    IAgentFactory agentFactory,
     IAiUsageLogger usageLogger,
     IOptionsMonitor<AiSettings> aiSettings,
     ILogger<PlaygroundService> logger) : IPlaygroundService
@@ -236,5 +238,65 @@ public class PlaygroundService(
 
         var fullReasoning = reasoningText.Length > 0 ? reasoningText.ToString() : null;
         return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens, fullReasoning);
+    }
+
+    public async Task<ErrorOr<OutputEvaluation>> JudgePlaygroundRunAsync(
+        Guid tenantId, Guid userId, Guid entryId, Guid runId, CancellationToken ct)
+    {
+        var run = await runService.GetByIdAsync(runId, ct);
+        if (run is null || run.TenantId != tenantId || run.EntryId != entryId)
+            return Error.NotFound("RUN_NOT_FOUND", "Playground run not found.");
+
+        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        if (version is null)
+            return DomainErrors.NoWorkingVersion;
+
+        var prompts = version.Prompts.OrderBy(p => p.Order).ToList();
+        var promptInputs = prompts.Select(p => new PromptInput(p.Content, p.IsTemplate)).ToList();
+
+        List<TestRunPromptResponse> responses;
+        try
+        {
+            responses = JsonSerializer.Deserialize<List<TestRunPromptResponse>>(run.Responses, JsonOptions) ?? [];
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Failed to deserialize responses for run {RunId}", runId);
+            return Error.Failure("INVALID_RUN_DATA", "Run data is corrupted. Please re-run the test.");
+        }
+
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var agent = agentFactory.CreatePlaygroundJudgeAgent();
+            var task = TaskBuilder.BuildPlaygroundJudgeTask(
+                version.SystemMessage, promptInputs, responses, run.Model);
+
+            var response = await agent.RunAsync<OutputEvaluation>(task, cancellationToken: ct);
+            var evaluation = OutputEvaluationNormalizer.Normalize(response.Result);
+            sw.Stop();
+
+            // Persist scores on the run
+            run.JudgeScores = JsonSerializer.Serialize(evaluation, JsonOptions);
+            await runService.UpdateRunAsync(run, ct);
+
+            // Log usage
+            var inputTokens = response.Usage?.InputTokenCount ?? 0;
+            var outputTokens = response.Usage?.OutputTokenCount ?? 0;
+            var providerName = agentFactory.DefaultProviderName ?? "unknown";
+
+            await usageLogger.LogAsync(
+                tenantId, userId, AiActionType.PlaygroundJudge,
+                agentFactory.DefaultModelId ?? "unknown", providerName,
+                inputTokens, outputTokens,
+                sw.ElapsedMilliseconds, entryId, ct);
+
+            return evaluation;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Playground judge failed for run {RunId}", runId);
+            return Error.Failure("JUDGE_FAILED", $"LLM judge evaluation failed: {ex.Message}");
+        }
     }
 }

@@ -29,6 +29,17 @@ export interface TestRunResponse {
   inputTokens: number | null;
   outputTokens: number | null;
   createdAt: string;
+  judgeScores?: Evaluation | null;
+}
+
+export interface Evaluation {
+  dimensions: Record<string, EvaluationEntry>;
+  averageScore: number;
+}
+
+export interface EvaluationEntry {
+  score: number;
+  feedback: string;
 }
 
 export interface TestEntryParams {
@@ -100,4 +111,11 @@ export interface EnrichedModel {
 export async function getEnrichedModels(): Promise<EnrichedModel[]> {
   const res = await api.get<{ models: EnrichedModel[] }>('/api/ai/available-models');
   return res.models;
+}
+
+export async function judgePlaygroundRun(
+  entryId: string,
+  runId: string
+): Promise<Evaluation> {
+  return api.post<Evaluation>(`/api/entries/${entryId}/runs/${runId}/judge`, {});
 }
