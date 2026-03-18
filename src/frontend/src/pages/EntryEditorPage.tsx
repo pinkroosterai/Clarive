@@ -375,7 +375,7 @@ const EntryEditorPage = () => {
           remains active until you publish the draft.
         </div>
       )}
-      <PromptEditor entry={localEntry} onChange={editor.handleChange} isReadOnly={isReadOnly} />
+      <PromptEditor key={editor.discardVersion} entry={localEntry} onChange={editor.handleChange} isReadOnly={isReadOnly} />
     </div>
   );
 

@@ -83,10 +83,17 @@ export function useEditorState(entryData: PromptEntry | undefined) {
     }
   }, [history, entryData]);
 
+  // Discard version — incremented on discard to force MarkdownEditor remount
+  const [discardVersion, setDiscardVersion] = useState(0);
+
   const handleDiscard = useCallback(() => {
     if (!entryData) return;
+    // Set ref synchronously so the content sync effect and any pending
+    // debounced Tiptap updates see the correct dirty state immediately
+    isDirtyRef.current = false;
     setLocalEntry(structuredClone(entryData));
     setIsDirty(false);
+    setDiscardVersion((v) => v + 1);
     history.clear();
     toast.success('Changes discarded');
   }, [entryData, history]);
@@ -115,5 +122,6 @@ export function useEditorState(entryData: PromptEntry | undefined) {
     canRedo: history.canRedo,
     clearHistory: history.clear,
     showEditNotice,
+    discardVersion,
   };
 }
