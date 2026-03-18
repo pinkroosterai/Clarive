@@ -66,7 +66,7 @@ export function AppSidebar() {
               <span>New Entry</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem className="hidden group-data-[collapsible=icon]:block">
+          <SidebarMenuItem className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:mt-1">
             <SidebarMenuButton asChild tooltip="All Prompts">
               <NavLink
                 to="/library"
