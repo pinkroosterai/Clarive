@@ -137,6 +137,7 @@ export function ActionsTabContent({
                 onClick={onUndo}
                 disabled={!canUndo}
                 className="size-9"
+                aria-label="Undo"
               >
                 <Undo2 className="size-4" />
               </Button>
@@ -153,6 +154,7 @@ export function ActionsTabContent({
                 onClick={onRedo}
                 disabled={!canRedo}
                 className="size-9"
+                aria-label="Redo"
               >
                 <Redo2 className="size-4" />
               </Button>
