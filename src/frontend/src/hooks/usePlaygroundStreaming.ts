@@ -91,6 +91,13 @@ export function usePlaygroundStreaming({
     };
   }, []);
 
+  // ── Clear stale reasoning when switching to non-reasoning model ──
+  useEffect(() => {
+    if (!isReasoning && !isStreaming) {
+      setStreamedReasoning({});
+    }
+  }, [isReasoning]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Auto-follow scrolling ──
   // The playground page content scrolls within the document/window because the
   // AppShell layout uses min-h-svh with no max constraint. We scroll the

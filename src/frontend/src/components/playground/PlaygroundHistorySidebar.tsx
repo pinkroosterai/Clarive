@@ -111,7 +111,11 @@ export default function PlaygroundHistorySidebar({
                       variant="ghost"
                       className="h-6 px-1.5"
                       onClick={() => onTogglePin(run)}
+                      disabled={isStreaming && !isPinned}
                       title={isPinned ? 'Unpin' : 'Pin for comparison'}
+                      aria-label={
+                        isPinned ? `Unpin ${run.model}` : `Pin ${run.model} for comparison`
+                      }
                     >
                       {isPinned ? (
                         <PinOff className="size-3 text-primary" />
@@ -125,6 +129,7 @@ export default function PlaygroundHistorySidebar({
                       className="h-6 px-1.5"
                       onClick={() => handleRerun(run)}
                       title="Load parameters"
+                      aria-label={`Load parameters from ${run.model}`}
                     >
                       <ArrowDownToLine className="size-3" />
                     </Button>
