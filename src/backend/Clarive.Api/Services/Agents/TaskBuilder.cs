@@ -259,46 +259,4 @@ public static class TaskBuilder
 
         return string.Join("\n\n", sections);
     }
-
-    public static string BuildFillTemplateFieldsTask(
-        List<Models.Requests.PromptInput> prompts,
-        string? systemMessage,
-        List<TemplateFieldInfo> fields)
-    {
-        var parts = new List<string> { "Generate realistic example values for the following template fields." };
-
-        if (systemMessage is not null)
-            parts.Add($"System message context:\n{systemMessage}");
-
-        parts.Add("Prompt content:");
-        for (var i = 0; i < prompts.Count; i++)
-            parts.Add($"  [{i + 1}] {prompts[i].Content}");
-
-        parts.Add("Template fields:");
-        foreach (var f in fields)
-        {
-            var desc = $"  - {f.Name} (type: {f.Type})";
-            if (f.EnumValues is { Count: > 0 })
-                desc += $" — allowed values: {string.Join(", ", f.EnumValues)}";
-            if (f.Min.HasValue || f.Max.HasValue)
-                desc += $" — range: {f.Min?.ToString() ?? "any"}–{f.Max?.ToString() ?? "any"}";
-            if (f.Description is not null)
-                desc += $" — {f.Description}";
-            parts.Add(desc);
-        }
-
-        return string.Join("\n\n", parts);
-    }
 }
-
-/// <summary>
-/// Lightweight DTO for passing template field metadata to the orchestrator
-/// without depending on EF entities.
-/// </summary>
-public record TemplateFieldInfo(
-    string Name,
-    string Type,
-    List<string>? EnumValues = null,
-    double? Min = null,
-    double? Max = null,
-    string? Description = null);

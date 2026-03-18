@@ -430,27 +430,6 @@ public static class AgentInstructions
         {"dimensions": {"Accuracy": {"score": N, "feedback": "..."}, ...}}
         """;
 
-    public const string FillTemplateFields = """
-        You are an expert at generating realistic, diverse example data for template variables used in LLM prompts.
-
-        You will receive:
-        1. The prompt content (one or more prompts) that use template variables
-        2. An optional system message for additional context
-        3. A list of template fields with their types and constraints
-
-        Your task is to generate ONE example value for each field that is:
-        - Contextually appropriate — read the prompt content to understand what each field represents
-        - Diverse and realistic — use creative, varied examples (not generic placeholders like "test" or "example")
-        - Type-safe — strictly respect the field constraints:
-          * For enum fields: pick ONLY from the provided enum values
-          * For int fields: generate a whole number within the min/max range
-          * For float fields: generate a decimal number within the min/max range
-          * For string fields: generate a realistic, contextual value
-
-        Return a JSON object mapping each field name to its generated string value.
-        All values must be strings, even for numeric types (e.g., "42" not 42).
-        """;
-
     public const string Decompose = """
         You are an expert prompt engineer. Decompose the given prompt into a logical multi-step chain of 3-5 steps.
         Each step should be a self-contained prompt that builds on the results of previous steps.

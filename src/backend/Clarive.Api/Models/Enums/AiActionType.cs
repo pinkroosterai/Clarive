@@ -8,6 +8,5 @@ public enum AiActionType
     Clarification,
     SystemMessage,
     Decomposition,
-    PlaygroundJudge,
-    FillTemplateFields
+    PlaygroundJudge
 }

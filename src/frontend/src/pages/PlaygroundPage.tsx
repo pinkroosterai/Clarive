@@ -18,7 +18,6 @@ import { entryService } from '@/services';
 import {
   getTestRuns,
   getEnrichedModels,
-  fillTemplateFields,
   type TestRunResponse,
   type EnrichedModel,
 } from '@/services/api/playgroundService';
@@ -133,7 +132,6 @@ const PlaygroundPage = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [pinnedRun, setPinnedRun] = useState<TestRunResponse | null>(null);
-  const [isFillingTemplateFields, setIsFillingTemplateFields] = useState(false);
 
   // ── Queries ──
   const { data: enrichedModels = [], isError: modelsError } = useQuery({
@@ -171,19 +169,6 @@ const PlaygroundPage = () => {
       toast.error('Failed to copy');
     }
   }, []);
-
-  const handleFillTemplateFields = useCallback(async () => {
-    if (!id) return;
-    setIsFillingTemplateFields(true);
-    try {
-      const values = await fillTemplateFields(id);
-      setFieldValues(values);
-    } catch {
-      toast.error('Failed to generate example values');
-    } finally {
-      setIsFillingTemplateFields(false);
-    }
-  }, [id]);
 
   const handleRerun = useCallback(
     (run: TestRunResponse) => {
@@ -333,8 +318,6 @@ const PlaygroundPage = () => {
           pinnedJudgeScores={pinnedRun?.judgeScores ?? null}
           currentJudgeScores={lastJudgeScores}
           isJudging={isJudging}
-          onFillTemplateFields={templateFields.length > 0 ? handleFillTemplateFields : undefined}
-          isFillingTemplateFields={isFillingTemplateFields}
         />
 
         {/* ── History sidebar ── */}

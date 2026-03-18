@@ -234,48 +234,6 @@ public class AiGenerationService(
         return agentResult.Value;
     }
 
-    public async Task<ErrorOr<Dictionary<string, string>>> FillTemplateFieldsAsync(
-        Guid tenantId, Guid userId, Guid entryId, CancellationToken ct)
-    {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null || entry.IsTrashed)
-            return DomainErrors.EntryNotFound;
-
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
-            return DomainErrors.VersionNotFoundForEntry;
-
-        var prompts = working.Prompts.OrderBy(p => p.Order).ToList();
-        var allFields = prompts
-            .Where(p => p.IsTemplate)
-            .SelectMany(p => p.TemplateFields)
-            .DistinctBy(f => f.Name)
-            .ToList();
-
-        if (allFields.Count == 0)
-            return Error.Validation("NO_TEMPLATE_FIELDS", "Entry has no template fields.");
-
-        var fieldInfos = allFields.Select(f => new TemplateFieldInfo(
-            f.Name,
-            f.Type.ToString().ToLowerInvariant(),
-            f.EnumValues,
-            f.Min,
-            f.Max,
-            null)).ToList();
-
-        var promptInputs = prompts
-            .Select(p => new PromptInput(p.Content, p.IsTemplate))
-            .ToList();
-
-        var sw = Stopwatch.StartNew();
-        var agentResult = await orchestrator.FillTemplateFieldsAsync(fieldInfos, promptInputs, working.SystemMessage, ct);
-        sw.Stop();
-
-        await LogUsageAsync(tenantId, userId, AiActionType.FillTemplateFields, sw.ElapsedMilliseconds, agentResult.Usage, entryId, ct);
-
-        return agentResult.Value;
-    }
-
     // ── Private helpers ──
 
     private Task LogUsageAsync(

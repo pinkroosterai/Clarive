@@ -45,13 +45,6 @@ public interface IPromptOrchestrator
         List<PromptInput> prompts, CancellationToken ct = default);
 
     /// <summary>
-    /// Single-turn: generates example values for template fields.
-    /// </summary>
-    Task<AgentResult<Dictionary<string, string>>> FillTemplateFieldsAsync(
-        List<TemplateFieldInfo> fields, List<PromptInput> prompts, string? systemMessage,
-        CancellationToken ct = default);
-
-    /// <summary>
     /// Single-turn: decomposes a single prompt into a chain.
     /// </summary>
     Task<AgentResult<List<PromptInput>>> DecomposeAsync(
