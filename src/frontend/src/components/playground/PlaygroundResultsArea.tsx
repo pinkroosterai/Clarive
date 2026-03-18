@@ -214,28 +214,11 @@ export default function PlaygroundResultsArea({
               Unpin
             </Button>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Pinned run responses */}
-            <div className="space-y-3">
-              <div className="text-xs font-medium text-foreground-muted mb-2">Pinned Run</div>
-              {pinnedRun.responses.map((r: TestRunPromptResponse) => (
-                <div
-                  key={r.promptIndex}
-                  className="rounded-lg border border-border-subtle bg-surface p-4"
-                >
-                  {prompts.length > 1 && (
-                    <div className="text-xs text-foreground-muted mb-2">
-                      Prompt {r.promptIndex + 1}
-                    </div>
-                  )}
-                  <LLMResponseBlock output={r.content} isStreaming={false} />
-                </div>
-              ))}
-              {pinnedJudgeScores && <JudgeScorePanel scores={pinnedJudgeScores} />}
-            </div>
-            {/* Current run responses */}
-            <div className="space-y-3">
-              <div className="text-xs font-medium text-foreground-muted mb-2">
+          <div className="space-y-3">
+            {/* Column headers */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-xs font-medium text-foreground-muted">Pinned Run</div>
+              <div className="text-xs font-medium text-foreground-muted">
                 <span className="flex items-center gap-1.5">
                   {isStreaming && <Loader2 className="size-3 animate-spin" />}
                   {isStreaming
@@ -245,20 +228,53 @@ export default function PlaygroundResultsArea({
                       : 'Run a new test to compare'}
                 </span>
               </div>
-              {prompts.map((_p, i) => {
-                const response = streamedResponses[i];
-                if (response === undefined) return null;
-                return (
-                  <div key={i} className="rounded-lg border border-border-subtle bg-surface p-4">
+            </div>
+            {/* Paired prompt rows — each row aligns pinned + current at the same height */}
+            {prompts.map((_p, i) => {
+              const pinnedResponse = pinnedRun.responses.find(
+                (r: TestRunPromptResponse) => r.promptIndex === i,
+              );
+              const currentResponse = streamedResponses[i];
+              return (
+                <div key={i} className="grid grid-cols-2 gap-4">
+                  {/* Pinned response */}
+                  <div className="rounded-lg border border-border-subtle bg-surface p-4">
+                    {prompts.length > 1 && (
+                      <div className="text-xs text-foreground-muted mb-2">
+                        Prompt {i + 1}
+                      </div>
+                    )}
+                    {pinnedResponse ? (
+                      <LLMResponseBlock output={pinnedResponse.content} isStreaming={false} />
+                    ) : (
+                      <span className="text-xs text-foreground-muted">—</span>
+                    )}
+                  </div>
+                  {/* Current response */}
+                  <div className="rounded-lg border border-border-subtle bg-surface p-4">
                     {prompts.length > 1 && (
                       <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                     )}
-                    <LLMResponseBlock output={response} isStreaming={isStreaming} />
+                    {currentResponse !== undefined ? (
+                      <LLMResponseBlock output={currentResponse} isStreaming={isStreaming} />
+                    ) : (
+                      <span className="text-xs text-foreground-muted">—</span>
+                    )}
                   </div>
-                );
-              })}
-              {!isStreaming && currentJudgeScores && <JudgeScorePanel scores={currentJudgeScores} />}
-            </div>
+                </div>
+              );
+            })}
+            {/* Judge scores — aligned row */}
+            {(pinnedJudgeScores || (!isStreaming && currentJudgeScores)) && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>{pinnedJudgeScores && <JudgeScorePanel scores={pinnedJudgeScores} />}</div>
+                <div>
+                  {!isStreaming && currentJudgeScores && (
+                    <JudgeScorePanel scores={currentJudgeScores} />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
