@@ -76,8 +76,8 @@ export default function PlaygroundToolbar({
   const navigate = useNavigate();
 
   return (
-    <div className="border-b border-border-subtle bg-surface px-6 py-3">
-      <div className="flex items-center gap-4 flex-wrap">
+    <div className="border-b border-border-subtle bg-surface px-3 sm:px-6 py-3">
+      <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
         {/* Back + title */}
         <Button
           variant="ghost"
@@ -88,21 +88,21 @@ export default function PlaygroundToolbar({
           <ArrowLeft className="size-4" />
           Back
         </Button>
-        <Separator orientation="vertical" className="h-5" />
-        <span className="text-sm font-medium truncate max-w-xs">{entryTitle}</span>
+        <Separator orientation="vertical" className="h-5 hidden sm:block" />
+        <span className="text-sm font-medium truncate max-w-[8rem] sm:max-w-xs">{entryTitle}</span>
         {isChain && <span className="text-xs text-foreground-muted">{promptsCount} prompts</span>}
 
         <div className="flex-1" />
 
         {/* Controls */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Parameter controls (locked during streaming) */}
           <div
-            className={`flex items-center gap-3 flex-wrap transition-opacity ${isStreaming ? 'opacity-50 pointer-events-none' : ''}`}
+            className={`flex items-center gap-2 sm:gap-3 flex-wrap transition-opacity ${isStreaming ? 'opacity-50 pointer-events-none' : ''}`}
           >
             {/* Model */}
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-foreground-muted shrink-0">Model</Label>
+              <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">Model</Label>
               {modelsError ? (
                 <span className="text-xs text-destructive">Failed to load models</span>
               ) : (
@@ -115,7 +115,7 @@ export default function PlaygroundToolbar({
                     if (found) onModelChange(found);
                   }}
                 >
-                  <SelectTrigger className="w-52 h-8 text-xs">
+                  <SelectTrigger className="w-36 sm:w-52 h-8 text-xs">
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
@@ -139,7 +139,7 @@ export default function PlaygroundToolbar({
             {/* Temperature (hidden for reasoning models) */}
             {!selectedModel?.isReasoning && (
               <div className="flex items-center gap-2">
-                <Label className="text-xs text-foreground-muted shrink-0">Temp</Label>
+                <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">Temp</Label>
                 <Slider
                   value={[temperature]}
                   onValueChange={([v]) => setTemperature(v)}
@@ -158,7 +158,7 @@ export default function PlaygroundToolbar({
             {selectedModel?.isReasoning && (
               <>
                 <div className="flex items-center gap-2">
-                  <Label className="text-xs text-foreground-muted shrink-0">Reasoning</Label>
+                  <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">Reasoning</Label>
                   <Select value={reasoningEffort} onValueChange={setReasoningEffort}>
                     <SelectTrigger className="w-28 h-8 text-xs">
                       <SelectValue />
@@ -180,7 +180,7 @@ export default function PlaygroundToolbar({
                   </Select>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-foreground-muted">Show thinking</Label>
+                  <Label className="text-xs text-foreground-muted hidden sm:block">Show thinking</Label>
                   <input
                     type="checkbox"
                     checked={showReasoning}
@@ -193,7 +193,7 @@ export default function PlaygroundToolbar({
 
             {/* Max tokens */}
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-foreground-muted shrink-0">Tokens</Label>
+              <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">Tokens</Label>
               <Input
                 type="number"
                 value={maxTokens}

@@ -48,7 +48,7 @@ export default function PlaygroundHistorySidebar({
   handleCopy,
 }: PlaygroundHistorySidebarProps) {
   return (
-    <div className="w-80 border-l border-border-subtle bg-surface overflow-hidden flex flex-col shrink-0">
+    <div className="w-full h-full border-l border-border-subtle bg-surface overflow-hidden flex flex-col shrink-0">
       <div className="px-4 py-3 border-b border-border-subtle flex items-center gap-2">
         <Clock className="size-4 text-foreground-muted" />
         <span className="text-sm font-medium">History</span>

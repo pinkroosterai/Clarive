@@ -172,7 +172,7 @@ export default function PlaygroundResultsArea({
             )}
           </div>
           <CollapsibleContent>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {templateFields.map((field) => {
                 const isEmpty = !fieldValues[field.name];
                 return (

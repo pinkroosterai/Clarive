@@ -364,21 +364,30 @@ const PlaygroundPage = () => {
           isFillingTemplateFields={isFillingTemplateFields}
         />
 
-        {/* ── History sidebar ── */}
+        {/* ── History sidebar — overlay on small screens, inline on md+ ── */}
         {showHistory && (
-          <PlaygroundHistorySidebar
-            testRuns={testRuns}
-            isStreaming={isStreaming}
-            selectedModel={selectedModel}
-            elapsedSeconds={elapsedSeconds}
-            expandedRunId={expandedRunId}
-            setExpandedRunId={setExpandedRunId}
-            pinnedRun={pinnedRun}
-            setPinnedRun={setPinnedRun}
-            copiedIndex={copiedIndex}
-            handleRerun={handleRerun}
-            handleCopy={handleCopy}
-          />
+          <>
+            {/* Backdrop for small screens */}
+            <div
+              className="fixed inset-0 z-30 bg-black/30 md:hidden"
+              onClick={() => setShowHistory(false)}
+            />
+            <div className="fixed inset-y-0 right-0 z-40 w-80 md:relative md:inset-auto md:z-auto">
+              <PlaygroundHistorySidebar
+                testRuns={testRuns}
+                isStreaming={isStreaming}
+                selectedModel={selectedModel}
+                elapsedSeconds={elapsedSeconds}
+                expandedRunId={expandedRunId}
+                setExpandedRunId={setExpandedRunId}
+                pinnedRun={pinnedRun}
+                setPinnedRun={setPinnedRun}
+                copiedIndex={copiedIndex}
+                handleRerun={handleRerun}
+                handleCopy={handleCopy}
+              />
+            </div>
+          </>
         )}
       </div>
 
