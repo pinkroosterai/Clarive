@@ -17,6 +17,7 @@ import {
   Settings,
   Globe,
   Share2,
+  Blocks,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -669,12 +670,12 @@ const sectionGroups: SectionGroup[] = [
         icon: Globe,
         title: 'Public API',
         searchText:
-          'public api fetch render published prompts get post entries generate template fields validation authentication x-api-key curl json error 401 404 422 429 rate limit',
+          'public api fetch render published prompts get post entries generate template fields validation authentication x-api-key curl json error 401 404 422 429 rate limit list search tags pagination openapi',
         content: (
           <div className="space-y-3">
             <p>
-              The Public API lets you fetch and render published prompts programmatically. All
-              requests require an API key (see <strong>API Keys</strong> above).
+              The Public API lets you list, fetch, and render published prompts programmatically.
+              All requests require an API key (see <strong>API Keys</strong> above).
             </p>
 
             <h4 className="text-sm font-semibold text-foreground">Authentication</h4>
@@ -685,8 +686,95 @@ const sectionGroups: SectionGroup[] = [
 
             <h4 className="text-sm font-semibold text-foreground">Base URL</h4>
             <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle">
-              /public/v1/entries
+              /public/v1
             </p>
+
+            <h4 className="text-sm font-semibold text-foreground">
+              GET /public/v1/entries
+            </h4>
+            <p>
+              List all published entries in your workspace with optional filtering, search, and
+              pagination.
+            </p>
+            <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border-subtle">
+                    <th className="text-left p-2 font-semibold text-foreground">Parameter</th>
+                    <th className="text-left p-2 font-semibold text-foreground">Type</th>
+                    <th className="text-left p-2 font-semibold text-foreground">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  <tr>
+                    <td className="p-2 font-mono">search</td>
+                    <td className="p-2">string</td>
+                    <td className="p-2">Filter by title (case-insensitive)</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">folderId</td>
+                    <td className="p-2">UUID</td>
+                    <td className="p-2">Filter by folder</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">tags</td>
+                    <td className="p-2">string</td>
+                    <td className="p-2">Comma-separated tag names</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">tagMode</td>
+                    <td className="p-2">string</td>
+                    <td className="p-2">
+                      <Code>and</Code> or <Code>or</Code> (default: <Code>or</Code>)
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">sortBy</td>
+                    <td className="p-2">string</td>
+                    <td className="p-2">
+                      <Code>recent</Code>, <Code>alphabetical</Code>, or <Code>oldest</Code>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">page</td>
+                    <td className="p-2">int</td>
+                    <td className="p-2">Page number (default: 1)</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">pageSize</td>
+                    <td className="p-2">int</td>
+                    <td className="p-2">Items per page (default: 50, max: 100)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle whitespace-pre">
+              {`curl -H "X-Api-Key: cl_your_key_here" \\
+  "https://your-domain/public/v1/entries?search=email&tags=marketing&page=1"`}
+            </p>
+            <p className="text-xs text-foreground-muted mt-1">Response (200):</p>
+            <pre className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle overflow-x-auto">
+              {`{
+  "items": [
+    {
+      "id": "a1b2c3d4-...",
+      "title": "Email Writer",
+      "version": 3,
+      "hasSystemMessage": true,
+      "isTemplate": true,
+      "isChain": false,
+      "promptCount": 1,
+      "firstPromptPreview": "Write a {{tone}} email to {{recipient}}.",
+      "tags": ["marketing", "email"],
+      "createdAt": "2026-01-15T10:30:00Z",
+      "updatedAt": "2026-03-10T14:22:00Z"
+    }
+  ],
+  "totalCount": 1,
+  "page": 1,
+  "pageSize": 50
+}`}
+            </pre>
 
             <h4 className="text-sm font-semibold text-foreground">
               GET /public/v1/entries/{'{entryId}'}
@@ -724,7 +812,10 @@ const sectionGroups: SectionGroup[] = [
         }
       ]
     }
-  ]
+  ],
+  "tags": ["marketing", "email"],
+  "updatedAt": "2026-03-10T14:22:00Z",
+  "publishedAt": "2026-03-10T14:22:00Z"
 }`}
             </pre>
 
@@ -758,6 +849,31 @@ const sectionGroups: SectionGroup[] = [
 }`}
             </pre>
 
+            <h4 className="text-sm font-semibold text-foreground">
+              GET /public/v1/tags
+            </h4>
+            <p>
+              List all tags in your workspace with entry counts.
+            </p>
+            <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle whitespace-pre">
+              {`curl -H "X-Api-Key: cl_your_key_here" \\
+  https://your-domain/public/v1/tags`}
+            </p>
+            <p className="text-xs text-foreground-muted mt-1">Response (200):</p>
+            <pre className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle overflow-x-auto">
+              {`[
+  { "name": "marketing", "entryCount": 5 },
+  { "name": "support", "entryCount": 3 }
+]`}
+            </pre>
+
+            <h4 className="text-sm font-semibold text-foreground">
+              GET /public/v1/openapi.json
+            </h4>
+            <p>
+              Download the full OpenAPI specification for the Clarive API in YAML format.
+            </p>
+
             <h4 className="text-sm font-semibold text-foreground">Template Field Types</h4>
             <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
               <table className="w-full text-xs font-mono">
@@ -789,6 +905,37 @@ const sectionGroups: SectionGroup[] = [
                     <td className="p-2 font-sans">
                       Must match one of the allowed values (case-insensitive)
                     </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4 className="text-sm font-semibold text-foreground">Rate Limiting</h4>
+            <p>
+              All <Code>/public/v1/</Code> endpoints are rate-limited to{' '}
+              <strong>600 requests per minute</strong> per API key. Every response includes rate
+              limit headers:
+            </p>
+            <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border-subtle">
+                    <th className="text-left p-2 font-semibold text-foreground">Header</th>
+                    <th className="text-left p-2 font-semibold text-foreground">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  <tr>
+                    <td className="p-2 font-mono">X-RateLimit-Limit</td>
+                    <td className="p-2">Maximum requests per window</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">X-RateLimit-Remaining</td>
+                    <td className="p-2">Requests remaining in current window</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">X-RateLimit-Reset</td>
+                    <td className="p-2">Unix timestamp when the window resets</td>
                   </tr>
                 </tbody>
               </table>
@@ -828,7 +975,9 @@ const sectionGroups: SectionGroup[] = [
                   <tr>
                     <td className="p-2 font-mono">429</td>
                     <td className="p-2 font-mono">RATE_LIMITED</td>
-                    <td className="p-2">Too many requests (limit: 20/min per IP)</td>
+                    <td className="p-2">
+                      Too many requests (limit: 600/min per API key)
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -837,6 +986,101 @@ const sectionGroups: SectionGroup[] = [
               All errors return a JSON body:{' '}
               <Code>{'{{"error": {"code": "...", "message": "..."}}}'}</Code>. Validation errors
               include a <Code>details</Code> object with per-field messages.
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: 'sdks',
+        icon: Blocks,
+        title: 'SDKs',
+        searchText:
+          'sdk client library csharp python typescript npm nuget pypi install dotnet pip package retry circuit breaker error handling',
+        content: (
+          <div className="space-y-3">
+            <p>
+              Official SDKs let you integrate Clarive into your applications with typed responses,
+              automatic retries, and built-in error handling. Available for C#, Python, and
+              TypeScript.
+            </p>
+
+            <h4 className="text-sm font-semibold text-foreground">Installation</h4>
+            <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border-subtle">
+                    <th className="text-left p-2 font-semibold text-foreground">Language</th>
+                    <th className="text-left p-2 font-semibold text-foreground">Install</th>
+                    <th className="text-left p-2 font-semibold text-foreground">Runtime</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  <tr>
+                    <td className="p-2">C#</td>
+                    <td className="p-2 font-mono">dotnet add package ClariveSDK</td>
+                    <td className="p-2">.NET 9+</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2">Python</td>
+                    <td className="p-2 font-mono">pip install clarive-sdk</td>
+                    <td className="p-2">Python 3.10+</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2">TypeScript</td>
+                    <td className="p-2 font-mono">npm install clarive-sdk</td>
+                    <td className="p-2">Node 18+</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4 className="text-sm font-semibold text-foreground">Quick Start</h4>
+            <p className="text-xs font-semibold text-foreground-muted">C#</p>
+            <pre className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle overflow-x-auto">
+              {`var client = new ClariveClient(httpClient, new ClariveOptions { ApiKey = "cl_..." });
+var entry = await client.GetEntryAsync(entryId);`}
+            </pre>
+            <p className="text-xs font-semibold text-foreground-muted">Python</p>
+            <pre className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle overflow-x-auto">
+              {`async with ClariveClient(api_key="cl_...") as client:
+    entry = await client.get_entry(entry_id)`}
+            </pre>
+            <p className="text-xs font-semibold text-foreground-muted">TypeScript</p>
+            <pre className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle overflow-x-auto">
+              {`const client = new ClariveClient({ apiKey: "cl_..." });
+const entry = await client.getEntry(entryId);`}
+            </pre>
+
+            <h4 className="text-sm font-semibold text-foreground">Features</h4>
+            <ul className="list-disc list-inside space-y-1">
+              <li>
+                <strong>Typed errors</strong> — catch <Code>ClariveNotFoundError</Code>,{' '}
+                <Code>ClariveValidationError</Code>, and <Code>ClariveRateLimitError</Code> by
+                name instead of parsing status codes.
+              </li>
+              <li>
+                <strong>Automatic retries</strong> — exponential backoff with jitter and a circuit
+                breaker to avoid hammering failing services. On by default, easy to turn off.
+              </li>
+              <li>
+                <strong>Credential safety</strong> — API keys are omitted from logs and
+                serialization output.
+              </li>
+              <li>
+                <strong>HTTPS enforced</strong> — with an opt-out for local development.
+              </li>
+            </ul>
+
+            <p className="text-xs text-foreground-muted">
+              Source and docs:{' '}
+              <a
+                href="https://github.com/pinkroosterai/ClariveSDK"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-foreground"
+              >
+                github.com/pinkroosterai/ClariveSDK
+              </a>
             </p>
           </div>
         ),
