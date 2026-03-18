@@ -90,8 +90,8 @@ export const PromptCard = memo(function PromptCard({
     }
   };
 
-  const borderColor =
-    index === 1 ? 'border-l-blue-500' : index === 2 ? 'border-l-cyan-500' : 'border-l-emerald-500';
+  const BORDER_COLORS = ['border-l-blue-500', 'border-l-cyan-500', 'border-l-emerald-500', 'border-l-violet-500', 'border-l-amber-500'];
+  const borderColor = BORDER_COLORS[(index - 1) % BORDER_COLORS.length];
 
   return (
     <motion.div
@@ -149,6 +149,11 @@ export const PromptCard = memo(function PromptCard({
             templateHighlight={true}
             minHeightClass="min-h-[120px]"
           />
+          {prompt.content.length > 0 && (
+            <div className="text-right text-xs text-foreground-muted">
+              {prompt.content.length.toLocaleString()} chars
+            </div>
+          )}
         </CardContent>
 
         {!isOnly && !isReadOnly && (

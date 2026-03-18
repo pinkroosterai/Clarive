@@ -223,6 +223,15 @@ export function UnifiedTemplateForm({ prompts, isReadOnly }: UnifiedTemplateForm
           Template Variables
           <span className="text-xs text-foreground-muted font-normal">({fields.length})</span>
         </CollapsibleTrigger>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowPreview((p) => !p)}
+          className="ml-auto h-7 gap-1.5 text-xs text-foreground-muted"
+        >
+          {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+          Preview
+        </Button>
       </div>
 
       <CollapsibleContent className="mt-3">
@@ -296,16 +305,6 @@ export function UnifiedTemplateForm({ prompts, isReadOnly }: UnifiedTemplateForm
                 );
               })}
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPreview((p) => !p)}
-              className="gap-1.5"
-            >
-              {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-              {showPreview ? 'Hide preview' : 'Preview'}
-            </Button>
 
             {showPreview && (
               <div className="space-y-3">

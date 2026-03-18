@@ -58,12 +58,15 @@ export function SystemMessageSection({
           exit={{ opacity: 0, height: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         >
-          <Collapsible defaultOpen data-tour="system-message">
+          <Collapsible defaultOpen={!!systemMessage} data-tour="system-message">
             <div className="flex items-center gap-2 border-l-2 border-primary pl-3">
               <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-foreground/80 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
                 <ChevronDown className="chevron size-4 text-foreground-muted transition-transform duration-200" />
                 <MessageSquare className="size-4 text-foreground-muted" />
                 System Message
+                {!systemMessage && (
+                  <span className="text-xs font-normal text-foreground-muted">(optional)</span>
+                )}
               </CollapsibleTrigger>
               {!isReadOnly && (
                 <Button
