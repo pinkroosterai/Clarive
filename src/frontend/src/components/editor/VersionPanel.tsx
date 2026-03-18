@@ -126,6 +126,12 @@ export function VersionPanel({
         })}
       </div>
 
+      {versions.length === 1 && (
+        <p className="text-xs text-foreground-muted text-center py-2">
+          Version history will grow as you publish.
+        </p>
+      )}
+
       {versions.length >= 2 && onCompare && (
         <Button variant="outline" size="sm" className="w-full gap-2" onClick={onCompare}>
           <GitCompareArrows className="size-3.5" />

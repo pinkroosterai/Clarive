@@ -62,7 +62,7 @@ export function DetailsTabContent({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-foreground-muted h-auto p-0 hover:text-foreground"
+            className="gap-1.5"
             onClick={async () => {
               try {
                 await copyToClipboard(entry.id);
@@ -73,7 +73,7 @@ export function DetailsTabContent({
             }}
           >
             <Copy className="size-3.5" />
-            <span className="text-sm">Copy Entry ID</span>
+            Copy Entry ID
           </Button>
         </div>
       </ActionGroup>
