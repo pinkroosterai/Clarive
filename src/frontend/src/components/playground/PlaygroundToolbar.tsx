@@ -232,7 +232,7 @@ export default function PlaygroundToolbar({
               size="sm"
               onClick={handleRun}
               disabled={!model || hasValidationErrors}
-              title="Run (⌘+Enter)"
+              title={hasValidationErrors ? 'Fill all template fields to run' : 'Run (⌘+Enter)'}
             >
               <Play className="size-3 mr-1.5" />
               Run
