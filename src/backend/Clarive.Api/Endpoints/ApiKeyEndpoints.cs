@@ -6,12 +6,12 @@ using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
+using Clarive.Api.Services;
 
 namespace Clarive.Api.Endpoints;
 
 public static class ApiKeyEndpoints
 {
-    private const int MaxApiKeyNameLength = 100;
 
     public static RouteGroupBuilder MapApiKeyEndpoints(this IEndpointRouteBuilder app)
     {
@@ -47,11 +47,7 @@ public static class ApiKeyEndpoints
     {
         var tenantId = ctx.GetTenantId();
 
-        if (string.IsNullOrWhiteSpace(request.Name))
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Name is required.");
-
-        if (request.Name.Trim().Length > MaxApiKeyNameLength)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", $"Name must be {MaxApiKeyNameLength} characters or fewer.");
+        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
 
         if (request.ExpiresAt.HasValue && request.ExpiresAt.Value.ToUniversalTime() <= DateTime.UtcNow)
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Expiry date must be in the future.");
