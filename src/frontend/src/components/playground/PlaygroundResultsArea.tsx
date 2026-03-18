@@ -88,26 +88,29 @@ function ScoreBadgeBar({
   activeCarouselIndex,
   onSelectIndex,
   referenceRunId,
+  carouselOffset,
 }: {
   pinnedRuns: TestRunResponse[];
   activeCarouselIndex: number;
-  onSelectIndex: (index: number) => void;
+  onSelectIndex: (carouselIndex: number) => void;
   referenceRunId: string | null;
+  carouselOffset: number; // number of pinnedRuns entries before carousel starts (0 or 1)
 }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {pinnedRuns.map((run, i) => {
         const isReference = run.id === referenceRunId;
-        const isActive = !isReference && i === activeCarouselIndex;
+        const carouselIndex = i - carouselOffset;
+        const isActive = !isReference && carouselIndex === activeCarouselIndex;
         const score = run.judgeScores?.averageScore;
         const color = score !== undefined ? scoreColor(score) : null;
         return (
           <button
             key={run.id}
             onClick={() => {
-              if (!isReference) onSelectIndex(i);
+              if (!isReference) onSelectIndex(carouselIndex);
             }}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all duration-150 ${
               isReference
                 ? 'bg-primary/10 border border-primary/30 cursor-default'
                 : isActive
@@ -337,8 +340,9 @@ export default function PlaygroundResultsArea({
           <ScoreBadgeBar
             pinnedRuns={pinnedRuns}
             activeCarouselIndex={clampedIndex}
-            onSelectIndex={(i) => setActiveCarouselIndex(hasCurrentRun ? i : Math.max(i - 1, 0))}
+            onSelectIndex={setActiveCarouselIndex}
             referenceRunId={referenceRun?.id ?? null}
+            carouselOffset={referenceRun ? 1 : 0}
           />
 
           {/* Column headers */}
@@ -438,7 +442,10 @@ export default function PlaygroundResultsArea({
                     <span className="text-xs text-foreground-muted">—</span>
                   )}
                 </div>
-                <div className="rounded-lg border border-border-subtle bg-surface p-4">
+                <div
+                  key={activeRun.id}
+                  className="rounded-lg border border-border-subtle bg-surface p-4 animate-fade-in"
+                >
                   {prompts.length > 1 && (
                     <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                   )}
@@ -465,7 +472,7 @@ export default function PlaygroundResultsArea({
                       <JudgeScorePanel scores={referenceRun.judgeScores} />
                     )}
               </div>
-              <div>
+              <div key={activeRun.id} className="animate-fade-in">
                 {activeRun.judgeScores && <JudgeScorePanel scores={activeRun.judgeScores} />}
               </div>
             </div>
@@ -499,6 +506,7 @@ export default function PlaygroundResultsArea({
             activeCarouselIndex={0}
             onSelectIndex={() => {}}
             referenceRunId={pinnedRuns[0].id}
+            carouselOffset={1}
           />
           <div className="text-xs font-medium text-foreground-muted flex items-center gap-1.5">
             <Pin className="size-3 text-primary" />
