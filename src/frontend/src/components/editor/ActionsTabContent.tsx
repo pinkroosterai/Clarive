@@ -69,6 +69,7 @@ export interface ActionsTabContentProps {
   isDeletingDraft?: boolean;
   onShare?: () => void;
   hasShareLink?: boolean;
+  hasEmptyTitle?: boolean;
 }
 
 export function ActionsTabContent({
@@ -97,6 +98,7 @@ export function ActionsTabContent({
   isDeletingDraft,
   onShare,
   hasShareLink,
+  hasEmptyTitle,
 }: ActionsTabContentProps) {
   const aiEnabled = useAiEnabled();
   const hasDraft = versions.some((v) => v.versionState === 'draft');
@@ -166,7 +168,7 @@ export function ActionsTabContent({
             <Button
               className="w-full gap-2"
               onClick={onSave}
-              disabled={(!isDirty && !showSaveSuccess) || isSaving}
+              disabled={(!isDirty && !showSaveSuccess) || isSaving || hasEmptyTitle}
             >
               <AnimatePresence mode="wait" initial={false}>
                 {showSaveSuccess ? (
@@ -197,6 +199,10 @@ export function ActionsTabContent({
             <kbd className="text-xs">Ctrl+S</kbd>
           </TooltipContent>
         </Tooltip>
+
+        {hasEmptyTitle && isDirty && (
+          <p className="text-xs text-destructive">Title is required</p>
+        )}
 
         {isDirty && (
           <AlertDialog>

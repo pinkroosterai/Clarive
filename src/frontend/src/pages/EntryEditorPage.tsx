@@ -121,9 +121,7 @@ const EntryEditorPage = () => {
   useEditorKeyboardShortcuts({
     isReadOnly,
     onSave: mutations.handleSave,
-    onPublish: () => {
-      if (hasDraft) mutations.handlePublish();
-    },
+    onPublish: handlePublishWithCheck,
     onUndo: editor.handleUndo,
     onRedo: editor.handleRedo,
   });
@@ -139,6 +137,18 @@ const EntryEditorPage = () => {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isAiRunningEarly]);
+
+  // ── Empty-content publish warning ──
+  const [showEmptyPublishWarning, setShowEmptyPublishWarning] = useState(false);
+  const handlePublishWithCheck = useCallback(() => {
+    if (!hasDraft) return;
+    const allEmpty = editor.localEntry?.prompts?.every((p) => !p.content?.trim());
+    if (allEmpty) {
+      setShowEmptyPublishWarning(true);
+    } else {
+      mutations.handlePublish();
+    }
+  }, [hasDraft, editor.localEntry, mutations]);
 
   // ── Favorite toggle ──
   const isFavorited = entryData?.isFavorited ?? false;
@@ -375,7 +385,7 @@ const EntryEditorPage = () => {
     onRedo: editor.handleRedo,
     canUndo: editor.canUndo,
     canRedo: editor.canRedo,
-    onPublish: mutations.handlePublish,
+    onPublish: handlePublishWithCheck,
     onEnhance: () => navigate(`/entry/${entryId}/enhance`),
     isSaving: mutations.saveMutation.isPending,
     isPublishing: mutations.publishMutation.isPending,
@@ -394,6 +404,7 @@ const EntryEditorPage = () => {
     onShare:
       !isReadOnly && currentUser?.role !== 'viewer' ? () => setShareDialogOpen(true) : undefined,
     hasShareLink: !!shareLinkQuery.data && !shareLinkQuery.error,
+    hasEmptyTitle: !localEntry.title?.trim(),
   } as const;
 
   const isAiRunning = mutations.isGeneratingSystemMessage || mutations.isDecomposing;
@@ -477,6 +488,29 @@ const EntryEditorPage = () => {
       </div>
 
       {dialogs}
+
+      {/* Empty-content publish warning */}
+      <AlertDialog open={showEmptyPublishWarning} onOpenChange={setShowEmptyPublishWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish empty entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This entry has no prompt content. Are you sure you want to publish it?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowEmptyPublishWarning(false);
+                mutations.handlePublish();
+              }}
+            >
+              Publish anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Navigation guard dialog */}
       <AlertDialog open={blocker.state === 'blocked'}>
