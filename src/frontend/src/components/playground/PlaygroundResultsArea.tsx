@@ -167,14 +167,14 @@ export default function PlaygroundResultsArea({
                 ) : (
                   <Sparkles className="size-3" />
                 )}
-                Fill with examples
+                {isFillingTemplateFields ? 'Generating...' : 'Fill with examples'}
               </Button>
             )}
           </div>
           <CollapsibleContent>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {templateFields.map((field) => {
-                const isEmpty = !fieldValues[field.name];
+                const isEmpty = field.name in fieldValues && !fieldValues[field.name];
                 return (
                   <div key={field.name} className="space-y-1">
                     <Label className="text-xs font-mono">{`{{${field.name}}}`}</Label>
