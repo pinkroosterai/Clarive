@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -45,6 +45,22 @@ const PlaygroundPage = () => {
 
   useEffect(() => {
     document.title = 'Clarive — Test Prompt';
+  }, []);
+
+  // The AppShell wraps pages in a div with `overflow-auto p-4`. The playground
+  // needs to fill the viewport without page-level scrolling, so we strip those
+  // classes on mount and restore them on unmount.
+  const wrapperRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const el = document.querySelector<HTMLElement>('.overflow-auto.p-4.animate-page-enter');
+    if (!el) return;
+    wrapperRef.current = el;
+    el.classList.remove('overflow-auto', 'p-4');
+    el.classList.add('overflow-hidden');
+    return () => {
+      el.classList.add('overflow-auto', 'p-4');
+      el.classList.remove('overflow-hidden');
+    };
   }, []);
 
   useEffect(() => {
@@ -322,7 +338,7 @@ const PlaygroundPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full -m-4">
+    <div className="flex flex-col h-full">
       {/* ── Top bar ── */}
       <PlaygroundToolbar
         entryId={entryId}
