@@ -52,8 +52,12 @@ export default function PlaygroundHistorySidebar({
   onClose,
 }: PlaygroundHistorySidebarProps) {
   const scrollTopRef = useRef<HTMLDivElement>(null);
+  const prevRunCountRef = useRef(testRuns.length);
   useEffect(() => {
-    scrollTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (testRuns.length > prevRunCountRef.current) {
+      scrollTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    prevRunCountRef.current = testRuns.length;
   }, [testRuns.length]);
 
   return (
