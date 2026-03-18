@@ -182,9 +182,7 @@ public static class PublicApiEndpoints
         var fields = request.Fields ?? new Dictionary<string, string>();
         var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
         if (errors.Count > 0)
-            return Results.Json(
-                new ErrorResponse(new("VALIDATION_ERROR", "Template field validation failed.", errors)),
-                statusCode: 422);
+            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Template field validation failed.", errors);
 
         // Render prompts
         var rendered = published.Prompts
