@@ -43,7 +43,20 @@ interface Prompt {
   content: string;
 }
 
+// Fixed order so score rows align across comparison columns
+const DIMENSION_ORDER = ['Accuracy', 'Helpfulness', 'Relevance', 'Coherence', 'Safety'];
+
 function JudgeScorePanel({ scores }: { scores: Evaluation }) {
+  const sortedDimensions = Object.entries(scores.dimensions).sort(([a], [b]) => {
+    const ai = DIMENSION_ORDER.indexOf(a);
+    const bi = DIMENSION_ORDER.indexOf(b);
+    // Known dimensions in canonical order, unknown ones at the end alphabetically
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b);
+  });
+
   return (
     <div className="mt-4 pt-3 border-t border-border-subtle space-y-2">
       <div className="flex items-center gap-2">
@@ -53,7 +66,7 @@ function JudgeScorePanel({ scores }: { scores: Evaluation }) {
         <span className="text-xs text-foreground-muted">Output Quality</span>
       </div>
       <div className="space-y-1.5">
-        {Object.entries(scores.dimensions).map(([dim, entry]) => {
+        {sortedDimensions.map(([dim, entry]) => {
           const { bar, text } = scoreColor(entry.score);
           return (
             <div key={dim} className="space-y-0.5">
