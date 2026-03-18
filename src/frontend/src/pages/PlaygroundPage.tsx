@@ -172,7 +172,13 @@ const PlaygroundPage = () => {
       prev.some((r) => r.id === run.id) ? removePinFromList(prev, run.id) : addPinToList(prev, run)
     );
   }, []);
+  const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
   const [isFillingTemplateFields, setIsFillingTemplateFields] = useState(false);
+
+  // Reset carousel index when pins change
+  useEffect(() => {
+    setActiveCarouselIndex(0);
+  }, [pinnedRuns.length]);
 
   // ── Queries ──
   const { data: enrichedModels = [], isError: modelsError } = useQuery({
@@ -368,6 +374,8 @@ const PlaygroundPage = () => {
           setFieldValues={setFieldValues}
           pinnedRuns={pinnedRuns}
           onUnpin={removePin}
+          activeCarouselIndex={activeCarouselIndex}
+          setActiveCarouselIndex={setActiveCarouselIndex}
           expandedStepInputs={expandedStepInputs}
           setExpandedStepInputs={setExpandedStepInputs}
           copiedIndex={copiedIndex}
