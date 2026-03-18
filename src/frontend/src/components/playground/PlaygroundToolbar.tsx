@@ -195,8 +195,14 @@ export default function PlaygroundToolbar({
                 type="number"
                 value={maxTokens}
                 onChange={(e) =>
-                  setMaxTokens(Number(e.target.value) || PLAYGROUND_DEFAULTS.MAX_TOKENS)
+                  setMaxTokens(
+                    Math.max(1, Math.min(Number(e.target.value) || PLAYGROUND_DEFAULTS.MAX_TOKENS, 128000))
+                  )
                 }
+                onBlur={(e) => {
+                  if (!e.target.value || Number(e.target.value) < 1)
+                    setMaxTokens(PLAYGROUND_DEFAULTS.MAX_TOKENS);
+                }}
                 className="w-20 h-8 text-xs"
                 min={1}
               />
@@ -209,6 +215,8 @@ export default function PlaygroundToolbar({
             size="sm"
             onClick={() => setShowHistory((p) => !p)}
             className={showHistory ? 'bg-elevated' : ''}
+            title="Test History"
+            aria-label="Toggle test history"
           >
             <History className="size-4" />
           </Button>
