@@ -8,6 +8,7 @@ import {
   Loader2,
   Pin,
   PinOff,
+  X,
 } from 'lucide-react';
 
 import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
@@ -32,6 +33,7 @@ interface PlaygroundHistorySidebarProps {
   copiedIndex: number | null;
   handleRerun: (run: TestRunResponse) => void;
   handleCopy: (text: string, index: number) => Promise<void>;
+  onClose: () => void;
 }
 
 export default function PlaygroundHistorySidebar({
@@ -46,6 +48,7 @@ export default function PlaygroundHistorySidebar({
   copiedIndex,
   handleRerun,
   handleCopy,
+  onClose,
 }: PlaygroundHistorySidebarProps) {
   return (
     <div className="w-full h-full border-l border-border-subtle bg-surface overflow-hidden flex flex-col shrink-0">
@@ -53,6 +56,13 @@ export default function PlaygroundHistorySidebar({
         <Clock className="size-4 text-foreground-muted" />
         <span className="text-sm font-medium">History</span>
         <span className="text-xs text-foreground-muted">({testRuns.length})</span>
+        <button
+          onClick={onClose}
+          className="ml-auto p-1 rounded hover:bg-elevated text-foreground-muted hover:text-foreground transition-colors"
+          aria-label="Close history"
+        >
+          <X className="size-4" />
+        </button>
       </div>
       <ScrollArea className="flex-1">
         {isStreaming && (

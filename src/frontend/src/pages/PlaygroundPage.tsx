@@ -408,6 +408,7 @@ const PlaygroundPage = () => {
                 copiedIndex={copiedIndex}
                 handleRerun={handleRerun}
                 handleCopy={handleCopy}
+                onClose={() => setShowHistory(false)}
               />
             </div>
           </>

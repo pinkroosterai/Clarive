@@ -102,7 +102,9 @@ export default function PlaygroundToolbar({
           >
             {/* Model */}
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">Model</Label>
+              <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">
+                Model
+              </Label>
               {modelsError ? (
                 <span className="text-xs text-destructive">Failed to load models</span>
               ) : (
@@ -139,7 +141,9 @@ export default function PlaygroundToolbar({
             {/* Temperature (hidden for reasoning models) */}
             {!selectedModel?.isReasoning && (
               <div className="flex items-center gap-2">
-                <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">Temp</Label>
+                <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">
+                  Temp
+                </Label>
                 <Slider
                   value={[temperature]}
                   onValueChange={([v]) => setTemperature(v)}
@@ -158,7 +162,9 @@ export default function PlaygroundToolbar({
             {selectedModel?.isReasoning && (
               <>
                 <div className="flex items-center gap-2">
-                  <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">Reasoning</Label>
+                  <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">
+                    Reasoning
+                  </Label>
                   <Select value={reasoningEffort} onValueChange={setReasoningEffort}>
                     <SelectTrigger className="w-28 h-8 text-xs">
                       <SelectValue />
@@ -180,7 +186,9 @@ export default function PlaygroundToolbar({
                   </Select>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-foreground-muted hidden sm:block">Show thinking</Label>
+                  <Label className="text-xs text-foreground-muted hidden sm:block">
+                    Show thinking
+                  </Label>
                   <input
                     type="checkbox"
                     checked={showReasoning}
@@ -193,13 +201,18 @@ export default function PlaygroundToolbar({
 
             {/* Max tokens */}
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">Tokens</Label>
+              <Label className="text-xs text-foreground-muted shrink-0 hidden sm:block">
+                Tokens
+              </Label>
               <Input
                 type="number"
                 value={maxTokens}
                 onChange={(e) =>
                   setMaxTokens(
-                    Math.max(1, Math.min(Number(e.target.value) || PLAYGROUND_DEFAULTS.MAX_TOKENS, 128000))
+                    Math.max(
+                      1,
+                      Math.min(Number(e.target.value) || PLAYGROUND_DEFAULTS.MAX_TOKENS, 128000)
+                    )
                   )
                 }
                 onBlur={(e) => {
@@ -212,18 +225,6 @@ export default function PlaygroundToolbar({
             </div>
           </div>
 
-          {/* History toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowHistory((p) => !p)}
-            className={showHistory ? 'bg-elevated' : ''}
-            title="Test History"
-            aria-label="Toggle test history"
-          >
-            <History className="size-4" />
-          </Button>
-
           {/* Run / Stop */}
           {isStreaming ? (
             <Button size="sm" variant="destructive" onClick={handleAbort} title="Stop (Esc)">
@@ -235,12 +236,26 @@ export default function PlaygroundToolbar({
               size="sm"
               onClick={handleRun}
               disabled={!model || hasValidationErrors}
-              title={hasValidationErrors ? 'Fill all template fields to run' : `Run (${modKey}+Enter)`}
+              title={
+                hasValidationErrors ? 'Fill all template fields to run' : `Run (${modKey}+Enter)`
+              }
             >
               <Play className="size-3 mr-1.5" />
               Run
             </Button>
           )}
+
+          {/* History toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowHistory((p) => !p)}
+            className={showHistory ? 'bg-elevated' : ''}
+            title="Test History"
+            aria-label="Toggle test history"
+          >
+            <History className="size-4" />
+          </Button>
         </div>
       </div>
     </div>
