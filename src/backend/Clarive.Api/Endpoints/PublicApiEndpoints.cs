@@ -32,7 +32,7 @@ public static class PublicApiEndpoints
         group.MapPost("/entries/{entryId:guid}/generate", HandleGenerate);
 
         // Tags
-        group.MapGet("/tags", HandleListTags);
+        group.MapGet("/tags", HandleListTags).AddEndpointFilter(new CacheControlFilter(300));
 
         // OpenAPI spec
         group.MapGet("/openapi.json", HandleOpenApiSpec).ExcludeFromDescription();
@@ -118,6 +118,7 @@ public static class PublicApiEndpoints
         HttpContext ctx,
         IEntryService entryService,
         ITagRepository tagRepo,
+        TenantCacheService cache,
         IAuditLogger auditLogger,
         CancellationToken ct)
     {
@@ -212,12 +213,19 @@ public static class PublicApiEndpoints
     private static async Task<IResult> HandleListTags(
         HttpContext ctx,
         ITagRepository tagRepo,
+        TenantCacheService cache,
         CancellationToken ct)
     {
         var (claims, claimsError) = GetApiKeyClaims(ctx);
         if (claims is null) return claimsError!;
 
-        var tags = await tagRepo.GetAllWithCountsAsync(claims.TenantId, ct);
+        var tags = await cache.GetOrCreateAsync(
+            TenantCacheKeys.WorkspaceTagsKey,
+            claims.TenantId,
+            _ => tagRepo.GetAllWithCountsAsync(claims.TenantId, ct),
+            TenantCacheKeys.WorkspaceTagsTtl,
+            ct);
+
         var response = tags.Select(t => new { name = t.TagName, entryCount = t.EntryCount }).ToList();
         return Results.Ok(response);
     }
