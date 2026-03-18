@@ -79,7 +79,7 @@ export default function PlaygroundToolbar({
   // Model selector — shared between desktop inline and mobile popover
   const modelSelector = (
     <div className="flex items-center gap-2">
-      <Label className="text-xs text-foreground-muted shrink-0 hidden md:block">Model</Label>
+      <Label className="text-xs text-foreground-muted shrink-0 hidden lg:block">Model</Label>
       {modelsError ? (
         <span className="text-xs text-destructive">Failed to load models</span>
       ) : (
@@ -231,18 +231,18 @@ export default function PlaygroundToolbar({
             {modelSelector}
           </div>
 
-          {/* Desktop inline parameter controls (md+) */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Desktop inline parameter controls (lg+) */}
+          <div className="hidden lg:flex items-center gap-3">
             {parameterControls(false)}
           </div>
 
-          {/* Mobile/tablet parameter popover (<md) */}
+          {/* Mobile/tablet parameter popover (<lg) */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden"
+                className="lg:hidden"
                 aria-label="Model settings"
               >
                 <SlidersHorizontal className="size-4" />
