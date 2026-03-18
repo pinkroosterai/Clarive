@@ -218,9 +218,6 @@ export function MarkdownEditor({
         className
       )}
       onClick={handleEditorClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') handleEditorClick();
-      }}
     >
       {templateHighlight && editable && (
         <div className="flex justify-end px-2 pt-1.5">
