@@ -19,7 +19,7 @@ public static class PublicApiEndpoints
                 policy.AuthenticationSchemes = [ApiKeyAuthHandler.SchemeName];
                 policy.RequireAuthenticatedUser();
             })
-            .RequireRateLimiting("auth");
+            .DisableRateLimiting(); // Rate limiting handled by PublicApiRateLimitMiddleware
 
         group.MapGet("/{entryId:guid}", HandleGet);
         group.MapPost("/{entryId:guid}/generate", HandleGenerate);

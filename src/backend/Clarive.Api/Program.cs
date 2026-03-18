@@ -458,6 +458,7 @@ else
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<Clarive.Api.Middleware.PublicApiRateLimitMiddleware>();
 app.UseRateLimiter();
 
 // ── Health Checks ──
