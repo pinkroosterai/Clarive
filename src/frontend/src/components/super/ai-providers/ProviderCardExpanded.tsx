@@ -1,9 +1,10 @@
-import { Brain, ChevronsUpDown, Loader2, Lock, LockOpen, Plus, RefreshCw, X } from 'lucide-react';
+import { Braces, Brain, ChevronsUpDown, Loader2, Lock, LockOpen, Plus, RefreshCw, SquareFunction, X } from 'lucide-react';
+
+import ModelCapabilityBadges from '../ai-config/ModelCapabilityBadges';
 import React, { useMemo, useState } from 'react';
 
 import { useDebouncedUpdate } from './useDebouncedUpdate';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -125,22 +126,15 @@ export default function ProviderCardExpanded({
                       >
                         <Plus className="mr-2 size-3.5 text-foreground-muted" />
                         <span className="flex-1">{m.modelId}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleType(m.modelId, m.isReasoning);
-                          }}
-                          className="ml-2 shrink-0"
-                          title="Click to toggle model type"
-                        >
-                          <Badge
-                            variant={m.isReasoning ? 'default' : 'outline'}
-                            className="text-[10px] px-1.5 py-0 cursor-pointer"
-                          >
-                            {m.isReasoning ? '🧠 Reasoning' : 'Standard'}
-                          </Badge>
-                        </button>
+                        <ModelCapabilityBadges
+                          isReasoning={m.isReasoning}
+                          supportsFunctionCalling={m.supportsFunctionCalling}
+                          supportsResponseSchema={m.supportsResponseSchema}
+                          maxInputTokens={m.maxInputTokens}
+                          maxOutputTokens={m.maxOutputTokens}
+                          inputCostPerMillion={m.inputCostPerMillion}
+                          outputCostPerMillion={m.outputCostPerMillion}
+                        />
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -193,14 +187,14 @@ export default function ProviderCardExpanded({
                 <tr className="border-b border-border-subtle">
                   <th className="text-left p-2 font-medium">Model ID</th>
                   <th className="text-left p-2 font-medium">Display Name</th>
-                  <th className="text-center p-2 font-medium" title="Reasoning model toggle">
+                  <th className="text-center p-2 font-medium" title="Reasoning model">
                     <Brain className="size-3.5 mx-auto" />
                   </th>
                   <th className="text-center p-2 font-medium" title="Supports function calling">
-                    Fn
+                    <SquareFunction className="size-3.5 mx-auto" />
                   </th>
                   <th className="text-center p-2 font-medium" title="Supports response schema">
-                    Schema
+                    <Braces className="size-3.5 mx-auto" />
                   </th>
                   <th className="text-center p-2 font-medium" title="Max input tokens">
                     Max In

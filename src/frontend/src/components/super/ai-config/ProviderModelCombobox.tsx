@@ -2,6 +2,7 @@ import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { groupByProvider, type ProviderModel } from './aiConfigUtils';
+import ModelCapabilityBadges from './ModelCapabilityBadges';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -90,7 +91,13 @@ export default function ProviderModelCombobox({
                         <Check
                           className={cn('mr-2 size-4', isSelected ? 'opacity-100' : 'opacity-0')}
                         />
-                        {m.modelId}
+                        <span className="flex-1">{m.modelId}</span>
+                        <ModelCapabilityBadges
+                          isReasoning={m.isReasoning}
+                          supportsFunctionCalling={m.supportsFunctionCalling}
+                          supportsResponseSchema={m.supportsResponseSchema}
+                          compact
+                        />
                       </CommandItem>
                     );
                   })}

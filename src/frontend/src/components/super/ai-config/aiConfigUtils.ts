@@ -5,8 +5,13 @@ export interface ProviderModel {
   providerId: string;
   providerName: string;
   modelId: string;
+  isReasoning: boolean;
   supportsFunctionCalling: boolean;
   supportsResponseSchema: boolean;
+  maxInputTokens: number | null;
+  maxOutputTokens: number | null;
+  inputCostPerMillion: number | null;
+  outputCostPerMillion: number | null;
 }
 
 export function findSetting(settings: ConfigSetting[], key: string): ConfigSetting | undefined {
@@ -24,8 +29,13 @@ export function buildProviderModels(providers: AiProviderResponse[] | undefined)
           providerId: p.id,
           providerName: p.name,
           modelId: m.modelId,
+          isReasoning: m.isReasoning,
           supportsFunctionCalling: m.supportsFunctionCalling,
           supportsResponseSchema: m.supportsResponseSchema,
+          maxInputTokens: m.maxInputTokens,
+          maxOutputTokens: m.maxOutputTokens,
+          inputCostPerMillion: m.inputCostPerMillion,
+          outputCostPerMillion: m.outputCostPerMillion,
         }))
     );
 }

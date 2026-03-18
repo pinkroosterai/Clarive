@@ -116,10 +116,20 @@ public class AiProviderService(
             var modelClient = client.GetOpenAIModelClient();
             var response = await modelClient.GetModelsAsync(cts.Token);
 
-            var models = response.Value
-                .Select(m => new FetchedModelItem(m.Id, ReasoningModelDetector.IsReasoningModel(m.Id)))
-                .OrderBy(m => m.ModelId, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            var models = new List<FetchedModelItem>();
+            foreach (var m in response.Value.OrderBy(m => m.Id, StringComparer.OrdinalIgnoreCase))
+            {
+                var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, m.Id, ct);
+                models.Add(new FetchedModelItem(
+                    m.Id,
+                    info?.IsReasoning == true || ReasoningModelDetector.IsReasoningModel(m.Id),
+                    info?.SupportsFunctionCalling == true,
+                    info?.SupportsResponseSchema == true,
+                    info?.MaxInputTokens,
+                    info?.MaxOutputTokens,
+                    info?.InputCostPerMillion,
+                    info?.OutputCostPerMillion));
+            }
 
             return new FetchedModelsResponse(models);
         }

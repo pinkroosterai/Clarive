@@ -104,6 +104,12 @@ export async function deleteProvider(id: string): Promise<void> {
 export interface FetchedModelItem {
   modelId: string;
   isReasoning: boolean;
+  supportsFunctionCalling: boolean;
+  supportsResponseSchema: boolean;
+  maxInputTokens: number | null;
+  maxOutputTokens: number | null;
+  inputCostPerMillion: number | null;
+  outputCostPerMillion: number | null;
 }
 
 export async function fetchModels(id: string): Promise<{ models: FetchedModelItem[] }> {

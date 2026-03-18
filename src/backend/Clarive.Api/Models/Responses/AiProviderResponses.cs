@@ -32,7 +32,16 @@ public record AiProviderModelResponse(
     int SortOrder
 );
 
-public record FetchedModelItem(string ModelId, bool IsReasoning);
+public record FetchedModelItem(
+    string ModelId,
+    bool IsReasoning,
+    bool SupportsFunctionCalling,
+    bool SupportsResponseSchema,
+    long? MaxInputTokens,
+    long? MaxOutputTokens,
+    decimal? InputCostPerMillion,
+    decimal? OutputCostPerMillion
+);
 
 public record FetchedModelsResponse(List<FetchedModelItem> Models);
 
