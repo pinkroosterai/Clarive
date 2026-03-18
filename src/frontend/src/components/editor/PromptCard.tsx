@@ -123,7 +123,7 @@ export const PromptCard = memo(function PromptCard({
               )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="size-7" onClick={handleCopy}>
+                  <Button variant="ghost" size="icon" className="size-8" onClick={handleCopy}>
                     <Copy className="size-3.5" />
                   </Button>
                 </TooltipTrigger>
@@ -163,7 +163,7 @@ export const PromptCard = memo(function PromptCard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7"
+                  className="size-8"
                   disabled={index === 1}
                   onClick={onMoveUp}
                 >
@@ -174,7 +174,7 @@ export const PromptCard = memo(function PromptCard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7"
+                  className="size-8"
                   disabled={isLast}
                   onClick={onMoveDown}
                 >

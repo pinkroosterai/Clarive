@@ -357,7 +357,7 @@ const EntryEditorPage = () => {
               onChange={(e) => editor.handleChange({ title: e.target.value })}
               disabled={isReadOnly}
               placeholder="Entry title"
-              className="text-2xl font-bold h-14 border-transparent bg-transparent px-0 shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-primary/40 rounded-none transition-colors"
+              className="text-xl md:text-2xl font-bold h-12 md:h-14 border-transparent bg-transparent px-0 shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-primary/40 rounded-none transition-colors"
             />
           </div>
           <Tooltip>
@@ -458,7 +458,7 @@ const EntryEditorPage = () => {
   // ── Mobile layout ──
   if (isMobile) {
     return (
-      <div className="p-4">
+      <div className="p-5">
         <EditorAiOverlay
           isVisible={isAiRunning}
           label={aiLabel}
