@@ -139,7 +139,14 @@ const EntryEditorPage = () => {
   });
 
   // ── Navigation guard for unsaved changes ──
-  const blocker = useBlocker(editor.isDirty);
+  const isDirtyForBlocker = editor.isDirty;
+  const blocker = useBlocker(
+    useCallback(
+      ({ currentLocation, nextLocation }) =>
+        isDirtyForBlocker && currentLocation.pathname !== nextLocation.pathname,
+      [isDirtyForBlocker]
+    )
+  );
 
   // Warn before closing/refreshing during AI operations
   const isAiRunningEarly = mutations.isGeneratingSystemMessage || mutations.isDecomposing;
