@@ -31,6 +31,8 @@ export interface TestRunResponse {
   outputTokens: number | null;
   createdAt: string;
   judgeScores?: Evaluation | null;
+  renderedSystemMessage?: string | null;
+  renderedPrompts?: TestRunPromptResponse[] | null;
 }
 
 export interface Evaluation {
@@ -114,13 +116,9 @@ export async function getEnrichedModels(): Promise<EnrichedModel[]> {
   return res.models;
 }
 
-export async function fillTemplateFields(
-  entryId: string
-): Promise<Record<string, string>> {
-  const res = await api.post<{ values: Record<string, string> }>(
-    '/api/ai/fill-template-fields',
-    { entryId }
-  );
+export async function fillTemplateFields(entryId: string): Promise<Record<string, string>> {
+  const res = await api.post<{ values: Record<string, string> }>('/api/ai/fill-template-fields', {
+    entryId,
+  });
   return res.values;
 }
-

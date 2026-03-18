@@ -83,6 +83,9 @@ public class PlaygroundService(
         long? totalInputTokens = null;
         long? totalOutputTokens = null;
 
+        var renderedPromptTexts = new List<TestRunPromptResponse>();
+        string? renderedSystemMessage = null;
+
         var sw = Stopwatch.StartNew();
         try
         {
@@ -113,10 +116,10 @@ public class PlaygroundService(
             var systemMessage = version.SystemMessage;
             if (!string.IsNullOrEmpty(systemMessage))
             {
-                systemMessage = allFields.Count > 0
+                renderedSystemMessage = allFields.Count > 0
                     ? TemplateParser.Render(systemMessage, fields)
                     : systemMessage;
-                conversationMessages.Add(new ChatMessage(ChatRole.System, systemMessage));
+                conversationMessages.Add(new ChatMessage(ChatRole.System, renderedSystemMessage));
             }
 
             for (var i = 0; i < prompts.Count; i++)
@@ -126,6 +129,7 @@ public class PlaygroundService(
                     ? TemplateParser.Render(prompt.Content, fields)
                     : prompt.Content;
 
+                renderedPromptTexts.Add(new TestRunPromptResponse(i, content));
                 conversationMessages.Add(new ChatMessage(ChatRole.User, content));
 
                 var responseText = new StringBuilder();
@@ -224,6 +228,8 @@ public class PlaygroundService(
                 ? JsonSerializer.Serialize(fields, JsonOptions)
                 : null,
             Responses = JsonSerializer.Serialize(responses, JsonOptions),
+            RenderedSystemMessage = renderedSystemMessage,
+            RenderedPrompts = JsonSerializer.Serialize(renderedPromptTexts, JsonOptions),
             CreatedAt = DateTime.UtcNow
         };
 

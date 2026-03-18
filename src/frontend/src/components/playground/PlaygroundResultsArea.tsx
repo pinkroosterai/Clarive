@@ -11,7 +11,7 @@ import {
   PinOff,
   Sparkles,
 } from 'lucide-react';
-import { useEffect, type RefObject } from 'react';
+import { useState, useEffect, type RefObject } from 'react';
 
 import CopyButton from './CopyButton';
 import ReasoningBlock from './ReasoningBlock';
@@ -146,6 +146,47 @@ function ScoreBadgeBar({
   );
 }
 
+// ── Collapsible prompt/system message display ──
+
+function PromptSection({
+  systemMessage,
+  renderedPrompts,
+}: {
+  systemMessage?: string | null;
+  renderedPrompts?: TestRunPromptResponse[] | null;
+}) {
+  if (!systemMessage && (!renderedPrompts || renderedPrompts.length === 0)) return null;
+  return (
+    <div className="space-y-2 mb-3">
+      {systemMessage && (
+        <div className="bg-elevated/50 border-l-2 border-l-primary rounded-r-md p-3">
+          <div className="text-[10px] font-semibold text-primary mb-1 uppercase tracking-wider">
+            System
+          </div>
+          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted">
+            {systemMessage}
+          </div>
+        </div>
+      )}
+      {renderedPrompts?.map((p) => (
+        <div
+          key={p.promptIndex}
+          className="bg-elevated/30 rounded-md p-3 border border-border-subtle"
+        >
+          {(renderedPrompts.length > 1 || systemMessage) && (
+            <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
+              Prompt {p.promptIndex + 1}
+            </div>
+          )}
+          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto">
+            {p.content}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface PlaygroundResultsAreaProps {
   prompts: Prompt[];
   isChain: boolean;
@@ -223,6 +264,7 @@ export default function PlaygroundResultsArea({
   isFillingTemplateFields,
 }: PlaygroundResultsAreaProps) {
   const hasPins = pinnedRuns.length > 0;
+  const [showPrompts, setShowPrompts] = useState(false);
 
   // ── Carousel logic: reference column + navigable carousel ──
   // When current run exists: left = current run, carousel = all pins
@@ -430,6 +472,48 @@ export default function PlaygroundResultsArea({
             </div>
           </div>
 
+          {/* Show prompt toggle */}
+          {(activeRun.renderedPrompts ||
+            activeRun.renderedSystemMessage ||
+            referenceRun?.renderedPrompts ||
+            referenceRun?.renderedSystemMessage ||
+            hasCurrentRun) && (
+            <button
+              onClick={() => setShowPrompts((p) => !p)}
+              className="text-xs text-foreground-muted hover:text-foreground transition-colors"
+            >
+              {showPrompts ? 'Hide prompts' : 'Show prompts'}
+            </button>
+          )}
+
+          {/* Collapsible prompt sections */}
+          {showPrompts && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                {hasCurrentRun ? (
+                  <PromptSection
+                    systemMessage={null}
+                    renderedPrompts={prompts.map((p, i) => ({
+                      promptIndex: i,
+                      content: renderTemplate(p.content, fieldValues),
+                    }))}
+                  />
+                ) : (
+                  <PromptSection
+                    systemMessage={referenceRun?.renderedSystemMessage}
+                    renderedPrompts={referenceRun?.renderedPrompts}
+                  />
+                )}
+              </div>
+              <div className="animate-fade-in">
+                <PromptSection
+                  systemMessage={activeRun.renderedSystemMessage}
+                  renderedPrompts={activeRun.renderedPrompts}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Prompt response rows */}
           {prompts.map((_p, i) => {
             // Left column: current run response or reference pin response
@@ -541,6 +625,20 @@ export default function PlaygroundResultsArea({
               </Button>
             </span>
           </div>
+          {(pinnedRuns[0].renderedPrompts || pinnedRuns[0].renderedSystemMessage) && (
+            <button
+              onClick={() => setShowPrompts((p) => !p)}
+              className="text-xs text-foreground-muted hover:text-foreground transition-colors"
+            >
+              {showPrompts ? 'Hide prompts' : 'Show prompts'}
+            </button>
+          )}
+          {showPrompts && (
+            <PromptSection
+              systemMessage={pinnedRuns[0].renderedSystemMessage}
+              renderedPrompts={pinnedRuns[0].renderedPrompts}
+            />
+          )}
           {prompts.map((_p, i) => {
             const response = pinnedRuns[0].responses.find(
               (r: TestRunPromptResponse) => r.promptIndex === i

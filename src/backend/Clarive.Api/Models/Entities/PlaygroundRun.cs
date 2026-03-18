@@ -21,6 +21,12 @@ public class PlaygroundRun : ITenantScoped
     [Column(TypeName = "jsonb")]
     public string? JudgeScores { get; set; }
 
+    [Column(TypeName = "jsonb")]
+    public string? RenderedSystemMessage { get; set; }
+
+    [Column(TypeName = "jsonb")]
+    public string? RenderedPrompts { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public PromptEntry Entry { get; set; } = null!;

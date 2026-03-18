@@ -12,7 +12,9 @@ public record TestRunResponse(
     long? InputTokens,
     long? OutputTokens,
     DateTime CreatedAt,
-    OutputEvaluation? JudgeScores = null
+    OutputEvaluation? JudgeScores = null,
+    string? RenderedSystemMessage = null,
+    List<TestRunPromptResponse>? RenderedPrompts = null
 );
 
 public record TestRunPromptResponse(

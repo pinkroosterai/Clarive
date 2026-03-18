@@ -51,6 +51,10 @@ public class PlaygroundRunService(IPlaygroundRunRepository runRepo) : IPlaygroun
             r.CreatedAt,
             !string.IsNullOrEmpty(r.JudgeScores)
                 ? JsonSerializer.Deserialize<OutputEvaluation>(r.JudgeScores, JsonOptions)
+                : null,
+            r.RenderedSystemMessage,
+            !string.IsNullOrEmpty(r.RenderedPrompts)
+                ? JsonSerializer.Deserialize<List<TestRunPromptResponse>>(r.RenderedPrompts, JsonOptions)
                 : null
         )).ToList();
     }
