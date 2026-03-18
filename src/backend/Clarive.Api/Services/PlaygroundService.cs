@@ -66,11 +66,11 @@ public class PlaygroundService(
                     string.Join("; ", errors.Select(e => $"{e.Key}: {e.Value}")));
         }
 
-        // Resolve model
+        // Resolve model — fall back to Generation model if none specified
         var settings = aiSettings.CurrentValue;
         var model = !string.IsNullOrWhiteSpace(request.Model)
             ? request.Model
-            : settings.DefaultModel;
+            : settings.Generation.Model;
 
         var resolvedResult = await modelResolution.ResolveProviderForModelAsync(model, ct);
         if (resolvedResult.IsError)
@@ -283,11 +283,11 @@ public class PlaygroundService(
             // Log usage
             var inputTokens = response.Usage?.InputTokenCount ?? 0;
             var outputTokens = response.Usage?.OutputTokenCount ?? 0;
-            var providerName = agentFactory.DefaultProviderName ?? "unknown";
+            var (modelId, providerName) = agentFactory.GetModelInfo(AiActionType.PlaygroundJudge);
 
             await usageLogger.LogAsync(
                 tenantId, userId, AiActionType.PlaygroundJudge,
-                agentFactory.DefaultModelId ?? "unknown", providerName,
+                modelId ?? "unknown", providerName ?? "unknown",
                 inputTokens, outputTokens,
                 sw.ElapsedMilliseconds, entryId, ct);
 

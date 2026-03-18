@@ -1,6 +1,7 @@
 using System.ClientModel;
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Microsoft.Agents.AI;
@@ -13,26 +14,33 @@ namespace Clarive.Api.Services.Agents;
 
 /// <summary>
 /// Creates AIAgent instances backed by OpenAI-compatible models.
-/// Singleton lifetime — holds the OpenAI clients and hot-reloads on config change.
+/// Singleton lifetime — holds per-action OpenAI clients and hot-reloads on config change.
 /// Resolves API credentials from AI providers in the database.
 /// </summary>
 public class OpenAIAgentFactory : IAgentFactory, IDisposable
 {
+    internal static readonly AiActionType[] ConfigurableActions =
+    [
+        AiActionType.Generation,
+        AiActionType.Evaluation,
+        AiActionType.Clarification,
+        AiActionType.SystemMessage,
+        AiActionType.Decomposition,
+        AiActionType.FillTemplateFields,
+        AiActionType.PlaygroundJudge
+    ];
+
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<OpenAIAgentFactory> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IEncryptionService _encryption;
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly IDisposable? _changeSubscription;
+    private readonly Dictionary<AiActionType, IChatClient> _actionClients = new();
+    private readonly Dictionary<AiActionType, (string ModelId, string ProviderName)> _actionModelInfo = new();
 
     private OpenAIClient? _openAiClient;
-    private IChatClient? _premiumClient;
-    private IChatClient? _defaultClient;
     private bool _isConfigured;
-    private string? _defaultModelId;
-    private string? _defaultProviderName;
-    private string? _premiumModelId;
-    private string? _premiumProviderName;
 
     public bool IsConfigured
     {
@@ -44,10 +52,17 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         }
     }
 
-    public string? DefaultModelId => _defaultModelId;
-    public string? DefaultProviderName => _defaultProviderName;
-    public string? PremiumModelId => _premiumModelId;
-    public string? PremiumProviderName => _premiumProviderName;
+    public (string? ModelId, string? ProviderName) GetModelInfo(AiActionType actionType)
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            return _actionModelInfo.TryGetValue(actionType, out var info)
+                ? info
+                : (null, null);
+        }
+        finally { _lock.ExitReadLock(); }
+    }
 
     public event Action? OnReconfigured;
 
@@ -79,13 +94,14 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         try
         {
             EnsureConfigured();
+            var client = _actionClients[AiActionType.Generation];
 
             if (tools is { Count: > 0 })
             {
                 var reporter = new ToolProgressReporter();
                 var handler = new TavilyToolProgressHandler(reporter);
 
-                var pipeline = new ChatClientBuilder(_premiumClient!)
+                var pipeline = new ChatClientBuilder(client)
                     .Use(innerClient =>
                     {
                         var eefic = new EventEmittingFunctionInvokingChatClient(
@@ -105,7 +121,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                 return (agent, reporter);
             }
 
-            var standardAgent = _premiumClient!.AsAIAgent(
+            var standardAgent = client.AsAIAgent(
                 instructions: AgentInstructions.BuildGeneration(config),
                 name: "PromptGenerator",
                 loggerFactory: _loggerFactory);
@@ -116,30 +132,30 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     }
 
     public AIAgent CreateEvaluationAgent(GenerationConfig config)
-        => CreateDefaultAgent(AgentInstructions.BuildEvaluation(config), "PromptEvaluator");
+        => CreateActionAgent(AiActionType.Evaluation, AgentInstructions.BuildEvaluation(config), "PromptEvaluator");
 
     public AIAgent CreateClarificationAgent()
-        => CreateDefaultAgent(AgentInstructions.Clarification, "PromptClarifier");
+        => CreateActionAgent(AiActionType.Clarification, AgentInstructions.Clarification, "PromptClarifier");
 
     public AIAgent CreateSystemMessageAgent()
-        => CreateDefaultAgent(AgentInstructions.SystemMessage, "SystemMessageGenerator");
+        => CreateActionAgent(AiActionType.SystemMessage, AgentInstructions.SystemMessage, "SystemMessageGenerator");
 
     public AIAgent CreateDecomposeAgent()
-        => CreateDefaultAgent(AgentInstructions.Decompose, "PromptDecomposer");
+        => CreateActionAgent(AiActionType.Decomposition, AgentInstructions.Decompose, "PromptDecomposer");
 
     public AIAgent CreateFillTemplateFieldsAgent()
-        => CreateDefaultAgent(AgentInstructions.FillTemplateFields, "TemplateFieldFiller");
+        => CreateActionAgent(AiActionType.FillTemplateFields, AgentInstructions.FillTemplateFields, "TemplateFieldFiller");
 
     public AIAgent CreatePlaygroundJudgeAgent()
-        => CreateDefaultAgent(AgentInstructions.PlaygroundJudge, "PlaygroundJudge");
+        => CreateActionAgent(AiActionType.PlaygroundJudge, AgentInstructions.PlaygroundJudge, "PlaygroundJudge");
 
-    private ChatClientAgent CreateDefaultAgent(string instructions, string name)
+    private ChatClientAgent CreateActionAgent(AiActionType actionType, string instructions, string name)
     {
         _lock.EnterReadLock();
         try
         {
             EnsureConfigured();
-            return _defaultClient!.AsAIAgent(
+            return _actionClients[actionType].AsAIAgent(
                 instructions: instructions,
                 name: name,
                 loggerFactory: _loggerFactory);
@@ -161,31 +177,18 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
     private async Task ReinitializeClientsAsync(AiSettings settings)
     {
-        if (string.IsNullOrWhiteSpace(settings.DefaultModel) ||
-            string.IsNullOrWhiteSpace(settings.PremiumModel))
+        // Check all 7 actions have models configured
+        foreach (var action in ConfigurableActions)
         {
-            ResetClients();
-            _logger.LogWarning("AI not configured — Default or Premium model not set");
-            return;
+            var config = settings.GetActionConfig(action);
+            if (config is null || string.IsNullOrWhiteSpace(config.Model))
+            {
+                ResetClients();
+                _logger.LogWarning("AI not configured — {Action} model not set", action);
+                return;
+            }
         }
 
-        var resolved = await ResolveProvidersAsync(settings);
-        if (resolved is null)
-            return;
-
-        var (defaultResolved, premiumResolved) = resolved.Value;
-        SwapClients(settings, defaultResolved, premiumResolved);
-
-        _logger.LogInformation(
-            "AI clients initialized (default: {Default} via {DefaultProvider}, premium: {Premium} via {PremiumProvider})",
-            settings.DefaultModel, defaultResolved.ProviderName,
-            settings.PremiumModel, premiumResolved.ProviderName);
-
-        OnReconfigured?.Invoke();
-    }
-
-    private async Task<(ResolvedProvider Default, ResolvedProvider Premium)?> ResolveProvidersAsync(AiSettings settings)
-    {
         List<AiProvider> providers;
         try
         {
@@ -195,56 +198,82 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         {
             ResetClients();
             _logger.LogWarning(ex, "Failed to load AI providers — AI features unavailable");
-            return null;
+            return;
         }
 
-        var defaultResolved = ResolveProviderForModel(providers, settings.DefaultModel, settings.DefaultModelProviderId);
-        var premiumResolved = ResolveProviderForModel(providers, settings.PremiumModel, settings.PremiumModelProviderId);
-
-        if (defaultResolved is null || premiumResolved is null)
+        // Resolve providers for all actions
+        var resolvedActions = new Dictionary<AiActionType, (ActionAiConfig Config, ResolvedProvider Provider)>();
+        foreach (var action in ConfigurableActions)
         {
-            ResetClients();
-            _logger.LogWarning("AI not configured — no active provider found for {Missing} model",
-                defaultResolved is null ? "default" : "premium");
-            return null;
+            var config = settings.GetActionConfig(action)!;
+            var resolved = ResolveProviderForModel(providers, config.Model, config.ProviderId);
+            if (resolved is null)
+            {
+                ResetClients();
+                _logger.LogWarning("AI not configured — no active provider found for {Action} model ({Model})",
+                    action, config.Model);
+                return;
+            }
+            resolvedActions[action] = (config, resolved);
         }
 
-        return (defaultResolved, premiumResolved);
+        SwapClients(resolvedActions);
+
+        var genInfo = resolvedActions[AiActionType.Generation];
+        _logger.LogInformation(
+            "AI clients initialized — {Count} actions configured (generation: {Model} via {Provider})",
+            ConfigurableActions.Length, genInfo.Config.Model, genInfo.Provider.ProviderName);
+
+        OnReconfigured?.Invoke();
     }
 
-    private void SwapClients(AiSettings settings, ResolvedProvider defaultResolved, ResolvedProvider premiumResolved)
+    private void SwapClients(Dictionary<AiActionType, (ActionAiConfig Config, ResolvedProvider Provider)> resolvedActions)
     {
-        var premiumOpenAiClient = CreateOpenAIClient(premiumResolved.ApiKey, premiumResolved.EndpointUrl);
-        var defaultOpenAiClient = premiumResolved == defaultResolved
-            ? premiumOpenAiClient
-            : CreateOpenAIClient(defaultResolved.ApiKey, defaultResolved.EndpointUrl);
+        // Group by provider to reuse OpenAIClient instances
+        var openAiClients = new Dictionary<string, OpenAIClient>();
+        OpenAIClient? firstClient = null;
+
+        foreach (var (_, (config, provider)) in resolvedActions)
+        {
+            var providerKey = $"{provider.ApiKey}|{provider.EndpointUrl}";
+            if (!openAiClients.ContainsKey(providerKey))
+            {
+                var client = CreateOpenAIClient(provider.ApiKey, provider.EndpointUrl);
+                openAiClients[providerKey] = client;
+                firstClient ??= client;
+            }
+        }
 
         _lock.EnterWriteLock();
         try
         {
-            (_premiumClient as IDisposable)?.Dispose();
-            (_defaultClient as IDisposable)?.Dispose();
+            // Dispose old clients
+            foreach (var client in _actionClients.Values)
+                (client as IDisposable)?.Dispose();
 
-            _openAiClient = premiumOpenAiClient;
+            _actionClients.Clear();
+            _actionModelInfo.Clear();
 
-            var premiumBase = premiumOpenAiClient.GetChatClient(settings.PremiumModel).AsIChatClient();
-            var defaultBase = defaultOpenAiClient.GetChatClient(settings.DefaultModel).AsIChatClient();
+            _openAiClient = firstClient;
 
-            _premiumClient = ChatOptionsBuilder.WrapWithRoleOverrides(
-                ChatOptionsBuilder.WrapWithModelDefaults(premiumBase, premiumResolved.Model),
-                settings.PremiumModelTemperature,
-                settings.PremiumModelMaxTokens,
-                settings.PremiumModelReasoningEffort);
-            _defaultClient = ChatOptionsBuilder.WrapWithRoleOverrides(
-                ChatOptionsBuilder.WrapWithModelDefaults(defaultBase, defaultResolved.Model),
-                settings.DefaultModelTemperature,
-                settings.DefaultModelMaxTokens,
-                settings.DefaultModelReasoningEffort);
-            _isConfigured = true;
-            _defaultModelId = settings.DefaultModel;
-            _defaultProviderName = defaultResolved.ProviderName;
-            _premiumModelId = settings.PremiumModel;
-            _premiumProviderName = premiumResolved.ProviderName;
+            foreach (var (action, (config, provider)) in resolvedActions)
+            {
+                var providerKey = $"{provider.ApiKey}|{provider.EndpointUrl}";
+                var openAiClient = openAiClients[providerKey];
+
+                var baseClient = openAiClient.GetChatClient(config.Model).AsIChatClient();
+
+                var wrappedClient = ChatOptionsBuilder.WrapWithRoleOverrides(
+                    ChatOptionsBuilder.WrapWithModelDefaults(baseClient, provider.Model),
+                    config.Temperature,
+                    config.MaxTokens,
+                    config.ReasoningEffort);
+
+                _actionClients[action] = wrappedClient;
+                _actionModelInfo[action] = (config.Model, provider.ProviderName);
+            }
+
+            _isConfigured = _actionClients.Count == ConfigurableActions.Length;
         }
         finally { _lock.ExitWriteLock(); }
     }
@@ -254,16 +283,13 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         _lock.EnterWriteLock();
         try
         {
-            (_premiumClient as IDisposable)?.Dispose();
-            (_defaultClient as IDisposable)?.Dispose();
-            _premiumClient = null;
-            _defaultClient = null;
+            foreach (var client in _actionClients.Values)
+                (client as IDisposable)?.Dispose();
+
+            _actionClients.Clear();
+            _actionModelInfo.Clear();
             _openAiClient = null;
             _isConfigured = false;
-            _defaultModelId = null;
-            _defaultProviderName = null;
-            _premiumModelId = null;
-            _premiumProviderName = null;
         }
         finally { _lock.ExitWriteLock(); }
     }
@@ -320,11 +346,11 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         finally { _lock.ExitReadLock(); }
     }
 
-    public IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model, Models.Enums.AiApiMode apiMode = Models.Enums.AiApiMode.ResponsesApi)
+    public IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model, AiApiMode apiMode = AiApiMode.ResponsesApi)
     {
         var client = CreateOpenAIClient(apiKey, endpointUrl);
         IChatClient baseClient;
-        if (apiMode == Models.Enums.AiApiMode.ChatCompletions)
+        if (apiMode == AiApiMode.ChatCompletions)
         {
             baseClient = client.GetChatClient(model).AsIChatClient();
         }
@@ -354,7 +380,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     {
         if (!_isConfigured)
             throw new InvalidOperationException(
-                "AI features are not configured. Add an AI provider with models and set the Default/Premium model in Super Admin > AI.");
+                "AI features are not configured. Set a model for each AI action in Super Admin > AI.");
     }
 
     public void Dispose()
@@ -363,10 +389,9 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         _lock.EnterWriteLock();
         try
         {
-            (_premiumClient as IDisposable)?.Dispose();
-            (_defaultClient as IDisposable)?.Dispose();
-            _premiumClient = null;
-            _defaultClient = null;
+            foreach (var client in _actionClients.Values)
+                (client as IDisposable)?.Dispose();
+            _actionClients.Clear();
         }
         finally { _lock.ExitWriteLock(); }
         _lock.Dispose();

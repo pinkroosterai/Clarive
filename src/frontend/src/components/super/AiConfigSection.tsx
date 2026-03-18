@@ -6,12 +6,10 @@ import { toast } from 'sonner';
 import {
   findSetting,
   buildProviderModels,
-  findModelMetadata,
   type ProviderModel,
 } from './ai-config/aiConfigUtils';
-import ModelOverrideFields from './ai-config/ModelOverrideFields';
+import ActionModelTable from './ai-config/ActionModelTable';
 import ModelTransferList from './ai-config/ModelTransferList';
-import ProviderModelCombobox from './ai-config/ProviderModelCombobox';
 import SettingField from './ai-config/SettingField';
 
 import { Button } from '@/components/ui/button';
@@ -31,19 +29,9 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
   const [dirtyValues, setDirtyValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  const defaultModelSetting = findSetting(settings, 'Ai:DefaultModel');
-  const defaultProviderIdSetting = findSetting(settings, 'Ai:DefaultModelProviderId');
-  const premiumModelSetting = findSetting(settings, 'Ai:PremiumModel');
-  const premiumProviderIdSetting = findSetting(settings, 'Ai:PremiumModelProviderId');
   const allowedModelsSetting = findSetting(settings, 'Ai:AllowedModels');
   const tavilyApiKeySetting = findSetting(settings, 'Ai:TavilyApiKey');
 
-  const currentDefaultModel = dirtyValues['Ai:DefaultModel'] ?? defaultModelSetting?.value ?? '';
-  const currentDefaultProviderId =
-    dirtyValues['Ai:DefaultModelProviderId'] ?? defaultProviderIdSetting?.value ?? '';
-  const currentPremiumModel = dirtyValues['Ai:PremiumModel'] ?? premiumModelSetting?.value ?? '';
-  const currentPremiumProviderId =
-    dirtyValues['Ai:PremiumModelProviderId'] ?? premiumProviderIdSetting?.value ?? '';
   const currentAllowedModels = dirtyValues['Ai:AllowedModels'] ?? allowedModelsSetting?.value ?? '';
   const currentTavilyKeyDirty = dirtyValues['Ai:TavilyApiKey'];
 
@@ -60,7 +48,6 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
     [providerModels]
   );
   const flatModels = useMemo(() => providerModels.map((m) => m.modelId), [providerModels]);
-  const hasModels = providerModels.length > 0;
 
   const resetMutation = useMutation({
     mutationFn: (key: string) => resetConfigValue(key),
@@ -113,13 +100,6 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
     }));
   };
 
-  // Find the provider name for a currently selected model+providerId
-  const findProviderName = (modelId: string, providerId: string): string | undefined => {
-    if (!providerId || !modelId) return undefined;
-    return providerModels.find((m) => m.modelId === modelId && m.providerId === providerId)
-      ?.providerName;
-  };
-
   const hasDirty = Object.keys(dirtyValues).length > 0;
 
   const handleSave = async () => {
@@ -150,121 +130,20 @@ export default function AiConfigSection({ settings, onSaved }: AiConfigSectionPr
 
   return (
     <div className="space-y-1">
-      {/* Default Model */}
-      {defaultModelSetting && (
-        <SettingField
-          setting={defaultModelSetting}
-          onReset={() => resetMutation.mutate(defaultModelSetting.key)}
-          isResetting={
-            resetMutation.isPending && resetMutation.variables === defaultModelSetting.key
-          }
-        >
-          {hasModels ? (
-            <ProviderModelCombobox
-              providerModels={agentCapableModels}
-              value={currentDefaultModel}
-              providerId={currentDefaultProviderId}
-              providerName={findProviderName(currentDefaultModel, currentDefaultProviderId)}
-              onSelect={(m) => handleModelSelect('Ai:DefaultModel', 'Ai:DefaultModelProviderId', m)}
-              onClear={() => handleModelClear('Ai:DefaultModel', 'Ai:DefaultModelProviderId')}
-              loading={providersLoading}
-              placeholder="Select default model..."
-            />
-          ) : (
-            <div className="space-y-1">
-              <Input
-                type="text"
-                value={currentDefaultModel}
-                onChange={(e) => handleChange('Ai:DefaultModel', e.target.value)}
-                placeholder={defaultModelSetting.validationHint ?? ''}
-                className="max-w-md"
-                autoComplete="off"
-              />
-              {!providersLoading && (
-                <p className="text-xs text-foreground-muted">
-                  Add an AI provider with models to enable the model selector.
-                </p>
-              )}
-            </div>
-          )}
-        </SettingField>
-      )}
-
-      {/* Default Model Parameter Overrides */}
-      {currentDefaultModel && (
-        <ModelOverrideFields
-          prefix="DefaultModel"
-          settings={settings}
-          dirtyValues={dirtyValues}
-          modelMetadata={findModelMetadata(
-            providers,
-            currentDefaultModel,
-            currentDefaultProviderId
-          )}
-          onChange={handleChange}
-          onReset={(key) => resetMutation.mutate(key)}
-          isResetting={(key) => resetMutation.isPending && resetMutation.variables === key}
-        />
-      )}
-
-      <Separator className="my-4" />
-
-      {/* Premium Model */}
-      {premiumModelSetting && (
-        <SettingField
-          setting={premiumModelSetting}
-          onReset={() => resetMutation.mutate(premiumModelSetting.key)}
-          isResetting={
-            resetMutation.isPending && resetMutation.variables === premiumModelSetting.key
-          }
-        >
-          {hasModels ? (
-            <ProviderModelCombobox
-              providerModels={agentCapableModels}
-              value={currentPremiumModel}
-              providerId={currentPremiumProviderId}
-              providerName={findProviderName(currentPremiumModel, currentPremiumProviderId)}
-              onSelect={(m) => handleModelSelect('Ai:PremiumModel', 'Ai:PremiumModelProviderId', m)}
-              onClear={() => handleModelClear('Ai:PremiumModel', 'Ai:PremiumModelProviderId')}
-              loading={providersLoading}
-              placeholder="Select premium model..."
-            />
-          ) : (
-            <div className="space-y-1">
-              <Input
-                type="text"
-                value={currentPremiumModel}
-                onChange={(e) => handleChange('Ai:PremiumModel', e.target.value)}
-                placeholder={premiumModelSetting.validationHint ?? ''}
-                className="max-w-md"
-                autoComplete="off"
-              />
-              {!providersLoading && (
-                <p className="text-xs text-foreground-muted">
-                  Add an AI provider with models to enable the model selector.
-                </p>
-              )}
-            </div>
-          )}
-        </SettingField>
-      )}
-
-      {/* Premium Model Parameter Overrides */}
-      {currentPremiumModel && (
-        <ModelOverrideFields
-          prefix="PremiumModel"
-          settings={settings}
-          dirtyValues={dirtyValues}
-          modelMetadata={findModelMetadata(
-            providers,
-            currentPremiumModel,
-            currentPremiumProviderId
-          )}
-          onChange={handleChange}
-          onReset={(key) => resetMutation.mutate(key)}
-          isResetting={(key) => resetMutation.isPending && resetMutation.variables === key}
-        />
-      )}
+      {/* Per-Action Model Configuration */}
+      <ActionModelTable
+        settings={settings}
+        dirtyValues={dirtyValues}
+        agentCapableModels={agentCapableModels}
+        providerModels={providerModels}
+        providers={providers}
+        providersLoading={providersLoading}
+        onChange={handleChange}
+        onModelSelect={handleModelSelect}
+        onModelClear={handleModelClear}
+        onReset={(key) => resetMutation.mutate(key)}
+        isResetting={(key) => resetMutation.isPending && resetMutation.variables === key}
+      />
 
       {/* Allowed Playground Models */}
       {allowedModelsSetting && (

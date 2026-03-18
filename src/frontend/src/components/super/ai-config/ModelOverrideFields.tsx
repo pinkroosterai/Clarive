@@ -6,7 +6,7 @@ import type { AiProviderModelResponse } from '@/services/api/aiProviderService';
 import type { ConfigSetting } from '@/services/api/configService';
 
 interface ModelOverrideFieldsProps {
-  prefix: 'DefaultModel' | 'PremiumModel';
+  prefix: string;
   settings: ConfigSetting[];
   dirtyValues: Record<string, string>;
   modelMetadata: AiProviderModelResponse | null;
@@ -24,9 +24,9 @@ export default function ModelOverrideFields({
   onReset,
   isResetting,
 }: ModelOverrideFieldsProps) {
-  const tempKey = `Ai:${prefix}Temperature`;
-  const tokensKey = `Ai:${prefix}MaxTokens`;
-  const effortKey = `Ai:${prefix}ReasoningEffort`;
+  const tempKey = `Ai:${prefix}:Temperature`;
+  const tokensKey = `Ai:${prefix}:MaxTokens`;
+  const effortKey = `Ai:${prefix}:ReasoningEffort`;
 
   const tempSetting = findSetting(settings, tempKey);
   const tokensSetting = findSetting(settings, tokensKey);

@@ -63,61 +63,186 @@ public static class ConfigRegistry
             "Default: 7",
             ConfigInputType.Number, SubGroup: "JWT Tokens"),
 
-        // ── AI ──
-        new ConfigDefinition("Ai:DefaultModel", "Default AI Model",
-            "Model used for everyday AI tasks: clarifying prompts, evaluating quality, and decomposing complex prompts into sections. Choose a fast, cost-effective model here.",
+        // ── AI › Generation ──
+        new ConfigDefinition("Ai:Generation:Model", "Generation Model",
+            "Model for the primary prompt generation workflow (AI Wizard). This task benefits from a more capable model since it produces the actual prompt content.",
             ConfigSection.Ai, false, false,
-            "e.g., gpt-4o-mini"),
+            "e.g., gpt-4o", SubGroup: "Generation"),
 
-        new ConfigDefinition("Ai:DefaultModelProviderId", "Default Model Provider",
-            "Provider ID for the default model. Set automatically when selecting a model from a provider.",
-            ConfigSection.Ai, false, false),
+        new ConfigDefinition("Ai:Generation:ProviderId", "Generation Provider",
+            "Provider ID for the generation model. Set automatically when selecting a model.",
+            ConfigSection.Ai, false, false, SubGroup: "Generation"),
 
-        new ConfigDefinition("Ai:PremiumModel", "Premium AI Model",
-            "Model used for the primary prompt generation workflow — the AI Wizard. This task benefits from a more capable model since it produces the actual prompt content users will work with.",
+        new ConfigDefinition("Ai:Generation:Temperature", "Generation Temperature",
+            "Override temperature for prompt generation. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 0.9",
+            ConfigInputType.Number, SubGroup: "Generation Overrides"),
+
+        new ConfigDefinition("Ai:Generation:MaxTokens", "Generation Max Tokens",
+            "Override max output tokens for prompt generation. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 8192",
+            ConfigInputType.Number, SubGroup: "Generation Overrides"),
+
+        new ConfigDefinition("Ai:Generation:ReasoningEffort", "Generation Reasoning Effort",
+            "Override reasoning effort for prompt generation (only applies to reasoning models).",
             ConfigSection.Ai, false, false,
-            "e.g., gpt-4o"),
-
-        new ConfigDefinition("Ai:PremiumModelProviderId", "Premium Model Provider",
-            "Provider ID for the premium model. Set automatically when selecting a model from a provider.",
-            ConfigSection.Ai, false, false),
-
-        // ── AI › Default Model Overrides ──
-        new ConfigDefinition("Ai:DefaultModelTemperature", "Default Model Temperature",
-            "Override the temperature for Default model tasks (evaluation, clarification, decomposition). Leave empty to use the model's configured default.",
-            ConfigSection.Ai, false, false,
-            "e.g., 0.7",
-            ConfigInputType.Number, SubGroup: "Default Model Overrides"),
-
-        new ConfigDefinition("Ai:DefaultModelMaxTokens", "Default Model Max Tokens",
-            "Override the max output tokens for Default model tasks. Leave empty to use the model's configured default.",
-            ConfigSection.Ai, false, false,
-            "e.g., 4096",
-            ConfigInputType.Number, SubGroup: "Default Model Overrides"),
-
-        new ConfigDefinition("Ai:DefaultModelReasoningEffort", "Default Model Reasoning Effort",
-            "Override the reasoning effort for Default model tasks (only applies to reasoning models). Leave empty to use the model's configured default.",
-            ConfigSection.Ai, false, false,
-            SubGroup: "Default Model Overrides",
+            SubGroup: "Generation Overrides",
             InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
 
-        // ── AI › Premium Model Overrides ──
-        new ConfigDefinition("Ai:PremiumModelTemperature", "Premium Model Temperature",
-            "Override the temperature for the Premium model generation workflow (AI Wizard). Leave empty to use the model's configured default.",
+        // ── AI › Evaluation ──
+        new ConfigDefinition("Ai:Evaluation:Model", "Evaluation Model",
+            "Model for quality scoring after prompt generation. A fast, cost-effective model works well here.",
             ConfigSection.Ai, false, false,
-            "e.g., 0.9",
-            ConfigInputType.Number, SubGroup: "Premium Model Overrides"),
+            "e.g., gpt-4o-mini", SubGroup: "Evaluation"),
 
-        new ConfigDefinition("Ai:PremiumModelMaxTokens", "Premium Model Max Tokens",
-            "Override the max output tokens for the Premium model generation workflow. Leave empty to use the model's configured default.",
-            ConfigSection.Ai, false, false,
-            "e.g., 8192",
-            ConfigInputType.Number, SubGroup: "Premium Model Overrides"),
+        new ConfigDefinition("Ai:Evaluation:ProviderId", "Evaluation Provider",
+            "Provider ID for the evaluation model. Set automatically when selecting a model.",
+            ConfigSection.Ai, false, false, SubGroup: "Evaluation"),
 
-        new ConfigDefinition("Ai:PremiumModelReasoningEffort", "Premium Model Reasoning Effort",
-            "Override the reasoning effort for the Premium model generation workflow (only applies to reasoning models). Leave empty to use the model's configured default.",
+        new ConfigDefinition("Ai:Evaluation:Temperature", "Evaluation Temperature",
+            "Override temperature for quality evaluation. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 0.3",
+            ConfigInputType.Number, SubGroup: "Evaluation Overrides"),
+
+        new ConfigDefinition("Ai:Evaluation:MaxTokens", "Evaluation Max Tokens",
+            "Override max output tokens for quality evaluation. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 4096",
+            ConfigInputType.Number, SubGroup: "Evaluation Overrides"),
+
+        new ConfigDefinition("Ai:Evaluation:ReasoningEffort", "Evaluation Reasoning Effort",
+            "Override reasoning effort for quality evaluation (only applies to reasoning models).",
             ConfigSection.Ai, false, false,
-            SubGroup: "Premium Model Overrides",
+            SubGroup: "Evaluation Overrides",
+            InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
+
+        // ── AI › Clarification ──
+        new ConfigDefinition("Ai:Clarification:Model", "Clarification Model",
+            "Model for generating follow-up clarification questions after prompt generation.",
+            ConfigSection.Ai, false, false,
+            "e.g., gpt-4o-mini", SubGroup: "Clarification"),
+
+        new ConfigDefinition("Ai:Clarification:ProviderId", "Clarification Provider",
+            "Provider ID for the clarification model. Set automatically when selecting a model.",
+            ConfigSection.Ai, false, false, SubGroup: "Clarification"),
+
+        new ConfigDefinition("Ai:Clarification:Temperature", "Clarification Temperature",
+            "Override temperature for clarification questions. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 0.5",
+            ConfigInputType.Number, SubGroup: "Clarification Overrides"),
+
+        new ConfigDefinition("Ai:Clarification:MaxTokens", "Clarification Max Tokens",
+            "Override max output tokens for clarification questions. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 2048",
+            ConfigInputType.Number, SubGroup: "Clarification Overrides"),
+
+        new ConfigDefinition("Ai:Clarification:ReasoningEffort", "Clarification Reasoning Effort",
+            "Override reasoning effort for clarification (only applies to reasoning models).",
+            ConfigSection.Ai, false, false,
+            SubGroup: "Clarification Overrides",
+            InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
+
+        // ── AI › System Message ──
+        new ConfigDefinition("Ai:SystemMessage:Model", "System Message Model",
+            "Model for generating system messages for prompt entries.",
+            ConfigSection.Ai, false, false,
+            "e.g., gpt-4o-mini", SubGroup: "System Message"),
+
+        new ConfigDefinition("Ai:SystemMessage:ProviderId", "System Message Provider",
+            "Provider ID for the system message model. Set automatically when selecting a model.",
+            ConfigSection.Ai, false, false, SubGroup: "System Message"),
+
+        new ConfigDefinition("Ai:SystemMessage:Temperature", "System Message Temperature",
+            "Override temperature for system message generation. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 0.7",
+            ConfigInputType.Number, SubGroup: "System Message Overrides"),
+
+        new ConfigDefinition("Ai:SystemMessage:MaxTokens", "System Message Max Tokens",
+            "Override max output tokens for system message generation. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 4096",
+            ConfigInputType.Number, SubGroup: "System Message Overrides"),
+
+        new ConfigDefinition("Ai:SystemMessage:ReasoningEffort", "System Message Reasoning Effort",
+            "Override reasoning effort for system message generation (only applies to reasoning models).",
+            ConfigSection.Ai, false, false,
+            SubGroup: "System Message Overrides",
+            InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
+
+        // ── AI › Decomposition ──
+        new ConfigDefinition("Ai:Decomposition:Model", "Decomposition Model",
+            "Model for splitting prompts into multi-step chain steps.",
+            ConfigSection.Ai, false, false,
+            "e.g., gpt-4o-mini", SubGroup: "Decomposition"),
+
+        new ConfigDefinition("Ai:Decomposition:ProviderId", "Decomposition Provider",
+            "Provider ID for the decomposition model. Set automatically when selecting a model.",
+            ConfigSection.Ai, false, false, SubGroup: "Decomposition"),
+
+        new ConfigDefinition("Ai:Decomposition:Temperature", "Decomposition Temperature",
+            "Override temperature for prompt decomposition. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 0.5",
+            ConfigInputType.Number, SubGroup: "Decomposition Overrides"),
+
+        new ConfigDefinition("Ai:Decomposition:MaxTokens", "Decomposition Max Tokens",
+            "Override max output tokens for prompt decomposition. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 4096",
+            ConfigInputType.Number, SubGroup: "Decomposition Overrides"),
+
+        new ConfigDefinition("Ai:Decomposition:ReasoningEffort", "Decomposition Reasoning Effort",
+            "Override reasoning effort for prompt decomposition (only applies to reasoning models).",
+            ConfigSection.Ai, false, false,
+            SubGroup: "Decomposition Overrides",
+            InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
+
+        // ── AI › Fill Template Fields ──
+        new ConfigDefinition("Ai:FillTemplateFields:Model", "Fill Template Fields Model",
+            "Model for generating template field example values.",
+            ConfigSection.Ai, false, false,
+            "e.g., gpt-4o-mini", SubGroup: "Fill Template Fields"),
+
+        new ConfigDefinition("Ai:FillTemplateFields:ProviderId", "Fill Template Fields Provider",
+            "Provider ID for the fill template fields model. Set automatically when selecting a model.",
+            ConfigSection.Ai, false, false, SubGroup: "Fill Template Fields"),
+
+        new ConfigDefinition("Ai:FillTemplateFields:Temperature", "Fill Template Fields Temperature",
+            "Override temperature for template field generation. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 0.7",
+            ConfigInputType.Number, SubGroup: "Fill Template Fields Overrides"),
+
+        new ConfigDefinition("Ai:FillTemplateFields:MaxTokens", "Fill Template Fields Max Tokens",
+            "Override max output tokens for template field generation. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 2048",
+            ConfigInputType.Number, SubGroup: "Fill Template Fields Overrides"),
+
+        new ConfigDefinition("Ai:FillTemplateFields:ReasoningEffort", "Fill Template Fields Reasoning Effort",
+            "Override reasoning effort for template field generation (only applies to reasoning models).",
+            ConfigSection.Ai, false, false,
+            SubGroup: "Fill Template Fields Overrides",
+            InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
+
+        // ── AI › Playground Judge ──
+        new ConfigDefinition("Ai:PlaygroundJudge:Model", "Playground Judge Model",
+            "Model for scoring playground run outputs across quality dimensions.",
+            ConfigSection.Ai, false, false,
+            "e.g., gpt-4o-mini", SubGroup: "Playground Judge"),
+
+        new ConfigDefinition("Ai:PlaygroundJudge:ProviderId", "Playground Judge Provider",
+            "Provider ID for the playground judge model. Set automatically when selecting a model.",
+            ConfigSection.Ai, false, false, SubGroup: "Playground Judge"),
+
+        new ConfigDefinition("Ai:PlaygroundJudge:Temperature", "Playground Judge Temperature",
+            "Override temperature for playground output scoring. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 0.3",
+            ConfigInputType.Number, SubGroup: "Playground Judge Overrides"),
+
+        new ConfigDefinition("Ai:PlaygroundJudge:MaxTokens", "Playground Judge Max Tokens",
+            "Override max output tokens for playground output scoring. Leave empty to use the model's default.",
+            ConfigSection.Ai, false, false, "e.g., 4096",
+            ConfigInputType.Number, SubGroup: "Playground Judge Overrides"),
+
+        new ConfigDefinition("Ai:PlaygroundJudge:ReasoningEffort", "Playground Judge Reasoning Effort",
+            "Override reasoning effort for playground output scoring (only applies to reasoning models).",
+            ConfigSection.Ai, false, false,
+            SubGroup: "Playground Judge Overrides",
             InputType: ConfigInputType.Select, SelectOptions: ["", "low", "medium", "high", "extra-high"]),
 
         new ConfigDefinition("Ai:AllowedModels", "Allowed Playground Models",

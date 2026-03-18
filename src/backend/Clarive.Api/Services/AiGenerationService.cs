@@ -291,10 +291,7 @@ public class AiGenerationService(
         if (usage is null)
             return Task.CompletedTask;
 
-        // Generation agent uses Premium model; all others use Default model
-        var (modelId, providerName) = actionType == AiActionType.Generation
-            ? (agentFactory.PremiumModelId, agentFactory.PremiumProviderName)
-            : (agentFactory.DefaultModelId, agentFactory.DefaultProviderName);
+        var (modelId, providerName) = agentFactory.GetModelInfo(actionType);
 
         return usageLogger.LogAsync(
             tenantId, userId, actionType,

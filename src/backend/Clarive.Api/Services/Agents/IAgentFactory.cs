@@ -22,9 +22,6 @@ public interface IAgentFactory
     IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model, AiApiMode apiMode = AiApiMode.ResponsesApi);
     OpenAI.OpenAIClient GetOpenAIClient();
     bool IsConfigured { get; }
-    string? DefaultModelId { get; }
-    string? DefaultProviderName { get; }
-    string? PremiumModelId { get; }
-    string? PremiumProviderName { get; }
+    (string? ModelId, string? ProviderName) GetModelInfo(AiActionType actionType);
     event Action? OnReconfigured;
 }
