@@ -1,4 +1,5 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -6,19 +7,23 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 interface ReasoningBlockProps {
   reasoning: string;
-  defaultOpen: boolean;
+  defaultOpen?: boolean;
   isStreaming?: boolean;
 }
 
 export default function ReasoningBlock({
   reasoning,
-  defaultOpen,
+  defaultOpen = true,
   isStreaming,
 }: ReasoningBlockProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
-    <Collapsible defaultOpen={defaultOpen}>
-      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1">
-        <ChevronDown className="size-3" />
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 mb-1 cursor-pointer">
+        <ChevronRight
+          className={`size-3 transition-transform duration-150 ${open ? 'rotate-90' : ''}`}
+        />
         Thinking
       </CollapsibleTrigger>
       <CollapsibleContent>

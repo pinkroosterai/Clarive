@@ -576,7 +576,6 @@ export default function PlaygroundResultsArea({
                   {leftReasoning && (
                     <ReasoningBlock
                       reasoning={leftReasoning}
-                      defaultOpen={false}
                       isStreaming={hasCurrentRun && isStreaming}
                     />
                   )}
@@ -604,9 +603,7 @@ export default function PlaygroundResultsArea({
                   {prompts.length > 1 && (
                     <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                   )}
-                  {rightReasoning && (
-                    <ReasoningBlock reasoning={rightReasoning} defaultOpen={false} />
-                  )}
+                  {rightReasoning && <ReasoningBlock reasoning={rightReasoning} />}
                   {rightResponse ? (
                     <LLMResponseBlock output={rightResponse.content} isStreaming={false} />
                   ) : (
@@ -717,7 +714,7 @@ export default function PlaygroundResultsArea({
                 {prompts.length > 1 && (
                   <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
                 )}
-                {pinReasoning && <ReasoningBlock reasoning={pinReasoning} defaultOpen={false} />}
+                {pinReasoning && <ReasoningBlock reasoning={pinReasoning} />}
                 {response ? (
                   <LLMResponseBlock output={response.content} isStreaming={false} />
                 ) : (
@@ -867,11 +864,7 @@ export default function PlaygroundResultsArea({
 
                   {/* Reasoning output */}
                   {streamedReasoning[i] && (
-                    <ReasoningBlock
-                      reasoning={streamedReasoning[i]}
-                      defaultOpen={isStreaming}
-                      isStreaming={isActive}
-                    />
+                    <ReasoningBlock reasoning={streamedReasoning[i]} isStreaming={isActive} />
                   )}
 
                   {/* Response */}
@@ -941,11 +934,7 @@ export default function PlaygroundResultsArea({
             return (
               <div key={i}>
                 {streamedReasoning[i] && (
-                  <ReasoningBlock
-                    reasoning={streamedReasoning[i]}
-                    defaultOpen={isStreaming}
-                    isStreaming={isStreaming}
-                  />
+                  <ReasoningBlock reasoning={streamedReasoning[i]} isStreaming={isStreaming} />
                 )}
 
                 <div className="relative group">
