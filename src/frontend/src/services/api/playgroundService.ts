@@ -17,6 +17,7 @@ export interface TestStreamResult {
   inputTokens: number | null;
   outputTokens: number | null;
   reasoning: string | null;
+  judgeScores: Evaluation | null;
 }
 
 export interface TestRunResponse {
@@ -113,9 +114,3 @@ export async function getEnrichedModels(): Promise<EnrichedModel[]> {
   return res.models;
 }
 
-export async function judgePlaygroundRun(
-  entryId: string,
-  runId: string
-): Promise<Evaluation> {
-  return api.post<Evaluation>(`/api/entries/${entryId}/runs/${runId}/judge`, {});
-}

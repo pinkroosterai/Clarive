@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -18,10 +18,8 @@ import { entryService } from '@/services';
 import {
   getTestRuns,
   getEnrichedModels,
-  judgePlaygroundRun,
   type TestRunResponse,
   type EnrichedModel,
-  type Evaluation,
 } from '@/services/api/playgroundService';
 import type { TemplateField } from '@/types';
 
@@ -31,7 +29,6 @@ import type { TemplateField } from '@/types';
 const PlaygroundPage = () => {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const aiEnabled = useAiEnabled();
   const storageKey = `playground_${entryId}`;
 
@@ -104,7 +101,7 @@ const PlaygroundPage = () => {
     elapsedSeconds,
     approxOutputTokens,
     lastTokens,
-    lastRunId,
+    lastJudgeScores,
     hasResponses,
     currentPromptIndex,
     responseCount,
@@ -129,32 +126,6 @@ const PlaygroundPage = () => {
 
   // ── Rerun ──
   const [pendingRerun, setPendingRerun] = useState(false);
-
-  // ── Judge ──
-  const [judgeScores, setJudgeScores] = useState<Evaluation | null>(null);
-  const [isJudging, setIsJudging] = useState(false);
-
-  // Clear judge scores when a new run starts
-  useEffect(() => {
-    if (isStreaming) {
-      setJudgeScores(null);
-    }
-  }, [isStreaming]);
-
-  const handleJudge = useCallback(async () => {
-    if (!entryId || !lastRunId) return;
-    setIsJudging(true);
-    try {
-      const evaluation = await judgePlaygroundRun(entryId, lastRunId);
-      setJudgeScores(evaluation);
-      // Refresh test runs to pick up persisted scores in history
-      void queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
-    } catch {
-      toast.error('Failed to evaluate output');
-    } finally {
-      setIsJudging(false);
-    }
-  }, [entryId, lastRunId, queryClient]);
 
   // ── History + comparison ──
   const [showHistory, setShowHistory] = useState(false);
@@ -343,10 +314,7 @@ const PlaygroundPage = () => {
           copiedIndex={copiedIndex}
           handleRun={handleRun}
           handleCopy={handleCopy}
-          judgeScores={pinnedRun ? pinnedRun.judgeScores ?? null : judgeScores}
-          isJudging={isJudging}
-          onRequestJudge={handleJudge}
-          canJudge={!pinnedRun && !!lastRunId}
+          judgeScores={pinnedRun ? pinnedRun.judgeScores ?? null : lastJudgeScores}
         />
 
         {/* ── History sidebar ── */}

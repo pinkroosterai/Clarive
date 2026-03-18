@@ -31,5 +31,6 @@ public record TestStreamResult(
     List<TestRunPromptResponse> Responses,
     long? InputTokens,
     long? OutputTokens,
-    string? Reasoning
+    string? Reasoning,
+    OutputEvaluation? JudgeScores = null
 );

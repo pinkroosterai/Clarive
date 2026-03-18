@@ -75,7 +75,15 @@ public static class PlaygroundEndpoints
             if (result.IsError)
                 return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-            return Results.Ok(result.Value);
+            var testResult = result.Value;
+            var judgeResult = await playground.JudgePlaygroundRunAsync(
+                tenantId, userId, entryId, testResult.RunId, ct);
+            var finalResult = testResult with
+            {
+                JudgeScores = judgeResult.IsError ? null : judgeResult.Value
+            };
+
+            return Results.Ok(finalResult);
         }
 
         // SSE streaming path
@@ -95,7 +103,14 @@ public static class PlaygroundEndpoints
             }
             else
             {
-                await sse.WriteDoneAsync(result.Value, ct);
+                var testResult = result.Value;
+                var judgeResult = await playground.JudgePlaygroundRunAsync(
+                    tenantId, userId, entryId, testResult.RunId, ct);
+                var finalResult = testResult with
+                {
+                    JudgeScores = judgeResult.IsError ? null : judgeResult.Value
+                };
+                await sse.WriteDoneAsync(finalResult, ct);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

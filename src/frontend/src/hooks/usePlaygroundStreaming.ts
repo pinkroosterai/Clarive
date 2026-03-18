@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
-import { testEntry, type TestStreamChunk } from '@/services/api/playgroundService';
+import { testEntry, type TestStreamChunk, type Evaluation } from '@/services/api/playgroundService';
 import type { TemplateField } from '@/types';
 
 // ── Streaming status thresholds ──
@@ -74,6 +74,7 @@ export function usePlaygroundStreaming({
     output: number | null;
   } | null>(null);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
+  const [lastJudgeScores, setLastJudgeScores] = useState<Evaluation | null>(null);
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
@@ -147,6 +148,7 @@ export function usePlaygroundStreaming({
     }
     setLastTokens(null);
     setLastRunId(null);
+    setLastJudgeScores(null);
     setElapsedSeconds(0);
     setApproxOutputTokens(0);
     streamedTextLengthRef.current = 0;
@@ -198,6 +200,7 @@ export function usePlaygroundStreaming({
         setLastTokens({ input: result.inputTokens, output: result.outputTokens });
       }
       setLastRunId(result.runId);
+      setLastJudgeScores(result.judgeScores ?? null);
 
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
     } catch (err) {
@@ -260,6 +263,7 @@ export function usePlaygroundStreaming({
     approxOutputTokens,
     lastTokens,
     lastRunId,
+    lastJudgeScores,
     hasResponses,
     currentPromptIndex,
     responseCount,

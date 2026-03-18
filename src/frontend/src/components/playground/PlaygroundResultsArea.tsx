@@ -61,9 +61,6 @@ interface PlaygroundResultsAreaProps {
   handleCopy: (text: string, index: number) => Promise<void>;
   // Judge
   judgeScores: Evaluation | null;
-  isJudging: boolean;
-  onRequestJudge: () => void;
-  canJudge: boolean;
 }
 
 export default function PlaygroundResultsArea({
@@ -94,9 +91,6 @@ export default function PlaygroundResultsArea({
   handleRun,
   handleCopy,
   judgeScores,
-  isJudging,
-  onRequestJudge,
-  canJudge,
 }: PlaygroundResultsAreaProps) {
   return (
     <div className="flex-1 p-6">
@@ -499,27 +493,6 @@ export default function PlaygroundResultsArea({
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* Judge button */}
-      {!isStreaming && hasResponses && !judgeScores && canJudge && (
-        <div className="mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRequestJudge}
-            disabled={isJudging}
-          >
-            {isJudging ? (
-              <>
-                <Loader2 className="size-3.5 mr-1.5 animate-spin" />
-                Evaluating...
-              </>
-            ) : (
-              'Evaluate Output'
-            )}
-          </Button>
         </div>
       )}
 
