@@ -130,8 +130,7 @@ public class EfAiUsageLogRepository(ClariveDbContext db) : IAiUsageLogRepository
             b.InputCost, b.OutputCost, b.InputCost + b.OutputCost
         )).OrderByDescending(b => b.TotalTokens).ToList();
 
-        var byActionType = await GetBreakdownAsync(
-            query, l => l.ActionType.ToString(), totals.TotalTokens, ct);
+        var byActionType = await GetActionBreakdownAsync(query, ct);
 
         return new AiUsageStatsResponse(totals, averages, byModel, byTenantItems, byUserItems, byActionType);
     }
@@ -215,28 +214,57 @@ public class EfAiUsageLogRepository(ClariveDbContext db) : IAiUsageLogRepository
     private static string FormatDisplayModel(string? provider, string model)
         => string.IsNullOrEmpty(provider) ? model : $"{provider}:{model}";
 
-    private static async Task<List<AiUsageBreakdownItem>> GetBreakdownAsync(
-        IQueryable<AiUsageLog> query, System.Linq.Expressions.Expression<Func<AiUsageLog, string>> groupKey,
-        long totalTokens, CancellationToken ct)
+    private static async Task<List<AiUsageActionBreakdownItem>> GetActionBreakdownAsync(
+        IQueryable<AiUsageLog> query, CancellationToken ct)
     {
+        // Aggregate totals per action type
         var grouped = await query
-            .GroupBy(groupKey)
+            .GroupBy(l => l.ActionType)
             .Select(g => new
             {
-                Name = g.Key,
+                ActionType = g.Key,
                 RequestCount = g.LongCount(),
                 InputTokens = g.Sum(l => l.InputTokens),
                 OutputTokens = g.Sum(l => l.OutputTokens),
                 InputCost = g.Sum(l => l.EstimatedInputCostUsd ?? 0),
-                OutputCost = g.Sum(l => l.EstimatedOutputCostUsd ?? 0)
+                OutputCost = g.Sum(l => l.EstimatedOutputCostUsd ?? 0),
+                DurationMs = g.Sum(l => l.DurationMs),
             })
             .ToListAsync(ct);
 
-        return grouped.Select(b => new AiUsageBreakdownItem(
-            b.Name, b.RequestCount, b.InputTokens, b.OutputTokens,
-            b.InputTokens + b.OutputTokens,
-            totalTokens > 0 ? (double)(b.InputTokens + b.OutputTokens) / totalTokens * 100 : 0,
-            b.InputCost, b.OutputCost, b.InputCost + b.OutputCost
-        )).OrderByDescending(b => b.TotalTokens).ToList();
+        // Determine most-used provider:model per action (separate query to avoid nested GroupBy translation issues)
+        var topModels = await query
+            .GroupBy(l => new { l.ActionType, l.Provider, l.Model })
+            .Select(g => new
+            {
+                g.Key.ActionType,
+                g.Key.Provider,
+                g.Key.Model,
+                Count = g.LongCount()
+            })
+            .ToListAsync(ct);
+
+        var topModelByAction = topModels
+            .GroupBy(m => m.ActionType)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(m => m.Count).First());
+
+        return grouped.Select(b =>
+        {
+            var rc = b.RequestCount > 0 ? b.RequestCount : 1;
+            var top = topModelByAction.GetValueOrDefault(b.ActionType);
+            return new AiUsageActionBreakdownItem(
+                b.ActionType.ToString(),
+                top?.Provider ?? "",
+                top?.Model ?? "",
+                b.RequestCount,
+                (double)b.InputTokens / rc,
+                (double)b.OutputTokens / rc,
+                b.InputCost / rc,
+                b.OutputCost / rc,
+                (double)b.DurationMs / rc);
+        }).OrderByDescending(b => b.RequestCount).ToList();
     }
+
 }

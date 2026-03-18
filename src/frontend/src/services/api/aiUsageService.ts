@@ -57,13 +57,25 @@ export interface AiUsageBreakdownItem {
   estimatedCostUsd: number;
 }
 
+export interface AiUsageActionBreakdownItem {
+  name: string;
+  provider: string;
+  model: string;
+  requestCount: number;
+  avgInputTokens: number;
+  avgOutputTokens: number;
+  avgEstimatedInputCostUsd: number;
+  avgEstimatedOutputCostUsd: number;
+  avgDurationMs: number;
+}
+
 export interface AiUsageStatsResponse {
   totals: AiUsageTotals;
   averages: AiUsageAverages;
   byModel: AiUsageBreakdownItem[];
   byTenant: AiUsageBreakdownItem[];
   byUser: AiUsageBreakdownItem[];
-  byActionType: AiUsageBreakdownItem[];
+  byActionType: AiUsageActionBreakdownItem[];
 }
 
 export interface AiUsageFilterParams {

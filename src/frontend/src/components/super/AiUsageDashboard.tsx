@@ -1,6 +1,7 @@
 import { BarChart3 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
+import AiUsageActionGrid from './AiUsageActionGrid';
 import AiUsageChart from './AiUsageChart';
 import AiUsageDateFilter, { getDateRange, type DatePreset } from './AiUsageDateFilter';
 import AiUsageLogGrid from './AiUsageLogGrid';
@@ -61,6 +62,7 @@ export default function AiUsageDashboard() {
         <AiUsageDateFilter value={preset} onChange={setPreset} />
       </div>
       <AiUsageSummaryCards stats={stats} />
+      <AiUsageActionGrid items={stats.byActionType} />
       <AiUsageChart byModel={stats.byModel} />
       <AiUsageLogGrid filters={filters} />
     </div>

@@ -28,7 +28,7 @@ public record AiUsageStatsResponse(
     List<AiUsageBreakdownItem> ByModel,
     List<AiUsageBreakdownItem> ByTenant,
     List<AiUsageBreakdownItem> ByUser,
-    List<AiUsageBreakdownItem> ByActionType
+    List<AiUsageActionBreakdownItem> ByActionType
 );
 
 public record AiUsageTotals(
@@ -57,6 +57,18 @@ public record AiUsageBreakdownItem(
     decimal EstimatedInputCostUsd,
     decimal EstimatedOutputCostUsd,
     decimal EstimatedCostUsd
+);
+
+public record AiUsageActionBreakdownItem(
+    string Name,
+    string Provider,
+    string Model,
+    long RequestCount,
+    double AvgInputTokens,
+    double AvgOutputTokens,
+    decimal AvgEstimatedInputCostUsd,
+    decimal AvgEstimatedOutputCostUsd,
+    double AvgDurationMs
 );
 
 public record AiUsageFilterRequest(
