@@ -1,5 +1,6 @@
 using Clarive.Api.Models.Agents;
 using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Results;
 using Clarive.Api.Repositories.Interfaces;
@@ -32,10 +33,7 @@ public class AiGenerationServiceTests
         _sessionRepo.CreateAsync(Arg.Any<AiSession>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<AiSession>());
 
-        _agentFactory.DefaultModelId.Returns("gpt-4o");
-        _agentFactory.DefaultProviderName.Returns("OpenAI");
-        _agentFactory.PremiumModelId.Returns("gpt-4o");
-        _agentFactory.PremiumProviderName.Returns("OpenAI");
+        _agentFactory.GetModelInfo(Arg.Any<AiActionType>()).Returns(("gpt-4o", "OpenAI"));
 
         _sut = new AiGenerationService(_orchestrator, _sessionRepo, _entryRepo, _toolRepo, _usageLogger, _agentFactory);
     }

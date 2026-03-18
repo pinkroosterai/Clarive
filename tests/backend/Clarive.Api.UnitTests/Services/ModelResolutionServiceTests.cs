@@ -29,7 +29,7 @@ public class ModelResolutionServiceTests
 
         _aiSettings.CurrentValue.Returns(new AiSettings
         {
-            DefaultModel = "gpt-4o",
+            Generation = new ActionAiConfig { Model = "gpt-4o" },
             AllowedModels = ""
         });
         _encryption.IsAvailable.Returns(true);

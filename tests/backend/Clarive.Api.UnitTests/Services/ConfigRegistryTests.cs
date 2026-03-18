@@ -96,12 +96,24 @@ public class ConfigRegistryTests
     }
 
     [Theory]
-    [InlineData("Ai:DefaultModel")]
+    [InlineData("Ai:Generation:Model")]
     [InlineData("Email:Provider")]
     [InlineData("Jwt:ExpirationMinutes")]
     [InlineData("Google:ClientId")]
     public void ByKey_LooksUpKnownKeys(string key)
     {
         ConfigRegistry.ByKey.Should().ContainKey(key);
+    }
+
+    [Fact]
+    public void All_EachConfigurableActionHasAllFiveConfigKeys()
+    {
+        var actions = new[] { "Generation", "Evaluation", "Clarification", "SystemMessage", "Decomposition", "FillTemplateFields", "PlaygroundJudge" };
+        var suffixes = new[] { "Model", "ProviderId", "Temperature", "MaxTokens", "ReasoningEffort" };
+
+        foreach (var action in actions)
+            foreach (var suffix in suffixes)
+                ConfigRegistry.ByKey.Should().ContainKey($"Ai:{action}:{suffix}",
+                    $"action '{action}' must have config key 'Ai:{action}:{suffix}'");
     }
 }
