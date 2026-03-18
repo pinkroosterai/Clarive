@@ -32,7 +32,7 @@ export function AppShell() {
   }, [setupStatus, currentUser, navigate, location.pathname]);
 
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen={false}>
       <DndProvider>
         <AppSidebar />
         <SidebarInset>
