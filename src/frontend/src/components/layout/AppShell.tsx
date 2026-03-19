@@ -31,18 +31,16 @@ export function AppShell() {
     }
   }, [setupStatus, currentUser, navigate, location.pathname]);
 
-  const isFullBleed = /\/entry\/[^/]+\/test/.test(location.pathname);
-
   return (
     <SidebarProvider defaultOpen={false}>
       <DndProvider>
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="min-w-0 max-h-svh overflow-hidden">
           <TopBar />
           <MaintenanceBanner />
           <AiNotConfiguredBanner />
           <EmailVerificationBanner />
-          <div className={`flex-1 animate-page-enter ${isFullBleed ? 'overflow-hidden' : 'overflow-auto p-4'}`}>
+          <div className="flex-1 overflow-auto p-4 animate-page-enter">
             <ErrorBoundary fallback={PageErrorFallback}>
               <Outlet />
             </ErrorBoundary>
