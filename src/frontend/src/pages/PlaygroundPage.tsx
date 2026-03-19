@@ -182,13 +182,13 @@ const PlaygroundPage = () => {
     );
   }, []);
   const clearAllPins = useCallback(() => setPinnedRuns([]), []);
-  const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
+  const [activeCarouselIndex, setActiveCarouselIndex] = useState(-1);
   const [isFillingTemplateFields, setIsFillingTemplateFields] = useState(false);
 
   // Reset carousel index when pins change + notify when all cleared
   const prevPinCountRef = useRef(0);
   useEffect(() => {
-    setActiveCarouselIndex(0);
+    setActiveCarouselIndex(-1);
     if (prevPinCountRef.current > 0 && pinnedRuns.length === 0) {
       toast.info('Comparison cleared');
     }

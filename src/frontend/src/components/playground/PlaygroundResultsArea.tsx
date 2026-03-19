@@ -120,7 +120,11 @@ function ScoreBadgeBar({
       {showCurrentPill && (
         <button
           onClick={onScrollToCurrent}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors cursor-pointer"
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer ${
+            activePinIndex === -1
+              ? 'bg-primary/10 border border-primary/30 ring-2 ring-primary'
+              : 'bg-primary/10 border border-primary/30 hover:bg-primary/20'
+          }`}
           title="Scroll to current run"
         >
           <span className="font-medium">Current Run</span>
@@ -137,7 +141,7 @@ function ScoreBadgeBar({
         </button>
       )}
       {pinnedRuns.map((run, i) => {
-        const isActive = i === activePinIndex;
+        const isActive = activePinIndex >= 0 && i === activePinIndex;
         const score = run.judgeScores?.averageScore;
         const color = score !== undefined ? scoreColor(score) : null;
         return (
@@ -468,6 +472,7 @@ export default function PlaygroundResultsArea({
             currentRunVersionLabel={hasCurrentRun ? currentVersionLabel : undefined}
             onClearAll={onClearAllPins}
             onScrollToCurrent={() => {
+              setActiveCarouselIndex(-1);
               const viewport = scrollContainerRef.current?.querySelector('[data-radix-scroll-area-viewport]');
               viewport?.scrollTo({ left: 0, behavior: 'smooth' });
             }}
