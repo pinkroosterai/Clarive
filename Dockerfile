@@ -13,13 +13,16 @@
 
 # ── Stage: backend-build ─────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
-WORKDIR /src
-COPY src/backend/Clarive.Api/Clarive.Api.csproj Clarive.Api/
+WORKDIR /repo
+# Copy build infrastructure files needed for restore (CPM, SDK pin, props)
+COPY global.json Directory.Build.props Directory.Packages.props ./
+COPY src/backend/Directory.Build.props src/backend/
+COPY src/backend/Clarive.Api/Clarive.Api.csproj src/backend/Clarive.Api/
 RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet restore Clarive.Api/Clarive.Api.csproj
-COPY src/backend/ .
+    dotnet restore src/backend/Clarive.Api/Clarive.Api.csproj
+COPY src/backend/ src/backend/
 RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet publish Clarive.Api/Clarive.Api.csproj \
+    dotnet publish src/backend/Clarive.Api/Clarive.Api.csproj \
     -c Release -o /app/publish
 
 # ── Stage: frontend-build ────────────────────────────────────

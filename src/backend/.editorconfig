@@ -1,0 +1,68 @@
+# .editorconfig — root config for .NET / C# projects (2026 best practices)
+# Documentation: https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/
+root = true
+
+# ── Universal settings ──────────────────────────────────────────────────────
+[*]
+charset                  = utf-8
+indent_style             = space
+indent_size              = 4
+end_of_line              = lf
+insert_final_newline     = true
+trim_trailing_whitespace = true
+
+# ── C# source files ─────────────────────────────────────────────────────────
+[*.cs]
+# ── Severity: treat all diagnostic categories as errors in CI ──────────────
+dotnet_analyzer_diagnostic.category-Style.severity           = warning
+dotnet_analyzer_diagnostic.category-Design.severity          = warning
+dotnet_analyzer_diagnostic.category-Performance.severity     = warning
+dotnet_analyzer_diagnostic.category-Reliability.severity     = error
+dotnet_analyzer_diagnostic.category-Security.severity        = error
+dotnet_analyzer_diagnostic.category-Maintainability.severity = warning
+
+# ── Nullable reference types: treat violations as errors ───────────────────
+dotnet_diagnostic.CS8600.severity = error  # null assigned to non-nullable
+dotnet_diagnostic.CS8601.severity = error  # possible null reference assignment
+dotnet_diagnostic.CS8602.severity = error  # dereference of possibly null
+dotnet_diagnostic.CS8603.severity = error  # possible null return
+dotnet_diagnostic.CS8618.severity = error  # non-nullable uninitialized
+
+# ── Code style: language features ──────────────────────────────────────────
+csharp_style_var_for_built_in_types                        = true:suggestion
+csharp_style_var_when_type_is_apparent                     = true:suggestion
+csharp_prefer_simple_using_statement                       = true:suggestion
+csharp_style_prefer_primary_constructors                   = true:suggestion
+csharp_style_prefer_null_check_over_type_check             = true:suggestion
+csharp_style_expression_bodied_methods                     = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties                  = true:suggestion
+csharp_prefer_static_local_function                        = true:warning
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
+dotnet_style_prefer_collection_expression                  = true:suggestion
+
+# ── Naming conventions ──────────────────────────────────────────────────────
+dotnet_naming_rule.private_fields_underscore.symbols        = private_fields
+dotnet_naming_rule.private_fields_underscore.style          = prefix_underscore
+dotnet_naming_rule.private_fields_underscore.severity       = warning
+
+dotnet_naming_symbols.private_fields.applicable_kinds       = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.prefix_underscore.required_prefix       = _
+dotnet_naming_style.prefix_underscore.capitalization        = camel_case
+
+# ── Formatting ──────────────────────────────────────────────────────────────
+csharp_new_line_before_open_brace                           = all
+csharp_new_line_before_else                                 = true
+csharp_new_line_before_catch                                = true
+csharp_new_line_before_finally                              = true
+csharp_indent_case_contents                                 = true
+csharp_indent_switch_labels                                 = true
+csharp_space_after_cast                                     = false
+csharp_space_before_colon_in_inheritance_clause             = true
+dotnet_sort_system_directives_first                         = true
+dotnet_separate_import_directive_groups                     = false
+
+# ── JSON / XML / config files ───────────────────────────────────────────────
+[*.{json,xml,yml,yaml,config,props,targets}]
+indent_size = 2

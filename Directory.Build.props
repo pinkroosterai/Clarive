@@ -1,22 +1,45 @@
 <Project>
-
   <PropertyGroup>
+    <!-- ── Target framework ─────────────────────────────────────────── -->
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- ── Language & compiler settings ────────────────────────────── -->
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- ── Treat warnings as errors in CI ────────────────────────────
+         Set TreatWarningsAsErrors=false locally if you want a softer
+         feedback loop during active development. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+
+    <!-- ── Static code analysis ──────────────────────────────────────
+         EnableNETAnalyzers = built-in .NET SDK CA/IDE rules.
+         AnalysisMode = All enables the widest rule set. -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisMode>All</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- ── Deterministic builds ──────────────────────────────────────
+         Ensures byte-identical output from identical inputs (CI best
+         practice — aids caching and reproducibility). -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- ── NuGet audit ───────────────────────────────────────────────
+         Fails the build if any dependency has a known CVE. -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>moderate</NuGetAuditLevel>
   </PropertyGroup>
 
+  <!-- ── Solution-wide Roslyn analyzers ───────────────────────────────────
+       Install these once here; they apply to every project automatically.
+       DO NOT add them individually in each .csproj file. -->
   <ItemGroup>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="all" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.9.0.115408" PrivateAssets="all" />
-    <PackageReference Include="Roslynator.Analyzers" Version="4.12.11" PrivateAssets="all" />
+    <PackageReference Include="Meziantou.Analyzer" PrivateAssets="All" />
+    <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="All" />
+    <PackageReference Include="Roslynator.Analyzers" PrivateAssets="All" />
   </ItemGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
-  </ItemGroup>
-
 </Project>
