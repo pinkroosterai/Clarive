@@ -222,7 +222,6 @@ export default function UsersTable() {
         sortable: true,
         flex: 3,
         minWidth: 160,
-        autoHeight: true,
         cellRenderer: UserCell,
       },
       {
@@ -388,7 +387,7 @@ export default function UsersTable() {
       {(isLoading || total > 0) && (
         <div
           className="ag-theme-quartz rounded-md border"
-          style={{ height: users.length > 0 ? Math.min(500, 48 + users.length * 52) : 500 }}
+          style={{ height: users.length > 0 ? Math.min(500, 48 + users.length * 58) : 500 }}
         >
           <AgGridReact<SuperUser>
             ref={gridRef}
@@ -396,6 +395,7 @@ export default function UsersTable() {
             modules={[AllCommunityModule]}
             rowData={users}
             columnDefs={columnDefs}
+            rowHeight={56}
             loading={isLoading}
             context={gridContext}
             suppressMovableColumns
