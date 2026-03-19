@@ -322,7 +322,7 @@ const PlaygroundPage = () => {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* ── Top bar ── */}
       <PlaygroundToolbar
         entryId={entryId}
@@ -357,7 +357,7 @@ const PlaygroundPage = () => {
       />
 
       {/* ── Main content ── */}
-      <div className="flex min-h-0">
+      <div className="flex flex-1 min-h-0">
         {/* Response area */}
         <PlaygroundResultsArea
           prompts={prompts}
@@ -404,7 +404,7 @@ const PlaygroundPage = () => {
               className="fixed inset-0 z-30 bg-black/30 md:hidden"
               onClick={() => setShowHistory(false)}
             />
-            <div className="fixed inset-y-0 right-0 z-40 w-full sm:w-80 md:sticky md:top-0 md:inset-auto md:z-auto md:h-[calc(100vh-3.5rem)] md:shrink-0">
+            <div className="fixed inset-y-0 right-0 z-40 w-full sm:w-80 md:relative md:inset-auto md:z-auto md:h-full md:shrink-0">
               <PlaygroundHistorySidebar
                 testRuns={testRuns}
                 isStreaming={isStreaming}

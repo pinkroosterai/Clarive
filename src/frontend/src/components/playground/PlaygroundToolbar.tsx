@@ -202,7 +202,7 @@ export default function PlaygroundToolbar({
   );
 
   return (
-    <div className="sticky top-0 z-10 border-b border-border-subtle bg-surface px-3 sm:px-6 py-3">
+    <div className="shrink-0 z-10 border-b border-border-subtle bg-surface px-3 sm:px-6 py-3">
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Back + title */}
         <Button
@@ -225,7 +225,7 @@ export default function PlaygroundToolbar({
         <div className="flex-1 min-w-0" />
 
         {/* Controls row — always single line */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
           {/* Model selector — always visible */}
           <div className={isStreaming ? 'opacity-50 pointer-events-none' : ''}>
             {modelSelector}
