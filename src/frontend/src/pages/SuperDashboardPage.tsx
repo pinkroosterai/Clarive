@@ -241,10 +241,11 @@ const SuperDashboardPage = () => {
           >
             {/* Platform Overview */}
             <section className="space-y-4">
-              <div className="mb-2">
+              <div className="flex items-center gap-2 mb-2">
                 <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
                   Platform Overview
                 </h3>
+                <div className="flex-1 border-b border-border" />
               </div>
               {statsLoading ? (
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

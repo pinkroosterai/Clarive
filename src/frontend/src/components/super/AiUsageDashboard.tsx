@@ -26,16 +26,17 @@ export default function AiUsageDashboard() {
   const { data: stats, isLoading } = useAiUsageStats(filters);
 
   const header = (
-    <div className="flex items-center justify-between mb-4">
-      <div>
+    <div className="mb-4 space-y-2">
+      <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
           AI Usage Analytics
         </h3>
-        <p className="text-xs text-foreground-muted mt-1">
-          Token consumption, cost breakdown, and usage trends across all AI operations.
-        </p>
+        <div className="flex-1 border-b border-border" />
+        <AiUsageDateFilter value={preset} onChange={setPreset} />
       </div>
-      <AiUsageDateFilter value={preset} onChange={setPreset} />
+      <p className="text-xs text-foreground-muted">
+        Token consumption, cost breakdown, and usage trends across all AI operations.
+      </p>
     </div>
   );
 
