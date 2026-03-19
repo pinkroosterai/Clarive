@@ -386,7 +386,10 @@ export default function UsersTable() {
 
       {/* Grid */}
       {(isLoading || total > 0) && (
-        <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
+        <div
+          className="ag-theme-quartz rounded-md border"
+          style={{ height: users.length > 0 ? Math.min(500, 48 + users.length * 52) : 500 }}
+        >
           <AgGridReact<SuperUser>
             ref={gridRef}
             theme={agGridTheme}
