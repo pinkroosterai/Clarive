@@ -1,7 +1,7 @@
 import { AllCommunityModule, type ColDef, type SortChangedEvent } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { format } from 'date-fns';
-import { Check, ChevronsUpDown, Download, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Download, Search, X } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import AiUsageLogDetailPanel from '@/components/super/AiUsageLogDetailPanel';
@@ -342,8 +342,17 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
         )}
       </div>
 
+      {/* Empty state */}
+      {!isLoading && totalCount === 0 && (
+        <div className="rounded-xl border border-border-subtle bg-surface elevation-1 p-12 flex flex-col items-center gap-3 text-center">
+          <Search className="size-10 text-foreground-muted" />
+          <p className="text-sm text-foreground-muted">No AI usage logs found for this period.</p>
+        </div>
+      )}
+
       {/* Grid */}
-      <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
+      {(isLoading || totalCount > 0) && (
+      <div className="ag-theme-quartz rounded-md border" style={{ height: 'min(500px, calc(100vh - 300px))' }}>
         <AgGridReact<AiUsageLogEntry>
           ref={gridRef}
           theme={agGridTheme}
@@ -363,6 +372,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
           }
         />
       </div>
+      )}
 
       {/* Detail Panel */}
       {selectedRow && <AiUsageLogDetailPanel row={selectedRow} onClose={handleDetailClose} />}

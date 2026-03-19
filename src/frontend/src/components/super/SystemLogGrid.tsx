@@ -328,7 +328,7 @@ export default function SystemLogGrid() {
       </div>
 
       {/* Grid */}
-      <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
+      <div className="ag-theme-quartz rounded-md border" style={{ height: 'min(500px, calc(100vh - 300px))' }}>
         <AgGridReact<SystemLogEntry>
           ref={gridRef}
           theme={agGridTheme}

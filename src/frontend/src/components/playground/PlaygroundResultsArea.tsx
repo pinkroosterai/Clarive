@@ -173,7 +173,7 @@ function ScoreBadgeBar({
               title={`View: ${run.model}`}
               aria-label={`View ${run.model}${score !== undefined ? `, score ${score.toFixed(1)}` : ''}`}
             >
-              <span className="truncate max-w-[100px] font-medium">{run.model}</span>
+              <span className="truncate max-w-[100px] font-medium" title={run.model}>{run.model}</span>
               {run.versionLabel && (
                 <span className="text-[10px] font-medium text-foreground-muted">
                   {run.versionLabel}

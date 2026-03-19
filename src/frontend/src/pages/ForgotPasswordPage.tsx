@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, ArrowLeft, Mail } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 
@@ -20,6 +20,10 @@ import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validat
 import { authService } from '@/services';
 
 const ForgotPasswordPage = () => {
+  useEffect(() => {
+    document.title = 'Clarive — Forgot Password';
+  }, []);
+
   const [sent, setSent] = useState(false);
 
   const form = useForm<ForgotPasswordFormData>({

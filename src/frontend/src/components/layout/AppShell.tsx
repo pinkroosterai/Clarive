@@ -34,7 +34,7 @@ export function AppShell() {
   const isFullBleed = /\/entry\/[^/]+(\/test|\/version\/\d+)?$/.test(location.pathname);
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={window.matchMedia('(min-width: 768px)').matches}>
       <DndProvider>
         <AppSidebar />
         <SidebarInset className="min-w-0 max-h-svh overflow-hidden">

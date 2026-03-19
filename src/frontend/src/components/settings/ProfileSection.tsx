@@ -242,9 +242,11 @@ export default function ProfileSection() {
               )}
             />
             {!isGoogleUser && (
-              <Button type="submit" disabled={!profileDirty || profileUpdate.isPending}>
-                {profileUpdate.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
+              <span title={!profileDirty ? 'No changes to save' : undefined}>
+                <Button type="submit" disabled={!profileDirty || profileUpdate.isPending}>
+                  {profileUpdate.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </span>
             )}
           </form>
         </Form>

@@ -78,7 +78,7 @@ function useBreadcrumbs(): Crumb[] {
 
   // --- Entry routes: build folder context + entry title ---
   if (entryId) {
-    const entryTitle = entry?.title ?? 'Entry';
+    const entryTitle = entry?.title ?? '...';
     const folderAncestors = entry ? buildFolderAncestorPath(folders, entry.folderId) : [];
     const folderCrumbs: Crumb[] = folderAncestors.map((a) => ({
       label: a.name,

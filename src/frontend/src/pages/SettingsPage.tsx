@@ -61,7 +61,7 @@ const SettingsPage = () => {
         onValueChange={(tab) => setSearchParams({ tab }, { replace: true })}
         className="w-full"
       >
-        <TabsList className="w-full h-auto justify-start flex-wrap bg-elevated rounded-lg p-1">
+        <TabsList className="w-full h-auto justify-start flex-nowrap overflow-x-auto bg-elevated rounded-lg p-1">
           <TabsTrigger value="profile" className={TAB_STYLE}>
             <UserCircle className="size-4 hidden sm:block" />
             Profile

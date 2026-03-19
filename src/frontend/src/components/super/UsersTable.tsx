@@ -73,7 +73,7 @@ function UserCell({ data }: ICellRendererParams<SuperUser>) {
       </Avatar>
       <div className="min-w-0 leading-tight">
         <div className="flex items-center gap-1.5">
-          <span className="font-medium truncate">{data.name}</span>
+          <span className="font-medium truncate" title={data.name}>{data.name}</span>
           {data.isSuperUser && (
             <Badge variant="outline" className="text-xs px-1 py-0 gap-0.5">
               <Shield className="size-3" />
@@ -81,7 +81,7 @@ function UserCell({ data }: ICellRendererParams<SuperUser>) {
             </Badge>
           )}
         </div>
-        <div className="text-xs text-foreground-muted truncate">{data.email}</div>
+        <div className="text-xs text-foreground-muted truncate" title={data.email}>{data.email}</div>
       </div>
     </div>
   );

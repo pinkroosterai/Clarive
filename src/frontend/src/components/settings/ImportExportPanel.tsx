@@ -152,7 +152,7 @@ export default function ImportExportPanel() {
 
           {selectedFile && !importResult && (
             <div className="flex items-center gap-3">
-              <div className="flex-1 truncate text-sm">
+              <div className="flex-1 truncate text-sm" title={selectedFile.name}>
                 <span className="font-medium">{selectedFile.name}</span>
                 <span className="ml-2 text-foreground-muted">
                   {formatFileSize(selectedFile.size)}

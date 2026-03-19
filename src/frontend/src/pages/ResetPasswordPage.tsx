@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -25,6 +25,10 @@ const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
+
+  useEffect(() => {
+    document.title = 'Clarive — Reset Password';
+  }, []);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);

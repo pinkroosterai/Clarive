@@ -74,7 +74,7 @@ export default function ProviderCard({
             </Badge>
           </div>
           {provider.endpointUrl && (
-            <p className="text-xs text-foreground-muted truncate">{provider.endpointUrl}</p>
+            <p className="text-xs text-foreground-muted truncate" title={provider.endpointUrl}>{provider.endpointUrl}</p>
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">

@@ -271,6 +271,7 @@ const TrashPage = () => {
                 type="button"
                 className="flex-1 min-w-0 font-medium truncate text-left cursor-pointer hover:text-primary transition-colors"
                 onClick={() => setPreviewId(entry.id)}
+                title={entry.title}
               >
                 {entry.title}
               </button>

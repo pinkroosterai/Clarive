@@ -11,6 +11,10 @@ type VerifyState = 'loading' | 'success' | 'error';
 const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
+  useEffect(() => {
+    document.title = 'Clarive — Verify Email';
+  }, []);
+
   const [state, setState] = useState<VerifyState>(token ? 'loading' : 'error');
   const [errorMessage, setErrorMessage] = useState('Invalid or missing verification token.');
 

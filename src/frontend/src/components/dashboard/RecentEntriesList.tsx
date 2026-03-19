@@ -53,7 +53,7 @@ export const RecentEntriesList = memo(function RecentEntriesList({
                   className="flex items-center justify-between gap-3 px-4 py-3 transition-colors"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{entry.title}</p>
+                    <p className="text-sm font-medium text-foreground truncate" title={entry.title}>{entry.title}</p>
                     <p className="text-xs text-foreground-muted mt-0.5">
                       {formatDistanceToNow(new Date(entry.updatedAt), { addSuffix: true })}
                     </p>

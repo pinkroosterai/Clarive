@@ -42,7 +42,7 @@ function SessionRow({
       {getDeviceIcon(session.os)}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium truncate">{session.browser}</span>
+          <span className="text-sm font-medium truncate" title={session.browser}>{session.browser}</span>
           <span className="text-xs text-foreground-muted">{session.os}</span>
           {session.isCurrent && (
             <Badge variant="outline" className="text-xs border-success-border text-success-text">

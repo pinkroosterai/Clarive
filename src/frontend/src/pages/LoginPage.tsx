@@ -32,6 +32,10 @@ const LoginPage = () => {
   const [emailEnabled, setEmailEnabled] = useState(true);
 
   useEffect(() => {
+    document.title = 'Clarive — Login';
+  }, []);
+
+  useEffect(() => {
     getSetupStatus()
       .then((s) => {
         setAllowRegistration(s.allowRegistration);

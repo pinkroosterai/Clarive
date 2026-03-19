@@ -10,6 +10,7 @@ import {
   Star,
   FolderTree,
   ChevronsUpDown,
+  ChevronsDownUp,
   Users,
   Wrench,
   Key,
@@ -1415,6 +1416,7 @@ export default function HelpPage() {
             onClick={() => setOpenSections([])}
             className="shrink-0 text-xs"
           >
+            <ChevronsDownUp className="size-3.5 mr-1" />
             Collapse All
           </Button>
         </div>
@@ -1457,7 +1459,7 @@ export default function HelpPage() {
       </div>
 
       {/* Sidebar TOC — desktop only, right side */}
-      <nav className="hidden lg:block w-56 shrink-0">
+      <nav className="hidden xl:block w-56 shrink-0">
         <div className="sticky top-20 space-y-3">
           {filteredGroups.map((group) => (
             <div key={group.label}>

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -26,6 +26,10 @@ import { useAuthStore } from '@/store/authStore';
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, setUser, setWorkspaces } = useAuthStore();
+
+  useEffect(() => {
+    document.title = 'Clarive — Register';
+  }, []);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);

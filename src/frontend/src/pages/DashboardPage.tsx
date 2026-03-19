@@ -105,10 +105,10 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="dashboard-stats">
-        <StatCard icon={FileText} label="Entries" value={stats.totalEntries} index={0} />
-        <StatCard icon={Globe} label="Published" value={stats.publishedEntries} index={1} />
-        <StatCard icon={PenLine} label="Drafts" value={stats.draftEntries} index={2} />
-        <StatCard icon={FolderOpen} label="Folders" value={stats.totalFolders} index={3} />
+        <StatCard icon={FileText} label="Entries" value={stats.totalEntries} index={0} to="/library" />
+        <StatCard icon={Globe} label="Published" value={stats.publishedEntries} index={1} to="/library?status=published" />
+        <StatCard icon={PenLine} label="Drafts" value={stats.draftEntries} index={2} to="/library?status=draft" />
+        <StatCard icon={FolderOpen} label="Folders" value={stats.totalFolders} index={3} to="/library" />
       </div>
 
       {stats.favoriteEntries && stats.favoriteEntries.length > 0 && (

@@ -89,7 +89,7 @@ export const EntryCard = memo(function EntryCard({
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
           <div className="flex items-center gap-1.5 min-w-0">
             <button
-              className="flex shrink-0 items-center justify-center rounded-sm opacity-0 group-hover:opacity-100 focus-visible:opacity-100 cursor-grab active:cursor-grabbing transition-opacity duration-150 touch-none"
+              className="hidden md:flex shrink-0 items-center justify-center rounded-sm opacity-0 group-hover:opacity-100 focus-visible:opacity-100 cursor-grab active:cursor-grabbing transition-opacity duration-150 touch-none"
               aria-label="Drag to move"
               onClick={(e) => e.stopPropagation()}
               {...listeners}

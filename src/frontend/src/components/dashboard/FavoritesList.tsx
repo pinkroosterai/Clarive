@@ -57,7 +57,7 @@ export const FavoritesList = memo(function FavoritesList({
                   className="flex items-center justify-between gap-3 flex-1 min-w-0"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{entry.title}</p>
+                    <p className="text-sm font-medium text-foreground truncate" title={entry.title}>{entry.title}</p>
                     <p className="text-xs text-foreground-muted mt-0.5">
                       Favorited{' '}
                       {formatDistanceToNow(new Date(entry.favoritedAt), { addSuffix: true })}

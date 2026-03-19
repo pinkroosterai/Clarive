@@ -100,7 +100,7 @@ export default function ModelTransferList({
                   onClick={() => addModel(model)}
                   className="flex items-center justify-between w-full px-2 py-1 text-xs rounded hover:bg-elevated transition-colors group"
                 >
-                  <span className="font-mono truncate">{model}</span>
+                  <span className="font-mono truncate" title={model}>{model}</span>
                   <ChevronRight className="size-3 opacity-0 group-hover:opacity-100 text-foreground-muted shrink-0" />
                 </button>
               ))
@@ -122,7 +122,7 @@ export default function ModelTransferList({
                   key={model}
                   className="flex items-center justify-between px-2 py-1 text-xs rounded hover:bg-elevated transition-colors group"
                 >
-                  <span className="font-mono truncate">{model}</span>
+                  <span className="font-mono truncate" title={model}>{model}</span>
                   <button
                     onClick={() => removeModel(model)}
                     className="opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive shrink-0"
