@@ -17,6 +17,12 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
     /// </summary>
     public static bool ShouldThrowOnGenerate { get; set; }
 
+    /// <summary>
+    /// When set, GenerateAsync will throw an AiProviderException with this category.
+    /// Reset to null after the throw to avoid affecting other tests.
+    /// </summary>
+    public static AiProviderErrorCategory? ThrowAiProviderErrorCategory { get; set; }
+
     public bool IsConfigured => true;
 
     public Task<GenerateOrchestratorResult> GenerateAsync(
@@ -25,6 +31,19 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
         Func<ProgressEvent, Task>? onProgress = null
     )
     {
+        if (ThrowAiProviderErrorCategory.HasValue)
+        {
+            var category = ThrowAiProviderErrorCategory.Value;
+            ThrowAiProviderErrorCategory = null;
+            throw new AiProviderException(
+                category,
+                "MockProvider",
+                attemptsMade: 4,
+                retryAfterSeconds: category == AiProviderErrorCategory.RateLimited ? 30 : null,
+                $"Simulated {category} error for testing",
+                innerException: null);
+        }
+
         if (ShouldThrowOnGenerate)
         {
             ShouldThrowOnGenerate = false;

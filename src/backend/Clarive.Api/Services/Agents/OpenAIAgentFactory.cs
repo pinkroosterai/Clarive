@@ -328,9 +328,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                 var openAiClient = openAiClients[providerKey];
 
                 var baseClient = openAiClient.GetChatClient(config.Model).AsIChatClient();
+                var resilientClient = new ResilientChatClient(baseClient, provider.ProviderName, _logger);
 
                 var wrappedClient = ChatOptionsBuilder.WrapWithRoleOverrides(
-                    ChatOptionsBuilder.WrapWithModelDefaults(baseClient, provider.Model),
+                    ChatOptionsBuilder.WrapWithModelDefaults(resilientClient, provider.Model),
                     config.Temperature,
                     config.MaxTokens,
                     config.ReasoningEffort

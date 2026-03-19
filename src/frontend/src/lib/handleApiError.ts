@@ -23,7 +23,28 @@ export function handleApiError(err: unknown, options: HandleApiErrorOptions = {}
 
   if (err instanceof ApiError) {
     if (!silent) {
-      if (err.status >= 500) {
+      // AI provider errors — contextual messages with retry guidance
+      if (err.code === 'AI_RATE_LIMITED') {
+        const retryAfter = (err.details?.retryAfterSeconds as number) ?? null;
+        if (retryAfter && retryAfter > 0) {
+          showRateLimitCountdown(retryAfter);
+        } else {
+          toast.error('AI provider rate limited', {
+            description: 'Too many requests. Please wait a moment and try again.',
+            duration: 15000,
+          });
+        }
+      } else if (err.code === 'AI_UNAVAILABLE') {
+        toast.error('AI provider unavailable', {
+          description: 'The AI service is temporarily unavailable. Please try again later.',
+          duration: 8000,
+        });
+      } else if (err.code === 'AI_TIMEOUT') {
+        toast.error('AI request timed out', {
+          description: 'The AI provider took too long to respond. Please try again.',
+          duration: 8000,
+        });
+      } else if (err.status >= 500) {
         toast.error(title ?? 'Server error', {
           description: err.message,
           duration: 8000,
@@ -47,4 +68,32 @@ export function handleApiError(err: unknown, options: HandleApiErrorOptions = {}
   } else {
     if (!silent) toast.error(title ?? fallback);
   }
+}
+
+function showRateLimitCountdown(seconds: number): void {
+  const toastId = 'ai-rate-limit';
+  let remaining = seconds;
+
+  toast.error('AI provider rate limited', {
+    id: toastId,
+    description: `Too many requests. Retry in ${remaining}s.`,
+    duration: (seconds + 1) * 1000,
+  });
+
+  const interval = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      toast.success('You can retry now', {
+        id: toastId,
+        duration: 4000,
+      });
+    } else {
+      toast.error('AI provider rate limited', {
+        id: toastId,
+        description: `Too many requests. Retry in ${remaining}s.`,
+        duration: (remaining + 1) * 1000,
+      });
+    }
+  }, 1000);
 }

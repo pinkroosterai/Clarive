@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Clarive.Api.Models.Responses;
+using Clarive.Api.Services.Agents;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Middleware;
@@ -21,6 +22,18 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
                 context.Request.Path
             );
             await HandleConcurrencyAsync(context);
+        }
+        catch (AiProviderException aiEx)
+        {
+            logger.LogWarning(
+                aiEx,
+                "AI provider {Provider} error after {Attempts} attempts on {Method} {Path}",
+                aiEx.ProviderName,
+                aiEx.AttemptsMade,
+                context.Request.Method,
+                context.Request.Path
+            );
+            await HandleAiProviderExceptionAsync(context, aiEx);
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
@@ -52,6 +65,33 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             new ErrorDetail(
                 "CONCURRENCY_CONFLICT",
                 "The resource was modified by another request. Please reload and try again."
+            )
+        );
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+        await context.Response.WriteAsJsonAsync(response, options);
+    }
+
+    private static async Task HandleAiProviderExceptionAsync(HttpContext context, AiProviderException aiEx)
+    {
+        var (statusCode, errorCode) = aiEx.Category switch
+        {
+            AiProviderErrorCategory.RateLimited => (StatusCodes.Status429TooManyRequests, "AI_RATE_LIMITED"),
+            AiProviderErrorCategory.Timeout => (StatusCodes.Status504GatewayTimeout, "AI_TIMEOUT"),
+            _ => (StatusCodes.Status503ServiceUnavailable, "AI_UNAVAILABLE"),
+        };
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+
+        var response = new ErrorResponse(
+            new ErrorDetail(
+                errorCode,
+                aiEx.Message,
+                new { aiEx.RetryAfterSeconds, aiEx.AttemptsMade, aiEx.ProviderName }
             )
         );
 

@@ -30,7 +30,8 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public code: string,
-    message: string
+    message: string,
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'ApiError';
@@ -140,13 +141,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       const { useAuthStore } = await import('@/store/authStore');
       useAuthStore.getState().setMaintenanceMode(true);
     }
-    throw new ApiError(503, err?.code ?? 'SERVICE_UNAVAILABLE', err?.message ?? res.statusText);
+    throw new ApiError(503, err?.code ?? 'SERVICE_UNAVAILABLE', err?.message ?? res.statusText, err?.details);
   }
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     const err = body?.error;
-    throw new ApiError(res.status, err?.code ?? 'UNKNOWN', err?.message ?? res.statusText);
+    throw new ApiError(res.status, err?.code ?? 'UNKNOWN', err?.message ?? res.statusText, err?.details);
   }
 
   if (res.status === 204) return undefined as T;
