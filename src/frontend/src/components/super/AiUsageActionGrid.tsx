@@ -19,8 +19,8 @@ function formatDuration(ms: number): string {
   return `${Math.round(ms)}ms`;
 }
 
-function formatCost(usd: number): string {
-  if (usd === 0) return '—';
+function formatCost(usd: number | undefined | null): string {
+  if (usd == null || usd === 0) return '—';
   return `$${usd.toFixed(4)}`;
 }
 

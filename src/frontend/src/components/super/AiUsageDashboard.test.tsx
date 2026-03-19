@@ -12,7 +12,7 @@ beforeAll(() => {
 
 vi.mock('@/hooks/useAiUsage', () => ({
   useAiUsageStats: vi.fn(),
-  useAiUsageLogs: vi.fn().mockReturnValue({ data: { items: [], totalCount: 0 }, isLoading: false }),
+  useAiUsageLogs: vi.fn().mockReturnValue({ data: { items: [{ id: '1' }], totalCount: 1 }, isLoading: false }),
   useAiUsageFilters: vi
     .fn()
     .mockReturnValue({ data: { models: [], actionTypes: [], tenants: [] }, isLoading: false }),
