@@ -1,3 +1,15 @@
+import type { EnrichedModel } from '@/services/api/playgroundService';
+
+/** A queued model with a full snapshot of its parameters at enqueue time. */
+export interface QueuedModel {
+  model: EnrichedModel;
+  temperature: number;
+  maxTokens: number;
+  reasoningEffort: string;
+  showReasoning: boolean;
+  isReasoning: boolean;
+}
+
 export function safeSessionGet<T>(key: string, fallback: T): T {
   try {
     const val = sessionStorage.getItem(key);

@@ -1,4 +1,4 @@
-import { ArrowLeft, Play, Square, History, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, ListPlus, Play, Square, History, SlidersHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,6 @@ interface PlaygroundToolbarProps {
   model: string;
   modelsByProvider: Record<string, EnrichedModel[]>;
   modelsError: boolean;
-  enrichedModels: EnrichedModel[];
   temperature: number;
   setTemperature: (v: number) => void;
   maxTokens: number;
@@ -44,6 +43,11 @@ interface PlaygroundToolbarProps {
   handleRun: () => void;
   handleAbort: () => void;
   onModelChange: (model: EnrichedModel) => void;
+  onEnqueue: () => void;
+  queueLength: number;
+  isBatchRunning?: boolean;
+  batchCurrent?: number;
+  batchTotal?: number;
 }
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -73,13 +77,17 @@ export default function PlaygroundToolbar({
   handleRun,
   handleAbort,
   onModelChange,
+  onEnqueue,
+  queueLength,
+  isBatchRunning,
+  batchCurrent,
+  batchTotal,
 }: PlaygroundToolbarProps) {
   const navigate = useNavigate();
 
   // Model selector — shared between desktop inline and mobile popover
   const modelSelector = (
     <div className="flex items-center gap-2">
-      <Label className="text-xs text-foreground-muted shrink-0 hidden lg:block">Model</Label>
       {modelsError ? (
         <span className="text-xs text-destructive">Failed to load models</span>
       ) : (
@@ -201,6 +209,8 @@ export default function PlaygroundToolbar({
     </div>
   );
 
+  const hasQueue = queueLength > 0;
+
   return (
     <div className="shrink-0 z-10 border-b border-border-subtle bg-surface px-3 sm:px-6 py-3">
       <div className="flex items-center gap-2 sm:gap-4">
@@ -231,18 +241,12 @@ export default function PlaygroundToolbar({
             {modelSelector}
           </div>
 
-          {/* Desktop inline parameter controls (lg+) */}
-          <div className="hidden lg:flex items-center gap-3">
-            {parameterControls(false)}
-          </div>
-
-          {/* Mobile/tablet parameter popover (<lg) */}
+          {/* Settings popover */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="lg:hidden"
                 aria-label="Model settings"
               >
                 <SlidersHorizontal className="size-4" />
@@ -254,19 +258,42 @@ export default function PlaygroundToolbar({
             </PopoverContent>
           </Popover>
 
+          {/* Enqueue */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onEnqueue}
+            disabled={!model || isStreaming}
+            title="Add model + params to comparison queue"
+          >
+            <ListPlus className="size-3 mr-1.5" />
+            <span className="hidden sm:inline">Enqueue</span>
+          </Button>
+
           {/* Run / Stop */}
           {isStreaming ? (
-            <Button size="sm" variant="destructive" onClick={handleAbort} title="Stop (Esc)">
-              <Square className="size-3 mr-1.5" />
-              Stop
-            </Button>
+            <>
+              <Button size="sm" variant="destructive" onClick={handleAbort} title="Stop (Esc)">
+                <Square className="size-3 mr-1.5" />
+                Stop
+              </Button>
+              {isBatchRunning && batchTotal != null && batchTotal > 1 && batchCurrent != null && (
+                <span className="text-xs text-foreground-muted tabular-nums">
+                  {batchCurrent}/{batchTotal}
+                </span>
+              )}
+            </>
           ) : (
             <Button
               size="sm"
               onClick={handleRun}
-              disabled={!model || hasValidationErrors}
+              disabled={!model || hasValidationErrors || hasQueue}
               title={
-                hasValidationErrors ? 'Fill all template fields to run' : `Run (${modKey}+Enter)`
+                hasQueue
+                  ? 'Clear queue or use Run Queue to run comparison'
+                  : hasValidationErrors
+                    ? 'Fill all template fields to run'
+                    : `Run (${modKey}+Enter)`
               }
             >
               <Play className="size-3 mr-1.5" />

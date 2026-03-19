@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -6,7 +6,13 @@ import { toast } from 'sonner';
 import PlaygroundHistorySidebar from '@/components/playground/PlaygroundHistorySidebar';
 import PlaygroundResultsArea from '@/components/playground/PlaygroundResultsArea';
 import PlaygroundToolbar from '@/components/playground/PlaygroundToolbar';
-import { safeSessionGet, addPinToList, removePinFromList } from '@/components/playground/utils';
+import QueueStrip from '@/components/playground/QueueStrip';
+import {
+  safeSessionGet,
+  addPinToList,
+  removePinFromList,
+  type QueuedModel,
+} from '@/components/playground/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +46,7 @@ import type { TemplateField } from '@/types';
 const PlaygroundPage = () => {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const aiEnabled = useAiEnabled();
   const storageKey = `playground_${entryId}`;
 
@@ -130,6 +137,7 @@ const PlaygroundPage = () => {
     elapsedSeconds,
     approxOutputTokens,
     lastTokens,
+    lastRunId,
     lastJudgeScores,
     lastVersionLabel,
     isJudging,
@@ -186,6 +194,132 @@ const PlaygroundPage = () => {
     }
     prevPinCountRef.current = pinnedRuns.length;
   }, [pinnedRuns.length]);
+
+  // ── Queue state (user-facing queue for building comparisons) ──
+  const [queuedModels, setQueuedModels] = useState<QueuedModel[]>([]);
+
+  const handleEnqueue = useCallback(() => {
+    if (!selectedModel) return;
+    setQueuedModels((prev) => [
+      ...prev,
+      {
+        model: selectedModel,
+        temperature,
+        maxTokens,
+        reasoningEffort,
+        showReasoning,
+        isReasoning: selectedModel.isReasoning,
+      },
+    ]);
+    toast.success(`Enqueued ${selectedModel.displayName || selectedModel.modelId}`);
+  }, [selectedModel, temperature, maxTokens, reasoningEffort, showReasoning]);
+
+  const handleRemoveFromQueue = useCallback((index: number) => {
+    setQueuedModels((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleClearQueue = useCallback(() => {
+    setQueuedModels([]);
+  }, []);
+
+  // ── Batch execution state (runtime queue consumed during execution) ──
+  const [executionQueue, setExecutionQueue] = useState<QueuedModel[]>([]);
+  const [batchTotal, setBatchTotal] = useState(0);
+  const batchAbortedRef = useRef(false);
+  const isBatchRunning = executionQueue.length > 0 || (batchTotal > 0 && isStreaming);
+  const batchCurrent = batchTotal - executionQueue.length;
+
+  // ── Batch orchestration: auto-pin completed run + start next ──
+  const prevIsStreamingRef = useRef(false);
+  useEffect(() => {
+    const justFinished = prevIsStreamingRef.current && !isStreaming;
+    prevIsStreamingRef.current = isStreaming;
+
+    if (!justFinished || batchTotal === 0) return;
+
+    // Auto-pin the just-completed run
+    if (lastRunId && !error && !wasStopped) {
+      queryClient
+        .invalidateQueries({ queryKey: ['playground', 'runs', entryId] })
+        .then(() => {
+          const runs = queryClient.getQueryData<TestRunResponse[]>([
+            'playground',
+            'runs',
+            entryId,
+          ]);
+          const completedRun = runs?.find((r) => r.id === lastRunId);
+          if (completedRun) addPin(completedRun);
+        });
+    }
+
+    // Error on one model during batch: toast and continue
+    if (error && executionQueue.length > 0 && !batchAbortedRef.current) {
+      const failedName = selectedModel?.displayName || selectedModel?.modelId || 'Unknown model';
+      toast.error(`Failed: ${failedName}`);
+    }
+
+    // If aborted or no more models, clean up batch state
+    if (batchAbortedRef.current || executionQueue.length === 0) {
+      setBatchTotal(0);
+      batchAbortedRef.current = false;
+      return;
+    }
+
+    // Rate limit: wait for countdown to expire before continuing
+    if (rateLimitCountdown > 0) return;
+
+    // Start next item in execution queue — apply its full param snapshot
+    const nextItem = executionQueue[0];
+    setSelectedModel(nextItem.model);
+    setTemperature(nextItem.temperature);
+    setMaxTokens(nextItem.maxTokens);
+    setReasoningEffort(nextItem.reasoningEffort);
+    setShowReasoning(nextItem.showReasoning);
+    setExecutionQueue((prev) => prev.slice(1));
+  }, [
+    isStreaming,
+    batchTotal,
+    executionQueue,
+    lastRunId,
+    error,
+    wasStopped,
+    rateLimitCountdown,
+    entryId,
+    queryClient,
+    addPin,
+    selectedModel,
+  ]);
+
+  // Rate limit recovery: resume batch when countdown reaches 0
+  useEffect(() => {
+    if (
+      rateLimitCountdown === 0 &&
+      executionQueue.length > 0 &&
+      !isStreaming &&
+      !batchAbortedRef.current &&
+      batchTotal > 0
+    ) {
+      const nextItem = executionQueue[0];
+      setSelectedModel(nextItem.model);
+      setTemperature(nextItem.temperature);
+      setMaxTokens(nextItem.maxTokens);
+      setReasoningEffort(nextItem.reasoningEffort);
+      setShowReasoning(nextItem.showReasoning);
+      setExecutionQueue((prev) => prev.slice(1));
+    }
+  }, [rateLimitCountdown]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Trigger handleRun when model changes during batch execution
+  const prevModelRef = useRef<string | null>(null);
+  useEffect(() => {
+    const modelId = selectedModel?.modelId ?? null;
+    if (modelId && modelId !== prevModelRef.current && batchTotal > 0 && !isStreaming) {
+      prevModelRef.current = modelId;
+      const timer = setTimeout(() => handleRun(), 50);
+      return () => clearTimeout(timer);
+    }
+    if (!modelId) prevModelRef.current = null;
+  }, [selectedModel, batchTotal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Queries ──
   const { data: enrichedModels = [], isError: modelsError } = useQuery({
@@ -251,6 +385,34 @@ const PlaygroundPage = () => {
     [enrichedModels]
   );
 
+  // ── Run Queue handler ──
+  const handleRunQueue = useCallback(() => {
+    if (queuedModels.length === 0) return;
+    // Clear pins for fresh comparison
+    clearAllPins();
+    batchAbortedRef.current = false;
+    prevModelRef.current = null;
+    setBatchTotal(queuedModels.length);
+    // Move user queue to execution queue, clear user queue
+    setExecutionQueue(queuedModels.slice(1));
+    setQueuedModels([]);
+    // Apply first item's params and kick off
+    const first = queuedModels[0];
+    setSelectedModel(first.model);
+    setTemperature(first.temperature);
+    setMaxTokens(first.maxTokens);
+    setReasoningEffort(first.reasoningEffort);
+    setShowReasoning(first.showReasoning);
+  }, [queuedModels, clearAllPins]);
+
+  // ── Batch abort handler ──
+  const handleBatchAbort = useCallback(() => {
+    batchAbortedRef.current = true;
+    setExecutionQueue([]);
+    setBatchTotal(0);
+    handleAbort();
+  }, [handleAbort]);
+
   const model = selectedModel?.modelId ?? '';
   const hasValidationErrors =
     templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
@@ -258,22 +420,22 @@ const PlaygroundPage = () => {
   // ── Keyboard shortcuts ──
   usePlaygroundKeyboardShortcuts({
     isStreaming,
-    canRun: !!model && !hasValidationErrors,
+    canRun: !!model && !hasValidationErrors && queuedModels.length === 0,
     onRun: handleRun,
-    onAbort: handleAbort,
+    onAbort: isBatchRunning ? handleBatchAbort : handleAbort,
   });
 
-  // ── Navigation guard while streaming ──
-  const blocker = useBlocker(isStreaming);
+  // ── Navigation guard while streaming or batch running ──
+  const blocker = useBlocker(isStreaming || executionQueue.length > 0);
 
   useEffect(() => {
-    if (!isStreaming) return;
+    if (!isStreaming && executionQueue.length === 0) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [isStreaming]);
+  }, [isStreaming, executionQueue.length]);
 
   const modelsByProvider = useMemo(
     () =>
@@ -333,7 +495,6 @@ const PlaygroundPage = () => {
         model={model}
         modelsByProvider={modelsByProvider}
         modelsError={modelsError}
-        enrichedModels={enrichedModels}
         temperature={temperature}
         setTemperature={setTemperature}
         maxTokens={maxTokens}
@@ -347,14 +508,33 @@ const PlaygroundPage = () => {
         setShowHistory={setShowHistory}
         hasValidationErrors={hasValidationErrors}
         handleRun={handleRun}
-        handleAbort={handleAbort}
+        handleAbort={isBatchRunning ? handleBatchAbort : handleAbort}
         onModelChange={(found) => {
           setSelectedModel(found);
           setTemperature(found.defaultTemperature ?? PLAYGROUND_DEFAULTS.TEMPERATURE);
           setMaxTokens(found.defaultMaxTokens ?? PLAYGROUND_DEFAULTS.MAX_TOKENS);
           setReasoningEffort(found.defaultReasoningEffort ?? PLAYGROUND_DEFAULTS.REASONING_EFFORT);
         }}
+        onEnqueue={handleEnqueue}
+        queueLength={queuedModels.length}
+        isBatchRunning={isBatchRunning}
+        batchCurrent={batchCurrent}
+        batchTotal={batchTotal}
       />
+
+      {/* ── Queue strip ── */}
+      {(queuedModels.length > 0 || isBatchRunning) && (
+        <QueueStrip
+          queue={queuedModels}
+          onRemove={handleRemoveFromQueue}
+          onClear={handleClearQueue}
+          onRunQueue={handleRunQueue}
+          isStreaming={isStreaming}
+          isBatchRunning={isBatchRunning}
+          batchCurrent={batchCurrent}
+          batchTotal={batchTotal}
+        />
+      )}
 
       {/* ── Main content ── */}
       <div className="flex flex-1 min-h-0">
@@ -424,21 +604,26 @@ const PlaygroundPage = () => {
         )}
       </div>
 
-      {/* Navigation guard during streaming */}
+      {/* Navigation guard during streaming or batch */}
       <AlertDialog open={blocker.state === 'blocked'}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Test in progress</AlertDialogTitle>
             <AlertDialogDescription>
-              A test is currently running. Leaving will stop the generation and discard the
-              response.
+              {isBatchRunning
+                ? `A batch comparison is running (${batchCurrent} of ${batchTotal} models completed). Leaving will stop the current run and cancel remaining models.`
+                : 'A test is currently running. Leaving will stop the generation and discard the response.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => blocker.reset?.()}>Stay</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                handleAbort();
+                if (isBatchRunning) {
+                  handleBatchAbort();
+                } else {
+                  handleAbort();
+                }
                 blocker.proceed?.();
               }}
             >

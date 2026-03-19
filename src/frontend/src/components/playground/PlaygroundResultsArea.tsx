@@ -325,13 +325,21 @@ export default function PlaygroundResultsArea({
     [pinnedRuns.length, setActiveCarouselIndex]
   );
 
-  // Scroll active pin column into view when index changes
+  // Scroll active pin column into view when index changes (horizontal only — no vertical scroll)
   useEffect(() => {
     if (!scrollContainerRef.current) return;
+    const viewport = scrollContainerRef.current.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
     const target = scrollContainerRef.current.querySelector(
       `[data-pin-index="${clampedPinIndex}"]`
-    );
-    target?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    ) as HTMLElement | null;
+    if (!target) return;
+    // Scroll horizontally within the ScrollArea viewport without affecting window scroll
+    const targetLeft = target.offsetLeft;
+    const viewportWidth = viewport.clientWidth;
+    const targetWidth = target.offsetWidth;
+    const scrollLeft = targetLeft - (viewportWidth - targetWidth) / 2;
+    viewport.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
   }, [clampedPinIndex]);
 
   return (
@@ -459,7 +467,8 @@ export default function PlaygroundResultsArea({
             currentRunVersionLabel={hasCurrentRun ? currentVersionLabel : undefined}
             onClearAll={onClearAllPins}
             onScrollToCurrent={() => {
-              scrollContainerRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+              const viewport = scrollContainerRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+              viewport?.scrollTo({ left: 0, behavior: 'smooth' });
             }}
           />
 
