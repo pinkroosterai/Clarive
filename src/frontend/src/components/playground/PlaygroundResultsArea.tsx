@@ -343,6 +343,7 @@ export default function PlaygroundResultsArea({
   }, [clampedPinIndex]);
 
   return (
+    <div className="flex flex-col flex-1 min-w-0">
     <ScrollArea className="flex-1 min-w-0">
     <div className="p-6">
       {/* Template variables (collapsible) */}
@@ -936,14 +937,6 @@ export default function PlaygroundResultsArea({
         </div>
       )}
 
-      {/* Judging indicator */}
-      {isJudging && !currentJudgeScores && (
-        <div className="flex items-center gap-2 text-xs text-foreground-muted mt-4 pt-3 border-t border-border-subtle">
-          <Loader2 className="size-3.5 animate-spin text-primary" />
-          <span>Evaluating output quality...</span>
-        </div>
-      )}
-
       {/* Judge output quality (non-comparison mode) */}
       {!hasPins && !isStreaming && hasResponses && currentJudgeScores && (
         <JudgeScorePanel scores={currentJudgeScores} />
@@ -984,5 +977,17 @@ export default function PlaygroundResultsArea({
       )}
     </div>
     </ScrollArea>
+
+    {/* Run status bar — fixed at bottom, visible during generation and judging */}
+    {(isStreaming || (isJudging && !currentJudgeScores)) && (
+      <div className="flex items-center justify-center gap-3 px-6 py-3 bg-elevated border-t border-border-subtle shrink-0">
+        <Loader2 className="size-5 animate-spin text-primary" />
+        <span className="text-base text-foreground">
+          {isJudging ? 'Evaluating quality...' : 'Generating response...'}
+        </span>
+        <span className="text-base text-foreground-muted">{elapsedSeconds}s</span>
+      </div>
+    )}
+    </div>
   );
 }
