@@ -268,6 +268,20 @@ export function usePlaygroundStreaming({
     abortRef.current?.abort();
   }, []);
 
+  const clearCurrentRun = useCallback(() => {
+    setStreamedResponses({});
+    setStreamedReasoning({});
+    setError(null);
+    setWasStopped(false);
+    setLastTokens(null);
+    setLastRunId(null);
+    setLastJudgeScores(null);
+    setLastVersionLabel(null);
+    setElapsedSeconds(0);
+    setApproxOutputTokens(0);
+    streamedTextLengthRef.current = 0;
+  }, []);
+
   return {
     isStreaming,
     firstTokenReceived,
@@ -288,6 +302,7 @@ export function usePlaygroundStreaming({
     responseCount,
     handleRun,
     handleAbort,
+    clearCurrentRun,
     responseAreaRef,
   };
 }

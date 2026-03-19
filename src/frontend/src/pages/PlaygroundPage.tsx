@@ -146,6 +146,7 @@ const PlaygroundPage = () => {
     responseCount,
     handleRun,
     handleAbort,
+    clearCurrentRun,
     responseAreaRef,
   } = usePlaygroundStreaming({
     entryId,
@@ -574,6 +575,7 @@ const PlaygroundPage = () => {
           currentVersionLabel={lastVersionLabel}
           onFillTemplateFields={templateFields.length > 0 ? handleFillTemplateFields : undefined}
           isFillingTemplateFields={isFillingTemplateFields}
+          onClearCurrentRun={clearCurrentRun}
         />
 
         {/* ── History sidebar — overlay on small screens, inline on md+ ── */}
