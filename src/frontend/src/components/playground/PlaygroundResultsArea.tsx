@@ -710,9 +710,24 @@ export default function PlaygroundResultsArea({
             );
           })()}
 
-          {/* Navigation hint for scrollable layouts */}
-          {pinnedRuns.length > 1 && (
+          {/* Navigation dots */}
+          {(hasCurrentRun ? pinnedRuns.length >= 1 : pinnedRuns.length > 1) && (
             <div className="flex items-center justify-center gap-1.5 pt-1">
+              {hasCurrentRun && (
+                <button
+                  onClick={() => {
+                    setActiveCarouselIndex(-1);
+                    const viewport = scrollContainerRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+                    viewport?.scrollTo({ left: 0, behavior: 'smooth' });
+                  }}
+                  className={`size-2 rounded-full transition-colors ${
+                    clampedPinIndex === -1
+                      ? 'bg-primary'
+                      : 'bg-border-subtle hover:bg-foreground-muted/40'
+                  }`}
+                  aria-label="View current run"
+                />
+              )}
               {pinnedRuns.map((_, i) => (
                 <button
                   key={i}
@@ -725,9 +740,6 @@ export default function PlaygroundResultsArea({
                   aria-label={`View pinned run ${i + 1}`}
                 />
               ))}
-              <span className="text-[10px] text-foreground-muted/50 ml-1.5 hidden sm:inline">
-                ← →
-              </span>
             </div>
           )}
         </div>
