@@ -1,5 +1,6 @@
 import { AlertTriangle, X } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { useAuthStore } from '@/store/authStore';
 
@@ -15,8 +16,11 @@ export function AiNotConfiguredBanner() {
       <div className="flex items-center gap-2">
         <AlertTriangle className="size-4 shrink-0" />
         <span>
-          AI features are not available. Add an AI provider and configure default/premium models in
-          Super Admin &gt; AI.
+          AI features are disabled — configure an AI provider in{' '}
+          <Link to="/super?tab=ai" className="underline underline-offset-2 font-medium hover:opacity-80">
+            Super Admin &gt; AI
+          </Link>{' '}
+          to enable them.
         </span>
       </div>
       <button

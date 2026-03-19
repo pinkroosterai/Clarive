@@ -159,28 +159,40 @@ export const PromptCard = memo(function PromptCard({
         {!isOnly && !isReadOnly && (
           <CardFooter className="justify-between pt-0">
             <div className="flex gap-1">
-              <motion.div whileTap={{ scale: 0.92 }}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  disabled={index === 1}
-                  onClick={onMoveUp}
-                >
-                  <ArrowUp className="size-3.5" />
-                </Button>
-              </motion.div>
-              <motion.div whileTap={{ scale: 0.92 }}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  disabled={isLast}
-                  onClick={onMoveDown}
-                >
-                  <ArrowDown className="size-3.5" />
-                </Button>
-              </motion.div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div whileTap={{ scale: 0.92 }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      disabled={index === 1}
+                      onClick={onMoveUp}
+                      aria-label="Move up"
+                    >
+                      <ArrowUp className="size-3.5" />
+                    </Button>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Move up</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div whileTap={{ scale: 0.92 }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      disabled={isLast}
+                      onClick={onMoveDown}
+                      aria-label="Move down"
+                    >
+                      <ArrowDown className="size-3.5" />
+                    </Button>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Move down</TooltipContent>
+              </Tooltip>
             </div>
             <motion.div whileTap={{ scale: 0.95 }}>
               <Button

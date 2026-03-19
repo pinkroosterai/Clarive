@@ -199,7 +199,9 @@ export function ActionsTabContent({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">
-            <kbd className="text-xs">Ctrl+S</kbd>
+            {hasEmptyTitle
+              ? 'Title is required to save'
+              : <>Save Draft <kbd className="ml-1 text-xs opacity-60">Ctrl+S</kbd></>}
           </TooltipContent>
         </Tooltip>
 
@@ -357,35 +359,51 @@ export function ActionsTabContent({
                   </Button>
                 </div>
               </TooltipTrigger>
-              {!aiEnabled && (
-                <TooltipContent side="left">AI features are not configured</TooltipContent>
-              )}
+              <TooltipContent side="left">
+                {aiEnabled ? 'Improve your prompt with AI suggestions' : 'AI features are not configured'}
+              </TooltipContent>
             </Tooltip>
 
             {showGenerateSystemMessage && (
-              <Button
-                variant="outline"
-                className="w-full gap-2 hover:border-primary/30 transition-all"
-                onClick={onGenerateSystemMessage}
-                disabled={isGeneratingSystemMessage || !aiEnabled}
-              >
-                <Wand2 className="size-4" />
-                {isGeneratingSystemMessage ? 'Generating\u2026' : 'Generate System Message'}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 hover:border-primary/30 transition-all"
+                      onClick={onGenerateSystemMessage}
+                      disabled={isGeneratingSystemMessage || !aiEnabled}
+                    >
+                      <Wand2 className="size-4" />
+                      {isGeneratingSystemMessage ? 'Generating\u2026' : 'Generate System Message'}
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  {aiEnabled ? 'Auto-generate a system message from your prompt' : 'AI features are not configured'}
+                </TooltipContent>
+              </Tooltip>
             )}
 
             {showDecomposeToChain && (
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full gap-2 hover:border-primary/30 transition-all"
-                    disabled={isDecomposing || !aiEnabled}
-                  >
-                    <Workflow className="size-4" />
-                    {isDecomposing ? 'Decomposing\u2026' : 'Decompose to Chain'}
-                  </Button>
-                </AlertDialogTrigger>
+                <Tooltip>
+                  <AlertDialogTrigger asChild>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2 hover:border-primary/30 transition-all"
+                        disabled={isDecomposing || !aiEnabled}
+                      >
+                        <Workflow className="size-4" />
+                        {isDecomposing ? 'Decomposing\u2026' : 'Decompose to Chain'}
+                      </Button>
+                    </TooltipTrigger>
+                  </AlertDialogTrigger>
+                  <TooltipContent side="left">
+                    {aiEnabled ? 'Split your prompt into a multi-step chain' : 'AI features are not configured'}
+                  </TooltipContent>
+                </Tooltip>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Decompose to chain?</AlertDialogTitle>
@@ -417,9 +435,9 @@ export function ActionsTabContent({
                     </Button>
                   </div>
                 </TooltipTrigger>
-                {!aiEnabled && (
-                  <TooltipContent side="left">AI features are not configured</TooltipContent>
-                )}
+                <TooltipContent side="left">
+                  {aiEnabled ? 'Run this prompt in the playground' : 'AI features are not configured'}
+                </TooltipContent>
               </Tooltip>
             )}
           </ActionGroup>
