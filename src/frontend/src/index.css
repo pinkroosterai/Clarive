@@ -434,6 +434,25 @@ html.theme-transitioning *::after {
   animation: fade-out 200ms ease-out forwards;
 }
 
+/* ── Themed native scrollbars (for containers that can't use Radix ScrollArea, e.g. virtualised lists) ── */
+.scrollbar-themed {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+.scrollbar-themed::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scrollbar-themed::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-themed::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
   *,

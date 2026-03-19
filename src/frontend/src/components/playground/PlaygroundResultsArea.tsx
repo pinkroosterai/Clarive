@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { scoreColor } from '@/components/wizard/scoreUtils';
 import { getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
@@ -211,7 +212,7 @@ function PromptSection({
               Prompt {p.promptIndex + 1}
             </div>
           )}
-          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto">
+          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
             {p.content}
           </div>
         </div>
@@ -334,7 +335,8 @@ export default function PlaygroundResultsArea({
   }, [clampedPinIndex]);
 
   return (
-    <div className="flex-1 p-6 min-w-0 overflow-auto">
+    <ScrollArea className="flex-1 min-w-0">
+    <div className="p-6">
       {/* Template variables (collapsible) */}
       {templateFields.length > 0 &&
         (() => {
@@ -479,10 +481,8 @@ export default function PlaygroundResultsArea({
             const needsScroll = totalColumns > 2;
 
             return (
-              <div
-                ref={scrollContainerRef}
-                className={needsScroll ? 'overflow-x-auto overflow-y-hidden' : ''}
-              >
+              <ScrollArea ref={scrollContainerRef}>
+              <div>
                 {/* 3-row grid: [header] [responses] [scores] — each row stretches to tallest cell */}
                 <div
                   className="grid gap-x-4 gap-y-3"
@@ -535,64 +535,87 @@ export default function PlaygroundResultsArea({
                   {/* ── Row 2: Response content (stretches to tallest) ── */}
                   {hasCurrentRun && (
                     <div className="space-y-3 self-start min-w-0">
-                      {showPrompts && (
-                        <PromptSection
-                          systemMessage={null}
-                          renderedPrompts={prompts.map((p, i) => ({
-                            promptIndex: i,
-                            content: renderTemplate(p.content, fieldValues),
-                          }))}
-                        />
-                      )}
-                      {prompts.map((_p, i) => (
-                        <div key={i}>
-                          {prompts.length > 1 && (
-                            <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                          )}
-                          {streamedReasoning[i] && (
-                            <ReasoningBlock
-                              reasoning={streamedReasoning[i]}
-                              isStreaming={isStreaming}
-                            />
-                          )}
-                          <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                            {streamedResponses[i] !== undefined ? (
-                              <LLMResponseBlock
-                                output={streamedResponses[i]}
+                      {prompts.map((_p, i) => {
+                        const renderedContent = renderTemplate(_p.content, fieldValues);
+                        return (
+                          <div key={i}>
+                            {showPrompts && (
+                              <div className="bg-elevated/30 rounded-md p-3 border border-border-subtle mb-3">
+                                {(prompts.length > 1) && (
+                                  <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
+                                    Prompt {i + 1}
+                                  </div>
+                                )}
+                                <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
+                                  {renderedContent}
+                                </div>
+                              </div>
+                            )}
+                            {!showPrompts && prompts.length > 1 && (
+                              <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                            )}
+                            {streamedReasoning[i] && (
+                              <ReasoningBlock
+                                reasoning={streamedReasoning[i]}
                                 isStreaming={isStreaming}
                               />
-                            ) : (
-                              <span className="text-xs text-foreground-muted">—</span>
                             )}
-                            {streamedResponses[i] && !isStreaming && (
-                              <CopyButton
-                                text={streamedResponses[i]}
-                                index={2000 + i}
-                                copiedIndex={copiedIndex}
-                                onCopy={handleCopy}
-                              />
-                            )}
+                            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                              {streamedResponses[i] !== undefined ? (
+                                <LLMResponseBlock
+                                  output={streamedResponses[i]}
+                                  isStreaming={isStreaming}
+                                />
+                              ) : (
+                                <span className="text-xs text-foreground-muted">—</span>
+                              )}
+                              {streamedResponses[i] && !isStreaming && (
+                                <CopyButton
+                                  text={streamedResponses[i]}
+                                  index={2000 + i}
+                                  copiedIndex={copiedIndex}
+                                  onCopy={handleCopy}
+                                />
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   {pinnedRuns.map((run, pinIndex) => (
                     <div key={`content-${run.id}`} className="space-y-3 self-start">
-                      {showPrompts && (
-                        <PromptSection
-                          systemMessage={run.renderedSystemMessage}
-                          renderedPrompts={run.renderedPrompts}
-                        />
+                      {showPrompts && run.renderedSystemMessage && (
+                        <div className="bg-elevated/50 border-l-2 border-l-primary rounded-r-md p-3">
+                          <div className="text-[10px] font-semibold text-primary mb-1 uppercase tracking-wider">
+                            System
+                          </div>
+                          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
+                            {run.renderedSystemMessage}
+                          </div>
+                        </div>
                       )}
                       {prompts.map((_p, i) => {
                         const response = run.responses.find(
                           (r: TestRunPromptResponse) => r.promptIndex === i
                         );
                         const reasoning = run.reasoning?.find((r) => r.promptIndex === i)?.content;
+                        const renderedPrompt = run.renderedPrompts?.find((r) => r.promptIndex === i);
                         return (
                           <div key={i}>
-                            {prompts.length > 1 && (
+                            {showPrompts && renderedPrompt && (
+                              <div className="bg-elevated/30 rounded-md p-3 border border-border-subtle mb-3">
+                                {(prompts.length > 1 || run.renderedSystemMessage) && (
+                                  <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
+                                    Prompt {i + 1}
+                                  </div>
+                                )}
+                                <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
+                                  {renderedPrompt.content}
+                                </div>
+                              </div>
+                            )}
+                            {!showPrompts && prompts.length > 1 && (
                               <div className="text-xs text-foreground-muted mb-2">
                                 Prompt {i + 1}
                               </div>
@@ -634,6 +657,8 @@ export default function PlaygroundResultsArea({
                   ))}
                 </div>
               </div>
+              {needsScroll && <ScrollBar orientation="horizontal" />}
+              </ScrollArea>
             );
           })()}
 
@@ -790,7 +815,7 @@ export default function PlaygroundResultsArea({
 
                   {/* Prompt input (collapsed by default) */}
                   {showInput && (
-                    <div className="bg-elevated/50 rounded-md p-3 text-xs font-mono mb-3 border border-border-subtle whitespace-pre-wrap max-h-32 overflow-y-auto">
+                    <div className="bg-elevated/50 rounded-md p-3 text-xs font-mono mb-3 border border-border-subtle whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-themed">
                       {renderTemplate(prompt.content, fieldValues)}
                     </div>
                   )}
@@ -949,5 +974,6 @@ export default function PlaygroundResultsArea({
         </div>
       )}
     </div>
+    </ScrollArea>
   );
 }

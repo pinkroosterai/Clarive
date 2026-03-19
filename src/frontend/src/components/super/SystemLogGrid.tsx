@@ -1,15 +1,11 @@
-import {
-  AllCommunityModule,
-  type ColDef,
-  type SortChangedEvent,
-  themeQuartz,
-} from 'ag-grid-community';
+import { AllCommunityModule, type ColDef, type SortChangedEvent } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { format } from 'date-fns';
 import { Check, ChevronsUpDown, Download, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import SystemLogDetailPanel from '@/components/super/SystemLogDetailPanel';
+import { agGridTheme } from '@/lib/agGridTheme';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -206,10 +202,11 @@ export default function SystemLogGrid() {
         width: 220,
         valueFormatter: (p) => {
           if (!p.value) return '—';
-          // Show last segment of namespace for brevity
+          // Show class name only (last segment of namespace)
           const parts = (p.value as string).split('.');
-          return parts.length > 2 ? `...${parts.slice(-2).join('.')}` : p.value;
+          return parts[parts.length - 1];
         },
+        tooltipValueGetter: (p) => p.value ?? '',
       },
       {
         field: 'message',
@@ -334,7 +331,7 @@ export default function SystemLogGrid() {
       <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
         <AgGridReact<SystemLogEntry>
           ref={gridRef}
-          theme={themeQuartz}
+          theme={agGridTheme}
           modules={[AllCommunityModule]}
           rowData={logs}
           columnDefs={columnDefs}

@@ -34,8 +34,9 @@ export default function AiUsageSummaryCards({ stats }: AiUsageSummaryCardsProps)
       />
       <HeroStatCard
         icon={Cpu}
-        label={topModel ? `Top: ${topModel.name}` : 'Top Model'}
+        label="Top Model Tokens"
         value={topModel ? topModel.totalTokens : 0}
+        subtitle={topModel?.name}
         index={3}
       />
       <HeroStatCard

@@ -1,15 +1,11 @@
-import {
-  AllCommunityModule,
-  type ColDef,
-  type SortChangedEvent,
-  themeQuartz,
-} from 'ag-grid-community';
+import { AllCommunityModule, type ColDef, type SortChangedEvent } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { format } from 'date-fns';
 import { Check, ChevronsUpDown, Download, X } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import AiUsageLogDetailPanel from '@/components/super/AiUsageLogDetailPanel';
+import { agGridTheme } from '@/lib/agGridTheme';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -350,7 +346,7 @@ export default function AiUsageLogGrid({ filters }: AiUsageLogGridProps) {
       <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
         <AgGridReact<AiUsageLogEntry>
           ref={gridRef}
-          theme={themeQuartz}
+          theme={agGridTheme}
           modules={[AllCommunityModule]}
           rowData={logs}
           columnDefs={columnDefs}

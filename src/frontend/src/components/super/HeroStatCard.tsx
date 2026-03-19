@@ -11,6 +11,7 @@ interface HeroStatCardProps {
   decimals?: number;
   delta?: number;
   deltaLabel?: string;
+  subtitle?: string;
   index?: number;
 }
 
@@ -22,6 +23,7 @@ export const HeroStatCard = memo(function HeroStatCard({
   decimals,
   delta,
   deltaLabel = '7d',
+  subtitle,
   index = 0,
 }: HeroStatCardProps) {
   const spring = useSpring(0, { stiffness: 60, damping: 20 });
@@ -76,6 +78,7 @@ export const HeroStatCard = memo(function HeroStatCard({
           {display}
         </motion.div>
         <div className="text-sm text-foreground-muted mt-1">{label}</div>
+        {subtitle && <div className="text-xs text-foreground-muted/70 truncate" title={subtitle}>{subtitle}</div>}
       </div>
     </motion.div>
   );

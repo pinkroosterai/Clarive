@@ -96,7 +96,7 @@ export default function PlaygroundHistorySidebar({
           <X className="size-4" />
         </button>
       </div>
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-themed">
         {isStreaming && (
           <div className="px-4 py-3 border-b border-border-subtle bg-primary/5">
             <div className="flex items-center gap-1.5 text-xs">
@@ -198,7 +198,7 @@ export default function PlaygroundHistorySidebar({
                       <div className="mt-2 space-y-2">
                         {run.responses.map((r: TestRunPromptResponse) => (
                           <div key={r.promptIndex} className="relative group">
-                            <div className="bg-elevated rounded-md p-2 border border-border-subtle max-h-40 overflow-y-auto text-xs">
+                            <div className="bg-elevated rounded-md p-2 border border-border-subtle max-h-40 overflow-y-auto scrollbar-themed text-xs">
                               <LLMResponseBlock output={r.content} isStreaming={false} />
                             </div>
                             <button

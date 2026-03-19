@@ -4,7 +4,6 @@ import {
   type ColDef,
   type ICellRendererParams,
   type SortChangedEvent,
-  themeQuartz,
 } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { format } from 'date-fns';
@@ -22,6 +21,7 @@ import {
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { DeleteUserDialog } from '@/components/super/DeleteUserDialog';
+import { agGridTheme } from '@/lib/agGridTheme';
 import { ResetPasswordDialog } from '@/components/super/ResetPasswordDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -340,7 +340,7 @@ export default function UsersTable() {
         <div className="ag-theme-quartz rounded-md border" style={{ height: 500 }}>
           <AgGridReact<SuperUser>
             ref={gridRef}
-            theme={themeQuartz}
+            theme={agGridTheme}
             modules={[AllCommunityModule]}
             rowData={users}
             columnDefs={columnDefs}

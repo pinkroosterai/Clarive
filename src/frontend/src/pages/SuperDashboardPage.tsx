@@ -5,6 +5,7 @@ import {
   FileText,
   Bot,
   LayoutDashboard,
+  BarChart3,
   AlertTriangle,
   X,
   Settings,
@@ -21,6 +22,7 @@ import { HeroStatCard } from '@/components/super/HeroStatCard';
 import LogsTab from '@/components/super/LogsTab';
 import SettingsTab from '@/components/super/SettingsTab';
 import UsersTable from '@/components/super/UsersTable';
+import { ErrorBoundary, PageErrorFallback } from '@/components/common/ErrorBoundary';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +32,7 @@ import { getSuperStats } from '@/services/api/superService';
 
 // ── Tab configuration ──
 
-const VALID_TABS = ['dashboard', 'users', 'ai', 'settings', 'logs'];
+const VALID_TABS = ['dashboard', 'usage', 'users', 'ai', 'settings', 'logs'];
 const RESTART_STORAGE_KEY = 'cl_pending_restart';
 
 interface PendingRestart {
@@ -41,7 +43,6 @@ interface PendingRestart {
 // Map old tab param values to new ones for backwards compatibility
 const TAB_REDIRECTS: Record<string, string> = {
   overview: 'dashboard',
-  usage: 'dashboard',
   'ai-providers': 'ai',
   authentication: 'settings',
   email: 'settings',
@@ -207,6 +208,10 @@ const SuperDashboardPage = () => {
             <LayoutDashboard className="size-4 hidden sm:block" />
             Dashboard
           </TabsTrigger>
+          <TabsTrigger value="usage" className={TAB_STYLE}>
+            <BarChart3 className="size-4 hidden sm:block" />
+            Usage
+          </TabsTrigger>
           <TabsTrigger value="users" className={TAB_STYLE}>
             <Users className="size-4 hidden sm:block" />
             Users
@@ -227,6 +232,7 @@ const SuperDashboardPage = () => {
 
         {/* Dashboard Tab — Platform Overview + AI Usage Analytics */}
         <TabsContent value="dashboard" className="mt-6">
+          <ErrorBoundary fallback={PageErrorFallback}>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -287,23 +293,26 @@ const SuperDashboardPage = () => {
               )}
             </section>
 
-            {/* AI Usage Analytics */}
-            <section>
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
-                  AI Usage Analytics
-                </h3>
-                <p className="text-xs text-foreground-muted mt-1">
-                  Token consumption, cost breakdown, and usage trends across all AI operations.
-                </p>
-              </div>
-              <AiUsageDashboard />
-            </section>
           </motion.div>
+          </ErrorBoundary>
+        </TabsContent>
+
+        {/* Usage Tab — AI Usage Analytics */}
+        <TabsContent value="usage" className="mt-6">
+          <ErrorBoundary fallback={PageErrorFallback}>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <AiUsageDashboard />
+          </motion.div>
+          </ErrorBoundary>
         </TabsContent>
 
         {/* Users Tab */}
         <TabsContent value="users" className="mt-6">
+          <ErrorBoundary fallback={PageErrorFallback}>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -311,10 +320,12 @@ const SuperDashboardPage = () => {
           >
             <UsersTable />
           </motion.div>
+          </ErrorBoundary>
         </TabsContent>
 
         {/* AI Tab (AI Providers + AI Config) */}
         <TabsContent value="ai" className="mt-6">
+          <ErrorBoundary fallback={PageErrorFallback}>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -327,10 +338,12 @@ const SuperDashboardPage = () => {
               onSaved={refreshRestartKeys}
             />
           </motion.div>
+          </ErrorBoundary>
         </TabsContent>
 
         {/* Settings Tab (merged Authentication + Email + Application) */}
         <TabsContent value="settings" className="mt-6">
+          <ErrorBoundary fallback={PageErrorFallback}>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -343,10 +356,12 @@ const SuperDashboardPage = () => {
               onSaved={refreshRestartKeys}
             />
           </motion.div>
+          </ErrorBoundary>
         </TabsContent>
 
         {/* Logs Tab */}
         <TabsContent value="logs" className="mt-6">
+          <ErrorBoundary fallback={PageErrorFallback}>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -354,6 +369,7 @@ const SuperDashboardPage = () => {
           >
             <LogsTab />
           </motion.div>
+          </ErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ActionsTabContent } from '@/components/editor/ActionsTabContent';
 import { DetailsTabContent } from '@/components/editor/DetailsTabContent';
 import { VersionsTabContent } from '@/components/editor/VersionsTabContent';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { PromptEntry, VersionInfo } from '@/types';
 
@@ -108,7 +109,8 @@ export function EditorActionPanel({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="actions" className="flex-1 overflow-y-auto overflow-x-hidden pt-4">
+        <TabsContent value="actions" className="flex-1 overflow-hidden pt-4">
+          <ScrollArea className="h-full">
           <ActionsTabContent
             isDirty={isDirty}
             isReadOnly={isReadOnly}
@@ -137,18 +139,22 @@ export function EditorActionPanel({
             hasShareLink={hasShareLink}
             hasEmptyTitle={hasEmptyTitle}
           />
+          </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="details" className="flex-1 overflow-y-auto pt-4">
+        <TabsContent value="details" className="flex-1 overflow-hidden pt-4">
+          <ScrollArea className="h-full">
           <DetailsTabContent
             entry={entry}
             folderName={folderName}
             onMoveFolder={onMoveFolder}
             isReadOnly={isReadOnly}
           />
+          </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="versions" className="flex-1 overflow-y-auto pt-4">
+        <TabsContent value="versions" className="flex-1 overflow-hidden pt-4">
+          <ScrollArea className="h-full">
           {versionPanel ? (
             <VersionsTabContent versionPanel={versionPanel} />
           ) : (
@@ -156,6 +162,7 @@ export function EditorActionPanel({
               No version data available.
             </div>
           )}
+          </ScrollArea>
         </TabsContent>
       </Tabs>
     </motion.div>

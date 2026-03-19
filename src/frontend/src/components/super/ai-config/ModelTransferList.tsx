@@ -91,7 +91,7 @@ export default function ModelTransferList({
           <div className="p-1">
             {available.length === 0 ? (
               <p className="text-xs text-foreground-muted p-2 text-center">
-                {search ? 'No matching models' : 'All models selected'}
+                {search ? 'No matching models' : 'No restrictions — all models available'}
               </p>
             ) : (
               available.map((model) => (

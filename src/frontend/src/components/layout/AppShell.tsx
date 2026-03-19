@@ -31,7 +31,7 @@ export function AppShell() {
     }
   }, [setupStatus, currentUser, navigate, location.pathname]);
 
-  const isFullBleed = /\/entry\/[^/]+\/test/.test(location.pathname);
+  const isFullBleed = /\/entry\/[^/]+(\/test|\/version\/\d+)?$/.test(location.pathname);
 
   return (
     <SidebarProvider defaultOpen={false}>
