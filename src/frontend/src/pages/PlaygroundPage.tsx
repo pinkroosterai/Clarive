@@ -165,7 +165,7 @@ const PlaygroundPage = () => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // ── History + comparison ──
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(() => window.matchMedia('(min-width: 768px)').matches);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [pinnedRuns, setPinnedRuns] = useState<TestRunResponse[]>([]);
 
