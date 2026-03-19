@@ -42,7 +42,7 @@ export function AppShell() {
           <MaintenanceBanner />
           <AiNotConfiguredBanner />
           <EmailVerificationBanner />
-          <div className={`flex-1 overflow-auto animate-page-enter ${isFullBleed ? '' : 'p-4'}`}>
+          <div className={`flex-1 overflow-auto scrollbar-themed animate-page-enter ${isFullBleed ? '' : 'p-4'}`}>
             <ErrorBoundary fallback={PageErrorFallback}>
               <Outlet />
             </ErrorBoundary>

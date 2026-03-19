@@ -82,7 +82,7 @@ export default function SystemLogDetailPanel({ row, onClose }: SystemLogDetailPa
       {row.exception && (
         <div>
           <div className="text-foreground-muted text-xs mb-1">Exception</div>
-          <pre className="text-xs bg-error-bg/30 text-error-text rounded-md p-2.5 overflow-x-auto whitespace-pre-wrap break-words font-mono max-h-[300px] overflow-y-auto">
+          <pre className="text-xs bg-error-bg/30 text-error-text rounded-md p-2.5 overflow-x-auto whitespace-pre-wrap break-words font-mono max-h-[300px] overflow-y-auto scrollbar-themed">
             {row.exception}
           </pre>
         </div>
