@@ -85,6 +85,8 @@ export async function getSuperUsers(params: {
   page?: number;
   pageSize?: number;
   search?: string;
+  role?: string;
+  authType?: string;
   sortBy?: string;
   sortDesc?: boolean;
 }): Promise<SuperUsersResponse> {
@@ -92,6 +94,8 @@ export async function getSuperUsers(params: {
   if (params.page) query.set('page', String(params.page));
   if (params.pageSize) query.set('pageSize', String(params.pageSize));
   if (params.search) query.set('search', params.search);
+  if (params.role) query.set('role', params.role);
+  if (params.authType) query.set('authType', params.authType);
   if (params.sortBy) query.set('sortBy', params.sortBy);
   if (params.sortDesc !== undefined) query.set('sortDesc', String(params.sortDesc));
   const qs = query.toString();

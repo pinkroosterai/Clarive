@@ -1,5 +1,6 @@
 using Clarive.Api.Data;
 using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 using Clarive.Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -112,6 +113,8 @@ public class EfUserRepository(ClariveDbContext db) : IUserRepository
         int page,
         int pageSize,
         string? search,
+        string? role,
+        string? authType,
         string? sortBy,
         bool sortDesc,
         CancellationToken ct = default
@@ -125,6 +128,24 @@ public class EfUserRepository(ClariveDbContext db) : IUserRepository
             query = query.Where(u =>
                 EF.Functions.ILike(u.Name, pattern) || EF.Functions.ILike(u.Email, pattern)
             );
+        }
+
+        if (
+            !string.IsNullOrWhiteSpace(role)
+            && Enum.TryParse<UserRole>(role, ignoreCase: true, out var parsedRole)
+        )
+        {
+            query = query.Where(u => u.Role == parsedRole);
+        }
+
+        if (!string.IsNullOrWhiteSpace(authType))
+        {
+            query = authType.ToLowerInvariant() switch
+            {
+                "google" => query.Where(u => u.GoogleId != null),
+                "password" => query.Where(u => u.GoogleId == null),
+                _ => query,
+            };
         }
 
         query = sortBy?.ToLowerInvariant() switch

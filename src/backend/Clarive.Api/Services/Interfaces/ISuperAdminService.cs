@@ -11,6 +11,8 @@ public interface ISuperAdminService
         int page,
         int pageSize,
         string? search,
+        string? role,
+        string? authType,
         string? sortBy,
         bool sortDesc,
         CancellationToken ct

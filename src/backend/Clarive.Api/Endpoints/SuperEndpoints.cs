@@ -73,6 +73,8 @@ public static class SuperEndpoints
         int page = 1,
         int pageSize = 20,
         string? search = null,
+        string? role = null,
+        string? authType = null,
         string? sortBy = null,
         bool sortDesc = true,
         CancellationToken ct = default
@@ -83,6 +85,8 @@ public static class SuperEndpoints
             page,
             pageSize,
             search,
+            role,
+            authType,
             sortBy,
             sortDesc,
             ct

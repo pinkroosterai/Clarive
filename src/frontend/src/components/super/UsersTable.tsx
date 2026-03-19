@@ -179,6 +179,8 @@ export default function UsersTable() {
   // ── Table state ──
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
+  const [roleFilter, setRoleFilter] = useState<string>('');
+  const [authFilter, setAuthFilter] = useState<string>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [sortBy, setSortBy] = useState<string | undefined>('createdAt');
@@ -190,9 +192,21 @@ export default function UsersTable() {
 
   // ── Data fetching ──
   const { data, isLoading } = useQuery({
-    queryKey: ['super', 'users', { page, pageSize, search: debouncedSearch, sortBy, sortDesc }],
+    queryKey: [
+      'super',
+      'users',
+      { page, pageSize, search: debouncedSearch, roleFilter, authFilter, sortBy, sortDesc },
+    ],
     queryFn: () =>
-      getSuperUsers({ page, pageSize, search: debouncedSearch || undefined, sortBy, sortDesc }),
+      getSuperUsers({
+        page,
+        pageSize,
+        search: debouncedSearch || undefined,
+        role: roleFilter || undefined,
+        authType: authFilter || undefined,
+        sortBy,
+        sortDesc,
+      }),
   });
 
   const users = data?.users ?? [];
@@ -304,18 +318,53 @@ export default function UsersTable() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-foreground-muted" />
-        <Input
-          placeholder="Search by name or email..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
+      {/* Search & Filters */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative max-w-sm flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-foreground-muted" />
+          <Input
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="pl-9"
+          />
+        </div>
+        <Select
+          value={roleFilter}
+          onValueChange={(v) => {
+            setRoleFilter(v === 'all' ? '' : v);
             setPage(1);
           }}
-          className="pl-9"
-        />
+        >
+          <SelectTrigger className="w-[130px]">
+            <SelectValue placeholder="All roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All roles</SelectItem>
+            <SelectItem value="Admin">Admin</SelectItem>
+            <SelectItem value="Editor">Editor</SelectItem>
+            <SelectItem value="Viewer">Viewer</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={authFilter}
+          onValueChange={(v) => {
+            setAuthFilter(v === 'all' ? '' : v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="All auth" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All auth</SelectItem>
+            <SelectItem value="password">Password</SelectItem>
+            <SelectItem value="google">Google</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Empty state — no users at all */}
