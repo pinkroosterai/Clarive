@@ -8,7 +8,7 @@ public static class ReasoningModelDetector
         "o3",
         "o4-mini",
         "deepseek-reasoner",
-        "qwq"
+        "qwq",
     ];
 
     /// <summary>
@@ -24,8 +24,10 @@ public static class ReasoningModelDetector
         foreach (var prefix in ReasoningPrefixes)
         {
             // Exact match or next char is '-' (to avoid "o1" matching "o10-something")
-            if (modelId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-                && (modelId.Length == prefix.Length || modelId[prefix.Length] == '-'))
+            if (
+                modelId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                && (modelId.Length == prefix.Length || modelId[prefix.Length] == '-')
+            )
                 return true;
         }
 

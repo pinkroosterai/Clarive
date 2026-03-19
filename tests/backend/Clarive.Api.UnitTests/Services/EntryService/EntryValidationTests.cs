@@ -1,5 +1,5 @@
-using FluentAssertions;
 using Clarive.Api.Models.Requests;
+using FluentAssertions;
 using MiniValidation;
 using NSubstitute;
 
@@ -49,7 +49,12 @@ public class EntryValidationTests : EntryServiceTestBase
     [Fact]
     public void CreateRequest_TitleExactly500Chars_PassesValidation()
     {
-        var request = new CreateEntryRequest(new string('a', 500), null, [new PromptInput("hi")], null);
+        var request = new CreateEntryRequest(
+            new string('a', 500),
+            null,
+            [new PromptInput("hi")],
+            null
+        );
 
         MiniValidator.TryValidate(request, out _).Should().BeTrue();
     }
@@ -99,12 +104,16 @@ public class EntryValidationTests : EntryServiceTestBase
     {
         var huge = new string('X', 100_001);
         var entry = MakeEntry();
-        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(entry);
+        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
         var request = new UpdateEntryRequest(null, null, [new PromptInput(huge)]);
 
-        var result = await Sut.UpdateEntryAsync(TenantId, entry.Id, request, CancellationToken.None);
+        var result = await Sut.UpdateEntryAsync(
+            TenantId,
+            entry.Id,
+            request,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("VALIDATION_ERROR");

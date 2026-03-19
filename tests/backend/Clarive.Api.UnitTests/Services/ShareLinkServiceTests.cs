@@ -24,37 +24,45 @@ public class ShareLinkServiceTests
         _sut = new ShareLinkService(_shareLinkRepo, _entryRepo, _passwordHasher);
     }
 
-    private PromptEntry CreateEntry(bool isTrashed = false) => new()
-    {
-        Id = EntryId,
-        TenantId = TenantId,
-        Title = "Test Entry",
-        IsTrashed = isTrashed,
-        CreatedBy = UserId,
-        CreatedAt = DateTime.UtcNow
-    };
+    private PromptEntry CreateEntry(bool isTrashed = false) =>
+        new()
+        {
+            Id = EntryId,
+            TenantId = TenantId,
+            Title = "Test Entry",
+            IsTrashed = isTrashed,
+            CreatedBy = UserId,
+            CreatedAt = DateTime.UtcNow,
+        };
 
-    private PromptEntryVersion CreateVersion(int version = 1, VersionState state = VersionState.Published) => new()
-    {
-        Id = Guid.NewGuid(),
-        EntryId = EntryId,
-        Version = version,
-        VersionState = state,
-        Prompts = [new Prompt { Content = "Test prompt", Order = 0 }],
-        CreatedAt = DateTime.UtcNow,
-        PublishedAt = state == VersionState.Published ? DateTime.UtcNow : null
-    };
+    private PromptEntryVersion CreateVersion(
+        int version = 1,
+        VersionState state = VersionState.Published
+    ) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            EntryId = EntryId,
+            Version = version,
+            VersionState = state,
+            Prompts = [new Prompt { Content = "Test prompt", Order = 0 }],
+            CreatedAt = DateTime.UtcNow,
+            PublishedAt = state == VersionState.Published ? DateTime.UtcNow : null,
+        };
 
     // ── CreateAsync ──
 
     [Fact]
     public async Task CreateAsync_ValidEntry_ReturnsTokenAndLink()
     {
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateEntry());
-        _entryRepo.GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateVersion());
-        _shareLinkRepo.CreateAsync(Arg.Any<ShareLink>(), Arg.Any<CancellationToken>())
+        _shareLinkRepo
+            .CreateAsync(Arg.Any<ShareLink>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<ShareLink>());
 
         var result = await _sut.CreateAsync(TenantId, EntryId, UserId);
@@ -68,7 +76,8 @@ public class ShareLinkServiceTests
     [Fact]
     public async Task CreateAsync_EntryNotFound_ReturnsError()
     {
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
         var result = await _sut.CreateAsync(TenantId, EntryId, UserId);
@@ -80,7 +89,8 @@ public class ShareLinkServiceTests
     [Fact]
     public async Task CreateAsync_TrashedEntry_ReturnsError()
     {
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateEntry(isTrashed: true));
 
         var result = await _sut.CreateAsync(TenantId, EntryId, UserId);
@@ -92,9 +102,11 @@ public class ShareLinkServiceTests
     [Fact]
     public async Task CreateAsync_NoPublishedVersion_ReturnsError()
     {
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateEntry());
-        _entryRepo.GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
         var result = await _sut.CreateAsync(TenantId, EntryId, UserId);
@@ -106,26 +118,34 @@ public class ShareLinkServiceTests
     [Fact]
     public async Task CreateAsync_DeletesExistingLink()
     {
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateEntry());
-        _entryRepo.GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateVersion());
-        _shareLinkRepo.CreateAsync(Arg.Any<ShareLink>(), Arg.Any<CancellationToken>())
+        _shareLinkRepo
+            .CreateAsync(Arg.Any<ShareLink>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<ShareLink>());
 
         await _sut.CreateAsync(TenantId, EntryId, UserId);
 
-        await _shareLinkRepo.Received(1).DeleteByEntryIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>());
+        await _shareLinkRepo
+            .Received(1)
+            .DeleteByEntryIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task CreateAsync_WithPassword_HashesPassword()
     {
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateEntry());
-        _entryRepo.GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateVersion());
-        _shareLinkRepo.CreateAsync(Arg.Any<ShareLink>(), Arg.Any<CancellationToken>())
+        _shareLinkRepo
+            .CreateAsync(Arg.Any<ShareLink>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<ShareLink>());
 
         var result = await _sut.CreateAsync(TenantId, EntryId, UserId, password: "secret123");
@@ -138,11 +158,14 @@ public class ShareLinkServiceTests
     [Fact]
     public async Task CreateAsync_WithPinnedVersion_ValidatesVersion()
     {
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateEntry());
-        _entryRepo.GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateVersion());
-        _entryRepo.GetVersionAsync(TenantId, EntryId, 99, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetVersionAsync(TenantId, EntryId, 99, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
         var result = await _sut.CreateAsync(TenantId, EntryId, UserId, pinnedVersion: 99);
@@ -156,7 +179,8 @@ public class ShareLinkServiceTests
     [Fact]
     public async Task RevokeAsync_ExistingLink_ReturnsSuccess()
     {
-        _shareLinkRepo.DeleteByEntryIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _shareLinkRepo
+            .DeleteByEntryIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(true);
 
         var result = await _sut.RevokeAsync(TenantId, EntryId);
@@ -167,7 +191,8 @@ public class ShareLinkServiceTests
     [Fact]
     public async Task RevokeAsync_NoLink_ReturnsNotFound()
     {
-        _shareLinkRepo.DeleteByEntryIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _shareLinkRepo
+            .DeleteByEntryIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(false);
 
         var result = await _sut.RevokeAsync(TenantId, EntryId);
@@ -183,11 +208,12 @@ public class ShareLinkServiceTests
     {
         var (rawToken, tokenHash) = GenerateTestToken();
         var link = CreateShareLink(tokenHash);
-        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>())
-            .Returns(link);
-        _entryRepo.GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>()).Returns(link);
+        _entryRepo
+            .GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateVersion());
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateEntry());
 
         var result = await _sut.GetPublicEntryByTokenAsync(rawToken);
@@ -200,7 +226,8 @@ public class ShareLinkServiceTests
     [Fact]
     public async Task GetPublicEntryByTokenAsync_InvalidToken_ReturnsNotFound()
     {
-        _shareLinkRepo.GetByTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _shareLinkRepo
+            .GetByTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((ShareLink?)null);
 
         var result = await _sut.GetPublicEntryByTokenAsync("invalid_token");
@@ -214,8 +241,7 @@ public class ShareLinkServiceTests
     {
         var (rawToken, tokenHash) = GenerateTestToken();
         var link = CreateShareLink(tokenHash, expiresAt: DateTime.UtcNow.AddHours(-1));
-        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>())
-            .Returns(link);
+        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>()).Returns(link);
 
         var result = await _sut.GetPublicEntryByTokenAsync(rawToken);
 
@@ -229,8 +255,7 @@ public class ShareLinkServiceTests
     {
         var (rawToken, tokenHash) = GenerateTestToken();
         var link = CreateShareLink(tokenHash, passwordHash: _passwordHasher.Hash("secret"));
-        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>())
-            .Returns(link);
+        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>()).Returns(link);
 
         var result = await _sut.GetPublicEntryByTokenAsync(rawToken);
 
@@ -245,11 +270,12 @@ public class ShareLinkServiceTests
     {
         var (rawToken, tokenHash) = GenerateTestToken();
         var link = CreateShareLink(tokenHash, passwordHash: _passwordHasher.Hash("secret"));
-        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>())
-            .Returns(link);
-        _entryRepo.GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>()).Returns(link);
+        _entryRepo
+            .GetPublishedVersionAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateVersion());
-        _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(CreateEntry());
 
         var result = await _sut.VerifyPasswordAndGetEntryAsync(rawToken, "secret");
@@ -263,8 +289,7 @@ public class ShareLinkServiceTests
     {
         var (rawToken, tokenHash) = GenerateTestToken();
         var link = CreateShareLink(tokenHash, passwordHash: _passwordHasher.Hash("secret"));
-        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>())
-            .Returns(link);
+        _shareLinkRepo.GetByTokenHashAsync(tokenHash, Arg.Any<CancellationToken>()).Returns(link);
 
         var result = await _sut.VerifyPasswordAndGetEntryAsync(rawToken, "wrong");
 
@@ -278,7 +303,8 @@ public class ShareLinkServiceTests
     {
         var rawToken = "sl_test-token-" + Guid.NewGuid().ToString("N");
         var hash = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(rawToken));
+            System.Text.Encoding.UTF8.GetBytes(rawToken)
+        );
         return (rawToken, Convert.ToHexStringLower(hash));
     }
 
@@ -286,18 +312,20 @@ public class ShareLinkServiceTests
         string tokenHash,
         DateTime? expiresAt = null,
         string? passwordHash = null,
-        int? pinnedVersion = null) => new()
-    {
-        Id = Guid.NewGuid(),
-        TenantId = TenantId,
-        EntryId = EntryId,
-        TokenHash = tokenHash,
-        CreatedBy = UserId,
-        CreatedAt = DateTime.UtcNow,
-        ExpiresAt = expiresAt,
-        PasswordHash = passwordHash,
-        PinnedVersion = pinnedVersion,
-        AccessCount = 0,
-        IsActive = true
-    };
+        int? pinnedVersion = null
+    ) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            TenantId = TenantId,
+            EntryId = EntryId,
+            TokenHash = tokenHash,
+            CreatedBy = UserId,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = expiresAt,
+            PasswordHash = passwordHash,
+            PinnedVersion = pinnedVersion,
+            AccessCount = 0,
+            IsActive = true,
+        };
 }

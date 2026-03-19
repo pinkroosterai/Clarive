@@ -17,26 +17,41 @@ public class EntryFavoriteConfiguration : IEntityTypeConfiguration<EntryFavorite
         builder.Property(f => f.EntryId).HasColumnName("entry_id").IsRequired();
         builder.Property(f => f.CreatedAt).HasColumnName("created_at").IsRequired();
 
-        builder.HasOne<Tenant>()
+        builder
+            .HasOne<Tenant>()
             .WithMany()
             .HasForeignKey(f => f.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<User>()
+        builder
+            .HasOne<User>()
             .WithMany()
             .HasForeignKey(f => f.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<PromptEntry>()
+        builder
+            .HasOne<PromptEntry>()
             .WithMany()
             .HasForeignKey(f => f.EntryId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(f => new { f.UserId, f.TenantId, f.EntryId })
+        builder
+            .HasIndex(f => new
+            {
+                f.UserId,
+                f.TenantId,
+                f.EntryId,
+            })
             .IsUnique()
             .HasDatabaseName("uq_entry_favorites_user_tenant_entry");
 
-        builder.HasIndex(f => new { f.UserId, f.TenantId, f.CreatedAt })
+        builder
+            .HasIndex(f => new
+            {
+                f.UserId,
+                f.TenantId,
+                f.CreatedAt,
+            })
             .HasDatabaseName("ix_entry_favorites_user_tenant_created");
     }
 }

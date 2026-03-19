@@ -18,14 +18,18 @@ public class ToolDescriptionConfiguration : IEntityTypeConfiguration<ToolDescrip
         builder.Property(t => t.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
         builder.Property(t => t.ToolName).HasColumnName("tool_name").HasMaxLength(100).IsRequired();
         builder.Property(t => t.Description).HasColumnName("description").IsRequired();
-        builder.Property(t => t.InputSchema).HasColumnName("input_schema")
+        builder
+            .Property(t => t.InputSchema)
+            .HasColumnName("input_schema")
             .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<JsonNode>(v, (JsonSerializerOptions?)null));
+                v => JsonSerializer.Deserialize<JsonNode>(v, (JsonSerializerOptions?)null)
+            );
         builder.Property(t => t.CreatedAt).HasColumnName("created_at").IsRequired();
 
-        builder.HasOne<Tenant>()
+        builder
+            .HasOne<Tenant>()
             .WithMany()
             .HasForeignKey(t => t.TenantId)
             .OnDelete(DeleteBehavior.Cascade);

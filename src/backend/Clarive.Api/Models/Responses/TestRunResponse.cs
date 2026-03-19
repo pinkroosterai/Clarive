@@ -20,16 +20,9 @@ public record TestRunResponse(
     string? VersionLabel = null
 );
 
-public record TestRunPromptResponse(
-    int PromptIndex,
-    string Content
-);
+public record TestRunPromptResponse(int PromptIndex, string Content);
 
-public record TestStreamChunk(
-    int PromptIndex,
-    string Text,
-    string Type = "text"
-);
+public record TestStreamChunk(int PromptIndex, string Text, string Type = "text");
 
 public record TestStreamResult(
     Guid RunId,

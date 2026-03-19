@@ -8,10 +8,12 @@ public record EntryActivityItem(
     string UserName,
     string? Details,
     int? Version,
-    DateTime Timestamp);
+    DateTime Timestamp
+);
 
 public record EntryActivityResponse(
     List<EntryActivityItem> Items,
     int Total,
     int Page,
-    int PageSize);
+    int PageSize
+);

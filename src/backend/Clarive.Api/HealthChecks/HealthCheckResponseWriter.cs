@@ -8,7 +8,7 @@ public static class HealthCheckResponseWriter
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
+        WriteIndented = false,
     };
 
     public static async Task WriteAsync(HttpContext context, HealthReport report)
@@ -25,11 +25,10 @@ public static class HealthCheckResponseWriter
                 status = e.Value.Status.ToString().ToLowerInvariant(),
                 duration = e.Value.Duration.TotalMilliseconds,
                 description = e.Value.Description,
-                error = e.Value.Exception?.Message
-            })
+                error = e.Value.Exception?.Message,
+            }),
         };
 
-        await context.Response.WriteAsync(
-            JsonSerializer.Serialize(result, JsonOptions));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(result, JsonOptions));
     }
 }

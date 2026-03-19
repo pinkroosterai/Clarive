@@ -14,8 +14,8 @@ public class EvaluationNormalizerTests
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
                 ["Clarity"] = new() { Score = 8, Feedback = "Good" },
-                ["Effectiveness"] = new() { Score = 6, Feedback = "OK" }
-            }
+                ["Effectiveness"] = new() { Score = 6, Feedback = "OK" },
+            },
         };
 
         EvaluationNormalizer.ComputeAverageScore(eval).Should().Be(7.0);
@@ -38,8 +38,8 @@ public class EvaluationNormalizerTests
                 ["Clarity"] = new() { Score = 9, Feedback = "Excellent" },
                 ["Effectiveness"] = new() { Score = 7, Feedback = "Good" },
                 ["Completeness"] = new() { Score = 8, Feedback = "Thorough" },
-                ["Faithfulness"] = new() { Score = 6, Feedback = "Mostly" }
-            }
+                ["Faithfulness"] = new() { Score = 6, Feedback = "Mostly" },
+            },
         };
 
         var result = EvaluationNormalizer.Normalize(raw);
@@ -61,8 +61,8 @@ public class EvaluationNormalizerTests
                 ["clarity"] = new() { Score = 9, Feedback = "F" },
                 ["EFFECTIVENESS"] = new() { Score = 7, Feedback = "F" },
                 ["completeness"] = new() { Score = 8, Feedback = "F" },
-                ["faithfulness"] = new() { Score = 6, Feedback = "F" }
-            }
+                ["faithfulness"] = new() { Score = 6, Feedback = "F" },
+            },
         };
 
         var result = EvaluationNormalizer.Normalize(raw);
@@ -81,8 +81,8 @@ public class EvaluationNormalizerTests
                 ["prompt_clarity"] = new() { Score = 9, Feedback = "F" },
                 ["overall_effectiveness"] = new() { Score = 7, Feedback = "F" },
                 ["Completeness"] = new() { Score = 8, Feedback = "F" },
-                ["Faithfulness"] = new() { Score = 6, Feedback = "F" }
-            }
+                ["Faithfulness"] = new() { Score = 6, Feedback = "F" },
+            },
         };
 
         var result = EvaluationNormalizer.Normalize(raw);
@@ -101,8 +101,8 @@ public class EvaluationNormalizerTests
                 ["Claritiy"] = new() { Score = 9, Feedback = "F" },
                 ["Effectiveness"] = new() { Score = 7, Feedback = "F" },
                 ["Completness"] = new() { Score = 8, Feedback = "F" },
-                ["Faithfulness"] = new() { Score = 6, Feedback = "F" }
-            }
+                ["Faithfulness"] = new() { Score = 6, Feedback = "F" },
+            },
         };
 
         var result = EvaluationNormalizer.Normalize(raw);
@@ -118,8 +118,8 @@ public class EvaluationNormalizerTests
         {
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
-                ["Clarity"] = new() { Score = 9, Feedback = "F" }
-            }
+                ["Clarity"] = new() { Score = 9, Feedback = "F" },
+            },
         };
 
         var result = EvaluationNormalizer.Normalize(raw);

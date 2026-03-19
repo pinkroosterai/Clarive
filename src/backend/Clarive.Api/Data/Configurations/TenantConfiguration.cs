@@ -23,7 +23,8 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.HasMany(t => t.Folders).WithOne().HasForeignKey(f => f.TenantId);
         builder.HasMany(t => t.Entries).WithOne().HasForeignKey(e => e.TenantId);
 
-        builder.HasOne<User>()
+        builder
+            .HasOne<User>()
             .WithMany()
             .HasForeignKey(t => t.OwnerId)
             .OnDelete(DeleteBehavior.SetNull);

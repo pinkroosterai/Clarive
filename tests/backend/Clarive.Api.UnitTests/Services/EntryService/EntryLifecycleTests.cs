@@ -1,7 +1,7 @@
+using Clarive.Api.Models.Entities;
 using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
-using Clarive.Api.Models.Entities;
 
 namespace Clarive.Api.UnitTests.Services.EntryService;
 
@@ -13,7 +13,8 @@ public class EntryLifecycleTests : EntryServiceTestBase
     public async Task Trash_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
-        EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
         var result = await Sut.TrashEntryAsync(TenantId, entryId, CancellationToken.None);
@@ -41,7 +42,8 @@ public class EntryLifecycleTests : EntryServiceTestBase
     public async Task Restore_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
-        EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
         var result = await Sut.RestoreEntryAsync(TenantId, entryId, CancellationToken.None);
@@ -84,7 +86,11 @@ public class EntryLifecycleTests : EntryServiceTestBase
         var entry = MakeEntry(isTrashed: false);
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        var result = await Sut.DeleteEntryPermanentlyAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await Sut.DeleteEntryPermanentlyAsync(
+            TenantId,
+            entry.Id,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.Conflict);
@@ -97,7 +103,11 @@ public class EntryLifecycleTests : EntryServiceTestBase
         var entry = MakeEntry(isTrashed: true);
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        var result = await Sut.DeleteEntryPermanentlyAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await Sut.DeleteEntryPermanentlyAsync(
+            TenantId,
+            entry.Id,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeFalse();
         await EntryRepo.Received(1).DeleteAsync(TenantId, entry.Id, Arg.Any<CancellationToken>());

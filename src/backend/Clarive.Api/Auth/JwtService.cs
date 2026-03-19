@@ -47,7 +47,8 @@ public class JwtService
             audience: settings.Audience,
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(settings.ExpirationMinutes),
-            signingCredentials: creds);
+            signingCredentials: creds
+        );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
@@ -59,8 +60,8 @@ public class JwtService
     public (string RawToken, string TokenHash) GenerateRefreshToken()
     {
         var bytes = RandomNumberGenerator.GetBytes(32);
-        var rawToken = "rt_" + Convert.ToBase64String(bytes)
-            .Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        var rawToken =
+            "rt_" + Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
         var tokenHash = Convert.ToHexStringLower(hash);
         return (rawToken, tokenHash);
@@ -73,8 +74,8 @@ public class JwtService
     public (string RawToken, string TokenHash) GenerateInvitationToken()
     {
         var bytes = RandomNumberGenerator.GetBytes(32);
-        var rawToken = "inv_" + Convert.ToBase64String(bytes)
-            .Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        var rawToken =
+            "inv_" + Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
         var tokenHash = Convert.ToHexStringLower(hash);
         return (rawToken, tokenHash);
@@ -89,5 +90,6 @@ public class JwtService
         return Convert.ToHexStringLower(hash);
     }
 
-    public int RefreshTokenExpirationDays => _optionsMonitor.CurrentValue.RefreshTokenExpirationDays;
+    public int RefreshTokenExpirationDays =>
+        _optionsMonitor.CurrentValue.RefreshTokenExpirationDays;
 }

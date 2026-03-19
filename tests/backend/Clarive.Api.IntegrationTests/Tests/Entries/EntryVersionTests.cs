@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Entries;
 [Collection("Integration")]
 public class EntryVersionTests : IntegrationTestBase
 {
-    public EntryVersionTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public EntryVersionTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task GetVersions_PublishedEntry_ReturnsVersionList()
@@ -20,7 +21,9 @@ public class EntryVersionTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Seed entry EntryBlogPostGenerator has a published version
-        var response = await Client.GetAsync($"/api/entries/{TestData.EntryBlogPostGenerator}/versions");
+        var response = await Client.GetAsync(
+            $"/api/entries/{TestData.EntryBlogPostGenerator}/versions"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var versions = await response.ReadJsonAsync();
@@ -48,7 +51,9 @@ public class EntryVersionTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.GetAsync($"/api/entries/{TestData.EntryBlogPostGenerator}/versions/1");
+        var response = await Client.GetAsync(
+            $"/api/entries/{TestData.EntryBlogPostGenerator}/versions/1"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.ReadJsonAsync();
@@ -61,7 +66,9 @@ public class EntryVersionTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.GetAsync($"/api/entries/{TestData.EntryBlogPostGenerator}/versions/999");
+        var response = await Client.GetAsync(
+            $"/api/entries/{TestData.EntryBlogPostGenerator}/versions/999"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -75,21 +82,28 @@ public class EntryVersionTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create entry at root
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Will be moved" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Will be moved" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
 
         // Move to a folder
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{entryId}/move",
-            new { folderId = TestData.FolderContentWriting });
+            new { folderId = TestData.FolderContentWriting }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.ReadJsonAsync();
-        json.GetProperty("folderId").GetString().Should().Be(TestData.FolderContentWriting.ToString());
+        json.GetProperty("folderId")
+            .GetString()
+            .Should()
+            .Be(TestData.FolderContentWriting.ToString());
     }
 
     [Fact]
@@ -99,18 +113,22 @@ public class EntryVersionTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create entry in a folder
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            folderId = TestData.FolderContentWriting,
-            prompts = new[] { new { content = "Will move to root" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                folderId = TestData.FolderContentWriting,
+                prompts = new[] { new { content = "Will move to root" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
 
         // Move to root (null folderId)
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{entryId}/move",
-            new { folderId = (Guid?)null });
+            new { folderId = (Guid?)null }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.ReadJsonAsync();
@@ -128,7 +146,8 @@ public class EntryVersionTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{Guid.NewGuid()}/move",
-            new { folderId = TestData.FolderContentWriting });
+            new { folderId = TestData.FolderContentWriting }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -142,11 +161,14 @@ public class EntryVersionTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create + trash
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Trash then restore" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Trash then restore" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
         await Client.PostAsync($"/api/entries/{entryId}/trash", null);
 
@@ -178,11 +200,14 @@ public class EntryVersionTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create entry (should generate activity)
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Activity test" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Activity test" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
 
         var response = await Client.GetAsync($"/api/entries/{entryId}/activity");
@@ -211,7 +236,8 @@ public class EntryVersionTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var response = await Client.GetAsync(
-            $"/api/entries/{TestData.EntryBlogPostGenerator}/activity?page=1&pageSize=5");
+            $"/api/entries/{TestData.EntryBlogPostGenerator}/activity?page=1&pageSize=5"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

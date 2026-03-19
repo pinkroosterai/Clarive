@@ -14,25 +14,23 @@ namespace Clarive.Api.Data.Migrations
                 name: "rendered_prompts",
                 table: "playground_runs",
                 type: "jsonb",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddColumn<string>(
                 name: "rendered_system_message",
                 table: "playground_runs",
                 type: "jsonb",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "rendered_prompts",
-                table: "playground_runs");
+            migrationBuilder.DropColumn(name: "rendered_prompts", table: "playground_runs");
 
-            migrationBuilder.DropColumn(
-                name: "rendered_system_message",
-                table: "playground_runs");
+            migrationBuilder.DropColumn(name: "rendered_system_message", table: "playground_runs");
         }
     }
 }

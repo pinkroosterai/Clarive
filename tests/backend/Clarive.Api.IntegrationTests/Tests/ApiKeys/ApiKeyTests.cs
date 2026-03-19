@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.ApiKeys;
@@ -10,7 +10,8 @@ namespace Clarive.Api.IntegrationTests.Tests.ApiKeys;
 [Collection("Integration")]
 public class ApiKeyTests : IntegrationTestBase
 {
-    public ApiKeyTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ApiKeyTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task List_AsAdmin_ReturnsSeededKeys()
@@ -49,10 +50,10 @@ public class ApiKeyTests : IntegrationTestBase
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/api-keys", new
-        {
-            name = "Test API Key"
-        });
+        var (response, body) = await Client.PostJsonAsync<JsonElement>(
+            "/api/api-keys",
+            new { name = "Test API Key" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.GetProperty("name").GetString().Should().Be("Test API Key");
@@ -66,10 +67,10 @@ public class ApiKeyTests : IntegrationTestBase
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/api-keys", new
-        {
-            name = "   "
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/api-keys",
+            new { name = "   " }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -80,10 +81,10 @@ public class ApiKeyTests : IntegrationTestBase
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/api-keys", new
-        {
-            name = new string('x', 101)
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/api-keys",
+            new { name = new string('x', 101) }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -95,10 +96,10 @@ public class ApiKeyTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create
-        var (createResponse, created) = await Client.PostJsonAsync<JsonElement>("/api/api-keys", new
-        {
-            name = "Temp Key"
-        });
+        var (createResponse, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/api-keys",
+            new { name = "Temp Key" }
+        );
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var keyId = created.GetProperty("id").GetString();
 
@@ -109,9 +110,7 @@ public class ApiKeyTests : IntegrationTestBase
         // Verify deleted — listing should not contain this key
         var listResponse = await Client.GetAsync("/api/api-keys");
         var keys = await listResponse.ReadJsonAsync();
-        keys.EnumerateArray()
-            .Any(k => k.GetProperty("id").GetString() == keyId)
-            .Should().BeFalse();
+        keys.EnumerateArray().Any(k => k.GetProperty("id").GetString() == keyId).Should().BeFalse();
     }
 
     [Fact]

@@ -13,31 +13,51 @@ namespace Clarive.Api.Services;
 public class ShareLinkService(
     IShareLinkRepository shareLinkRepo,
     IEntryRepository entryRepo,
-    PasswordHasher passwordHasher) : IShareLinkService
+    PasswordHasher passwordHasher
+) : IShareLinkService
 {
     public async Task<ErrorOr<ShareLinkResult>> CreateAsync(
-        Guid tenantId, Guid entryId, Guid userId,
-        DateTime? expiresAt = null, string? password = null, int? pinnedVersion = null,
-        CancellationToken ct = default)
+        Guid tenantId,
+        Guid entryId,
+        Guid userId,
+        DateTime? expiresAt = null,
+        string? password = null,
+        int? pinnedVersion = null,
+        CancellationToken ct = default
+    )
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
             return DomainErrors.EntryNotFoundByCode;
 
         if (entry.IsTrashed)
-            return Error.Validation("ENTRY_TRASHED", "Cannot create a share link for a trashed entry.");
+            return Error.Validation(
+                "ENTRY_TRASHED",
+                "Cannot create a share link for a trashed entry."
+            );
 
         // Verify entry has a published version
         var published = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
         if (published is null)
-            return Error.Validation("NO_PUBLISHED_VERSION", "Entry must have a published version to share.");
+            return Error.Validation(
+                "NO_PUBLISHED_VERSION",
+                "Entry must have a published version to share."
+            );
 
         // If pinned version specified, verify it exists
         if (pinnedVersion.HasValue)
         {
-            var version = await entryRepo.GetVersionAsync(tenantId, entryId, pinnedVersion.Value, ct);
+            var version = await entryRepo.GetVersionAsync(
+                tenantId,
+                entryId,
+                pinnedVersion.Value,
+                ct
+            );
             if (version is null)
-                return Error.NotFound("VERSION_NOT_FOUND", $"Version {pinnedVersion.Value} not found.");
+                return Error.NotFound(
+                    "VERSION_NOT_FOUND",
+                    $"Version {pinnedVersion.Value} not found."
+                );
         }
 
         // Remove existing share link for this entry (one-link-per-entry)
@@ -59,14 +79,18 @@ public class ShareLinkService(
             PasswordHash = password is not null ? passwordHasher.Hash(password) : null,
             PinnedVersion = pinnedVersion,
             AccessCount = 0,
-            IsActive = true
+            IsActive = true,
         };
 
         await shareLinkRepo.CreateAsync(shareLink, ct);
         return new ShareLinkResult(rawToken, shareLink);
     }
 
-    public async Task<ErrorOr<ShareLink>> GetByEntryIdAsync(Guid tenantId, Guid entryId, CancellationToken ct = default)
+    public async Task<ErrorOr<ShareLink>> GetByEntryIdAsync(
+        Guid tenantId,
+        Guid entryId,
+        CancellationToken ct = default
+    )
     {
         var link = await shareLinkRepo.GetByEntryIdAsync(tenantId, entryId, ct);
         if (link is null)
@@ -74,7 +98,11 @@ public class ShareLinkService(
         return link;
     }
 
-    public async Task<ErrorOr<Success>> RevokeAsync(Guid tenantId, Guid entryId, CancellationToken ct = default)
+    public async Task<ErrorOr<Success>> RevokeAsync(
+        Guid tenantId,
+        Guid entryId,
+        CancellationToken ct = default
+    )
     {
         var deleted = await shareLinkRepo.DeleteByEntryIdAsync(tenantId, entryId, ct);
         if (!deleted)
@@ -82,7 +110,10 @@ public class ShareLinkService(
         return Result.Success;
     }
 
-    public async Task<ErrorOr<SharedEntryResult>> GetPublicEntryByTokenAsync(string rawToken, CancellationToken ct = default)
+    public async Task<ErrorOr<SharedEntryResult>> GetPublicEntryByTokenAsync(
+        string rawToken,
+        CancellationToken ct = default
+    )
     {
         var tokenHash = HashToken(rawToken);
         var link = await shareLinkRepo.GetByTokenHashAsync(tokenHash, ct);
@@ -95,13 +126,24 @@ public class ShareLinkService(
 
         // If password-protected, return a signal that password is required
         if (link.PasswordHash is not null)
-            return new SharedEntryResult(link.EntryId, "", null, 0, null, [], PasswordRequired: true);
+            return new SharedEntryResult(
+                link.EntryId,
+                "",
+                null,
+                0,
+                null,
+                [],
+                PasswordRequired: true
+            );
 
         return await ResolveEntryForLink(link, ct);
     }
 
     public async Task<ErrorOr<SharedEntryResult>> VerifyPasswordAndGetEntryAsync(
-        string rawToken, string password, CancellationToken ct = default)
+        string rawToken,
+        string password,
+        CancellationToken ct = default
+    )
     {
         var tokenHash = HashToken(rawToken);
         var link = await shareLinkRepo.GetByTokenHashAsync(tokenHash, ct);
@@ -121,7 +163,10 @@ public class ShareLinkService(
         return await ResolveEntryForLink(link, ct);
     }
 
-    private async Task<ErrorOr<SharedEntryResult>> ResolveEntryForLink(ShareLink link, CancellationToken ct)
+    private async Task<ErrorOr<SharedEntryResult>> ResolveEntryForLink(
+        ShareLink link,
+        CancellationToken ct
+    )
     {
         await shareLinkRepo.IncrementAccessCountAsync(link.Id, ct);
 
@@ -130,7 +175,12 @@ public class ShareLinkService(
         PromptEntryVersion? version;
         if (link.PinnedVersion.HasValue)
         {
-            version = await entryRepo.GetVersionAsync(link.TenantId, link.EntryId, link.PinnedVersion.Value, ct);
+            version = await entryRepo.GetVersionAsync(
+                link.TenantId,
+                link.EntryId,
+                link.PinnedVersion.Value,
+                ct
+            );
         }
         else
         {
@@ -145,11 +195,14 @@ public class ShareLinkService(
         if (entry is null || entry.IsTrashed)
             return DomainErrors.SharedEntryNotFound;
 
-        var prompts = version.Prompts
-            .OrderBy(p => p.Order)
+        var prompts = version
+            .Prompts.OrderBy(p => p.Order)
             .Select(p => new SharedPrompt(
-                p.Content, p.Order, p.IsTemplate,
-                p.IsTemplate && p.TemplateFields.Count > 0 ? p.TemplateFields : null))
+                p.Content,
+                p.Order,
+                p.IsTemplate,
+                p.IsTemplate && p.TemplateFields.Count > 0 ? p.TemplateFields : null
+            ))
             .ToList();
 
         return new SharedEntryResult(
@@ -159,14 +212,15 @@ public class ShareLinkService(
             version.Version,
             version.PublishedAt,
             prompts,
-            PasswordRequired: false);
+            PasswordRequired: false
+        );
     }
 
     private static (string RawToken, string TokenHash) GenerateShareToken()
     {
         var bytes = RandomNumberGenerator.GetBytes(32);
-        var rawToken = "sl_" + Convert.ToBase64String(bytes)
-            .Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        var rawToken =
+            "sl_" + Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
         var tokenHash = Convert.ToHexStringLower(hash);
         return (rawToken, tokenHash);

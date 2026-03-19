@@ -1,7 +1,7 @@
+using Clarive.Api.Models.Entities;
 using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
-using Clarive.Api.Models.Entities;
 
 namespace Clarive.Api.UnitTests.Services.EntryService;
 
@@ -11,7 +11,8 @@ public class MoveEntryTests : EntryServiceTestBase
     public async Task Move_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
-        EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
         var result = await Sut.MoveEntryAsync(TenantId, entryId, null, CancellationToken.None);
@@ -27,10 +28,16 @@ public class MoveEntryTests : EntryServiceTestBase
         var targetFolderId = Guid.NewGuid();
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        FolderRepo.GetByIdAsync(TenantId, targetFolderId, Arg.Any<CancellationToken>())
+        FolderRepo
+            .GetByIdAsync(TenantId, targetFolderId, Arg.Any<CancellationToken>())
             .Returns((Folder?)null);
 
-        var result = await Sut.MoveEntryAsync(TenantId, entry.Id, targetFolderId, CancellationToken.None);
+        var result = await Sut.MoveEntryAsync(
+            TenantId,
+            entry.Id,
+            targetFolderId,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
@@ -57,7 +64,12 @@ public class MoveEntryTests : EntryServiceTestBase
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
         FolderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
 
-        var result = await Sut.MoveEntryAsync(TenantId, entry.Id, folder.Id, CancellationToken.None);
+        var result = await Sut.MoveEntryAsync(
+            TenantId,
+            entry.Id,
+            folder.Id,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeFalse();
         result.Value.FolderId.Should().Be(folder.Id);

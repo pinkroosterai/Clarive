@@ -6,4 +6,5 @@ public record EntryQueryOptions(
     string? Search = null,
     string? Status = null,
     string? SortBy = null,
-    IQueryable<Guid>? FilteredEntryIds = null);
+    IQueryable<Guid>? FilteredEntryIds = null
+);

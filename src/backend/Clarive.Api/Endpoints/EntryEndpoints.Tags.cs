@@ -11,13 +11,12 @@ public static partial class EntryEndpoints
         Guid entryId,
         HttpContext ctx,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var result = await entryService.GetEntryTagsAsync(tenantId, entryId, ct);
-        return result.IsError
-            ? result.Errors.ToHttpResult(ctx)
-            : Results.Ok(result.Value);
+        return result.IsError ? result.Errors.ToHttpResult(ctx) : Results.Ok(result.Value);
     }
 
     private static async Task<IResult> HandleAddTags(
@@ -25,13 +24,12 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         AddTagsRequest request,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var result = await entryService.AddEntryTagsAsync(tenantId, entryId, request.Tags, ct);
-        return result.IsError
-            ? result.Errors.ToHttpResult(ctx)
-            : Results.Ok(result.Value);
+        return result.IsError ? result.Errors.ToHttpResult(ctx) : Results.Ok(result.Value);
     }
 
     private static async Task<IResult> HandleRemoveTag(
@@ -39,12 +37,11 @@ public static partial class EntryEndpoints
         string tagName,
         HttpContext ctx,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var result = await entryService.RemoveEntryTagAsync(tenantId, entryId, tagName, ct);
-        return result.IsError
-            ? result.Errors.ToHttpResult(ctx)
-            : Results.NoContent();
+        return result.IsError ? result.Errors.ToHttpResult(ctx) : Results.NoContent();
     }
 }

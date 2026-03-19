@@ -10,27 +10,25 @@ public static partial class EntryEndpoints
         Guid entryId,
         HttpContext ctx,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
         var result = await entryService.FavoriteEntryAsync(tenantId, userId, entryId, ct);
-        return result.IsError
-            ? result.Errors.ToHttpResult(ctx)
-            : Results.NoContent();
+        return result.IsError ? result.Errors.ToHttpResult(ctx) : Results.NoContent();
     }
 
     private static async Task<IResult> HandleUnfavorite(
         Guid entryId,
         HttpContext ctx,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
         var result = await entryService.UnfavoriteEntryAsync(tenantId, userId, entryId, ct);
-        return result.IsError
-            ? result.Errors.ToHttpResult(ctx)
-            : Results.NoContent();
+        return result.IsError ? result.Errors.ToHttpResult(ctx) : Results.NoContent();
     }
 }

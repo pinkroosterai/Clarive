@@ -16,12 +16,16 @@ public class ImportExportService(
     IFolderRepository folderRepo,
     ITagRepository tagRepo,
     ClariveDbContext db,
-    TenantCacheService cache) : IImportExportService
+    TenantCacheService cache
+) : IImportExportService
 {
     private const int MaxFolderDepth = 20;
 
     public async Task<ExportFileResult> ExportAsync(
-        Guid tenantId, ExportRequest? request, CancellationToken ct)
+        Guid tenantId,
+        ExportRequest? request,
+        CancellationToken ct
+    )
     {
         var entries = await GatherExportEntriesAsync(tenantId, request, ct);
         var exportEntries = await BuildExportEntriesAsync(tenantId, entries, ct);
@@ -30,7 +34,7 @@ public class ImportExportService(
         {
             ["version"] = "1.0",
             ["exportedAt"] = DateTime.UtcNow.ToString("O"),
-            ["entries"] = exportEntries
+            ["entries"] = exportEntries,
         };
 
         var serializer = new SerializerBuilder()
@@ -45,65 +49,83 @@ public class ImportExportService(
     }
 
     public async Task<ImportResponse> ImportAsync(
-        Guid tenantId, Guid userId, List<object> entryList, CancellationToken ct)
+        Guid tenantId,
+        Guid userId,
+        List<object> entryList,
+        CancellationToken ct
+    )
     {
         var folderCache = new Dictionary<string, Guid>();
         var createdEntries = new List<PromptEntrySummary>();
         var batchEntries = new List<PromptEntry>();
         var batchVersions = new List<PromptEntryVersion>();
 
-        await db.Database.InTransactionAsync(async () =>
-        {
-            foreach (var item in entryList)
+        await db.Database.InTransactionAsync(
+            async () =>
             {
-                if (item is not Dictionary<object, object> raw) continue;
-
-                var title = raw.TryGetValue("title", out var t) ? t?.ToString() ?? "Untitled" : "Untitled";
-                var systemMessage = raw.TryGetValue("systemMessage", out var sm) ? sm?.ToString() : null;
-                var folderName = raw.TryGetValue("folder", out var fn) ? fn?.ToString() : null;
-
-                var folderId = await ResolveImportFolderAsync(folderName, tenantId, folderCache, ct);
-                var prompts = ParseImportPrompts(raw);
-
-                var entry = new PromptEntry
+                foreach (var item in entryList)
                 {
-                    Id = Guid.NewGuid(),
-                    TenantId = tenantId,
-                    Title = title,
-                    FolderId = folderId,
-                    IsTrashed = false,
-                    CreatedBy = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                batchEntries.Add(entry);
+                    if (item is not Dictionary<object, object> raw)
+                        continue;
 
-                var version = new PromptEntryVersion
+                    var title = raw.TryGetValue("title", out var t)
+                        ? t?.ToString() ?? "Untitled"
+                        : "Untitled";
+                    var systemMessage = raw.TryGetValue("systemMessage", out var sm)
+                        ? sm?.ToString()
+                        : null;
+                    var folderName = raw.TryGetValue("folder", out var fn) ? fn?.ToString() : null;
+
+                    var folderId = await ResolveImportFolderAsync(
+                        folderName,
+                        tenantId,
+                        folderCache,
+                        ct
+                    );
+                    var prompts = ParseImportPrompts(raw);
+
+                    var entry = new PromptEntry
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        Title = title,
+                        FolderId = folderId,
+                        IsTrashed = false,
+                        CreatedBy = userId,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                    };
+                    batchEntries.Add(entry);
+
+                    var version = new PromptEntryVersion
+                    {
+                        Id = Guid.NewGuid(),
+                        EntryId = entry.Id,
+                        Version = 1,
+                        VersionState = VersionState.Draft,
+                        SystemMessage = systemMessage,
+                        Prompts = prompts,
+                        CreatedAt = DateTime.UtcNow,
+                    };
+                    batchVersions.Add(version);
+
+                    createdEntries.Add(PromptEntrySummary.FromEntryAndVersion(entry, version));
+                }
+
+                await entryRepo.CreateBatchAsync(batchEntries, batchVersions, ct);
+
+                // Import tags
+                for (var i = 0; i < batchEntries.Count; i++)
                 {
-                    Id = Guid.NewGuid(),
-                    EntryId = entry.Id,
-                    Version = 1,
-                    VersionState = VersionState.Draft,
-                    SystemMessage = systemMessage,
-                    Prompts = prompts,
-                    CreatedAt = DateTime.UtcNow
-                };
-                batchVersions.Add(version);
-
-                createdEntries.Add(PromptEntrySummary.FromEntryAndVersion(entry, version));
-            }
-
-            await entryRepo.CreateBatchAsync(batchEntries, batchVersions, ct);
-
-            // Import tags
-            for (var i = 0; i < batchEntries.Count; i++)
-            {
-                if (entryList[i] is not Dictionary<object, object> rawItem) continue;
-                var importTags = ParseImportTags(rawItem);
-                if (importTags.Count > 0)
-                    await tagRepo.AddAsync(tenantId, batchEntries[i].Id, importTags, ct);
-            }
-        }, ct);
+                    if (entryList[i] is not Dictionary<object, object> rawItem)
+                        continue;
+                    var importTags = ParseImportTags(rawItem);
+                    if (importTags.Count > 0)
+                        await tagRepo.AddAsync(tenantId, batchEntries[i].Id, importTags, ct);
+                }
+            },
+            ct
+        );
 
         await TenantCacheKeys.EvictFolderData(cache, tenantId);
         await TenantCacheKeys.EvictEntryData(cache, tenantId);
@@ -116,7 +138,10 @@ public class ImportExportService(
     // ── Private helpers ──
 
     private async Task<List<PromptEntry>> GatherExportEntriesAsync(
-        Guid tenantId, ExportRequest? request, CancellationToken ct)
+        Guid tenantId,
+        ExportRequest? request,
+        CancellationToken ct
+    )
     {
         var entries = new List<PromptEntry>();
         var folderIds = request?.FolderIds;
@@ -136,7 +161,13 @@ public class ImportExportService(
         }
         else
         {
-            var (all, _) = await entryRepo.GetByFolderAsync(tenantId, null, includeAll: true, new EntryQueryOptions(PageSize: int.MaxValue), ct);
+            var (all, _) = await entryRepo.GetByFolderAsync(
+                tenantId,
+                null,
+                includeAll: true,
+                new EntryQueryOptions(PageSize: int.MaxValue),
+                ct
+            );
             entries.AddRange(all.Where(e => !e.IsTrashed));
         }
 
@@ -144,10 +175,17 @@ public class ImportExportService(
     }
 
     private async Task<List<Dictionary<string, object>>> BuildExportEntriesAsync(
-        Guid tenantId, List<PromptEntry> entries, CancellationToken ct)
+        Guid tenantId,
+        List<PromptEntry> entries,
+        CancellationToken ct
+    )
     {
         var entryIds = entries.Select(e => e.Id).ToList();
-        var publishedVersions = await entryRepo.GetPublishedVersionsBatchAsync(tenantId, entryIds, ct);
+        var publishedVersions = await entryRepo.GetPublishedVersionsBatchAsync(
+            tenantId,
+            entryIds,
+            ct
+        );
         var tagsByEntry = await tagRepo.GetByEntryIdsBatchAsync(tenantId, entryIds, ct);
 
         var folderIdSet = entries
@@ -160,22 +198,27 @@ public class ImportExportService(
 
         foreach (var entry in entries)
         {
-            if (!publishedVersions.TryGetValue(entry.Id, out var published)) continue;
+            if (!publishedVersions.TryGetValue(entry.Id, out var published))
+                continue;
 
-            var prompts = published.Prompts.OrderBy(p => p.Order).Select(p =>
-                new Dictionary<string, object>
+            var prompts = published
+                .Prompts.OrderBy(p => p.Order)
+                .Select(p => new Dictionary<string, object>
                 {
                     ["content"] = p.Content,
-                    ["isTemplate"] = p.IsTemplate
-                }).ToList();
+                    ["isTemplate"] = p.IsTemplate,
+                })
+                .ToList();
 
             var exportEntry = new Dictionary<string, object>
             {
                 ["title"] = entry.Title,
-                ["version"] = published.Version
+                ["version"] = published.Version,
             };
 
-            if (entry.FolderId.HasValue && folders.TryGetValue(entry.FolderId.Value, out var folder))
+            if (
+                entry.FolderId.HasValue && folders.TryGetValue(entry.FolderId.Value, out var folder)
+            )
                 exportEntry["folder"] = folder.Name;
 
             if (!string.IsNullOrEmpty(published.SystemMessage))
@@ -193,10 +236,15 @@ public class ImportExportService(
     }
 
     private async Task ExpandFolderSubtreeAsync(
-        Guid tenantId, List<Guid> parentIds, HashSet<Guid> collected,
-        int depth = 0, CancellationToken ct = default)
+        Guid tenantId,
+        List<Guid> parentIds,
+        HashSet<Guid> collected,
+        int depth = 0,
+        CancellationToken ct = default
+    )
     {
-        if (depth >= MaxFolderDepth) return;
+        if (depth >= MaxFolderDepth)
+            return;
 
         foreach (var parentId in parentIds)
         {
@@ -208,8 +256,11 @@ public class ImportExportService(
     }
 
     private async Task<Guid?> ResolveImportFolderAsync(
-        string? folderName, Guid tenantId,
-        Dictionary<string, Guid> folderCache, CancellationToken ct)
+        string? folderName,
+        Guid tenantId,
+        Dictionary<string, Guid> folderCache,
+        CancellationToken ct
+    )
     {
         if (string.IsNullOrEmpty(folderName))
             return null;
@@ -217,14 +268,17 @@ public class ImportExportService(
         if (folderCache.TryGetValue(folderName, out var cachedFolderId))
             return cachedFolderId;
 
-        var folder = await folderRepo.CreateAsync(new Folder
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId,
-            Name = folderName,
-            ParentId = null,
-            CreatedAt = DateTime.UtcNow
-        }, ct);
+        var folder = await folderRepo.CreateAsync(
+            new Folder
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                Name = folderName,
+                ParentId = null,
+                CreatedAt = DateTime.UtcNow,
+            },
+            ct
+        );
 
         folderCache[folderName] = folder.Id;
         return folder.Id;
@@ -245,24 +299,32 @@ public class ImportExportService(
     private static List<Prompt> ParseImportPrompts(Dictionary<object, object> raw)
     {
         var prompts = new List<Prompt>();
-        if (!raw.TryGetValue("prompts", out var promptsObj) || promptsObj is not List<object> promptList)
+        if (
+            !raw.TryGetValue("prompts", out var promptsObj)
+            || promptsObj is not List<object> promptList
+        )
             return prompts;
 
         for (var i = 0; i < promptList.Count; i++)
         {
-            if (promptList[i] is not Dictionary<object, object> pRaw) continue;
+            if (promptList[i] is not Dictionary<object, object> pRaw)
+                continue;
             var content = pRaw.TryGetValue("content", out var c) ? c?.ToString() ?? "" : "";
-            var isTemplate = pRaw.TryGetValue("isTemplate", out var it) &&
-                             bool.TryParse(it?.ToString(), out var itVal) && itVal;
+            var isTemplate =
+                pRaw.TryGetValue("isTemplate", out var it)
+                && bool.TryParse(it?.ToString(), out var itVal)
+                && itVal;
             var templateFields = isTemplate ? TemplateParser.Parse(content) : [];
-            prompts.Add(new Prompt
-            {
-                Id = Guid.NewGuid(),
-                Content = content,
-                Order = i,
-                IsTemplate = isTemplate,
-                TemplateFields = templateFields
-            });
+            prompts.Add(
+                new Prompt
+                {
+                    Id = Guid.NewGuid(),
+                    Content = content,
+                    Order = i,
+                    IsTemplate = isTemplate,
+                    TemplateFields = templateFields,
+                }
+            );
         }
 
         return prompts;

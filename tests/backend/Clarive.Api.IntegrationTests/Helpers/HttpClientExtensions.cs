@@ -8,7 +8,7 @@ public static class HttpClientExtensions
 {
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
     };
 
     /// <summary>Sets the Authorization: Bearer header and returns the same client for chaining.</summary>
@@ -29,7 +29,10 @@ public static class HttpClientExtensions
 
     /// <summary>POST JSON and return deserialized response.</summary>
     public static async Task<(HttpResponseMessage Response, T? Body)> PostJsonAsync<T>(
-        this HttpClient client, string url, object payload)
+        this HttpClient client,
+        string url,
+        object payload
+    )
     {
         var response = await client.PostAsJsonAsync(url, payload);
         var body = response.IsSuccessStatusCode
@@ -40,7 +43,10 @@ public static class HttpClientExtensions
 
     /// <summary>PATCH JSON and return deserialized response.</summary>
     public static async Task<(HttpResponseMessage Response, T? Body)> PatchJsonAsync<T>(
-        this HttpClient client, string url, object payload)
+        this HttpClient client,
+        string url,
+        object payload
+    )
     {
         var content = JsonContent.Create(payload);
         var response = await client.PatchAsync(url, content);

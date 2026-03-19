@@ -1,7 +1,7 @@
-using Clarive.Api.Models.Requests;
-using Clarive.Api.Services.Interfaces;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
+using Clarive.Api.Models.Requests;
+using Clarive.Api.Services.Interfaces;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -29,7 +29,8 @@ public static class ImportExportEndpoints
         HttpContext ctx,
         ExportRequest? request,
         IImportExportService importExportService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var result = await importExportService.ExportAsync(tenantId, request, ct);
@@ -39,7 +40,8 @@ public static class ImportExportEndpoints
     private static async Task<IResult> HandleImport(
         HttpContext ctx,
         IImportExportService importExportService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -54,10 +56,18 @@ public static class ImportExportEndpoints
 
     private static async Task<(List<object>? entries, IResult? error)> ReadAndParseImportFileAsync(
         HttpContext ctx,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         if (!ctx.Request.HasFormContentType)
-            return (null, ctx.ErrorResult(422, "VALIDATION_ERROR", "Expected multipart/form-data with a 'file' field."));
+            return (
+                null,
+                ctx.ErrorResult(
+                    422,
+                    "VALIDATION_ERROR",
+                    "Expected multipart/form-data with a 'file' field."
+                )
+            );
 
         var form = await ctx.Request.ReadFormAsync(ct);
         var file = form.Files.GetFile("file");
@@ -65,7 +75,14 @@ public static class ImportExportEndpoints
             return (null, ctx.ErrorResult(422, "VALIDATION_ERROR", "No file uploaded."));
 
         if (file.Length > MaxImportFileSize)
-            return (null, ctx.ErrorResult(422, "VALIDATION_ERROR", $"File size exceeds the {MaxImportFileSize / (1024 * 1024)} MB limit."));
+            return (
+                null,
+                ctx.ErrorResult(
+                    422,
+                    "VALIDATION_ERROR",
+                    $"File size exceeds the {MaxImportFileSize / (1024 * 1024)} MB limit."
+                )
+            );
 
         string yamlContent;
         using (var reader = new StreamReader(file.OpenReadStream()))
@@ -86,14 +103,27 @@ public static class ImportExportEndpoints
             return (null, ctx.ErrorResult(422, "VALIDATION_ERROR", "Invalid YAML format."));
         }
 
-        if (parsed is null || !parsed.TryGetValue("entries", out var entriesObj) ||
-            entriesObj is not List<object> entryList)
+        if (
+            parsed is null
+            || !parsed.TryGetValue("entries", out var entriesObj)
+            || entriesObj is not List<object> entryList
+        )
         {
-            return (null, ctx.ErrorResult(422, "VALIDATION_ERROR", "YAML must contain an 'entries' array."));
+            return (
+                null,
+                ctx.ErrorResult(422, "VALIDATION_ERROR", "YAML must contain an 'entries' array.")
+            );
         }
 
         if (entryList.Count > MaxImportEntries)
-            return (null, ctx.ErrorResult(422, "VALIDATION_ERROR", $"Import cannot exceed {MaxImportEntries} entries."));
+            return (
+                null,
+                ctx.ErrorResult(
+                    422,
+                    "VALIDATION_ERROR",
+                    $"Import cannot exceed {MaxImportEntries} entries."
+                )
+            );
 
         return (entryList, null);
     }

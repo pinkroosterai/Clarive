@@ -9,13 +9,18 @@ public class MaintenanceModeService(IServiceScopeFactory scopeFactory) : IMainte
 
     public bool IsEnabled => _enabled;
 
-    public async Task SetEnabledAsync(bool enabled, string changedBy, CancellationToken ct = default)
+    public async Task SetEnabledAsync(
+        bool enabled,
+        string changedBy,
+        CancellationToken ct = default
+    )
     {
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
 
         var config = await db.SystemConfigs.FirstOrDefaultAsync(c => c.Id == 1, ct);
-        if (config is null) return;
+        if (config is null)
+            return;
 
         config.MaintenanceEnabled = enabled;
         config.MaintenanceSince = enabled ? DateTime.UtcNow : null;

@@ -13,15 +13,14 @@ namespace Clarive.Api.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_ai_usage_logs_user_id",
                 table: "ai_usage_logs",
-                column: "user_id");
+                column: "user_id"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "ix_ai_usage_logs_user_id",
-                table: "ai_usage_logs");
+            migrationBuilder.DropIndex(name: "ix_ai_usage_logs_user_id", table: "ai_usage_logs");
         }
     }
 }

@@ -13,7 +13,8 @@ public class SystemLogTests : IntegrationTestBase
 {
     private const string LogsUrl = "/api/super/system-logs";
 
-    public SystemLogTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public SystemLogTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     private async Task EnsureLogsTableExistsAsync(NpgsqlDataSource ds)
     {
@@ -39,7 +40,13 @@ public class SystemLogTests : IntegrationTestBase
         await createCmd.ExecuteNonQueryAsync();
     }
 
-    private async Task SeedLogsAsync(NpgsqlDataSource ds, int count, int level = 2, string? message = null, DateTime? timestamp = null)
+    private async Task SeedLogsAsync(
+        NpgsqlDataSource ds,
+        int count,
+        int level = 2,
+        string? message = null,
+        DateTime? timestamp = null
+    )
     {
         await using var conn = await ds.OpenConnectionAsync();
         for (var i = 0; i < count; i++)
@@ -53,8 +60,14 @@ public class SystemLogTests : IntegrationTestBase
             cmd.Parameters.AddWithValue("@lvl", level);
             cmd.Parameters.AddWithValue("@msg", message ?? $"Test log message {i}");
             cmd.Parameters.AddWithValue("@tmpl", "Test log message {Index}");
-            cmd.Parameters.AddWithValue("@exc", level >= 4 ? (object)"System.Exception: test\n  at Test.Method()" : DBNull.Value);
-            cmd.Parameters.AddWithValue("@props", $"{{\"SourceContext\":\"Clarive.Api.TestSource\",\"Index\":{i}}}");
+            cmd.Parameters.AddWithValue(
+                "@exc",
+                level >= 4 ? (object)"System.Exception: test\n  at Test.Method()" : DBNull.Value
+            );
+            cmd.Parameters.AddWithValue(
+                "@props",
+                $"{{\"SourceContext\":\"Clarive.Api.TestSource\",\"Index\":{i}}}"
+            );
             await cmd.ExecuteNonQueryAsync();
         }
     }

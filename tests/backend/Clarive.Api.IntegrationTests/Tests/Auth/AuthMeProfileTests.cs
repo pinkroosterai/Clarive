@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Auth;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Auth;
 [Collection("Integration")]
 public class AuthMeProfileTests : IntegrationTestBase
 {
-    public AuthMeProfileTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public AuthMeProfileTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task GetMe_WithValidToken_ReturnsCurrentUser()
@@ -42,21 +43,24 @@ public class AuthMeProfileTests : IntegrationTestBase
     {
         // Register a fresh user so we don't mutate seed data
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securePassword123",
-            name = "Original Name"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securePassword123",
+                name = "Original Name",
+            }
+        );
         var regJson = await regResponse.ReadJsonAsync();
         var token = regJson.GetProperty("token").GetString()!;
 
         Client.WithBearerToken(token);
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            name = "Updated Name"
-        });
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>(
+            "/api/profile",
+            new { name = "Updated Name" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         json.GetProperty("name").GetString().Should().Be("Updated Name");
@@ -69,11 +73,14 @@ public class AuthMeProfileTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
-        {
-            newPassword = "newSecurePass123"
-            // missing currentPassword
-        });
+        var (response, _) = await Client.PatchJsonAsync<object>(
+            "/api/profile",
+            new
+            {
+                newPassword = "newSecurePass123",
+                // missing currentPassword
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }

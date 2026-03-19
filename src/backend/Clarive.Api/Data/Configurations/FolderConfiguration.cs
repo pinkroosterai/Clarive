@@ -17,12 +17,15 @@ public class FolderConfiguration : IEntityTypeConfiguration<Folder>
         builder.Property(f => f.ParentId).HasColumnName("parent_id");
         builder.Property(f => f.CreatedAt).HasColumnName("created_at").IsRequired();
 
-        builder.HasOne(f => f.Parent)
+        builder
+            .HasOne(f => f.Parent)
             .WithMany(f => f.Children)
             .HasForeignKey(f => f.ParentId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(f => f.TenantId).HasDatabaseName("ix_folders_tenant_id");
-        builder.HasIndex(f => new { f.TenantId, f.ParentId }).HasDatabaseName("ix_folders_tenant_parent");
+        builder
+            .HasIndex(f => new { f.TenantId, f.ParentId })
+            .HasDatabaseName("ix_folders_tenant_parent");
     }
 }

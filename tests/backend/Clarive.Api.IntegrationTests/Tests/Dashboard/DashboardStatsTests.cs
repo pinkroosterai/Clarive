@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Dashboard;
@@ -10,7 +10,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Dashboard;
 [Collection("Integration")]
 public class DashboardStatsTests : IntegrationTestBase
 {
-    public DashboardStatsTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public DashboardStatsTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task GetStats_WithValidToken_ReturnsExpectedShape()
@@ -57,7 +58,9 @@ public class DashboardStatsTests : IntegrationTestBase
         drafts.Should().BeGreaterOrEqualTo(1);
 
         // published + drafts should not exceed total (total may include historical versions)
-        (published + drafts).Should().BeLessThanOrEqualTo(total);
+        (published + drafts)
+            .Should()
+            .BeLessThanOrEqualTo(total);
 
         // Seed has 6 folders minimum
         json.GetProperty("totalFolders").GetInt32().Should().BeGreaterOrEqualTo(6);

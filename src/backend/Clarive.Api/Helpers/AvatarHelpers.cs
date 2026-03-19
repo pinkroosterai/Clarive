@@ -4,11 +4,11 @@ namespace Clarive.Api.Helpers;
 
 public static class AvatarHelpers
 {
-    public static string? TenantAvatarUrl(Tenant? tenant)
-        => tenant?.AvatarPath != null ? $"/api/tenants/{tenant.Id}/avatar" : null;
+    public static string? TenantAvatarUrl(Tenant? tenant) =>
+        tenant?.AvatarPath != null ? $"/api/tenants/{tenant.Id}/avatar" : null;
 
-    public static string? UserAvatarUrl(User user)
-        => user.AvatarPath != null ? $"/api/users/{user.Id}/avatar" : null;
+    public static string? UserAvatarUrl(User user) =>
+        user.AvatarPath != null ? $"/api/users/{user.Id}/avatar" : null;
 
     /// <summary>
     /// Validates avatar upload form data. Returns an error result if invalid, or the file if valid.
@@ -24,7 +24,10 @@ public static class AvatarHelpers
             return (null, ctx.ErrorResult(422, "VALIDATION_ERROR", "Uploaded file is empty."));
 
         if (file.Length > 3 * 1024 * 1024)
-            return (null, ctx.ErrorResult(413, "FILE_TOO_LARGE", "Image exceeds the 3 MB size limit."));
+            return (
+                null,
+                ctx.ErrorResult(413, "FILE_TOO_LARGE", "Image exceeds the 3 MB size limit.")
+            );
 
         return (file, null);
     }

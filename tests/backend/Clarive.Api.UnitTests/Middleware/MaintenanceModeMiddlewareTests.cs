@@ -10,11 +10,10 @@ public class MaintenanceModeMiddlewareTests
 {
     private static MaintenanceModeMiddleware CreateMiddleware(
         IMaintenanceModeService maintenanceMode,
-        RequestDelegate? next = null)
+        RequestDelegate? next = null
+    )
     {
-        return new MaintenanceModeMiddleware(
-            next ?? (_ => Task.CompletedTask),
-            maintenanceMode);
+        return new MaintenanceModeMiddleware(next ?? (_ => Task.CompletedTask), maintenanceMode);
     }
 
     private static IMaintenanceModeService MockMaintenance(bool enabled)
@@ -30,7 +29,12 @@ public class MaintenanceModeMiddlewareTests
         var nextCalled = false;
         var middleware = CreateMiddleware(
             MockMaintenance(false),
-            _ => { nextCalled = true; return Task.CompletedTask; });
+            _ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }
+        );
 
         var context = new DefaultHttpContext();
         context.Request.Path = "/api/entries";
@@ -64,7 +68,12 @@ public class MaintenanceModeMiddlewareTests
         var nextCalled = false;
         var middleware = CreateMiddleware(
             MockMaintenance(true),
-            _ => { nextCalled = true; return Task.CompletedTask; });
+            _ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }
+        );
 
         var context = new DefaultHttpContext();
         context.Request.Path = path;
@@ -86,7 +95,12 @@ public class MaintenanceModeMiddlewareTests
         var nextCalled = false;
         var middleware = CreateMiddleware(
             MockMaintenance(true),
-            _ => { nextCalled = true; return Task.CompletedTask; });
+            _ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }
+        );
 
         var context = new DefaultHttpContext();
         context.Request.Path = path;
@@ -119,15 +133,20 @@ public class MaintenanceModeMiddlewareTests
         var nextCalled = false;
         var middleware = CreateMiddleware(
             MockMaintenance(true),
-            _ => { nextCalled = true; return Task.CompletedTask; });
+            _ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }
+        );
 
         // Create a minimal JWT with superUser claim
         // Header: {"alg":"none","typ":"JWT"}
         // Payload: {"superUser":"true"}
-        var header = Convert.ToBase64String("{ \"alg\": \"none\", \"typ\": \"JWT\" }"u8)
+        var header = Convert
+            .ToBase64String("{ \"alg\": \"none\", \"typ\": \"JWT\" }"u8)
             .TrimEnd('=');
-        var payload = Convert.ToBase64String("{ \"superUser\": \"true\" }"u8)
-            .TrimEnd('=');
+        var payload = Convert.ToBase64String("{ \"superUser\": \"true\" }"u8).TrimEnd('=');
         var fakeJwt = $"{header}.{payload}.";
 
         var context = new DefaultHttpContext();
@@ -145,10 +164,10 @@ public class MaintenanceModeMiddlewareTests
     {
         var middleware = CreateMiddleware(MockMaintenance(true));
 
-        var header = Convert.ToBase64String("{ \"alg\": \"none\", \"typ\": \"JWT\" }"u8)
+        var header = Convert
+            .ToBase64String("{ \"alg\": \"none\", \"typ\": \"JWT\" }"u8)
             .TrimEnd('=');
-        var payload = Convert.ToBase64String("{ \"sub\": \"user123\" }"u8)
-            .TrimEnd('=');
+        var payload = Convert.ToBase64String("{ \"sub\": \"user123\" }"u8).TrimEnd('=');
         var fakeJwt = $"{header}.{payload}.";
 
         var context = new DefaultHttpContext();

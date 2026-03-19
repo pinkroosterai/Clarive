@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Folders;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Folders;
 [Collection("Integration")]
 public class FolderTests : IntegrationTestBase
 {
-    public FolderTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public FolderTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task GetTree_ReturnsNestedFolders()
@@ -35,10 +36,10 @@ public class FolderTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var folderName = TestData.UniqueFolderName();
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/folders", new
-        {
-            name = folderName
-        });
+        var (response, body) = await Client.PostJsonAsync<JsonElement>(
+            "/api/folders",
+            new { name = folderName }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.GetProperty("name").GetString().Should().Be(folderName);
@@ -52,15 +53,17 @@ public class FolderTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var folderName = TestData.UniqueFolderName();
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/folders", new
-        {
-            name = folderName,
-            parentId = TestData.FolderContentWriting
-        });
+        var (response, body) = await Client.PostJsonAsync<JsonElement>(
+            "/api/folders",
+            new { name = folderName, parentId = TestData.FolderContentWriting }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.GetProperty("name").GetString().Should().Be(folderName);
-        body.GetProperty("parentId").GetString().Should().Be(TestData.FolderContentWriting.ToString());
+        body.GetProperty("parentId")
+            .GetString()
+            .Should()
+            .Be(TestData.FolderContentWriting.ToString());
     }
 
     [Fact]
@@ -70,15 +73,17 @@ public class FolderTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create a folder to rename
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/folders", new
-        {
-            name = TestData.UniqueFolderName()
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/folders",
+            new { name = TestData.UniqueFolderName() }
+        );
         var folderId = created.GetProperty("id").GetString();
 
         var newName = TestData.UniqueFolderName();
         var (response, body) = await Client.PatchJsonAsync<JsonElement>(
-            $"/api/folders/{folderId}", new { name = newName });
+            $"/api/folders/{folderId}",
+            new { name = newName }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.GetProperty("name").GetString().Should().Be(newName);
@@ -91,10 +96,10 @@ public class FolderTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create a folder to delete
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/folders", new
-        {
-            name = TestData.UniqueFolderName()
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/folders",
+            new { name = TestData.UniqueFolderName() }
+        );
         var folderId = created.GetProperty("id").GetString();
 
         var response = await Client.DeleteAsync($"/api/folders/{folderId}");

@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
-using Clarive.Api.Services;
 using Clarive.Api.Auth;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
+using Clarive.Api.Models.Responses;
+using Clarive.Api.Repositories.Interfaces;
+using Clarive.Api.Services;
 
 namespace Clarive.Api.Endpoints;
 
@@ -12,9 +12,7 @@ public static class DashboardEndpoints
 {
     public static RouteGroupBuilder MapDashboardEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/dashboard")
-            .WithTags("Dashboard")
-            .RequireAuthorization();
+        var group = app.MapGroup("/api/dashboard").WithTags("Dashboard").RequireAuthorization();
 
         group.MapGet("/stats", HandleGetStats);
 
@@ -28,7 +26,8 @@ public static class DashboardEndpoints
         IAuditLogRepository auditRepo,
         IFavoriteRepository favoriteRepo,
         TenantCacheService cache,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -44,7 +43,8 @@ public static class DashboardEndpoints
                 return new DashboardStatsCache(total, published, drafts, folderCount);
             },
             TenantCacheKeys.DashboardStatsTtl,
-            ct);
+            ct
+        );
 
         // Cache recent entries + audit log (1-min TTL, invalidated on entry mutations)
         var recentData = await cache.GetOrCreateAsync(
@@ -57,25 +57,30 @@ public static class DashboardEndpoints
                 return new RecentDataCache(entries, audit);
             },
             TenantCacheKeys.RecentEntriesTtl,
-            ct);
+            ct
+        );
 
         var recentEntries = recentData.Entries;
         var auditEntries = recentData.AuditEntries;
 
-        var recentActivity = auditEntries.Select(a => new RecentActivityDto(
-            a.Id,
-            JsonNamingPolicy.SnakeCaseLower.ConvertName(a.Action.ToString()),
-            a.EntityType,
-            a.UserName,
-            a.Details,
-            a.Timestamp)).ToList();
+        var recentActivity = auditEntries
+            .Select(a => new RecentActivityDto(
+                a.Id,
+                JsonNamingPolicy.SnakeCaseLower.ConvertName(a.Action.ToString()),
+                a.EntityType,
+                a.UserName,
+                a.Details,
+                a.Timestamp
+            ))
+            .ToList();
 
         // Favorites — per-user, fetched live
         var userFavorites = await favoriteRepo.GetByUserAsync(tenantId, userId, 8, ct);
         var favoriteEntryIds = userFavorites.Select(f => f.EntryId).ToList();
-        var favoriteVersions = favoriteEntryIds.Count > 0
-            ? await entryRepo.GetWorkingVersionsBatchAsync(tenantId, favoriteEntryIds, ct)
-            : new Dictionary<Guid, PromptEntryVersion>();
+        var favoriteVersions =
+            favoriteEntryIds.Count > 0
+                ? await entryRepo.GetWorkingVersionsBatchAsync(tenantId, favoriteEntryIds, ct)
+                : new Dictionary<Guid, PromptEntryVersion>();
 
         // Resolve entry titles and build DTOs (batch fetch to avoid N+1)
         var favoriteEntries = new List<FavoriteEntryDto>();
@@ -84,19 +89,33 @@ public static class DashboardEndpoints
             var entriesById = await entryRepo.GetByIdsAsync(tenantId, favoriteEntryIds, ct);
             foreach (var (entryId, favoritedAt) in userFavorites)
             {
-                if (!entriesById.TryGetValue(entryId, out var entry) || entry.IsTrashed) continue;
+                if (!entriesById.TryGetValue(entryId, out var entry) || entry.IsTrashed)
+                    continue;
 
                 favoriteVersions.TryGetValue(entryId, out var version);
-                var versionState = (version?.VersionState ?? Models.Enums.VersionState.Draft).ToString().ToLower();
-                favoriteEntries.Add(new FavoriteEntryDto(entryId, entry.Title, versionState, favoritedAt));
+                var versionState = (version?.VersionState ?? Models.Enums.VersionState.Draft)
+                    .ToString()
+                    .ToLower();
+                favoriteEntries.Add(
+                    new FavoriteEntryDto(entryId, entry.Title, versionState, favoritedAt)
+                );
             }
         }
 
-        return Results.Ok(new DashboardStatsResponse(
-            stats.Total, stats.Published, stats.Drafts, stats.FolderCount,
-            recentEntries, recentActivity, favoriteEntries));
+        return Results.Ok(
+            new DashboardStatsResponse(
+                stats.Total,
+                stats.Published,
+                stats.Drafts,
+                stats.FolderCount,
+                recentEntries,
+                recentActivity,
+                favoriteEntries
+            )
+        );
     }
 
     private record DashboardStatsCache(int Total, int Published, int Drafts, int FolderCount);
+
     private record RecentDataCache(List<RecentEntryDto> Entries, List<AuditLogEntry> AuditEntries);
 }

@@ -15,7 +15,8 @@ namespace Clarive.Api.Data.Migrations
                 table: "ai_provider_models",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
 
         /// <inheritdoc />
@@ -23,7 +24,8 @@ namespace Clarive.Api.Data.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "has_manual_cost_override",
-                table: "ai_provider_models");
+                table: "ai_provider_models"
+            );
         }
     }
 }

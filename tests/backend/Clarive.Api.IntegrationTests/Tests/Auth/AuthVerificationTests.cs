@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Auth;
@@ -10,29 +10,30 @@ namespace Clarive.Api.IntegrationTests.Tests.Auth;
 [Collection("Integration")]
 public class AuthVerificationTests : IntegrationTestBase
 {
-    public AuthVerificationTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public AuthVerificationTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task VerifyEmail_WithInvalidToken_ReturnsError()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/verify-email", new
-        {
-            token = "invalid_verification_token_value"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/verify-email",
+            new { token = "invalid_verification_token_value" }
+        );
 
-        response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.BadRequest,
-            HttpStatusCode.UnprocessableEntity,
-            HttpStatusCode.NotFound);
+        response
+            .StatusCode.Should()
+            .BeOneOf(
+                HttpStatusCode.BadRequest,
+                HttpStatusCode.UnprocessableEntity,
+                HttpStatusCode.NotFound
+            );
     }
 
     [Fact]
     public async Task VerifyEmail_WithEmptyToken_Returns422()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/verify-email", new
-        {
-            token = ""
-        });
+        var response = await Client.PostAsJsonAsync("/api/auth/verify-email", new { token = "" });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }

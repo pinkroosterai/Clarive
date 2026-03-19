@@ -26,15 +26,16 @@ public record AiSettings
     public string AllowedModels { get; init; } = "";
     public string TavilyApiKey { get; init; } = "";
 
-    public ActionAiConfig? GetActionConfig(AiActionType actionType) => actionType switch
-    {
-        AiActionType.Generation => Generation,
-        AiActionType.Evaluation => Evaluation,
-        AiActionType.Clarification => Clarification,
-        AiActionType.SystemMessage => SystemMessage,
-        AiActionType.Decomposition => Decomposition,
-        AiActionType.FillTemplateFields => FillTemplateFields,
-        AiActionType.PlaygroundJudge => PlaygroundJudge,
-        _ => null
-    };
+    public ActionAiConfig? GetActionConfig(AiActionType actionType) =>
+        actionType switch
+        {
+            AiActionType.Generation => Generation,
+            AiActionType.Evaluation => Evaluation,
+            AiActionType.Clarification => Clarification,
+            AiActionType.SystemMessage => SystemMessage,
+            AiActionType.Decomposition => Decomposition,
+            AiActionType.FillTemplateFields => FillTemplateFields,
+            AiActionType.PlaygroundJudge => PlaygroundJudge,
+            _ => null,
+        };
 }

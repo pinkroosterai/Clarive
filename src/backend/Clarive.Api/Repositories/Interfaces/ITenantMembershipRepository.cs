@@ -23,7 +23,10 @@ public interface ITenantMembershipRepository
     Task DeleteAsync(Guid userId, Guid tenantId, CancellationToken ct = default);
 
     /// <summary>Count members per tenant in a single query.</summary>
-    Task<Dictionary<Guid, int>> CountMembersByTenantIdsAsync(IEnumerable<Guid> tenantIds, CancellationToken ct = default);
+    Task<Dictionary<Guid, int>> CountMembersByTenantIdsAsync(
+        IEnumerable<Guid> tenantIds,
+        CancellationToken ct = default
+    );
 
     /// <summary>Count admins in a tenant (for "last admin" safety check).</summary>
     Task<int> CountAdminsAsync(Guid tenantId, CancellationToken ct = default);

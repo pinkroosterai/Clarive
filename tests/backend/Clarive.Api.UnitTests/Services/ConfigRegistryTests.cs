@@ -46,8 +46,10 @@ public class ConfigRegistryTests
     {
         foreach (var section in Enum.GetValues<ConfigSection>())
         {
-            ConfigRegistry.GetBySection(section).Should().NotBeEmpty(
-                $"section {section} should have at least one config definition");
+            ConfigRegistry
+                .GetBySection(section)
+                .Should()
+                .NotBeEmpty($"section {section} should have at least one config definition");
         }
     }
 
@@ -68,9 +70,12 @@ public class ConfigRegistryTests
         var selects = ConfigRegistry.All.Where(d => d.InputType == ConfigInputType.Select).ToList();
 
         selects.Should().NotBeEmpty();
-        selects.Should().AllSatisfy(d =>
-            d.SelectOptions.Should().NotBeNullOrEmpty(
-                $"config '{d.Key}' uses Select input but has no options"));
+        selects
+            .Should()
+            .AllSatisfy(d =>
+                d.SelectOptions.Should()
+                    .NotBeNullOrEmpty($"config '{d.Key}' uses Select input but has no options")
+            );
     }
 
     [Fact]
@@ -80,19 +85,26 @@ public class ConfigRegistryTests
 
         foreach (var config in conditionalConfigs)
         {
-            ConfigRegistry.ByKey.Should().ContainKey(config.VisibleWhen!.Key,
-                $"config '{config.Key}' references non-existent VisibleWhen key '{config.VisibleWhen.Key}'");
+            ConfigRegistry
+                .ByKey.Should()
+                .ContainKey(
+                    config.VisibleWhen!.Key,
+                    $"config '{config.Key}' references non-existent VisibleWhen key '{config.VisibleWhen.Key}'"
+                );
         }
     }
 
     [Fact]
     public void All_LabelsAndDescriptions_AreNotEmpty()
     {
-        ConfigRegistry.All.Should().AllSatisfy(d =>
-        {
-            d.Label.Should().NotBeNullOrWhiteSpace($"config '{d.Key}' must have a label");
-            d.Description.Should().NotBeNullOrWhiteSpace($"config '{d.Key}' must have a description");
-        });
+        ConfigRegistry
+            .All.Should()
+            .AllSatisfy(d =>
+            {
+                d.Label.Should().NotBeNullOrWhiteSpace($"config '{d.Key}' must have a label");
+                d.Description.Should()
+                    .NotBeNullOrWhiteSpace($"config '{d.Key}' must have a description");
+            });
     }
 
     [Theory]
@@ -108,12 +120,32 @@ public class ConfigRegistryTests
     [Fact]
     public void All_EachConfigurableActionHasAllFiveConfigKeys()
     {
-        var actions = new[] { "Generation", "Evaluation", "Clarification", "SystemMessage", "Decomposition", "FillTemplateFields", "PlaygroundJudge" };
-        var suffixes = new[] { "Model", "ProviderId", "Temperature", "MaxTokens", "ReasoningEffort" };
+        var actions = new[]
+        {
+            "Generation",
+            "Evaluation",
+            "Clarification",
+            "SystemMessage",
+            "Decomposition",
+            "FillTemplateFields",
+            "PlaygroundJudge",
+        };
+        var suffixes = new[]
+        {
+            "Model",
+            "ProviderId",
+            "Temperature",
+            "MaxTokens",
+            "ReasoningEffort",
+        };
 
         foreach (var action in actions)
-            foreach (var suffix in suffixes)
-                ConfigRegistry.ByKey.Should().ContainKey($"Ai:{action}:{suffix}",
-                    $"action '{action}' must have config key 'Ai:{action}:{suffix}'");
+        foreach (var suffix in suffixes)
+            ConfigRegistry
+                .ByKey.Should()
+                .ContainKey(
+                    $"Ai:{action}:{suffix}",
+                    $"action '{action}' must have config key 'Ai:{action}:{suffix}'"
+                );
     }
 }

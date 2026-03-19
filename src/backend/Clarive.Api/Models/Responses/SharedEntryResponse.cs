@@ -11,6 +11,12 @@ public record SharedEntryResult(
     int Version,
     DateTime? PublishedAt,
     List<SharedPrompt> Prompts,
-    bool PasswordRequired);
+    bool PasswordRequired
+);
 
-public record SharedPrompt(string Content, int Order, bool IsTemplate, List<TemplateField>? TemplateFields);
+public record SharedPrompt(
+    string Content,
+    int Order,
+    bool IsTemplate,
+    List<TemplateField>? TemplateFields
+);

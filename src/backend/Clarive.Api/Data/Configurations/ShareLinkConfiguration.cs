@@ -24,17 +24,21 @@ public class ShareLinkConfiguration : IEntityTypeConfiguration<ShareLink>
         builder.Property(s => s.AccessCount).HasColumnName("access_count").IsRequired();
         builder.Property(s => s.IsActive).HasColumnName("is_active").IsRequired();
 
-        builder.HasOne<PromptEntry>()
+        builder
+            .HasOne<PromptEntry>()
             .WithMany()
             .HasForeignKey(s => s.EntryId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<Tenant>()
+        builder
+            .HasOne<Tenant>()
             .WithMany()
             .HasForeignKey(s => s.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(s => s.TokenHash).IsUnique().HasDatabaseName("uq_share_links_token_hash");
-        builder.HasIndex(s => new { s.TenantId, s.EntryId }).HasDatabaseName("ix_share_links_tenant_entry");
+        builder
+            .HasIndex(s => new { s.TenantId, s.EntryId })
+            .HasDatabaseName("ix_share_links_tenant_entry");
     }
 }

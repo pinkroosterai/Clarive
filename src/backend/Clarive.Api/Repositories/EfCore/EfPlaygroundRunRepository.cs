@@ -18,10 +18,14 @@ public class EfPlaygroundRunRepository(ClariveDbContext db) : IPlaygroundRunRepo
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<List<PlaygroundRun>> GetByEntryIdAsync(Guid entryId, int limit, CancellationToken ct = default)
+    public async Task<List<PlaygroundRun>> GetByEntryIdAsync(
+        Guid entryId,
+        int limit,
+        CancellationToken ct = default
+    )
     {
-        return await db.PlaygroundRuns
-            .Where(r => r.EntryId == entryId)
+        return await db
+            .PlaygroundRuns.Where(r => r.EntryId == entryId)
             .OrderByDescending(r => r.CreatedAt)
             .Take(limit)
             .ToListAsync(ct);
@@ -36,21 +40,22 @@ public class EfPlaygroundRunRepository(ClariveDbContext db) : IPlaygroundRunRepo
 
     public async Task<int> DeleteOlderThanAsync(DateTime cutoff, CancellationToken ct = default)
     {
-        return await db.PlaygroundRuns
-            .Where(r => r.CreatedAt < cutoff)
-            .ExecuteDeleteAsync(ct);
+        return await db.PlaygroundRuns.Where(r => r.CreatedAt < cutoff).ExecuteDeleteAsync(ct);
     }
 
     public async Task<int> CountByEntryIdAsync(Guid entryId, CancellationToken ct = default)
     {
-        return await db.PlaygroundRuns
-            .CountAsync(r => r.EntryId == entryId, ct);
+        return await db.PlaygroundRuns.CountAsync(r => r.EntryId == entryId, ct);
     }
 
-    public async Task DeleteOldestByEntryIdAsync(Guid entryId, int keepCount, CancellationToken ct = default)
+    public async Task DeleteOldestByEntryIdAsync(
+        Guid entryId,
+        int keepCount,
+        CancellationToken ct = default
+    )
     {
-        var idsToDelete = await db.PlaygroundRuns
-            .Where(r => r.EntryId == entryId)
+        var idsToDelete = await db
+            .PlaygroundRuns.Where(r => r.EntryId == entryId)
             .OrderByDescending(r => r.CreatedAt)
             .Skip(keepCount)
             .Select(r => r.Id)
@@ -58,9 +63,7 @@ public class EfPlaygroundRunRepository(ClariveDbContext db) : IPlaygroundRunRepo
 
         if (idsToDelete.Count > 0)
         {
-            await db.PlaygroundRuns
-                .Where(r => idsToDelete.Contains(r.Id))
-                .ExecuteDeleteAsync(ct);
+            await db.PlaygroundRuns.Where(r => idsToDelete.Contains(r.Id)).ExecuteDeleteAsync(ct);
         }
     }
 }

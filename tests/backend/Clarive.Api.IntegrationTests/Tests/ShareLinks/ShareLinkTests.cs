@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.ShareLinks;
 [Collection("Integration")]
 public class ShareLinkTests : IntegrationTestBase
 {
-    public ShareLinkTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ShareLinkTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     private async Task<string> AuthAsAdmin()
     {
@@ -36,11 +37,16 @@ public class ShareLinkTests : IntegrationTestBase
 
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/share-link",
-            new { });
+            new { }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body!.GetProperty("token").GetString().Should().StartWith("sl_");
-        body!.GetProperty("entryId").GetString().Should().Be(TestData.EntryBlogPostGenerator.ToString());
+        body!
+            .GetProperty("entryId")
+            .GetString()
+            .Should()
+            .Be(TestData.EntryBlogPostGenerator.ToString());
     }
 
     [Fact]
@@ -50,7 +56,8 @@ public class ShareLinkTests : IntegrationTestBase
 
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryCsvSummarizer}/share-link",
-            new { });
+            new { }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -63,7 +70,8 @@ public class ShareLinkTests : IntegrationTestBase
 
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryCodeReviewPipeline}/share-link",
-            new { expiresAt = expiry.ToString("O") });
+            new { expiresAt = expiry.ToString("O") }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body!.GetProperty("expiresAt").GetString().Should().NotBeNull();
@@ -76,7 +84,8 @@ public class ShareLinkTests : IntegrationTestBase
 
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryTutorialWriter}/share-link",
-            new { password = "test-password" });
+            new { password = "test-password" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body!.GetProperty("hasPassword").GetBoolean().Should().BeTrue();
@@ -92,9 +101,12 @@ public class ShareLinkTests : IntegrationTestBase
         // Create first
         await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntrySalesAnalyzer}/share-link",
-            new { });
+            new { }
+        );
 
-        var response = await Client.GetAsync($"/api/entries/{TestData.EntrySalesAnalyzer}/share-link");
+        var response = await Client.GetAsync(
+            $"/api/entries/{TestData.EntrySalesAnalyzer}/share-link"
+        );
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var json = await response.ReadJsonAsync();
@@ -106,7 +118,9 @@ public class ShareLinkTests : IntegrationTestBase
     {
         await AuthAsAdmin();
 
-        var response = await Client.GetAsync($"/api/entries/{TestData.EntryOwaspChecker}/share-link");
+        var response = await Client.GetAsync(
+            $"/api/entries/{TestData.EntryOwaspChecker}/share-link"
+        );
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -120,15 +134,18 @@ public class ShareLinkTests : IntegrationTestBase
         // Create first
         await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryEmailToneAdjuster}/share-link",
-            new { });
+            new { }
+        );
 
         var response = await Client.DeleteAsync(
-            $"/api/entries/{TestData.EntryEmailToneAdjuster}/share-link");
+            $"/api/entries/{TestData.EntryEmailToneAdjuster}/share-link"
+        );
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify it's gone
         var getResponse = await Client.GetAsync(
-            $"/api/entries/{TestData.EntryEmailToneAdjuster}/share-link");
+            $"/api/entries/{TestData.EntryEmailToneAdjuster}/share-link"
+        );
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -142,7 +159,8 @@ public class ShareLinkTests : IntegrationTestBase
         // Create share link
         var (_, createBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntrySeoMetaGenerator}/share-link",
-            new { });
+            new { }
+        );
 
         var shareToken = createBody!.GetProperty("token").GetString()!;
 
@@ -172,7 +190,8 @@ public class ShareLinkTests : IntegrationTestBase
         // Create password-protected link
         var (_, createBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/share-link",
-            new { password = "secret123" });
+            new { password = "secret123" }
+        );
 
         var shareToken = createBody!.GetProperty("token").GetString()!;
 
@@ -187,7 +206,8 @@ public class ShareLinkTests : IntegrationTestBase
         // Verify with correct password
         var (verifyResponse, verifyBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/share/{Uri.EscapeDataString(shareToken)}/verify",
-            new { password = "secret123" });
+            new { password = "secret123" }
+        );
 
         verifyResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         verifyBody!.GetProperty("title").GetString().Should().NotBeNullOrEmpty();
@@ -201,7 +221,8 @@ public class ShareLinkTests : IntegrationTestBase
         // Create password-protected link
         var (_, createBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/share-link",
-            new { password = "correct-password" });
+            new { password = "correct-password" }
+        );
 
         var shareToken = createBody!.GetProperty("token").GetString()!;
 
@@ -209,7 +230,8 @@ public class ShareLinkTests : IntegrationTestBase
 
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/share/{Uri.EscapeDataString(shareToken)}/verify",
-            new { password = "wrong-password" });
+            new { password = "wrong-password" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -224,13 +246,15 @@ public class ShareLinkTests : IntegrationTestBase
         // Create first link
         var (_, firstBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/share-link",
-            new { });
+            new { }
+        );
         var firstToken = firstBody!.GetProperty("token").GetString()!;
 
         // Regenerate
         var (_, secondBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/share-link",
-            new { });
+            new { }
+        );
         var secondToken = secondBody!.GetProperty("token").GetString()!;
 
         secondToken.Should().NotBe(firstToken);
@@ -255,7 +279,8 @@ public class ShareLinkTests : IntegrationTestBase
 
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/share-link",
-            new { });
+            new { }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }

@@ -12,8 +12,10 @@ public class EncryptionService : IEncryptionService
         var keyBase64 = configuration["CONFIG_ENCRYPTION_KEY"];
         if (string.IsNullOrWhiteSpace(keyBase64))
         {
-            logger.LogWarning("CONFIG_ENCRYPTION_KEY not set — service config encryption is disabled. " +
-                              "Secret values cannot be stored in the dashboard.");
+            logger.LogWarning(
+                "CONFIG_ENCRYPTION_KEY not set — service config encryption is disabled. "
+                    + "Secret values cannot be stored in the dashboard."
+            );
             _key = null;
             return;
         }
@@ -25,17 +27,21 @@ public class EncryptionService : IEncryptionService
         }
         catch (FormatException)
         {
-            logger.LogWarning("CONFIG_ENCRYPTION_KEY is not valid base64 — encryption disabled. " +
-                              "Generate a valid key with: openssl rand -base64 32");
+            logger.LogWarning(
+                "CONFIG_ENCRYPTION_KEY is not valid base64 — encryption disabled. "
+                    + "Generate a valid key with: openssl rand -base64 32"
+            );
             _key = null;
             return;
         }
 
         if (decoded.Length != 32)
         {
-            logger.LogWarning("CONFIG_ENCRYPTION_KEY must be exactly 32 bytes (256 bits) when decoded. " +
-                              "Got {KeyLength} bytes — encryption disabled. Generate a valid key with: openssl rand -base64 32",
-                              decoded.Length);
+            logger.LogWarning(
+                "CONFIG_ENCRYPTION_KEY must be exactly 32 bytes (256 bits) when decoded. "
+                    + "Got {KeyLength} bytes — encryption disabled. Generate a valid key with: openssl rand -base64 32",
+                decoded.Length
+            );
             _key = null;
             return;
         }
@@ -48,7 +54,9 @@ public class EncryptionService : IEncryptionService
     public string Encrypt(string plaintext)
     {
         if (_key is null)
-            throw new InvalidOperationException("Encryption not available — CONFIG_ENCRYPTION_KEY is not set.");
+            throw new InvalidOperationException(
+                "Encryption not available — CONFIG_ENCRYPTION_KEY is not set."
+            );
 
         var nonce = new byte[12];
         RandomNumberGenerator.Fill(nonce);
@@ -72,7 +80,9 @@ public class EncryptionService : IEncryptionService
     public string Decrypt(string ciphertextBase64)
     {
         if (_key is null)
-            throw new InvalidOperationException("Encryption not available — CONFIG_ENCRYPTION_KEY is not set.");
+            throw new InvalidOperationException(
+                "Encryption not available — CONFIG_ENCRYPTION_KEY is not set."
+            );
 
         var data = Convert.FromBase64String(ciphertextBase64);
         if (data.Length < 28) // 12 nonce + 0 ciphertext + 16 tag minimum

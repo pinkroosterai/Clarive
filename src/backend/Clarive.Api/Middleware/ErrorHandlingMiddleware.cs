@@ -14,17 +14,31 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            logger.LogWarning(ex, "Concurrency conflict on {Method} {Path}", context.Request.Method, context.Request.Path);
+            logger.LogWarning(
+                ex,
+                "Concurrency conflict on {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path
+            );
             await HandleConcurrencyAsync(context);
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
             // Client disconnected — not an error
-            logger.LogInformation("Request cancelled by client on {Method} {Path}", context.Request.Method, context.Request.Path);
+            logger.LogInformation(
+                "Request cancelled by client on {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path
+            );
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unhandled exception on {Method} {Path}", context.Request.Method, context.Request.Path);
+            logger.LogError(
+                ex,
+                "Unhandled exception on {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path
+            );
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -34,11 +48,17 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
         context.Response.StatusCode = StatusCodes.Status409Conflict;
         context.Response.ContentType = "application/json";
 
-        var response = new ErrorResponse(new ErrorDetail(
-            "CONCURRENCY_CONFLICT",
-            "The resource was modified by another request. Please reload and try again."));
+        var response = new ErrorResponse(
+            new ErrorDetail(
+                "CONCURRENCY_CONFLICT",
+                "The resource was modified by another request. Please reload and try again."
+            )
+        );
 
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
         await context.Response.WriteAsJsonAsync(response, options);
     }
 
@@ -53,12 +73,18 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             ? new { message = exception.Message, stackTrace = exception.StackTrace }
             : null;
 
-        var response = new ErrorResponse(new ErrorDetail(
-            "INTERNAL_ERROR",
-            isDev ? exception.Message : "An unexpected error occurred.",
-            details));
+        var response = new ErrorResponse(
+            new ErrorDetail(
+                "INTERNAL_ERROR",
+                isDev ? exception.Message : "An unexpected error occurred.",
+                details
+            )
+        );
 
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
         await context.Response.WriteAsJsonAsync(response, options);
     }
 }

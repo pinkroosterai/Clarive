@@ -1,8 +1,8 @@
+using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
 
 namespace Clarive.Api.UnitTests.Services.EntryService;
 
@@ -12,7 +12,8 @@ public class DeleteDraftTests : EntryServiceTestBase
     public async Task DeleteDraft_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
-        EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
         var result = await Sut.DeleteDraftAsync(TenantId, entryId, CancellationToken.None);
@@ -28,7 +29,9 @@ public class DeleteDraftTests : EntryServiceTestBase
         var published = MakeVersion(entry.Id, version: 1, state: VersionState.Published);
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(published);
+        EntryRepo
+            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(published);
 
         var result = await Sut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
 
@@ -42,7 +45,8 @@ public class DeleteDraftTests : EntryServiceTestBase
         var entry = MakeEntry();
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
         var result = await Sut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
@@ -58,8 +62,11 @@ public class DeleteDraftTests : EntryServiceTestBase
         var draft = MakeVersion(entry.Id, version: 1, state: VersionState.Draft);
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(draft);
-        EntryRepo.GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(draft);
+        EntryRepo
+            .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
         var result = await Sut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
@@ -76,8 +83,12 @@ public class DeleteDraftTests : EntryServiceTestBase
         var published = MakeVersion(entry.Id, version: 1, state: VersionState.Published);
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(draft);
-        EntryRepo.GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(published);
+        EntryRepo
+            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(draft);
+        EntryRepo
+            .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(published);
 
         var result = await Sut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
 

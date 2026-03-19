@@ -7,15 +7,21 @@ public sealed class ValkeyHealthCheck(IDistributedCache cache) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
             var testKey = "health:ping";
-            await cache.SetStringAsync(testKey, "pong", new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10)
-            }, cancellationToken);
+            await cache.SetStringAsync(
+                testKey,
+                "pong",
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10),
+                },
+                cancellationToken
+            );
 
             var value = await cache.GetStringAsync(testKey, cancellationToken);
             return value == "pong"

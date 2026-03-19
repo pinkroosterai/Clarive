@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Super;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Super;
 [Collection("Integration")]
 public class ConfigTests : IntegrationTestBase
 {
-    public ConfigTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ConfigTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task GetAll_AsSuperUser_ReturnsConfigList()
@@ -65,17 +66,23 @@ public class ConfigTests : IntegrationTestBase
             }
         }
 
-        if (testKey is null) return; // Skip if no non-secret keys
+        if (testKey is null)
+            return; // Skip if no non-secret keys
 
         // Set value
         var content = JsonContent.Create(new { value = "test-value-123" });
-        var setResponse = await Client.PutAsync($"/api/super/config/{Uri.EscapeDataString(testKey)}", content);
+        var setResponse = await Client.PutAsync(
+            $"/api/super/config/{Uri.EscapeDataString(testKey)}",
+            content
+        );
         setResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var setJson = await setResponse.ReadJsonAsync();
         setJson.GetProperty("updated").GetBoolean().Should().BeTrue();
 
         // Delete (reset)
-        var deleteResponse = await Client.DeleteAsync($"/api/super/config/{Uri.EscapeDataString(testKey)}");
+        var deleteResponse = await Client.DeleteAsync(
+            $"/api/super/config/{Uri.EscapeDataString(testKey)}"
+        );
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var deleteJson = await deleteResponse.ReadJsonAsync();
         deleteJson.GetProperty("reset").GetBoolean().Should().BeTrue();
@@ -105,7 +112,10 @@ public class ConfigTests : IntegrationTestBase
         var firstKey = listBody.GetProperty("settings")[0].GetProperty("key").GetString()!;
 
         var content = JsonContent.Create(new { value = "" });
-        var response = await Client.PutAsync($"/api/super/config/{Uri.EscapeDataString(firstKey)}", content);
+        var response = await Client.PutAsync(
+            $"/api/super/config/{Uri.EscapeDataString(firstKey)}",
+            content
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

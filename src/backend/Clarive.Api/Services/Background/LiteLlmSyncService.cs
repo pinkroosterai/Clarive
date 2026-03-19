@@ -12,10 +12,15 @@ public class LiteLlmSyncService(
     IServiceScopeFactory scopeFactory,
     IHttpClientFactory httpClientFactory,
     ILiteLlmRegistryCache registryCache,
-    ILogger<LiteLlmSyncService> logger) : BackgroundService
+    ILogger<LiteLlmSyncService> logger
+) : BackgroundService
 {
     // Suppress S1075: URL is a well-known public registry, not a configuration concern
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "S1075", Justification = "Well-known public registry URL")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "S1075",
+        Justification = "Well-known public registry URL"
+    )]
     private const string RegistryUrl =
         "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
 
@@ -86,8 +91,13 @@ public class LiteLlmSyncService(
         {
             foreach (var model in provider.Models)
             {
-                var info = await registryCache.TryGetModelInfoAsync(provider.Name, model.ModelId, ct);
-                if (info is null) continue;
+                var info = await registryCache.TryGetModelInfoAsync(
+                    provider.Name,
+                    model.ModelId,
+                    ct
+                );
+                if (info is null)
+                    continue;
 
                 var changed = false;
 
@@ -97,12 +107,18 @@ public class LiteLlmSyncService(
                     model.IsReasoning = info.IsReasoning.Value;
                     changed = true;
                 }
-                if (info.SupportsFunctionCalling is not null && model.SupportsFunctionCalling != info.SupportsFunctionCalling.Value)
+                if (
+                    info.SupportsFunctionCalling is not null
+                    && model.SupportsFunctionCalling != info.SupportsFunctionCalling.Value
+                )
                 {
                     model.SupportsFunctionCalling = info.SupportsFunctionCalling.Value;
                     changed = true;
                 }
-                if (info.SupportsResponseSchema is not null && model.SupportsResponseSchema != info.SupportsResponseSchema.Value)
+                if (
+                    info.SupportsResponseSchema is not null
+                    && model.SupportsResponseSchema != info.SupportsResponseSchema.Value
+                )
                 {
                     model.SupportsResponseSchema = info.SupportsResponseSchema.Value;
                     changed = true;
@@ -111,22 +127,34 @@ public class LiteLlmSyncService(
                 // Cost and context fields respect the manual override flag
                 if (!model.HasManualCostOverride)
                 {
-                    if (info.InputCostPerMillion is not null && model.InputCostPerMillion != info.InputCostPerMillion)
+                    if (
+                        info.InputCostPerMillion is not null
+                        && model.InputCostPerMillion != info.InputCostPerMillion
+                    )
                     {
                         model.InputCostPerMillion = info.InputCostPerMillion;
                         changed = true;
                     }
-                    if (info.OutputCostPerMillion is not null && model.OutputCostPerMillion != info.OutputCostPerMillion)
+                    if (
+                        info.OutputCostPerMillion is not null
+                        && model.OutputCostPerMillion != info.OutputCostPerMillion
+                    )
                     {
                         model.OutputCostPerMillion = info.OutputCostPerMillion;
                         changed = true;
                     }
-                    if (info.MaxInputTokens is not null && model.MaxInputTokens != info.MaxInputTokens)
+                    if (
+                        info.MaxInputTokens is not null
+                        && model.MaxInputTokens != info.MaxInputTokens
+                    )
                     {
                         model.MaxInputTokens = info.MaxInputTokens;
                         changed = true;
                     }
-                    if (info.MaxOutputTokens is not null && model.MaxOutputTokens != info.MaxOutputTokens)
+                    if (
+                        info.MaxOutputTokens is not null
+                        && model.MaxOutputTokens != info.MaxOutputTokens
+                    )
                     {
                         model.MaxOutputTokens = info.MaxOutputTokens;
                         changed = true;

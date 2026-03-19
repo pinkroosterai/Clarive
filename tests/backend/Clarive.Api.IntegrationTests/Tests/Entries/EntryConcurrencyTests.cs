@@ -14,7 +14,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Entries;
 [Collection("Integration")]
 public class EntryConcurrencyTests : IntegrationTestBase
 {
-    public EntryConcurrencyTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public EntryConcurrencyTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Update_WithStaleXmin_ThrowsConcurrencyException()
@@ -23,12 +24,15 @@ public class EntryConcurrencyTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (createResp, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            systemMessage = "Original",
-            prompts = new[] { new { content = "Original prompt" } }
-        });
+        var (createResp, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                systemMessage = "Original",
+                prompts = new[] { new { content = "Original prompt" } },
+            }
+        );
         createResp.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var entryId = Guid.Parse(created.GetProperty("id").GetString()!);
@@ -36,27 +40,30 @@ public class EntryConcurrencyTests : IntegrationTestBase
         // Load the entry in a separate DbContext (captures xmin via tracking)
         using var scope = Fixture.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-        var entry = await db.PromptEntries.IgnoreQueryFilters()
-            .FirstAsync(e => e.Id == entryId);
+        var entry = await db.PromptEntries.IgnoreQueryFilters().FirstAsync(e => e.Id == entryId);
         var originalXmin = entry.RowVersion;
 
         // Update via HTTP (this changes the xmin in the database)
-        var updateContent = JsonContent.Create(new
-        {
-            title = "Updated via HTTP",
-            prompts = new[] { new { content = "Updated prompt" } }
-        });
+        var updateContent = JsonContent.Create(
+            new
+            {
+                title = "Updated via HTTP",
+                prompts = new[] { new { content = "Updated prompt" } },
+            }
+        );
         var httpUpdateResp = await Client.PutAsync($"/api/entries/{entryId}", updateContent);
         httpUpdateResp.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Verify xmin actually changed in the database
         using var scope2 = Fixture.Services.CreateScope();
         var db2 = scope2.ServiceProvider.GetRequiredService<ClariveDbContext>();
-        var freshEntry = await db2.PromptEntries.IgnoreQueryFilters()
+        var freshEntry = await db2
+            .PromptEntries.IgnoreQueryFilters()
             .AsNoTracking()
             .FirstAsync(e => e.Id == entryId);
-        freshEntry.RowVersion.Should().NotBe(originalXmin,
-            "HTTP update should have changed the xmin value");
+        freshEntry
+            .RowVersion.Should()
+            .NotBe(originalXmin, "HTTP update should have changed the xmin value");
 
         // Act: try to save the stale entity (old xmin) → should throw
         entry.Title = "Stale update";
@@ -73,12 +80,15 @@ public class EntryConcurrencyTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (createResp, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            systemMessage = "Base version",
-            prompts = new[] { new { content = "Base prompt" } }
-        });
+        var (createResp, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                systemMessage = "Base version",
+                prompts = new[] { new { content = "Base prompt" } },
+            }
+        );
         createResp.StatusCode.Should().Be(HttpStatusCode.Created);
         var entryId = created.GetProperty("id").GetString()!;
 
@@ -93,19 +103,27 @@ public class EntryConcurrencyTests : IntegrationTestBase
         client2.WithBearerToken(token2);
 
         // Act: send two concurrent updates
-        var update1 = client1.PutAsync($"/api/entries/{entryId}",
-            JsonContent.Create(new
-            {
-                title = "Update from client 1",
-                prompts = new[] { new { content = "Prompt 1" } }
-            }));
+        var update1 = client1.PutAsync(
+            $"/api/entries/{entryId}",
+            JsonContent.Create(
+                new
+                {
+                    title = "Update from client 1",
+                    prompts = new[] { new { content = "Prompt 1" } },
+                }
+            )
+        );
 
-        var update2 = client2.PutAsync($"/api/entries/{entryId}",
-            JsonContent.Create(new
-            {
-                title = "Update from client 2",
-                prompts = new[] { new { content = "Prompt 2" } }
-            }));
+        var update2 = client2.PutAsync(
+            $"/api/entries/{entryId}",
+            JsonContent.Create(
+                new
+                {
+                    title = "Update from client 2",
+                    prompts = new[] { new { content = "Prompt 2" } },
+                }
+            )
+        );
 
         var results = await Task.WhenAll(update1, update2);
 
@@ -120,15 +138,21 @@ public class EntryConcurrencyTests : IntegrationTestBase
         {
             result.StatusCode.Should().Be(HttpStatusCode.Conflict);
             var body = await result.ReadJsonAsync();
-            body.GetProperty("error").GetProperty("code").GetString()
-                .Should().Be("CONCURRENCY_CONFLICT");
+            body.GetProperty("error")
+                .GetProperty("code")
+                .GetString()
+                .Should()
+                .Be("CONCURRENCY_CONFLICT");
         }
 
         // Verify data integrity: entry is not corrupted
         var getResp = await Client.GetAsync($"/api/entries/{entryId}");
         getResp.StatusCode.Should().Be(HttpStatusCode.OK);
         var entry = await getResp.ReadJsonAsync();
-        entry.GetProperty("title").GetString().Should()
+        entry
+            .GetProperty("title")
+            .GetString()
+            .Should()
             .BeOneOf("Update from client 1", "Update from client 2");
     }
 }

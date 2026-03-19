@@ -17,7 +17,8 @@ public class PromptConfiguration : IEntityTypeConfiguration<Prompt>
         builder.Property(p => p.Order).HasColumnName("\"order\"").IsRequired();
         builder.Property(p => p.IsTemplate).HasColumnName("is_template").IsRequired();
 
-        builder.HasMany(p => p.TemplateFields)
+        builder
+            .HasMany(p => p.TemplateFields)
             .WithOne()
             .HasForeignKey(tf => tf.PromptId)
             .OnDelete(DeleteBehavior.Cascade);

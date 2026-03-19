@@ -9,18 +9,27 @@ namespace Clarive.Api.Services.Agents;
 public static class OutputEvaluationNormalizer
 {
     public static readonly string[] ExpectedDimensions =
-        ["Accuracy", "Helpfulness", "Relevance", "Coherence", "Safety"];
+    [
+        "Accuracy",
+        "Helpfulness",
+        "Relevance",
+        "Coherence",
+        "Safety",
+    ];
 
     public static OutputEvaluation Normalize(OutputEvaluation raw)
     {
         var normalized = DimensionNormalizer.Normalize(
             raw.Dimensions,
             ExpectedDimensions,
-            () => new OutputEvaluationEntry
-            {
-                Score = 0,
-                Feedback = "Not evaluated — dimension was missing from the evaluation response."
-            });
+            () =>
+                new OutputEvaluationEntry
+                {
+                    Score = 0,
+                    Feedback =
+                        "Not evaluated — dimension was missing from the evaluation response.",
+                }
+        );
 
         return new OutputEvaluation { Dimensions = normalized };
     }

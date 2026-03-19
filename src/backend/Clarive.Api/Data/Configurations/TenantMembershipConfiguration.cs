@@ -14,30 +14,38 @@ public class TenantMembershipConfiguration : IEntityTypeConfiguration<TenantMemb
         builder.Property(m => m.Id).HasColumnName("id");
         builder.Property(m => m.UserId).HasColumnName("user_id").IsRequired();
         builder.Property(m => m.TenantId).HasColumnName("tenant_id").IsRequired();
-        builder.Property(m => m.Role).HasColumnName("role").HasMaxLength(20)
-            .HasConversion<string>().IsRequired();
-        builder.Property(m => m.IsPersonal).HasColumnName("is_personal")
-            .IsRequired().HasDefaultValue(false);
+        builder
+            .Property(m => m.Role)
+            .HasColumnName("role")
+            .HasMaxLength(20)
+            .HasConversion<string>()
+            .IsRequired();
+        builder
+            .Property(m => m.IsPersonal)
+            .HasColumnName("is_personal")
+            .IsRequired()
+            .HasDefaultValue(false);
         builder.Property(m => m.JoinedAt).HasColumnName("joined_at").IsRequired();
 
-        builder.HasOne<User>()
+        builder
+            .HasOne<User>()
             .WithMany()
             .HasForeignKey(m => m.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<Tenant>()
+        builder
+            .HasOne<Tenant>()
             .WithMany()
             .HasForeignKey(m => m.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(m => new { m.UserId, m.TenantId })
+        builder
+            .HasIndex(m => new { m.UserId, m.TenantId })
             .IsUnique()
             .HasDatabaseName("uq_tenant_memberships_user_tenant");
 
-        builder.HasIndex(m => m.UserId)
-            .HasDatabaseName("ix_tenant_memberships_user_id");
+        builder.HasIndex(m => m.UserId).HasDatabaseName("ix_tenant_memberships_user_id");
 
-        builder.HasIndex(m => m.TenantId)
-            .HasDatabaseName("ix_tenant_memberships_tenant_id");
+        builder.HasIndex(m => m.TenantId).HasDatabaseName("ix_tenant_memberships_tenant_id");
     }
 }

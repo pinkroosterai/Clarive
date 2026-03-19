@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Playground;
@@ -10,7 +10,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Playground;
 [Collection("Integration")]
 public class PlaygroundJudgeTests : IntegrationTestBase
 {
-    public PlaygroundJudgeTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public PlaygroundJudgeTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task JudgeRun_AsViewer_Returns403()
@@ -20,7 +21,8 @@ public class PlaygroundJudgeTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/runs/{Guid.NewGuid()}/judge",
-            new { });
+            new { }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -33,12 +35,13 @@ public class PlaygroundJudgeTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/runs/{Guid.NewGuid()}/judge",
-            new { });
+            new { }
+        );
 
         // Returns 404 (run not found) or 503 (AI not configured in test env)
-        response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.NotFound,
-            HttpStatusCode.ServiceUnavailable);
+        response
+            .StatusCode.Should()
+            .BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.ServiceUnavailable);
     }
 
     [Fact]
@@ -49,12 +52,13 @@ public class PlaygroundJudgeTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{Guid.NewGuid()}/runs/{Guid.NewGuid()}/judge",
-            new { });
+            new { }
+        );
 
         // Returns 404 (entry not found) or 503 (AI not configured)
-        response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.NotFound,
-            HttpStatusCode.ServiceUnavailable);
+        response
+            .StatusCode.Should()
+            .BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.ServiceUnavailable);
     }
 
     [Fact]
@@ -64,7 +68,8 @@ public class PlaygroundJudgeTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var response = await Client.GetAsync(
-            $"/api/entries/{TestData.EntryBlogPostGenerator}/test-runs");
+            $"/api/entries/{TestData.EntryBlogPostGenerator}/test-runs"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 

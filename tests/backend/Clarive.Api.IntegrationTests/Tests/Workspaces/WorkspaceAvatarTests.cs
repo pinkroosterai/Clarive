@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using SkiaSharp;
 using Xunit;
 
@@ -12,7 +12,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Workspaces;
 [Collection("Integration")]
 public class WorkspaceAvatarTests : IntegrationTestBase
 {
-    public WorkspaceAvatarTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public WorkspaceAvatarTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     // ── Upload ──
 
@@ -160,7 +161,8 @@ public class WorkspaceAvatarTests : IntegrationTestBase
         var workspaces = json.GetProperty("workspaces");
 
         // Find the seed workspace and verify avatarUrl
-        var seedWs = workspaces.EnumerateArray()
+        var seedWs = workspaces
+            .EnumerateArray()
             .First(w => w.GetProperty("id").GetString() == TestData.TenantId.ToString());
 
         seedWs.TryGetProperty("avatarUrl", out var avatarUrlProp).Should().BeTrue();

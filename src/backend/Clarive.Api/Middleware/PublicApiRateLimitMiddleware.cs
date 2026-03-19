@@ -11,12 +11,19 @@ namespace Clarive.Api.Middleware;
 public class PublicApiRateLimitMiddleware(
     RequestDelegate next,
     IConfiguration configuration,
-    ILoggerFactory loggerFactory) : IDisposable
+    ILoggerFactory loggerFactory
+) : IDisposable
 {
     private readonly ILogger _logger = loggerFactory.CreateLogger("PublicApiRateLimiter");
 
-    private readonly int _permitLimit = configuration.GetValue("RateLimiting:PublicApiPermitLimit", 600);
-    private readonly int _windowMinutes = configuration.GetValue("RateLimiting:PublicApiWindowMinutes", 1);
+    private readonly int _permitLimit = configuration.GetValue(
+        "RateLimiting:PublicApiPermitLimit",
+        600
+    );
+    private readonly int _windowMinutes = configuration.GetValue(
+        "RateLimiting:PublicApiWindowMinutes",
+        1
+    );
 
     private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = 10_000 });
 
@@ -30,27 +37,35 @@ public class PublicApiRateLimitMiddleware(
             return;
         }
 
-        var partitionKey = context.User.FindFirst("apiKeyId")?.Value
+        var partitionKey =
+            context.User.FindFirst("apiKeyId")?.Value
             ?? context.Connection.RemoteIpAddress?.ToString()
             ?? "unknown";
 
-        var limiter = _cache.GetOrCreate(partitionKey, entry =>
-        {
-            entry.Size = 1;
-            entry.SlidingExpiration = TimeSpan.FromHours(1);
-            entry.RegisterPostEvictionCallback(static (_, value, _, _) =>
+        var limiter = _cache.GetOrCreate(
+            partitionKey,
+            entry =>
             {
-                if (value is FixedWindowRateLimiter l)
-                    l.Dispose();
-            });
-            return new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = _permitLimit,
-                Window = TimeSpan.FromMinutes(_windowMinutes),
-                QueueLimit = 0,
-                AutoReplenishment = true
-            });
-        })!;
+                entry.Size = 1;
+                entry.SlidingExpiration = TimeSpan.FromHours(1);
+                entry.RegisterPostEvictionCallback(
+                    static (_, value, _, _) =>
+                    {
+                        if (value is FixedWindowRateLimiter l)
+                            l.Dispose();
+                    }
+                );
+                return new FixedWindowRateLimiter(
+                    new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = _permitLimit,
+                        Window = TimeSpan.FromMinutes(_windowMinutes),
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }
+                );
+            }
+        )!;
 
         using var lease = limiter.AttemptAcquire();
         var stats = limiter.GetStatistics();
@@ -76,13 +91,22 @@ public class PublicApiRateLimitMiddleware(
         // Rejected
         _logger.LogWarning(
             "Public API rate limit exceeded for key {PartitionKey} on {Method} {Path}",
-            partitionKey, context.Request.Method, context.Request.Path);
+            partitionKey,
+            context.Request.Method,
+            context.Request.Path
+        );
 
         context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.Response.Headers["Retry-After"] = windowSeconds.ToString();
-        await context.Response.WriteAsJsonAsync(new
-        {
-            error = new { code = "RATE_LIMITED", message = "Too many requests. Try again later." }
-        });
+        await context.Response.WriteAsJsonAsync(
+            new
+            {
+                error = new
+                {
+                    code = "RATE_LIMITED",
+                    message = "Too many requests. Try again later.",
+                },
+            }
+        );
     }
 }

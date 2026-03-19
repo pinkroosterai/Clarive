@@ -11,7 +11,8 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<ClariveDbC
 {
     public ClariveDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__DEFAULTCONNECTION")
+        var connectionString =
+            Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__DEFAULTCONNECTION")
             ?? "Host=localhost;Database=clarive;Username=clarive;Password=clarive";
 
         var optionsBuilder = new DbContextOptionsBuilder<ClariveDbContext>();

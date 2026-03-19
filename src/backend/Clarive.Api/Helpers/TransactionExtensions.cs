@@ -7,7 +7,8 @@ public static class TransactionExtensions
     public static async Task<T> InTransactionAsync<T>(
         this DatabaseFacade database,
         Func<Task<T>> operation,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         await using var tx = await database.BeginTransactionAsync(ct);
         var result = await operation();
@@ -18,7 +19,8 @@ public static class TransactionExtensions
     public static async Task InTransactionAsync(
         this DatabaseFacade database,
         Func<Task> operation,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         await using var tx = await database.BeginTransactionAsync(ct);
         await operation();

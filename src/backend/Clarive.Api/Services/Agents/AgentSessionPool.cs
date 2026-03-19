@@ -20,7 +20,11 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
     private readonly Timer _cleanupTimer;
     private readonly int _maxPoolSize;
 
-    public AgentSessionPool(IAgentFactory factory, ILogger<AgentSessionPool> logger, IConfiguration configuration)
+    public AgentSessionPool(
+        IAgentFactory factory,
+        ILogger<AgentSessionPool> logger,
+        IConfiguration configuration
+    )
     {
         _factory = factory;
         _logger = logger;
@@ -30,7 +34,11 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
         _factory.OnReconfigured += InvalidateAll;
     }
 
-    public async Task<string> CreateSessionAsync(GenerationConfig config, CancellationToken ct = default, IList<AITool>? tools = null)
+    public async Task<string> CreateSessionAsync(
+        GenerationConfig config,
+        CancellationToken ct = default,
+        IList<AITool>? tools = null
+    )
     {
         if (_sessions.Count >= _maxPoolSize)
         {
@@ -39,7 +47,8 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
 
             if (_sessions.Count >= _maxPoolSize)
                 throw new InvalidOperationException(
-                    $"Agent session pool is at capacity ({_maxPoolSize}). Please try again later.");
+                    $"Agent session pool is at capacity ({_maxPoolSize}). Please try again later."
+                );
         }
 
         var (agent, toolProgress) = _factory.CreateGenerationAgent(config, tools);
@@ -49,7 +58,11 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
         var entry = new AgentSessionEntry(agent, session, DateTime.UtcNow, toolProgress);
         _sessions[id] = entry;
 
-        _logger.LogDebug("Created agent session {SessionId}, pool size: {Count}", id, _sessions.Count);
+        _logger.LogDebug(
+            "Created agent session {SessionId}, pool size: {Count}",
+            id,
+            _sessions.Count
+        );
         return id;
     }
 
@@ -88,7 +101,10 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
         }
 
         if (count > 0)
-            _logger.LogInformation("Invalidated {Count} agent sessions due to AI config change", count);
+            _logger.LogInformation(
+                "Invalidated {Count} agent sessions due to AI config change",
+                count
+            );
     }
 
     private void CleanupExpired(object? state)
@@ -106,8 +122,11 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
         }
 
         if (removed > 0)
-            _logger.LogInformation("Cleaned up {Count} expired agent sessions, pool size: {Remaining}",
-                removed, _sessions.Count);
+            _logger.LogInformation(
+                "Cleaned up {Count} expired agent sessions, pool size: {Remaining}",
+                removed,
+                _sessions.Count
+            );
     }
 
     private static void DisposeEntry(AgentSessionEntry entry)

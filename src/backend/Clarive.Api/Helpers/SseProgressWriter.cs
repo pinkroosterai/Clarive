@@ -10,7 +10,7 @@ public sealed class SseProgressWriter
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
     private readonly HttpResponse _response;
@@ -28,7 +28,10 @@ public sealed class SseProgressWriter
         await _response.Body.FlushAsync(ct);
     }
 
-    public async Task WriteProgressAsync(Clarive.Api.Services.Agents.AiExtensions.ProgressEvent progress, CancellationToken ct = default)
+    public async Task WriteProgressAsync(
+        Clarive.Api.Services.Agents.AiExtensions.ProgressEvent progress,
+        CancellationToken ct = default
+    )
     {
         var json = JsonSerializer.Serialize(progress, JsonOptions);
         await WriteEventAsync("progress", json, ct);

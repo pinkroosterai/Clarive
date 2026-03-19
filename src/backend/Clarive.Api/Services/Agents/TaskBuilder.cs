@@ -14,10 +14,13 @@ public static class TaskBuilder
         var requirements = new List<string>();
 
         if (config.GenerateSystemMessage)
-            requirements.Add("Place the system message in the SystemMessage field of the response.");
+            requirements.Add(
+                "Place the system message in the SystemMessage field of the response."
+            );
 
         if (config.GenerateAsPromptTemplate)
-            requirements.Add("""
+            requirements.Add(
+                """
                 Use the following template tag syntax for placeholders:
                   {{name}}               — string input (default type)
                   {{name|type}}          — typed input
@@ -25,24 +28,30 @@ public static class TaskBuilder
                 Supported types: string, int (with min-max range), float (with min-max range), enum (fixed set).
                 Names may contain letters, digits, and underscores only.
                 Choose the most specific type for each placeholder.
-                """);
+                """
+            );
 
         if (config.GenerateAsPromptChain)
             requirements.Add("Structure as a multi-step prompt chain (3–5 steps).");
 
         if (config.SelectedTools.Count > 0)
         {
-            var toolLines = string.Join("\n", config.SelectedTools.Select(t =>
-                $"  - {t.Name}: {t.Description}"));
-            requirements.Add($"""
+            var toolLines = string.Join(
+                "\n",
+                config.SelectedTools.Select(t => $"  - {t.Name}: {t.Description}")
+            );
+            requirements.Add(
+                $"""
                 The following tools are available to the LLM executing the prompt:
                 {toolLines}
-                """);
+                """
+            );
         }
 
-        var requirementsList = requirements.Count > 0
-            ? string.Join("\n", requirements.Select(r => $"- {r}"))
-            : "- No special requirements";
+        var requirementsList =
+            requirements.Count > 0
+                ? string.Join("\n", requirements.Select(r => $"- {r}"))
+                : "- No special requirements";
 
         return $"""
             Generate a high-quality prompt for the following use case.
@@ -77,7 +86,8 @@ public static class TaskBuilder
         var placeholderSection = "";
         if (config.GenerateAsPromptTemplate)
         {
-            var placeholders = Regex.Matches(promptsText, @"\{\{([^}]+)\}\}")
+            var placeholders = Regex
+                .Matches(promptsText, @"\{\{([^}]+)\}\}")
                 .Select(m => m.Groups[1].Value)
                 .Distinct()
                 .ToList();
@@ -113,18 +123,25 @@ public static class TaskBuilder
         PromptEvaluation evaluation,
         List<AnsweredQuestion> answers,
         List<string> selectedEnhancements,
-        List<double>? scoreHistory = null)
+        List<double>? scoreHistory = null
+    )
     {
-        var scoresSummary = string.Join("\n", evaluation.PromptEvaluations
-            .Select(e => $"- {e.Key}: {e.Value.Score}/10 — {e.Value.Feedback}"));
+        var scoresSummary = string.Join(
+            "\n",
+            evaluation.PromptEvaluations.Select(e =>
+                $"- {e.Key}: {e.Value.Score}/10 — {e.Value.Feedback}"
+            )
+        );
 
-        var answersSummary = answers.Count > 0
-            ? string.Join("\n", answers.Select(a => $"- Q: {a.Question}\n  A: {a.Answer}"))
-            : "- No clarifications provided.";
+        var answersSummary =
+            answers.Count > 0
+                ? string.Join("\n", answers.Select(a => $"- Q: {a.Question}\n  A: {a.Answer}"))
+                : "- No clarifications provided.";
 
-        var enhancementsSummary = selectedEnhancements.Count > 0
-            ? string.Join("\n", selectedEnhancements.Select(e => $"- {e}"))
-            : "- No enhancements selected.";
+        var enhancementsSummary =
+            selectedEnhancements.Count > 0
+                ? string.Join("\n", selectedEnhancements.Select(e => $"- {e}"))
+                : "- No enhancements selected.";
 
         var historySection = "";
         if (scoreHistory is { Count: > 1 })
@@ -135,7 +152,7 @@ public static class TaskBuilder
             {
                 > 0 => $"improving (+{trend:F1})",
                 < 0 => $"declining ({trend:F1})",
-                _ => "flat"
+                _ => "flat",
             };
             historySection = $"""
 
@@ -170,15 +187,20 @@ public static class TaskBuilder
     }
 
     public static string BuildDecompositionTask(
-        string promptContent, bool isTemplate, string? systemMessage)
+        string promptContent,
+        bool isTemplate,
+        string? systemMessage
+    )
     {
         var parts = new List<string>
         {
-            $"Decompose this {(isTemplate ? "template " : "")}prompt into a sequential chain of 3-5 steps:\n\n{promptContent}"
+            $"Decompose this {(isTemplate ? "template " : "")}prompt into a sequential chain of 3-5 steps:\n\n{promptContent}",
         };
 
         if (isTemplate)
-            parts.Add("Place ALL template variables in the first step only. Preserve all {{name|type}} syntax exactly.");
+            parts.Add(
+                "Place ALL template variables in the first step only. Preserve all {{name|type}} syntax exactly."
+            );
 
         if (systemMessage is not null)
             parts.Add($"Context from system message:\n{systemMessage}");
@@ -187,7 +209,9 @@ public static class TaskBuilder
     }
 
     public static string BuildEnhanceBootstrapTask(
-        string? systemMessage, List<Models.Requests.PromptInput> prompts)
+        string? systemMessage,
+        List<Models.Requests.PromptInput> prompts
+    )
     {
         var parts = new List<string>();
 
@@ -208,7 +232,8 @@ public static class TaskBuilder
         string? systemMessage,
         List<Models.Requests.PromptInput> prompts,
         List<Models.Responses.TestRunPromptResponse> responses,
-        string modelName)
+        string modelName
+    )
     {
         var sections = new List<string>();
 
@@ -263,9 +288,13 @@ public static class TaskBuilder
     public static string BuildFillTemplateFieldsTask(
         List<Models.Requests.PromptInput> prompts,
         string? systemMessage,
-        List<TemplateFieldInfo> fields)
+        List<TemplateFieldInfo> fields
+    )
     {
-        var parts = new List<string> { "Generate realistic example values for the following template fields." };
+        var parts = new List<string>
+        {
+            "Generate realistic example values for the following template fields.",
+        };
 
         if (systemMessage is not null)
             parts.Add($"System message context:\n{systemMessage}");
@@ -301,4 +330,5 @@ public record TemplateFieldInfo(
     List<string>? EnumValues = null,
     double? Min = null,
     double? Max = null,
-    string? Description = null);
+    string? Description = null
+);

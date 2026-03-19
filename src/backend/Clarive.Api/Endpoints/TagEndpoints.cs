@@ -1,9 +1,9 @@
+using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
-using Clarive.Api.Auth;
 
 namespace Clarive.Api.Endpoints;
 
@@ -13,9 +13,7 @@ public static class TagEndpoints
 
     public static RouteGroupBuilder MapTagEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/tags")
-            .WithTags("Tags")
-            .RequireAuthorization();
+        var group = app.MapGroup("/api/tags").WithTags("Tags").RequireAuthorization();
 
         group.MapGet("/", HandleList).AddEndpointFilter(new CacheControlFilter(300));
         group.MapPut("/{tagName}", HandleRename).RequireAuthorization("AdminOnly");
@@ -44,7 +42,8 @@ public static class TagEndpoints
         HttpContext ctx,
         ITagRepository tagRepo,
         TenantCacheService cache,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
 
@@ -53,7 +52,8 @@ public static class TagEndpoints
             tenantId,
             _ => tagRepo.GetAllWithCountsAsync(tenantId, ct),
             TenantCacheKeys.WorkspaceTagsTtl,
-            ct);
+            ct
+        );
 
         var response = tags.Select(t => new TagSummary(t.TagName, t.EntryCount)).ToList();
         return Results.Ok(response);
@@ -65,7 +65,8 @@ public static class TagEndpoints
         RenameTagRequest request,
         ITagRepository tagRepo,
         TenantCacheService cache,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var normalizedOld = NormalizeTagName(tagName);
@@ -89,7 +90,8 @@ public static class TagEndpoints
         HttpContext ctx,
         ITagRepository tagRepo,
         TenantCacheService cache,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var normalized = NormalizeTagName(tagName);

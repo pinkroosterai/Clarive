@@ -15,15 +15,14 @@ namespace Clarive.Api.Data.Migrations
                 table: "share_links",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: ""
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "token",
-                table: "share_links");
+            migrationBuilder.DropColumn(name: "token", table: "share_links");
         }
     }
 }

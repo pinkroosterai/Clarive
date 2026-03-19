@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Tags;
 [Collection("Integration")]
 public class TagTests : IntegrationTestBase
 {
-    public TagTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public TagTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task ListTags_ReturnsTags()
@@ -37,18 +38,24 @@ public class TagTests : IntegrationTestBase
         Client.WithBearerToken(editorToken);
 
         var tagName = $"test-tag-{Guid.NewGuid():N}"[..30];
-        var (createResponse, _) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Tag test" } },
-            tags = new[] { tagName }
-        });
+        var (createResponse, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Tag test" } },
+                tags = new[] { tagName },
+            }
+        );
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Rename as admin
         Client.WithBearerToken(token);
         var newTagName = $"renamed-{Guid.NewGuid():N}"[..30];
-        var response = await Client.PutAsJsonAsync($"/api/tags/{tagName}", new { newName = newTagName });
+        var response = await Client.PutAsJsonAsync(
+            $"/api/tags/{tagName}",
+            new { newName = newTagName }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
@@ -59,7 +66,10 @@ public class TagTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.PutAsJsonAsync("/api/tags/some-tag", new { newName = "new-name" });
+        var response = await Client.PutAsJsonAsync(
+            "/api/tags/some-tag",
+            new { newName = "new-name" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -70,7 +80,10 @@ public class TagTests : IntegrationTestBase
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.PutAsJsonAsync("/api/tags/some-tag", new { newName = "INVALID!!!" });
+        var response = await Client.PutAsJsonAsync(
+            "/api/tags/some-tag",
+            new { newName = "INVALID!!!" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -86,12 +99,15 @@ public class TagTests : IntegrationTestBase
         Client.WithBearerToken(editorToken);
 
         var tagName = $"delete-tag-{Guid.NewGuid():N}"[..30];
-        await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Delete tag test" } },
-            tags = new[] { tagName }
-        });
+        await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Delete tag test" } },
+                tags = new[] { tagName },
+            }
+        );
 
         // Delete as admin
         Client.WithBearerToken(token);

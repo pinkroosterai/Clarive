@@ -6,7 +6,8 @@ namespace Clarive.Api.Services.Background;
 
 public class AccountPurgeBackgroundService(
     IServiceScopeFactory scopeFactory,
-    ILogger<AccountPurgeBackgroundService> logger) : BackgroundService
+    ILogger<AccountPurgeBackgroundService> logger
+) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -43,26 +44,41 @@ public class AccountPurgeBackgroundService(
         // Purge tenants scheduled for deletion — in batches for bounded memory and partial-failure resilience
         while (true)
         {
-            var tenants = await db.Tenants
-                .Include(t => t.Users)
+            var tenants = await db
+                .Tenants.Include(t => t.Users)
                 .Where(t => t.DeleteScheduledAt != null && t.DeleteScheduledAt <= now)
                 .Take(BatchSize)
                 .ToListAsync(ct);
 
-            if (tenants.Count == 0) break;
+            if (tenants.Count == 0)
+                break;
 
             foreach (var tenant in tenants)
             {
-                logger.LogInformation("Purging tenant {TenantId} ({TenantName})", tenant.Id, tenant.Name);
+                logger.LogInformation(
+                    "Purging tenant {TenantId} ({TenantName})",
+                    tenant.Id,
+                    tenant.Name
+                );
 
                 // Notify admin(s) before permanent deletion
                 foreach (var user in tenant.Users)
                 {
-                    _ = emailService.SendAccountDeletionCompletedAsync(
-                        user.Email, user.Name, CancellationToken.None)
-                        .ContinueWith(t => logger.LogWarning(t.Exception,
-                            "Failed to send deletion-completed email to {Email}", user.Email),
-                            TaskContinuationOptions.OnlyOnFaulted);
+                    _ = emailService
+                        .SendAccountDeletionCompletedAsync(
+                            user.Email,
+                            user.Name,
+                            CancellationToken.None
+                        )
+                        .ContinueWith(
+                            t =>
+                                logger.LogWarning(
+                                    t.Exception,
+                                    "Failed to send deletion-completed email to {Email}",
+                                    user.Email
+                                ),
+                            TaskContinuationOptions.OnlyOnFaulted
+                        );
                 }
 
                 // Cascade delete handles all child entities
@@ -77,12 +93,13 @@ public class AccountPurgeBackgroundService(
         // Purge individual users (non-admin) scheduled for deletion — in batches
         while (true)
         {
-            var users = await db.Users
-                .Where(u => u.DeleteScheduledAt != null && u.DeleteScheduledAt <= now)
+            var users = await db
+                .Users.Where(u => u.DeleteScheduledAt != null && u.DeleteScheduledAt <= now)
                 .Take(BatchSize)
                 .ToListAsync(ct);
 
-            if (users.Count == 0) break;
+            if (users.Count == 0)
+                break;
 
             foreach (var user in users)
             {
@@ -96,8 +113,11 @@ public class AccountPurgeBackgroundService(
 
         if (totalTenants > 0 || totalUsers > 0)
         {
-            logger.LogInformation("Account purge complete: {TenantCount} tenants, {UserCount} users deleted",
-                totalTenants, totalUsers);
+            logger.LogInformation(
+                "Account purge complete: {TenantCount} tenants, {UserCount} users deleted",
+                totalTenants,
+                totalUsers
+            );
         }
     }
 }

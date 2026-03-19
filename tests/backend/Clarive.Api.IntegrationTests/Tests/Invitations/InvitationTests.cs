@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Clarive.Api.Data;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Invitations;
@@ -14,7 +14,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Invitations;
 [Collection("Integration")]
 public class InvitationTests : IntegrationTestBase
 {
-    public InvitationTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public InvitationTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     // ── Create ──
 
@@ -25,11 +26,10 @@ public class InvitationTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var email = TestData.UniqueEmail();
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "editor"
-        });
+        var (response, body) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "editor" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.GetProperty("email").GetString().Should().Be(email);
@@ -44,11 +44,10 @@ public class InvitationTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email = TestData.UniqueEmail(),
-            role = "viewer"
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email = TestData.UniqueEmail(), role = "viewer" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -60,15 +59,19 @@ public class InvitationTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Try to invite a seed user who is already a member of this workspace
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email = TestData.EditorEmail,
-            role = "viewer"
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email = TestData.EditorEmail, role = "viewer" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var errorBody = await response.ReadJsonAsync();
-        errorBody.GetProperty("error").GetProperty("code").GetString().Should().Be("ALREADY_MEMBER");
+        errorBody
+            .GetProperty("error")
+            .GetProperty("code")
+            .GetString()
+            .Should()
+            .Be("ALREADY_MEMBER");
     }
 
     [Fact]
@@ -78,18 +81,25 @@ public class InvitationTests : IntegrationTestBase
         var email = TestData.UniqueEmail();
         var regResponse = await Client.PostAsync(
             "/api/auth/register",
-            JsonContent.Create(new { email, password = "securepassword123", name = "External User" }));
+            JsonContent.Create(
+                new
+                {
+                    email,
+                    password = "securepassword123",
+                    name = "External User",
+                }
+            )
+        );
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Admin invites this existing user to the admin's workspace
         var adminToken = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(adminToken);
 
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "editor"
-        });
+        var (response, body) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "editor" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.GetProperty("status").GetString().Should().Be("pending");
@@ -105,22 +115,25 @@ public class InvitationTests : IntegrationTestBase
         var email = TestData.UniqueEmail();
 
         // First invitation should succeed
-        var (first, _) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "editor"
-        });
+        var (first, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "editor" }
+        );
         first.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Second invitation for the same email should fail
-        var (second, secondBody) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "viewer"
-        });
+        var (second, secondBody) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "viewer" }
+        );
         second.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var secondError = await second.ReadJsonAsync();
-        secondError.GetProperty("error").GetProperty("code").GetString().Should().Be("INVITATION_EXISTS");
+        secondError
+            .GetProperty("error")
+            .GetProperty("code")
+            .GetString()
+            .Should()
+            .Be("INVITATION_EXISTS");
     }
 
     [Fact]
@@ -129,11 +142,10 @@ public class InvitationTests : IntegrationTestBase
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email = TestData.UniqueEmail(),
-            role = "admin"
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email = TestData.UniqueEmail(), role = "admin" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -188,7 +200,8 @@ public class InvitationTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = null;
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{rawToken}/accept",
-            new { name = "New Team Member", password = "securepassword123" });
+            new { name = "New Team Member", password = "securepassword123" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.TryGetProperty("token", out _).Should().BeTrue();
@@ -201,11 +214,15 @@ public class InvitationTests : IntegrationTestBase
         body.TryGetProperty("workspaces", out var workspaces).Should().BeTrue();
         workspaces.GetArrayLength().Should().Be(2);
 
-        var personalWs = workspaces.EnumerateArray().FirstOrDefault(w => w.GetProperty("isPersonal").GetBoolean());
+        var personalWs = workspaces
+            .EnumerateArray()
+            .FirstOrDefault(w => w.GetProperty("isPersonal").GetBoolean());
         personalWs.ValueKind.Should().NotBe(JsonValueKind.Undefined);
         personalWs.GetProperty("role").GetString().Should().Be("admin");
 
-        var invitedWs = workspaces.EnumerateArray().FirstOrDefault(w => !w.GetProperty("isPersonal").GetBoolean());
+        var invitedWs = workspaces
+            .EnumerateArray()
+            .FirstOrDefault(w => !w.GetProperty("isPersonal").GetBoolean());
         invitedWs.ValueKind.Should().NotBe(JsonValueKind.Undefined);
         invitedWs.GetProperty("role").GetString().Should().Be("editor");
     }
@@ -218,7 +235,8 @@ public class InvitationTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = null;
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{rawToken}/accept",
-            new { name = "Test User", password = "short" });
+            new { name = "Test User", password = "short" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -234,7 +252,8 @@ public class InvitationTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = null;
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{rawToken}/accept",
-            new { name = "Too Late", password = "securepassword123" });
+            new { name = "Too Late", password = "securepassword123" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -248,17 +267,18 @@ public class InvitationTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var email = TestData.UniqueEmail();
-        var (createRes, createBody) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "editor"
-        });
+        var (createRes, createBody) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "editor" }
+        );
         createRes.EnsureSuccessStatusCode();
         var invitationId = createBody.GetProperty("id").GetString();
         var originalExpiry = DateTime.Parse(createBody.GetProperty("expiresAt").GetString()!);
 
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
-            $"/api/invitations/{invitationId}/resend", new { });
+            $"/api/invitations/{invitationId}/resend",
+            new { }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.GetProperty("email").GetString().Should().Be(email);
@@ -277,11 +297,10 @@ public class InvitationTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var email = TestData.UniqueEmail();
-        var (createRes, createBody) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "viewer"
-        });
+        var (createRes, createBody) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "viewer" }
+        );
         createRes.EnsureSuccessStatusCode();
         var invitationId = createBody.GetProperty("id").GetString();
 
@@ -297,11 +316,10 @@ public class InvitationTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var email = TestData.UniqueEmail();
-        var (createRes, createBody) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "editor"
-        });
+        var (createRes, createBody) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "editor" }
+        );
         createRes.EnsureSuccessStatusCode();
 
         // Get the raw token before revoking
@@ -317,7 +335,8 @@ public class InvitationTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = null;
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{rawToken}/accept",
-            new { name = "Should Fail", password = "securepassword123" });
+            new { name = "Should Fail", password = "securepassword123" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -327,17 +346,18 @@ public class InvitationTests : IntegrationTestBase
     /// <summary>
     /// Creates an invitation as admin and returns (email, rawToken).
     /// </summary>
-    private async Task<(string Email, string RawToken)> CreateInvitationAndGetTokenAsync(string role)
+    private async Task<(string Email, string RawToken)> CreateInvitationAndGetTokenAsync(
+        string role
+    )
     {
         var adminToken = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(adminToken);
 
         var email = TestData.UniqueEmail();
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role }
+        );
         response.EnsureSuccessStatusCode();
 
         var acceptUrl = TestEmailService.GetInvitationUrl(email);
@@ -354,8 +374,9 @@ public class InvitationTests : IntegrationTestBase
     {
         using var scope = Fixture.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-        var invitation = await db.Invitations
-            .FirstOrDefaultAsync(i => i.Email == email.Trim().ToLowerInvariant());
+        var invitation = await db.Invitations.FirstOrDefaultAsync(i =>
+            i.Email == email.Trim().ToLowerInvariant()
+        );
         invitation.Should().NotBeNull();
         invitation!.ExpiresAt = DateTime.UtcNow.AddDays(-1);
         await db.SaveChangesAsync();

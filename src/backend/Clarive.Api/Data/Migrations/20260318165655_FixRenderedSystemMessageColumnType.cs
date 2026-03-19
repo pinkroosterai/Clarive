@@ -17,7 +17,8 @@ namespace Clarive.Api.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "jsonb",
-                oldNullable: true);
+                oldNullable: true
+            );
         }
 
         /// <inheritdoc />
@@ -30,7 +31,8 @@ namespace Clarive.Api.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "text",
-                oldNullable: true);
+                oldNullable: true
+            );
         }
     }
 }

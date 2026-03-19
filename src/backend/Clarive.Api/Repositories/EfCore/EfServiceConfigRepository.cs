@@ -12,9 +12,7 @@ public class EfServiceConfigRepository(ClariveDbContext db) : IServiceConfigRepo
     {
         try
         {
-            return await db.ServiceConfigs
-                .AsNoTracking()
-                .ToDictionaryAsync(c => c.Key, c => c, ct);
+            return await db.ServiceConfigs.AsNoTracking().ToDictionaryAsync(c => c.Key, c => c, ct);
         }
         catch (DbException)
         {
@@ -49,7 +47,8 @@ public class EfServiceConfigRepository(ClariveDbContext db) : IServiceConfigRepo
     public async Task<bool> DeleteByKeyAsync(string key, CancellationToken ct = default)
     {
         var existing = await db.ServiceConfigs.FindAsync([key], ct);
-        if (existing is null) return false;
+        if (existing is null)
+            return false;
 
         db.ServiceConfigs.Remove(existing);
         await db.SaveChangesAsync(ct);

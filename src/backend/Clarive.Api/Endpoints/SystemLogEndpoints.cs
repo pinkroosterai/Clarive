@@ -12,7 +12,9 @@ public static class SystemLogEndpoints
     private const int DefaultPageSize = 50;
 
     // Serilog stores level as integer: 0=Verbose, 1=Debug, 2=Information, 3=Warning, 4=Error, 5=Fatal
-    private static readonly Dictionary<string, int> LevelNameToInt = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, int> LevelNameToInt = new(
+        StringComparer.OrdinalIgnoreCase
+    )
     {
         ["Verbose"] = 0,
         ["Debug"] = 1,
@@ -32,9 +34,13 @@ public static class SystemLogEndpoints
         [5] = "Fatal",
     };
 
-    private static readonly HashSet<string> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> AllowedSortColumns = new(
+        StringComparer.OrdinalIgnoreCase
+    )
     {
-        "timestamp", "level", "message",
+        "timestamp",
+        "level",
+        "message",
     };
 
     public static RouteGroupBuilder MapSystemLogEndpoints(this IEndpointRouteBuilder app)
@@ -59,14 +65,27 @@ public static class SystemLogEndpoints
         bool sortDesc = true,
         int page = 1,
         int pageSize = DefaultPageSize,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         if (dateFrom.HasValue && dateTo.HasValue && dateFrom > dateTo)
-            return Results.BadRequest(new { error = new { code = "INVALID_DATE_RANGE", message = "dateFrom must be before dateTo" } });
+            return Results.BadRequest(
+                new
+                {
+                    error = new
+                    {
+                        code = "INVALID_DATE_RANGE",
+                        message = "dateFrom must be before dateTo",
+                    },
+                }
+            );
 
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = DefaultPageSize;
-        if (pageSize > MaxPageSize) pageSize = MaxPageSize;
+        if (page < 1)
+            page = 1;
+        if (pageSize < 1)
+            pageSize = DefaultPageSize;
+        if (pageSize > MaxPageSize)
+            pageSize = MaxPageSize;
 
         // Parse level filter
         int[]? levelInts = null;
@@ -77,7 +96,8 @@ public static class SystemLogEndpoints
                 .Where(l => LevelNameToInt.ContainsKey(l))
                 .Select(l => LevelNameToInt[l])
                 .ToArray();
-            if (levelInts.Length == 0) levelInts = null;
+            if (levelInts.Length == 0)
+                levelInts = null;
         }
 
         // Build WHERE clause
@@ -128,7 +148,12 @@ public static class SystemLogEndpoints
         // Count query (sortColumn/whereClause are built from validated whitelists; all user input is parameterized)
         long totalCount;
 #pragma warning disable CA2100
-        await using (var countCmd = new NpgsqlCommand($"SELECT COUNT(*) FROM logs WHERE 1=1{whereClause}", conn))
+        await using (
+            var countCmd = new NpgsqlCommand(
+                $"SELECT COUNT(*) FROM logs WHERE 1=1{whereClause}",
+                conn
+            )
+        )
 #pragma warning restore CA2100
         {
             AddFilterParams(countCmd);
@@ -169,18 +194,22 @@ public static class SystemLogEndpoints
                         if (jsonDoc.RootElement.TryGetProperty("SourceContext", out var sc))
                             sourceContext = sc.GetString();
                     }
-                    catch { /* ignore malformed JSON */ }
+                    catch
+                    { /* ignore malformed JSON */
+                    }
                 }
 
-                items.Add(new SystemLogEntry(
-                    Id: reader.IsDBNull(0) ? 0 : reader.GetInt64(0),
-                    Timestamp: reader.GetDateTime(1),
-                    Level: LevelIntToName.GetValueOrDefault(levelInt, "Information"),
-                    SourceContext: sourceContext,
-                    Message: reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    Exception: reader.IsDBNull(5) ? null : reader.GetString(5),
-                    Properties: props
-                ));
+                items.Add(
+                    new SystemLogEntry(
+                        Id: reader.IsDBNull(0) ? 0 : reader.GetInt64(0),
+                        Timestamp: reader.GetDateTime(1),
+                        Level: LevelIntToName.GetValueOrDefault(levelInt, "Information"),
+                        SourceContext: sourceContext,
+                        Message: reader.IsDBNull(3) ? "" : reader.GetString(3),
+                        Exception: reader.IsDBNull(5) ? null : reader.GetString(5),
+                        Properties: props
+                    )
+                );
             }
         }
 

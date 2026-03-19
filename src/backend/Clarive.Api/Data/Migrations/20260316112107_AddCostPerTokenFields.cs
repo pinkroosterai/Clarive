@@ -17,7 +17,8 @@ namespace Clarive.Api.Data.Migrations
                 type: "numeric(18,6)",
                 precision: 18,
                 scale: 6,
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddColumn<decimal>(
                 name: "output_cost_per_million",
@@ -25,12 +26,11 @@ namespace Clarive.Api.Data.Migrations
                 type: "numeric(18,6)",
                 precision: 18,
                 scale: 6,
-                nullable: true);
+                nullable: true
+            );
 
             // AiUsageLog: replace estimated_cost_usd with split fields
-            migrationBuilder.DropColumn(
-                name: "estimated_cost_usd",
-                table: "ai_usage_logs");
+            migrationBuilder.DropColumn(name: "estimated_cost_usd", table: "ai_usage_logs");
 
             migrationBuilder.AddColumn<decimal>(
                 name: "estimated_input_cost_usd",
@@ -38,7 +38,8 @@ namespace Clarive.Api.Data.Migrations
                 type: "numeric(18,8)",
                 precision: 18,
                 scale: 8,
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddColumn<decimal>(
                 name: "estimated_output_cost_usd",
@@ -46,14 +47,21 @@ namespace Clarive.Api.Data.Migrations
                 type: "numeric(18,8)",
                 precision: 18,
                 scale: 8,
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(name: "input_cost_per_million", table: "ai_provider_models");
-            migrationBuilder.DropColumn(name: "output_cost_per_million", table: "ai_provider_models");
+            migrationBuilder.DropColumn(
+                name: "input_cost_per_million",
+                table: "ai_provider_models"
+            );
+            migrationBuilder.DropColumn(
+                name: "output_cost_per_million",
+                table: "ai_provider_models"
+            );
 
             migrationBuilder.DropColumn(name: "estimated_input_cost_usd", table: "ai_usage_logs");
             migrationBuilder.DropColumn(name: "estimated_output_cost_usd", table: "ai_usage_logs");
@@ -64,7 +72,8 @@ namespace Clarive.Api.Data.Migrations
                 type: "numeric(18,8)",
                 precision: 18,
                 scale: 8,
-                nullable: true);
+                nullable: true
+            );
         }
     }
 }

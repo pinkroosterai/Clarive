@@ -1,12 +1,12 @@
+using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
-using Clarive.Api.Services;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Models.Results;
+using Clarive.Api.Services;
 using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Clarive.Api.Services.Interfaces;
-using Clarive.Api.Auth;
 
 namespace Clarive.Api.Endpoints;
 
@@ -18,13 +18,20 @@ public static class AiGenerationEndpoints
             .WithTags("AI Generation")
             .RequireAuthorization("EditorOrAdmin")
             .RequireRateLimiting("auth")
-            .AddEndpointFilter(async (ctx, next) =>
-            {
-                var orchestrator = ctx.HttpContext.RequestServices.GetRequiredService<IPromptOrchestrator>();
-                if (!orchestrator.IsConfigured)
-                    return ctx.HttpContext.ErrorResult(503, "AI_NOT_CONFIGURED", "AI features are not configured.");
-                return await next(ctx);
-            });
+            .AddEndpointFilter(
+                async (ctx, next) =>
+                {
+                    var orchestrator =
+                        ctx.HttpContext.RequestServices.GetRequiredService<IPromptOrchestrator>();
+                    if (!orchestrator.IsConfigured)
+                        return ctx.HttpContext.ErrorResult(
+                            503,
+                            "AI_NOT_CONFIGURED",
+                            "AI features are not configured."
+                        );
+                    return await next(ctx);
+                }
+            );
 
         group.MapPost("/generate", HandleGenerate);
         group.MapPost("/refine", HandleRefine);
@@ -45,13 +52,20 @@ public static class AiGenerationEndpoints
         HttpContext ctx,
         GeneratePromptRequest request,
         IAiGenerationService aiService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
-        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
 
         if (!WantsSse(ctx))
         {
-            var result = await aiService.GenerateAsync(ctx.GetTenantId(), ctx.GetUserId(), request, ct);
+            var result = await aiService.GenerateAsync(
+                ctx.GetTenantId(),
+                ctx.GetUserId(),
+                request,
+                ct
+            );
             return Results.Ok(ToResponse(result));
         }
 
@@ -62,14 +76,22 @@ public static class AiGenerationEndpoints
         try
         {
             var result = await aiService.GenerateAsync(
-                ctx.GetTenantId(), ctx.GetUserId(), request, ct,
-                progress => sse.WriteProgressAsync(progress, ct));
+                ctx.GetTenantId(),
+                ctx.GetUserId(),
+                request,
+                ct,
+                progress => sse.WriteProgressAsync(progress, ct)
+            );
 
             await sse.WriteDoneAsync(ToResponse(result), ct);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("expired"))
         {
-            await sse.WriteErrorAsync("SESSION_EXPIRED", "Agent session expired. Please start a new generation.", ct);
+            await sse.WriteErrorAsync(
+                "SESSION_EXPIRED",
+                "Agent session expired. Please start a new generation.",
+                ct
+            );
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -85,16 +107,26 @@ public static class AiGenerationEndpoints
         HttpContext ctx,
         RefinePromptRequest request,
         IAiGenerationService aiService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         if (request.Answers?.Any(a => a.Answer.Length > 1000) == true)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Each answer must not exceed 1000 characters.");
+            return ctx.ErrorResult(
+                422,
+                "VALIDATION_ERROR",
+                "Each answer must not exceed 1000 characters."
+            );
 
         if (!WantsSse(ctx))
         {
             try
             {
-                var result = await aiService.RefineAsync(ctx.GetTenantId(), ctx.GetUserId(), request, ct);
+                var result = await aiService.RefineAsync(
+                    ctx.GetTenantId(),
+                    ctx.GetUserId(),
+                    request,
+                    ct
+                );
 
                 if (result.IsError)
                     return result.Errors.ToHttpResult(ctx);
@@ -103,7 +135,11 @@ public static class AiGenerationEndpoints
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("expired"))
             {
-                return ctx.ErrorResult(410, "SESSION_EXPIRED", "Agent session expired. Please start a new generation.");
+                return ctx.ErrorResult(
+                    410,
+                    "SESSION_EXPIRED",
+                    "Agent session expired. Please start a new generation."
+                );
             }
         }
 
@@ -114,12 +150,20 @@ public static class AiGenerationEndpoints
         try
         {
             var result = await aiService.RefineAsync(
-                ctx.GetTenantId(), ctx.GetUserId(), request, ct,
-                progress => sse.WriteProgressAsync(progress, ct));
+                ctx.GetTenantId(),
+                ctx.GetUserId(),
+                request,
+                ct,
+                progress => sse.WriteProgressAsync(progress, ct)
+            );
 
             if (result.IsError)
             {
-                await sse.WriteErrorAsync(result.FirstError.Code, result.FirstError.Description, ct);
+                await sse.WriteErrorAsync(
+                    result.FirstError.Code,
+                    result.FirstError.Description,
+                    ct
+                );
             }
             else
             {
@@ -128,7 +172,11 @@ public static class AiGenerationEndpoints
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("expired"))
         {
-            await sse.WriteErrorAsync("SESSION_EXPIRED", "Agent session expired. Please start a new generation.", ct);
+            await sse.WriteErrorAsync(
+                "SESSION_EXPIRED",
+                "Agent session expired. Please start a new generation.",
+                ct
+            );
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -144,7 +192,8 @@ public static class AiGenerationEndpoints
         HttpContext ctx,
         EnhanceRequest request,
         IAiGenerationService aiService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -166,12 +215,20 @@ public static class AiGenerationEndpoints
         try
         {
             var result = await aiService.EnhanceAsync(
-                tenantId, userId, request.EntryId, ct,
-                progress => sse.WriteProgressAsync(progress, ct));
+                tenantId,
+                userId,
+                request.EntryId,
+                ct,
+                progress => sse.WriteProgressAsync(progress, ct)
+            );
 
             if (result.IsError)
             {
-                await sse.WriteErrorAsync(result.FirstError.Code, result.FirstError.Description, ct);
+                await sse.WriteErrorAsync(
+                    result.FirstError.Code,
+                    result.FirstError.Description,
+                    ct
+                );
             }
             else
             {
@@ -180,7 +237,11 @@ public static class AiGenerationEndpoints
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("expired"))
         {
-            await sse.WriteErrorAsync("SESSION_EXPIRED", "Agent session expired. Please start a new generation.", ct);
+            await sse.WriteErrorAsync(
+                "SESSION_EXPIRED",
+                "Agent session expired. Please start a new generation.",
+                ct
+            );
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -196,12 +257,18 @@ public static class AiGenerationEndpoints
         HttpContext ctx,
         GenerateSystemMessageRequest request,
         IAiGenerationService aiService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await aiService.GenerateSystemMessageAsync(tenantId, userId, request.EntryId, ct);
+        var result = await aiService.GenerateSystemMessageAsync(
+            tenantId,
+            userId,
+            request.EntryId,
+            ct
+        );
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
@@ -214,7 +281,8 @@ public static class AiGenerationEndpoints
         HttpContext ctx,
         DecomposeRequest request,
         IAiGenerationService aiService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -232,7 +300,8 @@ public static class AiGenerationEndpoints
         HttpContext ctx,
         FillTemplateFieldsRequest request,
         IAiGenerationService aiService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -245,6 +314,12 @@ public static class AiGenerationEndpoints
     }
 
     private static GeneratePromptResponse ToResponse(AiGenerationResult result) =>
-        new(result.SessionId, result.Draft, result.Questions, result.Enhancements,
-            result.Evaluation, result.ScoreHistory);
+        new(
+            result.SessionId,
+            result.Draft,
+            result.Questions,
+            result.Enhancements,
+            result.Evaluation,
+            result.ScoreHistory
+        );
 }

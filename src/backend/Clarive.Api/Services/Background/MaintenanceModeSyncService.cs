@@ -6,7 +6,8 @@ namespace Clarive.Api.Services.Background;
 public class MaintenanceModeSyncService(
     IServiceScopeFactory scopeFactory,
     MaintenanceModeService maintenanceMode,
-    ILogger<MaintenanceModeSyncService> logger) : BackgroundService
+    ILogger<MaintenanceModeSyncService> logger
+) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(10);
 
@@ -31,9 +32,7 @@ public class MaintenanceModeSyncService(
     {
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-        var config = await db.SystemConfigs
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == 1, ct);
+        var config = await db.SystemConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.Id == 1, ct);
 
         if (config is not null)
             maintenanceMode.SyncFromDb(config.MaintenanceEnabled);

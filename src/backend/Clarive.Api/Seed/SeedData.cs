@@ -11,9 +11,11 @@ namespace Clarive.Api.Seed;
 
 public static class SeedData
 {
-    // Deterministic GUIDs from string names — stable across restarts
-    private static Guid DeterministicGuid(string name)
-        => new(MD5.HashData(Encoding.UTF8.GetBytes(name)));
+    // Deterministic GUIDs from string names — stable across restarts (not used for security)
+#pragma warning disable CA5351 // MD5 is fine here — deterministic IDs, not cryptographic use
+    private static Guid DeterministicGuid(string name) =>
+        new(MD5.HashData(Encoding.UTF8.GetBytes(name)));
+#pragma warning restore CA5351
 
     // Well-known IDs
     public static readonly Guid TenantId = DeterministicGuid("clarive-default-tenant");
@@ -86,68 +88,112 @@ public static class SeedData
 
     private static async Task SeedTenantAsync(ITenantRepository tenantRepo)
     {
-        await tenantRepo.CreateAsync(new Tenant
-        {
-            Id = TenantId,
-            Name = "Clarive Demo",
-            CreatedAt = DateTime.Parse("2025-08-01T00:00:00Z").ToUniversalTime()
-        });
+        await tenantRepo.CreateAsync(
+            new Tenant
+            {
+                Id = TenantId,
+                Name = "Clarive Demo",
+                CreatedAt = DateTime.Parse("2025-08-01T00:00:00Z").ToUniversalTime(),
+            }
+        );
     }
 
-    private static async Task SeedUsersAsync(IUserRepository userRepo, PasswordHasher passwordHasher)
+    private static async Task SeedUsersAsync(
+        IUserRepository userRepo,
+        PasswordHasher passwordHasher
+    )
     {
         var hash = passwordHasher.Hash("password");
 
-        await userRepo.CreateAsync(new User
-        {
-            Id = AdminUserId, TenantId = TenantId,
-            Email = "admin@clarive.dev", Name = "Admin User",
-            PasswordHash = hash, Role = UserRole.Admin,
-            EmailVerified = true, OnboardingCompleted = true,
-            IsSuperUser = true,
-            CreatedAt = DateTime.Parse("2025-08-01T00:00:00Z").ToUniversalTime()
-        });
+        await userRepo.CreateAsync(
+            new User
+            {
+                Id = AdminUserId,
+                TenantId = TenantId,
+                Email = "admin@clarive.dev",
+                Name = "Admin User",
+                PasswordHash = hash,
+                Role = UserRole.Admin,
+                EmailVerified = true,
+                OnboardingCompleted = true,
+                IsSuperUser = true,
+                CreatedAt = DateTime.Parse("2025-08-01T00:00:00Z").ToUniversalTime(),
+            }
+        );
 
-        await userRepo.CreateAsync(new User
-        {
-            Id = EditorUserId, TenantId = TenantId,
-            Email = "jane@clarive.dev", Name = "Jane Editor",
-            PasswordHash = hash, Role = UserRole.Editor,
-            EmailVerified = true, OnboardingCompleted = true,
-            CreatedAt = DateTime.Parse("2025-08-15T00:00:00Z").ToUniversalTime()
-        });
+        await userRepo.CreateAsync(
+            new User
+            {
+                Id = EditorUserId,
+                TenantId = TenantId,
+                Email = "jane@clarive.dev",
+                Name = "Jane Editor",
+                PasswordHash = hash,
+                Role = UserRole.Editor,
+                EmailVerified = true,
+                OnboardingCompleted = true,
+                CreatedAt = DateTime.Parse("2025-08-15T00:00:00Z").ToUniversalTime(),
+            }
+        );
 
-        await userRepo.CreateAsync(new User
-        {
-            Id = ViewerUserId, TenantId = TenantId,
-            Email = "sam@clarive.dev", Name = "Sam Viewer",
-            PasswordHash = hash, Role = UserRole.Viewer,
-            EmailVerified = true, OnboardingCompleted = true,
-            CreatedAt = DateTime.Parse("2025-09-01T00:00:00Z").ToUniversalTime()
-        });
+        await userRepo.CreateAsync(
+            new User
+            {
+                Id = ViewerUserId,
+                TenantId = TenantId,
+                Email = "sam@clarive.dev",
+                Name = "Sam Viewer",
+                PasswordHash = hash,
+                Role = UserRole.Viewer,
+                EmailVerified = true,
+                OnboardingCompleted = true,
+                CreatedAt = DateTime.Parse("2025-09-01T00:00:00Z").ToUniversalTime(),
+            }
+        );
     }
 
-    private static async Task SeedMembershipsAsync(ITenantMembershipRepository membershipRepo, ITenantRepository tenantRepo)
+    private static async Task SeedMembershipsAsync(
+        ITenantMembershipRepository membershipRepo,
+        ITenantRepository tenantRepo
+    )
     {
         var baseDate = DateTime.Parse("2025-08-01T00:00:00Z").ToUniversalTime();
 
-        await membershipRepo.CreateAsync(new TenantMembership
-        {
-            Id = DeterministicGuid("membership-admin"), UserId = AdminUserId, TenantId = TenantId,
-            Role = UserRole.Admin, IsPersonal = true, JoinedAt = baseDate
-        });
+        await membershipRepo.CreateAsync(
+            new TenantMembership
+            {
+                Id = DeterministicGuid("membership-admin"),
+                UserId = AdminUserId,
+                TenantId = TenantId,
+                Role = UserRole.Admin,
+                IsPersonal = true,
+                JoinedAt = baseDate,
+            }
+        );
 
-        await membershipRepo.CreateAsync(new TenantMembership
-        {
-            Id = DeterministicGuid("membership-editor"), UserId = EditorUserId, TenantId = TenantId,
-            Role = UserRole.Editor, IsPersonal = false, JoinedAt = DateTime.Parse("2025-08-15T00:00:00Z").ToUniversalTime()
-        });
+        await membershipRepo.CreateAsync(
+            new TenantMembership
+            {
+                Id = DeterministicGuid("membership-editor"),
+                UserId = EditorUserId,
+                TenantId = TenantId,
+                Role = UserRole.Editor,
+                IsPersonal = false,
+                JoinedAt = DateTime.Parse("2025-08-15T00:00:00Z").ToUniversalTime(),
+            }
+        );
 
-        await membershipRepo.CreateAsync(new TenantMembership
-        {
-            Id = DeterministicGuid("membership-viewer"), UserId = ViewerUserId, TenantId = TenantId,
-            Role = UserRole.Viewer, IsPersonal = false, JoinedAt = DateTime.Parse("2025-09-01T00:00:00Z").ToUniversalTime()
-        });
+        await membershipRepo.CreateAsync(
+            new TenantMembership
+            {
+                Id = DeterministicGuid("membership-viewer"),
+                UserId = ViewerUserId,
+                TenantId = TenantId,
+                Role = UserRole.Viewer,
+                IsPersonal = false,
+                JoinedAt = DateTime.Parse("2025-09-01T00:00:00Z").ToUniversalTime(),
+            }
+        );
 
         // Set tenant owner
         var tenant = await tenantRepo.GetByIdAsync(TenantId);
@@ -161,11 +207,16 @@ public static class SeedData
     private static async Task SeedFoldersAsync(IFolderRepository folderRepo)
     {
         async Task F(Guid id, string name, Guid? parentId) =>
-            await folderRepo.CreateAsync(new Folder
-            {
-                Id = id, TenantId = TenantId, Name = name,
-                ParentId = parentId, CreatedAt = DateTime.Parse("2025-08-01T00:00:00Z").ToUniversalTime()
-            });
+            await folderRepo.CreateAsync(
+                new Folder
+                {
+                    Id = id,
+                    TenantId = TenantId,
+                    Name = name,
+                    ParentId = parentId,
+                    CreatedAt = DateTime.Parse("2025-08-01T00:00:00Z").ToUniversalTime(),
+                }
+            );
 
         await F(F001, "Content Writing", null);
         await F(F002, "Code Review", null);
@@ -187,105 +238,223 @@ public static class SeedData
         Guid CreatedBy,
         string CreatedAt,
         string UpdatedAt,
-        int HistoricalVersions = 0);
+        int HistoricalVersions = 0
+    );
 
     private static async Task SeedEntriesAsync(IEntryRepository entryRepo)
     {
         var entries = new SeedEntryOptions[]
         {
             // e-001: Blog Post Generator — published v2, template, in Content Writing
-            new(E001, "Blog Post Generator", F001,
+            new(
+                E001,
+                "Blog Post Generator",
+                F001,
                 "You are a professional content writer specializing in technology blogs.",
-                [("Write a {{tone}} blog post about {{topic}} targeting a {{audience}} audience. The post should be approximately {{wordCount}} words long.", true)],
-                CurrentVersion: 2, State: VersionState.Published, IsTrashed: false,
+                [
+                    (
+                        "Write a {{tone}} blog post about {{topic}} targeting a {{audience}} audience. The post should be approximately {{wordCount}} words long.",
+                        true
+                    ),
+                ],
+                CurrentVersion: 2,
+                State: VersionState.Published,
+                IsTrashed: false,
                 CreatedBy: AdminUserId,
-                CreatedAt: "2025-11-10T09:00:00Z", UpdatedAt: "2026-01-15T14:30:00Z",
-                HistoricalVersions: 1),
-
+                CreatedAt: "2025-11-10T09:00:00Z",
+                UpdatedAt: "2026-01-15T14:30:00Z",
+                HistoricalVersions: 1
+            ),
             // e-002: Code Review Pipeline — published v3, chain, in Code Review
-            new(E002, "Code Review Pipeline", F002,
+            new(
+                E002,
+                "Code Review Pipeline",
+                F002,
                 "You are a senior software engineer performing thorough code reviews.",
                 [
-                    ("Analyze the following code for potential bugs, logic errors, and edge cases that are not handled:\n\n```\n{{code}}\n```", false),
-                    ("Now review the same code for security vulnerabilities, including injection risks, authentication issues, and data exposure.", false),
-                    ("Finally, suggest performance optimizations and refactoring opportunities. Prioritize by impact.", false)
+                    (
+                        "Analyze the following code for potential bugs, logic errors, and edge cases that are not handled:\n\n```\n{{code}}\n```",
+                        false
+                    ),
+                    (
+                        "Now review the same code for security vulnerabilities, including injection risks, authentication issues, and data exposure.",
+                        false
+                    ),
+                    (
+                        "Finally, suggest performance optimizations and refactoring opportunities. Prioritize by impact.",
+                        false
+                    ),
                 ],
-                CurrentVersion: 3, State: VersionState.Published, IsTrashed: false,
+                CurrentVersion: 3,
+                State: VersionState.Published,
+                IsTrashed: false,
                 CreatedBy: EditorUserId,
-                CreatedAt: "2025-10-05T11:00:00Z", UpdatedAt: "2026-01-20T10:00:00Z",
-                HistoricalVersions: 2),
-
+                CreatedAt: "2025-10-05T11:00:00Z",
+                UpdatedAt: "2026-01-20T10:00:00Z",
+                HistoricalVersions: 2
+            ),
             // e-003: CSV Data Summarizer — draft v1, in Data Analysis
-            new(E003, "CSV Data Summarizer", F003,
+            new(
+                E003,
+                "CSV Data Summarizer",
+                F003,
                 "You are a data analyst who excels at extracting insights from raw data.",
-                [("Given the following CSV data, provide a concise summary including key trends, outliers, and actionable insights:\n\n{{csvData}}", false)],
-                CurrentVersion: 1, State: VersionState.Draft, IsTrashed: false,
+                [
+                    (
+                        "Given the following CSV data, provide a concise summary including key trends, outliers, and actionable insights:\n\n{{csvData}}",
+                        false
+                    ),
+                ],
+                CurrentVersion: 1,
+                State: VersionState.Draft,
+                IsTrashed: false,
                 CreatedBy: AdminUserId,
-                CreatedAt: "2026-02-01T08:00:00Z", UpdatedAt: "2026-02-01T08:00:00Z"),
-
+                CreatedAt: "2026-02-01T08:00:00Z",
+                UpdatedAt: "2026-02-01T08:00:00Z"
+            ),
             // e-004: Technical Tutorial Writer — published v1, template, in Technical Blogs
-            new(E004, "Technical Tutorial Writer", F006,
+            new(
+                E004,
+                "Technical Tutorial Writer",
+                F006,
                 "You are an experienced technical writer creating step-by-step tutorials.",
-                [("Write a step-by-step tutorial on {{subject}} for {{skillLevel}} developers. Include code examples in {{language}} and explain each step clearly.", true)],
-                CurrentVersion: 1, State: VersionState.Published, IsTrashed: false,
+                [
+                    (
+                        "Write a step-by-step tutorial on {{subject}} for {{skillLevel}} developers. Include code examples in {{language}} and explain each step clearly.",
+                        true
+                    ),
+                ],
+                CurrentVersion: 1,
+                State: VersionState.Published,
+                IsTrashed: false,
                 CreatedBy: EditorUserId,
-                CreatedAt: "2025-12-20T10:00:00Z", UpdatedAt: "2026-01-05T16:45:00Z"),
-
+                CreatedAt: "2025-12-20T10:00:00Z",
+                UpdatedAt: "2026-01-05T16:45:00Z"
+            ),
             // e-005: Sales Report Analyzer — published v4, chain, in Data Analysis
-            new(E005, "Sales Report Analyzer", F003,
+            new(
+                E005,
+                "Sales Report Analyzer",
+                F003,
                 "You are a business intelligence analyst.",
                 [
-                    ("Parse the following sales data and identify the top 5 performing products by revenue:\n\n{{salesData}}", false),
-                    ("Based on the top performers identified, analyze seasonal trends and predict next quarter's performance.", false),
-                    ("Generate an executive summary with 3 key recommendations for the sales team.", false),
-                    ("Format the complete analysis as a markdown report with charts described in text.", false)
+                    (
+                        "Parse the following sales data and identify the top 5 performing products by revenue:\n\n{{salesData}}",
+                        false
+                    ),
+                    (
+                        "Based on the top performers identified, analyze seasonal trends and predict next quarter's performance.",
+                        false
+                    ),
+                    (
+                        "Generate an executive summary with 3 key recommendations for the sales team.",
+                        false
+                    ),
+                    (
+                        "Format the complete analysis as a markdown report with charts described in text.",
+                        false
+                    ),
                 ],
-                CurrentVersion: 4, State: VersionState.Published, IsTrashed: false,
+                CurrentVersion: 4,
+                State: VersionState.Published,
+                IsTrashed: false,
                 CreatedBy: AdminUserId,
-                CreatedAt: "2025-09-15T13:00:00Z", UpdatedAt: "2026-02-10T09:15:00Z",
-                HistoricalVersions: 3),
-
+                CreatedAt: "2025-09-15T13:00:00Z",
+                UpdatedAt: "2026-02-10T09:15:00Z",
+                HistoricalVersions: 3
+            ),
             // e-006: Meeting Notes Formatter — draft v1, root level
-            new(E006, "Meeting Notes Formatter", null,
+            new(
+                E006,
+                "Meeting Notes Formatter",
                 null,
-                [("Take the following raw meeting notes and format them into a structured document with: attendees, key decisions, action items with owners, and follow-up dates.\n\nRaw notes:\n{{notes}}", false)],
-                CurrentVersion: 1, State: VersionState.Draft, IsTrashed: false,
+                null,
+                [
+                    (
+                        "Take the following raw meeting notes and format them into a structured document with: attendees, key decisions, action items with owners, and follow-up dates.\n\nRaw notes:\n{{notes}}",
+                        false
+                    ),
+                ],
+                CurrentVersion: 1,
+                State: VersionState.Draft,
+                IsTrashed: false,
                 CreatedBy: EditorUserId,
-                CreatedAt: "2026-02-15T11:00:00Z", UpdatedAt: "2026-02-15T11:00:00Z"),
-
+                CreatedAt: "2026-02-15T11:00:00Z",
+                UpdatedAt: "2026-02-15T11:00:00Z"
+            ),
             // e-007: OWASP Security Checker — published v2, in Security Audits
-            new(E007, "OWASP Security Checker", F005,
+            new(
+                E007,
+                "OWASP Security Checker",
+                F005,
                 "You are a cybersecurity expert specializing in application security.",
-                [("Review the following code against the OWASP Top 10 vulnerabilities. For each applicable vulnerability, explain the risk, show the problematic code, and provide the corrected version.\n\n```\n{{code}}\n```", false)],
-                CurrentVersion: 2, State: VersionState.Published, IsTrashed: false,
+                [
+                    (
+                        "Review the following code against the OWASP Top 10 vulnerabilities. For each applicable vulnerability, explain the risk, show the problematic code, and provide the corrected version.\n\n```\n{{code}}\n```",
+                        false
+                    ),
+                ],
+                CurrentVersion: 2,
+                State: VersionState.Published,
+                IsTrashed: false,
                 CreatedBy: AdminUserId,
-                CreatedAt: "2025-11-01T09:30:00Z", UpdatedAt: "2026-01-25T15:00:00Z",
-                HistoricalVersions: 1),
-
+                CreatedAt: "2025-11-01T09:30:00Z",
+                UpdatedAt: "2026-01-25T15:00:00Z",
+                HistoricalVersions: 1
+            ),
             // e-008: Email Tone Adjuster — published v1, root level
-            new(E008, "Email Tone Adjuster", null,
+            new(
+                E008,
+                "Email Tone Adjuster",
+                null,
                 "You are a professional communications specialist.",
-                [("Rewrite the following email to be more {{desiredTone}} while preserving the core message and all factual information:\n\n{{emailContent}}", false)],
-                CurrentVersion: 1, State: VersionState.Published, IsTrashed: false,
+                [
+                    (
+                        "Rewrite the following email to be more {{desiredTone}} while preserving the core message and all factual information:\n\n{{emailContent}}",
+                        false
+                    ),
+                ],
+                CurrentVersion: 1,
+                State: VersionState.Published,
+                IsTrashed: false,
                 CreatedBy: EditorUserId,
-                CreatedAt: "2026-01-10T14:00:00Z", UpdatedAt: "2026-01-10T14:00:00Z"),
-
+                CreatedAt: "2026-01-10T14:00:00Z",
+                UpdatedAt: "2026-01-10T14:00:00Z"
+            ),
             // e-009: Deprecated: Basic Summarizer — trashed, published v1
-            new(E009, "Deprecated: Basic Summarizer", F001,
+            new(
+                E009,
+                "Deprecated: Basic Summarizer",
+                F001,
                 null,
                 [("Summarize the following text in 3 sentences:\n\n{{text}}", false)],
-                CurrentVersion: 1, State: VersionState.Published, IsTrashed: true,
+                CurrentVersion: 1,
+                State: VersionState.Published,
+                IsTrashed: true,
                 CreatedBy: AdminUserId,
-                CreatedAt: "2025-08-20T10:00:00Z", UpdatedAt: "2026-02-05T12:00:00Z"),
-
+                CreatedAt: "2025-08-20T10:00:00Z",
+                UpdatedAt: "2026-02-05T12:00:00Z"
+            ),
             // e-010: SEO Meta Description Generator — published v3, in Blog Posts
-            new(E010, "SEO Meta Description Generator", F004,
+            new(
+                E010,
+                "SEO Meta Description Generator",
+                F004,
                 "You are an SEO specialist who writes compelling meta descriptions.",
-                [("Generate 3 meta description options (max 155 characters each) for a page about {{pageTitle}}. Focus on click-through rate and include a call to action.", false)],
-                CurrentVersion: 3, State: VersionState.Published, IsTrashed: false,
+                [
+                    (
+                        "Generate 3 meta description options (max 155 characters each) for a page about {{pageTitle}}. Focus on click-through rate and include a call to action.",
+                        false
+                    ),
+                ],
+                CurrentVersion: 3,
+                State: VersionState.Published,
+                IsTrashed: false,
                 CreatedBy: EditorUserId,
-                CreatedAt: "2025-10-15T08:00:00Z", UpdatedAt: "2026-02-12T11:30:00Z",
-                HistoricalVersions: 2),
+                CreatedAt: "2025-10-15T08:00:00Z",
+                UpdatedAt: "2026-02-12T11:30:00Z",
+                HistoricalVersions: 2
+            ),
         };
 
         foreach (var opts in entries)
@@ -297,152 +466,291 @@ public static class SeedData
         var created = DateTime.Parse(opts.CreatedAt).ToUniversalTime();
         var updated = DateTime.Parse(opts.UpdatedAt).ToUniversalTime();
 
-        await entryRepo.CreateAsync(new PromptEntry
-        {
-            Id = opts.EntryId,
-            TenantId = TenantId,
-            Title = opts.Title,
-            FolderId = opts.FolderId,
-            IsTrashed = opts.IsTrashed,
-            CreatedBy = opts.CreatedBy,
-            CreatedAt = created,
-            UpdatedAt = updated
-        });
+        await entryRepo.CreateAsync(
+            new PromptEntry
+            {
+                Id = opts.EntryId,
+                TenantId = TenantId,
+                Title = opts.Title,
+                FolderId = opts.FolderId,
+                IsTrashed = opts.IsTrashed,
+                CreatedBy = opts.CreatedBy,
+                CreatedAt = created,
+                UpdatedAt = updated,
+            }
+        );
 
         // Create historical versions
         for (int v = 1; v <= opts.HistoricalVersions; v++)
         {
-            await entryRepo.CreateVersionAsync(new PromptEntryVersion
-            {
-                Id = DeterministicGuid($"version-{opts.EntryId}-v{v}"),
-                EntryId = opts.EntryId,
-                Version = v,
-                VersionState = VersionState.Historical,
-                SystemMessage = opts.SystemMessage,
-                Prompts = BuildSeedPrompts(opts.EntryId, v, opts.PromptInputs),
-                PublishedAt = created.AddDays(v * 7),
-                PublishedBy = opts.CreatedBy,
-                CreatedAt = created.AddDays((v - 1) * 7)
-            });
+            await entryRepo.CreateVersionAsync(
+                new PromptEntryVersion
+                {
+                    Id = DeterministicGuid($"version-{opts.EntryId}-v{v}"),
+                    EntryId = opts.EntryId,
+                    Version = v,
+                    VersionState = VersionState.Historical,
+                    SystemMessage = opts.SystemMessage,
+                    Prompts = BuildSeedPrompts(opts.EntryId, v, opts.PromptInputs),
+                    PublishedAt = created.AddDays(v * 7),
+                    PublishedBy = opts.CreatedBy,
+                    CreatedAt = created.AddDays((v - 1) * 7),
+                }
+            );
         }
 
         // Create current version
-        await entryRepo.CreateVersionAsync(new PromptEntryVersion
-        {
-            Id = DeterministicGuid($"version-{opts.EntryId}-v{opts.CurrentVersion}"),
-            EntryId = opts.EntryId,
-            Version = opts.CurrentVersion,
-            VersionState = opts.State,
-            SystemMessage = opts.SystemMessage,
-            Prompts = BuildSeedPrompts(opts.EntryId, opts.CurrentVersion, opts.PromptInputs),
-            PublishedAt = opts.State == VersionState.Published ? updated : null,
-            PublishedBy = opts.State == VersionState.Published ? opts.CreatedBy : null,
-            CreatedAt = opts.HistoricalVersions > 0 ? created.AddDays(opts.HistoricalVersions * 7) : created
-        });
+        await entryRepo.CreateVersionAsync(
+            new PromptEntryVersion
+            {
+                Id = DeterministicGuid($"version-{opts.EntryId}-v{opts.CurrentVersion}"),
+                EntryId = opts.EntryId,
+                Version = opts.CurrentVersion,
+                VersionState = opts.State,
+                SystemMessage = opts.SystemMessage,
+                Prompts = BuildSeedPrompts(opts.EntryId, opts.CurrentVersion, opts.PromptInputs),
+                PublishedAt = opts.State == VersionState.Published ? updated : null,
+                PublishedBy = opts.State == VersionState.Published ? opts.CreatedBy : null,
+                CreatedAt =
+                    opts.HistoricalVersions > 0
+                        ? created.AddDays(opts.HistoricalVersions * 7)
+                        : created,
+            }
+        );
     }
 
     private static List<Prompt> BuildSeedPrompts(
         Guid entryId,
         int version,
-        List<(string Content, bool IsTemplate)> inputs)
+        List<(string Content, bool IsTemplate)> inputs
+    )
     {
-        return inputs.Select((pi, i) =>
-        {
-            var fields = TemplateParser.Parse(pi.Content);
-            return new Prompt
-            {
-                Id = DeterministicGuid($"prompt-{entryId}-v{version}-{i}"),
-                Content = pi.Content,
-                Order = i,
-                IsTemplate = pi.IsTemplate || fields.Count > 0,
-                TemplateFields = fields
-            };
-        }).ToList();
+        return inputs
+            .Select(
+                (pi, i) =>
+                {
+                    var fields = TemplateParser.Parse(pi.Content);
+                    return new Prompt
+                    {
+                        Id = DeterministicGuid($"prompt-{entryId}-v{version}-{i}"),
+                        Content = pi.Content,
+                        Order = i,
+                        IsTemplate = pi.IsTemplate || fields.Count > 0,
+                        TemplateFields = fields,
+                    };
+                }
+            )
+            .ToList();
     }
 
     private static async Task SeedToolsAsync(IToolRepository toolRepo)
     {
-        await toolRepo.CreateAsync(new ToolDescription
-        {
-            Id = T001, TenantId = TenantId,
-            Name = "Web Search", ToolName = "web_search",
-            Description = "Searches the web for current information and returns relevant results with snippets and URLs.",
-            CreatedAt = DateTime.Parse("2025-10-01T00:00:00Z").ToUniversalTime()
-        });
-        await toolRepo.CreateAsync(new ToolDescription
-        {
-            Id = T002, TenantId = TenantId,
-            Name = "Code Executor", ToolName = "run_code",
-            Description = "Executes code in a sandboxed environment and returns stdout, stderr, and the exit code.",
-            CreatedAt = DateTime.Parse("2025-10-01T00:00:00Z").ToUniversalTime()
-        });
-        await toolRepo.CreateAsync(new ToolDescription
-        {
-            Id = T003, TenantId = TenantId,
-            Name = "File Reader", ToolName = "read_file",
-            Description = "Reads the contents of a file from the user's workspace given a relative file path.",
-            CreatedAt = DateTime.Parse("2025-10-01T00:00:00Z").ToUniversalTime()
-        });
-        await toolRepo.CreateAsync(new ToolDescription
-        {
-            Id = T004, TenantId = TenantId,
-            Name = "Database Query", ToolName = "query_db",
-            Description = "Executes a read-only SQL query against the connected database and returns the result set as JSON.",
-            CreatedAt = DateTime.Parse("2026-01-05T08:00:00Z").ToUniversalTime()
-        });
+        await toolRepo.CreateAsync(
+            new ToolDescription
+            {
+                Id = T001,
+                TenantId = TenantId,
+                Name = "Web Search",
+                ToolName = "web_search",
+                Description =
+                    "Searches the web for current information and returns relevant results with snippets and URLs.",
+                CreatedAt = DateTime.Parse("2025-10-01T00:00:00Z").ToUniversalTime(),
+            }
+        );
+        await toolRepo.CreateAsync(
+            new ToolDescription
+            {
+                Id = T002,
+                TenantId = TenantId,
+                Name = "Code Executor",
+                ToolName = "run_code",
+                Description =
+                    "Executes code in a sandboxed environment and returns stdout, stderr, and the exit code.",
+                CreatedAt = DateTime.Parse("2025-10-01T00:00:00Z").ToUniversalTime(),
+            }
+        );
+        await toolRepo.CreateAsync(
+            new ToolDescription
+            {
+                Id = T003,
+                TenantId = TenantId,
+                Name = "File Reader",
+                ToolName = "read_file",
+                Description =
+                    "Reads the contents of a file from the user's workspace given a relative file path.",
+                CreatedAt = DateTime.Parse("2025-10-01T00:00:00Z").ToUniversalTime(),
+            }
+        );
+        await toolRepo.CreateAsync(
+            new ToolDescription
+            {
+                Id = T004,
+                TenantId = TenantId,
+                Name = "Database Query",
+                ToolName = "query_db",
+                Description =
+                    "Executes a read-only SQL query against the connected database and returns the result set as JSON.",
+                CreatedAt = DateTime.Parse("2026-01-05T08:00:00Z").ToUniversalTime(),
+            }
+        );
     }
 
     private static async Task SeedApiKeysAsync(IApiKeyRepository apiKeyRepo)
     {
-        await apiKeyRepo.CreateAsync(new ApiKey
-        {
-            Id = AK001, TenantId = TenantId,
-            Name = "Production API Key",
-            KeyHash = ApiKeyEndpoints.HashKey(TestApiKey1),
-            KeyPrefix = "cl_seed••••••••••••a3f8",
-            CreatedAt = DateTime.Parse("2025-12-01T10:00:00Z").ToUniversalTime()
-        });
-        await apiKeyRepo.CreateAsync(new ApiKey
-        {
-            Id = AK002, TenantId = TenantId,
-            Name = "Development API Key",
-            KeyHash = ApiKeyEndpoints.HashKey(TestApiKey2),
-            KeyPrefix = "cl_dev_••••••••••••7b21",
-            CreatedAt = DateTime.Parse("2026-01-20T15:30:00Z").ToUniversalTime()
-        });
+        await apiKeyRepo.CreateAsync(
+            new ApiKey
+            {
+                Id = AK001,
+                TenantId = TenantId,
+                Name = "Production API Key",
+                KeyHash = ApiKeyEndpoints.HashKey(TestApiKey1),
+                KeyPrefix = "cl_seed••••••••••••a3f8",
+                CreatedAt = DateTime.Parse("2025-12-01T10:00:00Z").ToUniversalTime(),
+            }
+        );
+        await apiKeyRepo.CreateAsync(
+            new ApiKey
+            {
+                Id = AK002,
+                TenantId = TenantId,
+                Name = "Development API Key",
+                KeyHash = ApiKeyEndpoints.HashKey(TestApiKey2),
+                KeyPrefix = "cl_dev_••••••••••••7b21",
+                CreatedAt = DateTime.Parse("2026-01-20T15:30:00Z").ToUniversalTime(),
+            }
+        );
     }
 
     private static async Task SeedAuditLogAsync(IAuditLogRepository auditLogRepo)
     {
-        async Task A(string id, AuditAction action, string entityType, Guid entityId,
-            Guid userId, string userName, string timestamp, string details)
+        async Task A(
+            string id,
+            AuditAction action,
+            string entityType,
+            Guid entityId,
+            Guid userId,
+            string userName,
+            string timestamp,
+            string details
+        )
         {
-            await auditLogRepo.AddAsync(new AuditLogEntry
-            {
-                Id = DeterministicGuid($"audit-{id}"),
-                TenantId = TenantId,
-                Action = action,
-                EntityType = entityType,
-                EntityId = entityId,
-                EntityTitle = details,
-                UserId = userId,
-                UserName = userName,
-                Timestamp = DateTime.Parse(timestamp).ToUniversalTime(),
-                Details = details,
-                ExpiresAt = DateTime.Parse(timestamp).ToUniversalTime().AddDays(30)
-            });
+            await auditLogRepo.AddAsync(
+                new AuditLogEntry
+                {
+                    Id = DeterministicGuid($"audit-{id}"),
+                    TenantId = TenantId,
+                    Action = action,
+                    EntityType = entityType,
+                    EntityId = entityId,
+                    EntityTitle = details,
+                    UserId = userId,
+                    UserName = userName,
+                    Timestamp = DateTime.Parse(timestamp).ToUniversalTime(),
+                    Details = details,
+                    ExpiresAt = DateTime.Parse(timestamp).ToUniversalTime().AddDays(30),
+                }
+            );
         }
 
-        await A("al-001", AuditAction.EntryCreated, "prompt_entry", E001, AdminUserId, "Admin User", "2025-11-10T09:00:00Z", "Created 'Blog Post Generator'");
-        await A("al-002", AuditAction.EntryPublished, "prompt_entry", E001, AdminUserId, "Admin User", "2025-11-12T14:00:00Z", "Published version 1");
-        await A("al-003", AuditAction.EntryCreated, "prompt_entry", E002, EditorUserId, "Jane Editor", "2025-10-05T11:00:00Z", "Created 'Code Review Pipeline'");
-        await A("al-004", AuditAction.EntryPublished, "prompt_entry", E002, EditorUserId, "Jane Editor", "2025-10-10T09:30:00Z", "Published version 1");
-        await A("al-005", AuditAction.EntryCreated, "prompt_entry", E005, AdminUserId, "Admin User", "2026-02-10T09:15:00Z", "Updated prompts in 'Sales Report Analyzer'");
-        await A("al-006", AuditAction.EntryTrashed, "prompt_entry", E009, AdminUserId, "Admin User", "2026-02-05T12:00:00Z", "Moved 'Deprecated: Basic Summarizer' to trash");
-        await A("al-007", AuditAction.EntryCreated, "folder", F006, EditorUserId, "Jane Editor", "2025-12-18T10:00:00Z", "Created folder 'Technical Blogs'");
-        await A("al-008", AuditAction.EntryCreated, "api_key", AK001, AdminUserId, "Admin User", "2025-12-01T10:00:00Z", "Created 'Production API Key'");
-        await A("al-009", AuditAction.EntryPublished, "prompt_entry", E010, EditorUserId, "Jane Editor", "2026-02-12T11:30:00Z", "Published version 3 of 'SEO Meta Description Generator'");
-        await A("al-010", AuditAction.EntryCreated, "tool_description", T004, AdminUserId, "Admin User", "2026-01-05T08:00:00Z", "Added 'Database Query' tool description");
+        await A(
+            "al-001",
+            AuditAction.EntryCreated,
+            "prompt_entry",
+            E001,
+            AdminUserId,
+            "Admin User",
+            "2025-11-10T09:00:00Z",
+            "Created 'Blog Post Generator'"
+        );
+        await A(
+            "al-002",
+            AuditAction.EntryPublished,
+            "prompt_entry",
+            E001,
+            AdminUserId,
+            "Admin User",
+            "2025-11-12T14:00:00Z",
+            "Published version 1"
+        );
+        await A(
+            "al-003",
+            AuditAction.EntryCreated,
+            "prompt_entry",
+            E002,
+            EditorUserId,
+            "Jane Editor",
+            "2025-10-05T11:00:00Z",
+            "Created 'Code Review Pipeline'"
+        );
+        await A(
+            "al-004",
+            AuditAction.EntryPublished,
+            "prompt_entry",
+            E002,
+            EditorUserId,
+            "Jane Editor",
+            "2025-10-10T09:30:00Z",
+            "Published version 1"
+        );
+        await A(
+            "al-005",
+            AuditAction.EntryCreated,
+            "prompt_entry",
+            E005,
+            AdminUserId,
+            "Admin User",
+            "2026-02-10T09:15:00Z",
+            "Updated prompts in 'Sales Report Analyzer'"
+        );
+        await A(
+            "al-006",
+            AuditAction.EntryTrashed,
+            "prompt_entry",
+            E009,
+            AdminUserId,
+            "Admin User",
+            "2026-02-05T12:00:00Z",
+            "Moved 'Deprecated: Basic Summarizer' to trash"
+        );
+        await A(
+            "al-007",
+            AuditAction.EntryCreated,
+            "folder",
+            F006,
+            EditorUserId,
+            "Jane Editor",
+            "2025-12-18T10:00:00Z",
+            "Created folder 'Technical Blogs'"
+        );
+        await A(
+            "al-008",
+            AuditAction.EntryCreated,
+            "api_key",
+            AK001,
+            AdminUserId,
+            "Admin User",
+            "2025-12-01T10:00:00Z",
+            "Created 'Production API Key'"
+        );
+        await A(
+            "al-009",
+            AuditAction.EntryPublished,
+            "prompt_entry",
+            E010,
+            EditorUserId,
+            "Jane Editor",
+            "2026-02-12T11:30:00Z",
+            "Published version 3 of 'SEO Meta Description Generator'"
+        );
+        await A(
+            "al-010",
+            AuditAction.EntryCreated,
+            "tool_description",
+            T004,
+            AdminUserId,
+            "Admin User",
+            "2026-01-05T08:00:00Z",
+            "Added 'Database Query' tool description"
+        );
     }
-
 }

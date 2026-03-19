@@ -21,14 +21,18 @@ public sealed class TavilyClientService : ITavilyClientService
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_currentApiKey);
 
-    public TavilyClientService(IOptionsMonitor<AiSettings> optionsMonitor, ILoggerFactory loggerFactory)
+    public TavilyClientService(
+        IOptionsMonitor<AiSettings> optionsMonitor,
+        ILoggerFactory loggerFactory
+    )
     {
         _logger = loggerFactory.CreateLogger<TavilyClientService>();
         _currentApiKey = optionsMonitor.CurrentValue.TavilyApiKey;
 
         _changeSubscription = optionsMonitor.OnChange(settings =>
         {
-            if (settings.TavilyApiKey == _currentApiKey) return;
+            if (settings.TavilyApiKey == _currentApiKey)
+                return;
             _currentApiKey = settings.TavilyApiKey;
             _ = ResetClientAsync();
         });
@@ -36,18 +40,17 @@ public sealed class TavilyClientService : ITavilyClientService
 
     public async Task<IList<AITool>?> GetToolsAsync(CancellationToken ct = default)
     {
-        if (!IsConfigured) return null;
+        if (!IsConfigured)
+            return null;
 
         await _initLock.WaitAsync(ct);
         try
         {
-            if (_cachedTools is not null) return _cachedTools;
+            if (_cachedTools is not null)
+                return _cachedTools;
 
             var endpoint = $"{TavilyMcpEndpoint}?tavilyApiKey={_currentApiKey}";
-            var transportOptions = new HttpClientTransportOptions
-            {
-                Endpoint = new Uri(endpoint),
-            };
+            var transportOptions = new HttpClientTransportOptions { Endpoint = new Uri(endpoint) };
             _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(TimeoutSeconds) };
             var transport = new HttpClientTransport(transportOptions, _httpClient);
             _client = await McpClient.CreateAsync(transport, cancellationToken: ct);
@@ -55,14 +58,20 @@ public sealed class TavilyClientService : ITavilyClientService
             var allTools = await _client.ListToolsAsync(cancellationToken: ct);
 
             _cachedTools = allTools
-                .Where(t => t.Name is "tavily-search" or "tavily_search"
-                                   or "tavily-extract" or "tavily_extract")
+                .Where(t =>
+                    t.Name
+                        is "tavily-search"
+                            or "tavily_search"
+                            or "tavily-extract"
+                            or "tavily_extract"
+                )
                 .Cast<AITool>()
                 .ToList();
 
             _logger.LogInformation(
                 "Tavily MCP client connected, {ToolCount} tools available",
-                _cachedTools.Count);
+                _cachedTools.Count
+            );
 
             return _cachedTools;
         }

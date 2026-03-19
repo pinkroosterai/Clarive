@@ -5,5 +5,5 @@ public enum TemplateFieldType
     String,
     Int,
     Float,
-    Enum
+    Enum,
 }

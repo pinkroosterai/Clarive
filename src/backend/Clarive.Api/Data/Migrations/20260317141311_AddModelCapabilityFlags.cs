@@ -15,14 +15,16 @@ namespace Clarive.Api.Data.Migrations
                 table: "ai_provider_models",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
 
             migrationBuilder.AddColumn<bool>(
                 name: "supports_response_schema",
                 table: "ai_provider_models",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
 
         /// <inheritdoc />
@@ -30,11 +32,13 @@ namespace Clarive.Api.Data.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "supports_function_calling",
-                table: "ai_provider_models");
+                table: "ai_provider_models"
+            );
 
             migrationBuilder.DropColumn(
                 name: "supports_response_schema",
-                table: "ai_provider_models");
+                table: "ai_provider_models"
+            );
         }
     }
 }

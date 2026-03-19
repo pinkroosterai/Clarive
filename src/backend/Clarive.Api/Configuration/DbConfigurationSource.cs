@@ -18,13 +18,16 @@ public static class ConfigurationBuilderExtensions
         this IConfigurationBuilder builder,
         string connectionString,
         string? encryptionKeyBase64 = null,
-        TimeSpan? reloadInterval = null)
+        TimeSpan? reloadInterval = null
+    )
     {
-        return builder.Add(new DbConfigurationSource
-        {
-            ConnectionString = connectionString,
-            EncryptionKeyBase64 = encryptionKeyBase64,
-            ReloadInterval = reloadInterval ?? TimeSpan.FromSeconds(30)
-        });
+        return builder.Add(
+            new DbConfigurationSource
+            {
+                ConnectionString = connectionString,
+                EncryptionKeyBase64 = encryptionKeyBase64,
+                ReloadInterval = reloadInterval ?? TimeSpan.FromSeconds(30),
+            }
+        );
     }
 }

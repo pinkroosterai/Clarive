@@ -13,7 +13,9 @@ namespace Clarive.Api.UnitTests.Middleware;
 public class ErrorHandlingMiddlewareTests
 {
     private static (ErrorHandlingMiddleware Middleware, DefaultHttpContext Context) CreateSetup(
-        RequestDelegate next, bool isDevelopment = false)
+        RequestDelegate next,
+        bool isDevelopment = false
+    )
     {
         var logger = Substitute.For<ILogger<ErrorHandlingMiddleware>>();
         var middleware = new ErrorHandlingMiddleware(next, logger);
@@ -41,7 +43,11 @@ public class ErrorHandlingMiddlewareTests
     public async Task InvokeAsync_NoException_PassesThrough()
     {
         var nextCalled = false;
-        var (middleware, context) = CreateSetup(_ => { nextCalled = true; return Task.CompletedTask; });
+        var (middleware, context) = CreateSetup(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
 
         await middleware.InvokeAsync(context);
 
@@ -52,7 +58,9 @@ public class ErrorHandlingMiddlewareTests
     [Fact]
     public async Task InvokeAsync_GenericException_Returns500()
     {
-        var (middleware, context) = CreateSetup(_ => throw new InvalidOperationException("Something broke"));
+        var (middleware, context) = CreateSetup(_ =>
+            throw new InvalidOperationException("Something broke")
+        );
 
         await middleware.InvokeAsync(context);
 
@@ -65,7 +73,8 @@ public class ErrorHandlingMiddlewareTests
     {
         var (middleware, context) = CreateSetup(
             _ => throw new InvalidOperationException("Secret internal error"),
-            isDevelopment: false);
+            isDevelopment: false
+        );
 
         await middleware.InvokeAsync(context);
 
@@ -80,7 +89,8 @@ public class ErrorHandlingMiddlewareTests
     {
         var (middleware, context) = CreateSetup(
             _ => throw new InvalidOperationException("Detailed error info"),
-            isDevelopment: true);
+            isDevelopment: true
+        );
 
         await middleware.InvokeAsync(context);
 
@@ -92,13 +102,19 @@ public class ErrorHandlingMiddlewareTests
     [Fact]
     public async Task InvokeAsync_DbUpdateConcurrencyException_Returns409()
     {
-        var (middleware, context) = CreateSetup(_ => throw new DbUpdateConcurrencyException("Conflict"));
+        var (middleware, context) = CreateSetup(_ =>
+            throw new DbUpdateConcurrencyException("Conflict")
+        );
 
         await middleware.InvokeAsync(context);
 
         context.Response.StatusCode.Should().Be(409);
         var json = await ReadResponseJson(context);
-        json.GetProperty("error").GetProperty("code").GetString().Should().Be("CONCURRENCY_CONFLICT");
+        json.GetProperty("error")
+            .GetProperty("code")
+            .GetString()
+            .Should()
+            .Be("CONCURRENCY_CONFLICT");
     }
 
     [Fact]

@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Auth;
@@ -10,19 +10,23 @@ namespace Clarive.Api.IntegrationTests.Tests.Auth;
 [Collection("Integration")]
 public class AuthRegisterTests : IntegrationTestBase
 {
-    public AuthRegisterTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public AuthRegisterTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Register_ValidData_Returns201WithTokenAndUser()
     {
         var email = TestData.UniqueEmail();
 
-        var response = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securePassword123",
-            name = "New Test User"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securePassword123",
+                name = "New Test User",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -38,12 +42,15 @@ public class AuthRegisterTests : IntegrationTestBase
     [Fact]
     public async Task Register_DuplicateEmail_Returns409()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email = TestData.AdminEmail, // already exists in seed
-            password = "securePassword123",
-            name = "Duplicate User"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email = TestData.AdminEmail, // already exists in seed
+                password = "securePassword123",
+                name = "Duplicate User",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
@@ -51,12 +58,15 @@ public class AuthRegisterTests : IntegrationTestBase
     [Fact]
     public async Task Register_ShortPassword_Returns422()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email = TestData.UniqueEmail(),
-            password = "short",
-            name = "Short Pass User"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email = TestData.UniqueEmail(),
+                password = "short",
+                name = "Short Pass User",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }

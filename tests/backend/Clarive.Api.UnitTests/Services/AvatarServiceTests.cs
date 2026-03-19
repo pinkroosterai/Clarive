@@ -39,7 +39,8 @@ public class AvatarServiceTests : IDisposable
 
         var act = () => _sut.SaveAsync(Guid.NewGuid(), stream, contentType);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
             .WithMessage("*Unsupported image format*");
     }
 
@@ -52,8 +53,7 @@ public class AvatarServiceTests : IDisposable
 
         var act = () => _sut.SaveAsync(Guid.NewGuid(), stream, "image/png");
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*size limit*");
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*size limit*");
     }
 
     [Theory]
@@ -65,7 +65,8 @@ public class AvatarServiceTests : IDisposable
 
         var act = () => _sut.SaveTenantAvatarAsync(Guid.NewGuid(), stream, contentType);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
             .WithMessage("*Unsupported image format*");
     }
 
@@ -77,8 +78,7 @@ public class AvatarServiceTests : IDisposable
 
         var act = () => _sut.SaveTenantAvatarAsync(Guid.NewGuid(), stream, "image/jpeg");
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*size limit*");
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*size limit*");
     }
 
     [Fact]

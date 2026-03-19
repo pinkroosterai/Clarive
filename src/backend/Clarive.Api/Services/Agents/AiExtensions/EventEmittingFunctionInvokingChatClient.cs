@@ -36,15 +36,17 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
     public EventEmittingFunctionInvokingChatClient(
         IChatClient innerClient,
         ILoggerFactory? loggerFactory = null,
-        IServiceProvider? functionInvocationServices = null)
-        : base(innerClient, loggerFactory, functionInvocationServices)
-    {
-    }
+        IServiceProvider? functionInvocationServices = null
+    )
+        : base(innerClient, loggerFactory, functionInvocationServices) { }
 
     /// <summary>
     /// Called when a <see cref="ToolCallCompleted"/> handler throws inside the <c>finally</c> block.
     /// </summary>
-    protected virtual void OnCompletedHandlerException(Exception handlerException, Exception? functionException)
+    protected virtual void OnCompletedHandlerException(
+        Exception handlerException,
+        Exception? functionException
+    )
     {
         // Default: swallow. Subclasses can override to log or rethrow.
     }
@@ -52,7 +54,8 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
     /// <inheritdoc/>
     protected override async ValueTask<object?> InvokeFunctionAsync(
         FunctionInvocationContext context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         // ── Raise "starting" event ──
         var startingHandler = ToolCallStarting;
@@ -116,7 +119,10 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
                 {
                     foreach (var d in completedHandler.GetInvocationList())
                     {
-                        await ((Func<object, ToolCallCompletedEventArgs, Task>)d)(this, completedArgs);
+                        await ((Func<object, ToolCallCompletedEventArgs, Task>)d)(
+                            this,
+                            completedArgs
+                        );
                     }
                 }
                 catch (Exception handlerEx)

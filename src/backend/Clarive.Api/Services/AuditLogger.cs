@@ -16,22 +16,26 @@ public class AuditLogger(IAuditLogRepository auditRepo) : IAuditLogger
         Guid entityId,
         string entityTitle,
         string? details = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         var now = DateTime.UtcNow;
-        await auditRepo.AddAsync(new AuditLogEntry
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId,
-            Action = action,
-            EntityType = entityType,
-            EntityId = entityId,
-            EntityTitle = entityTitle,
-            UserId = userId,
-            UserName = userName,
-            Timestamp = now,
-            Details = details,
-            ExpiresAt = now.AddDays(30)
-        }, ct);
+        await auditRepo.AddAsync(
+            new AuditLogEntry
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                Action = action,
+                EntityType = entityType,
+                EntityId = entityId,
+                EntityTitle = entityTitle,
+                UserId = userId,
+                UserName = userName,
+                Timestamp = now,
+                Details = details,
+                ExpiresAt = now.AddDays(30),
+            },
+            ct
+        );
     }
 }

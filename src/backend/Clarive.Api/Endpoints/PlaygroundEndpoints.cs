@@ -16,18 +16,20 @@ public static class PlaygroundEndpoints
             .WithTags("Playground")
             .RequireAuthorization("EditorOrAdmin");
 
-        group.MapPost("/entries/{entryId:guid}/test", HandleTest)
+        group
+            .MapPost("/entries/{entryId:guid}/test", HandleTest)
             .RequireRateLimiting("auth")
             .AddEndpointFilter(AiConfiguredFilter);
 
-        group.MapPost("/entries/{entryId:guid}/runs/{runId:guid}/judge", HandleJudgeRun)
+        group
+            .MapPost("/entries/{entryId:guid}/runs/{runId:guid}/judge", HandleJudgeRun)
             .RequireRateLimiting("auth")
             .AddEndpointFilter(AiConfiguredFilter);
 
-        group.MapGet("/ai/models", HandleGetModels)
-            .AddEndpointFilter(AiConfiguredFilter);
+        group.MapGet("/ai/models", HandleGetModels).AddEndpointFilter(AiConfiguredFilter);
 
-        group.MapGet("/ai/available-models", HandleGetEnrichedModels)
+        group
+            .MapGet("/ai/available-models", HandleGetEnrichedModels)
             .AddEndpointFilter(AiConfiguredFilter);
 
         // Test runs are read-only — allow any authenticated user (including viewers)
@@ -39,13 +41,18 @@ public static class PlaygroundEndpoints
     }
 
     private static async ValueTask<object?> AiConfiguredFilter(
-        EndpointFilterInvocationContext ctx, EndpointFilterDelegate next)
+        EndpointFilterInvocationContext ctx,
+        EndpointFilterDelegate next
+    )
     {
-        var orchestrator = ctx.HttpContext.RequestServices
-            .GetRequiredService<IPromptOrchestrator>();
+        var orchestrator =
+            ctx.HttpContext.RequestServices.GetRequiredService<IPromptOrchestrator>();
         if (!orchestrator.IsConfigured)
-            return ctx.HttpContext.ErrorResult(503, "AI_NOT_CONFIGURED",
-                "AI features are not configured.");
+            return ctx.HttpContext.ErrorResult(
+                503,
+                "AI_NOT_CONFIGURED",
+                "AI features are not configured."
+            );
         return await next(ctx);
     }
 
@@ -59,7 +66,8 @@ public static class PlaygroundEndpoints
         HttpContext ctx,
         TestEntryRequest request,
         IPlaygroundService playground,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         if (Validator.ValidateRequest(request) is { } validationErr)
             return validationErr;
@@ -69,18 +77,22 @@ public static class PlaygroundEndpoints
 
         if (!WantsSse(ctx))
         {
-            var result = await playground.TestEntryAsync(
-                tenantId, userId, entryId, request, ct);
+            var result = await playground.TestEntryAsync(tenantId, userId, entryId, request, ct);
 
             if (result.IsError)
                 return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
             var testResult = result.Value;
             var judgeResult = await playground.JudgePlaygroundRunAsync(
-                tenantId, userId, entryId, testResult.RunId, ct);
+                tenantId,
+                userId,
+                entryId,
+                testResult.RunId,
+                ct
+            );
             var finalResult = testResult with
             {
-                JudgeScores = judgeResult.IsError ? null : judgeResult.Value
+                JudgeScores = judgeResult.IsError ? null : judgeResult.Value,
             };
 
             return Results.Ok(finalResult);
@@ -93,23 +105,36 @@ public static class PlaygroundEndpoints
         try
         {
             var result = await playground.TestEntryAsync(
-                tenantId, userId, entryId, request, ct,
-                chunk => sse.WriteChunkAsync(chunk, ct));
+                tenantId,
+                userId,
+                entryId,
+                request,
+                ct,
+                chunk => sse.WriteChunkAsync(chunk, ct)
+            );
 
             if (result.IsError)
             {
                 await sse.WriteErrorAsync(
-                    result.FirstError.Code, result.FirstError.Description, ct);
+                    result.FirstError.Code,
+                    result.FirstError.Description,
+                    ct
+                );
             }
             else
             {
                 var testResult = result.Value;
                 await sse.WriteChunkAsync(new TestStreamChunk(-1, "", "judging"), ct);
                 var judgeResult = await playground.JudgePlaygroundRunAsync(
-                    tenantId, userId, entryId, testResult.RunId, ct);
+                    tenantId,
+                    userId,
+                    entryId,
+                    testResult.RunId,
+                    ct
+                );
                 var finalResult = testResult with
                 {
-                    JudgeScores = judgeResult.IsError ? null : judgeResult.Value
+                    JudgeScores = judgeResult.IsError ? null : judgeResult.Value,
                 };
                 await sse.WriteDoneAsync(finalResult, ct);
             }
@@ -129,13 +154,13 @@ public static class PlaygroundEndpoints
         Guid runId,
         HttpContext ctx,
         IPlaygroundService playground,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await playground.JudgePlaygroundRunAsync(
-            tenantId, userId, entryId, runId, ct);
+        var result = await playground.JudgePlaygroundRunAsync(tenantId, userId, entryId, runId, ct);
 
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Run", runId.ToString());
@@ -149,7 +174,8 @@ public static class PlaygroundEndpoints
         Guid entryId,
         HttpContext ctx,
         IPlaygroundRunService runService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var runs = await runService.GetRunsAsync(entryId, ct);
         return Results.Ok(runs);
@@ -160,7 +186,8 @@ public static class PlaygroundEndpoints
     private static async Task<IResult> HandleGetEnrichedModels(
         HttpContext ctx,
         IModelResolutionService modelResolution,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var result = await modelResolution.GetEnrichedModelsAsync(ct);
 
@@ -175,7 +202,8 @@ public static class PlaygroundEndpoints
     private static async Task<IResult> HandleGetModels(
         HttpContext ctx,
         IModelResolutionService modelResolution,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var result = await modelResolution.GetAvailableModelsAsync(ct);
 

@@ -11,18 +11,22 @@ namespace Clarive.Api.IntegrationTests.Tests.Profile;
 [Collection("Integration")]
 public class ProfileUpdateTests : IntegrationTestBase
 {
-    public ProfileUpdateTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ProfileUpdateTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     /// <summary>Registers a fresh user and returns the JWT token.</summary>
     private async Task<string> RegisterFreshUserAsync(string? password = "securePassword123")
     {
         var email = TestData.UniqueEmail();
-        var response = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password,
-            name = "Test User"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password,
+                name = "Test User",
+            }
+        );
         response.EnsureSuccessStatusCode();
         var json = await response.ReadJsonAsync();
         return json.GetProperty("token").GetString()!;
@@ -37,11 +41,10 @@ public class ProfileUpdateTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var newEmail = TestData.UniqueEmail();
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            email = newEmail,
-            currentPassword = "securePassword123"
-        });
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>(
+            "/api/profile",
+            new { email = newEmail, currentPassword = "securePassword123" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         json.GetProperty("email").GetString().Should().Be(newEmail);
@@ -53,11 +56,14 @@ public class ProfileUpdateTests : IntegrationTestBase
         var token = await RegisterFreshUserAsync();
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
-        {
-            email = TestData.UniqueEmail()
-            // missing currentPassword
-        });
+        var (response, _) = await Client.PatchJsonAsync<object>(
+            "/api/profile",
+            new
+            {
+                email = TestData.UniqueEmail(),
+                // missing currentPassword
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -68,11 +74,10 @@ public class ProfileUpdateTests : IntegrationTestBase
         var token = await RegisterFreshUserAsync();
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
-        {
-            email = "not-an-email",
-            currentPassword = "securePassword123"
-        });
+        var (response, _) = await Client.PatchJsonAsync<object>(
+            "/api/profile",
+            new { email = "not-an-email", currentPassword = "securePassword123" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -85,11 +90,10 @@ public class ProfileUpdateTests : IntegrationTestBase
         var token = await RegisterFreshUserAsync();
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            newPassword = "newSecurePassword456",
-            currentPassword = "securePassword123"
-        });
+        var (response, _) = await Client.PatchJsonAsync<JsonElement>(
+            "/api/profile",
+            new { newPassword = "newSecurePassword456", currentPassword = "securePassword123" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -100,11 +104,10 @@ public class ProfileUpdateTests : IntegrationTestBase
         var token = await RegisterFreshUserAsync();
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
-        {
-            newPassword = "newSecurePassword456",
-            currentPassword = "wrongPassword123"
-        });
+        var (response, _) = await Client.PatchJsonAsync<object>(
+            "/api/profile",
+            new { newPassword = "newSecurePassword456", currentPassword = "wrongPassword123" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -117,10 +120,10 @@ public class ProfileUpdateTests : IntegrationTestBase
         var token = await RegisterFreshUserAsync();
         Client.WithBearerToken(token);
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            themePreference = "dark"
-        });
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>(
+            "/api/profile",
+            new { themePreference = "dark" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         json.GetProperty("themePreference").GetString().Should().Be("dark");
@@ -132,10 +135,10 @@ public class ProfileUpdateTests : IntegrationTestBase
         var token = await RegisterFreshUserAsync();
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
-        {
-            themePreference = "neon"
-        });
+        var (response, _) = await Client.PatchJsonAsync<object>(
+            "/api/profile",
+            new { themePreference = "neon" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -182,10 +185,10 @@ public class ProfileUpdateTests : IntegrationTestBase
         var token = await RegisterFreshUserAsync();
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
-        {
-            name = new string('A', 256)
-        });
+        var (response, _) = await Client.PatchJsonAsync<object>(
+            "/api/profile",
+            new { name = new string('A', 256) }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }

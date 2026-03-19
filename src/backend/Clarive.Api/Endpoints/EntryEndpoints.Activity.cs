@@ -15,11 +15,14 @@ public static partial class EntryEndpoints
         IEntryService entryService,
         CancellationToken ct,
         [Description("Page number (1-based)")] int? page = null,
-        [Description("Items per page (max 50)")] int? pageSize = null)
+        [Description("Items per page (max 50)")] int? pageSize = null
+    )
     {
         var tenantId = ctx.GetTenantId();
         var p = page is > 0 ? page.Value : 1;
-        var ps = pageSize is > 0 ? Math.Min(pageSize.Value, MaxActivityPageSize) : DefaultActivityPageSize;
+        var ps = pageSize is > 0
+            ? Math.Min(pageSize.Value, MaxActivityPageSize)
+            : DefaultActivityPageSize;
 
         var result = await entryService.GetEntryActivityAsync(tenantId, entryId, p, ps, ct);
         return result.IsError
@@ -37,16 +40,33 @@ public static partial class EntryEndpoints
         Guid entityId,
         string entityTitle,
         string? details,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         try
         {
-            await auditLogger.LogAsync(tenantId, userId, userName, action, entityType, entityId, entityTitle, details, ct);
+            await auditLogger.LogAsync(
+                tenantId,
+                userId,
+                userName,
+                action,
+                entityType,
+                entityId,
+                entityTitle,
+                details,
+                ct
+            );
         }
         catch (Exception ex)
         {
             // Audit logging failures must not affect the primary operation
-            Log.Warning(ex, "Audit logging failed for {Action} on {EntityType} {EntityId}", action, entityType, entityId);
+            Log.Warning(
+                ex,
+                "Audit logging failed for {Action} on {EntityType} {EntityId}",
+                action,
+                entityType,
+                entityId
+            );
         }
     }
 }

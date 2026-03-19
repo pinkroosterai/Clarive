@@ -15,10 +15,18 @@ public class AiProviderService(
     IAiProviderRepository repo,
     IEncryptionService encryption,
     ILiteLlmRegistryCache liteLlmCache,
-    ILogger<AiProviderService> logger) : IAiProviderService
+    ILogger<AiProviderService> logger
+) : IAiProviderService
 {
-    private static readonly HashSet<string> ValidReasoningEfforts = new(StringComparer.OrdinalIgnoreCase)
-        { "low", "medium", "high", "extra-high" };
+    private static readonly HashSet<string> ValidReasoningEfforts = new(
+        StringComparer.OrdinalIgnoreCase
+    )
+    {
+        "low",
+        "medium",
+        "high",
+        "extra-high",
+    };
 
     public async Task<List<AiProviderResponse>> GetAllAsync(CancellationToken ct)
     {
@@ -34,10 +42,16 @@ public class AiProviderService(
         return ToResponse(provider);
     }
 
-    public async Task<ErrorOr<AiProviderResponse>> CreateAsync(CreateAiProviderRequest request, CancellationToken ct)
+    public async Task<ErrorOr<AiProviderResponse>> CreateAsync(
+        CreateAiProviderRequest request,
+        CancellationToken ct
+    )
     {
         if (!encryption.IsAvailable)
-            return Error.Failure("ENCRYPTION_UNAVAILABLE", "CONFIG_ENCRYPTION_KEY is not configured.");
+            return Error.Failure(
+                "ENCRYPTION_UNAVAILABLE",
+                "CONFIG_ENCRYPTION_KEY is not configured."
+            );
 
         if (ValidateEndpointUrl(request.EndpointUrl) is { } urlError)
             return urlError;
@@ -50,27 +64,35 @@ public class AiProviderService(
             EndpointUrl = request.EndpointUrl,
             ApiKeyEncrypted = encryption.Encrypt(request.ApiKey),
             IsActive = true,
-            ApiMode = ParseApiMode(request.ApiMode)
-                ?? (request.Name.Contains("openai", StringComparison.OrdinalIgnoreCase)
+            ApiMode =
+                ParseApiMode(request.ApiMode)
+                ?? (
+                    request.Name.Contains("openai", StringComparison.OrdinalIgnoreCase)
                     || request.Name.Contains("azure", StringComparison.OrdinalIgnoreCase)
-                    ? Models.Enums.AiApiMode.ResponsesApi
-                    : Models.Enums.AiApiMode.ChatCompletions),
+                        ? Models.Enums.AiApiMode.ResponsesApi
+                        : Models.Enums.AiApiMode.ChatCompletions
+                ),
             SortOrder = 0,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
         };
 
         await repo.CreateAsync(provider, ct);
         return ToResponse(provider);
     }
 
-    public async Task<ErrorOr<AiProviderResponse>> UpdateAsync(Guid id, UpdateAiProviderRequest request, CancellationToken ct)
+    public async Task<ErrorOr<AiProviderResponse>> UpdateAsync(
+        Guid id,
+        UpdateAiProviderRequest request,
+        CancellationToken ct
+    )
     {
         var provider = await repo.GetByIdAsync(id, ct);
         if (provider is null)
             return DomainErrors.ProviderNotFound;
 
-        if (request.Name is not null) provider.Name = request.Name;
+        if (request.Name is not null)
+            provider.Name = request.Name;
         if (request.EndpointUrl is not null)
         {
             if (ValidateEndpointUrl(request.EndpointUrl) is { } urlError)
@@ -80,12 +102,18 @@ public class AiProviderService(
         if (request.ApiKey is not null)
         {
             if (!encryption.IsAvailable)
-                return Error.Failure("ENCRYPTION_UNAVAILABLE", "CONFIG_ENCRYPTION_KEY is not configured.");
+                return Error.Failure(
+                    "ENCRYPTION_UNAVAILABLE",
+                    "CONFIG_ENCRYPTION_KEY is not configured."
+                );
             provider.ApiKeyEncrypted = encryption.Encrypt(request.ApiKey);
         }
-        if (request.IsActive.HasValue) provider.IsActive = request.IsActive.Value;
-        if (request.SortOrder.HasValue) provider.SortOrder = request.SortOrder.Value;
-        if (ParseApiMode(request.ApiMode) is { } parsedMode) provider.ApiMode = parsedMode;
+        if (request.IsActive.HasValue)
+            provider.IsActive = request.IsActive.Value;
+        if (request.SortOrder.HasValue)
+            provider.SortOrder = request.SortOrder.Value;
+        if (ParseApiMode(request.ApiMode) is { } parsedMode)
+            provider.ApiMode = parsedMode;
         provider.UpdatedAt = DateTime.UtcNow;
 
         await repo.UpdateAsync(provider, ct);
@@ -100,7 +128,10 @@ public class AiProviderService(
         return Result.Success;
     }
 
-    public async Task<ErrorOr<FetchedModelsResponse>> FetchModelsAsync(Guid id, CancellationToken ct)
+    public async Task<ErrorOr<FetchedModelsResponse>> FetchModelsAsync(
+        Guid id,
+        CancellationToken ct
+    )
     {
         var provider = await repo.GetByIdAsync(id, ct);
         if (provider is null)
@@ -124,15 +155,18 @@ public class AiProviderService(
                     continue;
 
                 var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, m.Id, ct);
-                models.Add(new FetchedModelItem(
-                    m.Id,
-                    info?.IsReasoning == true || ReasoningModelDetector.IsReasoningModel(m.Id),
-                    info?.SupportsFunctionCalling == true,
-                    info?.SupportsResponseSchema == true,
-                    info?.MaxInputTokens,
-                    info?.MaxOutputTokens,
-                    info?.InputCostPerMillion,
-                    info?.OutputCostPerMillion));
+                models.Add(
+                    new FetchedModelItem(
+                        m.Id,
+                        info?.IsReasoning == true || ReasoningModelDetector.IsReasoningModel(m.Id),
+                        info?.SupportsFunctionCalling == true,
+                        info?.SupportsResponseSchema == true,
+                        info?.MaxInputTokens,
+                        info?.MaxOutputTokens,
+                        info?.InputCostPerMillion,
+                        info?.OutputCostPerMillion
+                    )
+                );
             }
 
             return new FetchedModelsResponse(models);
@@ -161,7 +195,10 @@ public class AiProviderService(
     }
 
     public async Task<ErrorOr<AiProviderModelResponse>> AddModelAsync(
-        Guid providerId, AddAiProviderModelRequest request, CancellationToken ct)
+        Guid providerId,
+        AddAiProviderModelRequest request,
+        CancellationToken ct
+    )
     {
         if (ValidateReasoningEffort(request.DefaultReasoningEffort) is { } effortErr)
             return effortErr;
@@ -171,7 +208,10 @@ public class AiProviderService(
             return DomainErrors.ProviderNotFound;
 
         if (provider.Models.Any(m => m.ModelId == request.ModelId))
-            return Error.Conflict("DUPLICATE_MODEL", $"Model '{request.ModelId}' already exists for this provider.");
+            return Error.Conflict(
+                "DUPLICATE_MODEL",
+                $"Model '{request.ModelId}' already exists for this provider."
+            );
 
         var model = new AiProviderModel
         {
@@ -190,7 +230,7 @@ public class AiProviderService(
             InputCostPerMillion = request.InputCostPerMillion,
             OutputCostPerMillion = request.OutputCostPerMillion,
             IsActive = true,
-            SortOrder = provider.Models.Count
+            SortOrder = provider.Models.Count,
         };
 
         // Auto-fill from LiteLLM registry cache
@@ -201,9 +241,12 @@ public class AiProviderService(
             model.OutputCostPerMillion ??= info.OutputCostPerMillion;
             model.MaxInputTokens ??= info.MaxInputTokens;
             model.MaxOutputTokens ??= info.MaxOutputTokens;
-            if (info.IsReasoning == true) model.IsReasoning = true;
-            if (info.SupportsFunctionCalling == true) model.SupportsFunctionCalling = true;
-            if (info.SupportsResponseSchema == true) model.SupportsResponseSchema = true;
+            if (info.IsReasoning == true)
+                model.IsReasoning = true;
+            if (info.SupportsFunctionCalling == true)
+                model.SupportsFunctionCalling = true;
+            if (info.SupportsResponseSchema == true)
+                model.SupportsResponseSchema = true;
         }
 
         await repo.AddModelAsync(model, ct);
@@ -211,7 +254,10 @@ public class AiProviderService(
     }
 
     public async Task<ErrorOr<AiProviderModelResponse>> UpdateModelAsync(
-        Guid modelId, UpdateAiProviderModelRequest request, CancellationToken ct)
+        Guid modelId,
+        UpdateAiProviderModelRequest request,
+        CancellationToken ct
+    )
     {
         if (ValidateReasoningEffort(request.DefaultReasoningEffort) is { } effortErr)
             return effortErr;
@@ -220,23 +266,40 @@ public class AiProviderService(
         if (model is null)
             return DomainErrors.AiModelNotFound;
 
-        if (request.DisplayName is not null) model.DisplayName = request.DisplayName;
-        if (request.IsReasoning.HasValue) model.IsReasoning = request.IsReasoning.Value;
-        if (request.SupportsFunctionCalling.HasValue) model.SupportsFunctionCalling = request.SupportsFunctionCalling.Value;
-        if (request.SupportsResponseSchema.HasValue) model.SupportsResponseSchema = request.SupportsResponseSchema.Value;
-        if (request.MaxInputTokens.HasValue) model.MaxInputTokens = request.MaxInputTokens.Value;
-        if (request.MaxOutputTokens.HasValue) model.MaxOutputTokens = request.MaxOutputTokens.Value;
-        if (request.IsActive.HasValue) model.IsActive = request.IsActive.Value;
-        if (request.SortOrder.HasValue) model.SortOrder = request.SortOrder.Value;
-        if (request.DefaultTemperature.HasValue) model.DefaultTemperature = request.DefaultTemperature.Value;
-        if (request.DefaultMaxTokens.HasValue) model.DefaultMaxTokens = request.DefaultMaxTokens.Value;
-        if (request.DefaultReasoningEffort is not null) model.DefaultReasoningEffort = request.DefaultReasoningEffort;
-        if (request.InputCostPerMillion.HasValue) model.InputCostPerMillion = request.InputCostPerMillion.Value;
-        if (request.OutputCostPerMillion.HasValue) model.OutputCostPerMillion = request.OutputCostPerMillion.Value;
+        if (request.DisplayName is not null)
+            model.DisplayName = request.DisplayName;
+        if (request.IsReasoning.HasValue)
+            model.IsReasoning = request.IsReasoning.Value;
+        if (request.SupportsFunctionCalling.HasValue)
+            model.SupportsFunctionCalling = request.SupportsFunctionCalling.Value;
+        if (request.SupportsResponseSchema.HasValue)
+            model.SupportsResponseSchema = request.SupportsResponseSchema.Value;
+        if (request.MaxInputTokens.HasValue)
+            model.MaxInputTokens = request.MaxInputTokens.Value;
+        if (request.MaxOutputTokens.HasValue)
+            model.MaxOutputTokens = request.MaxOutputTokens.Value;
+        if (request.IsActive.HasValue)
+            model.IsActive = request.IsActive.Value;
+        if (request.SortOrder.HasValue)
+            model.SortOrder = request.SortOrder.Value;
+        if (request.DefaultTemperature.HasValue)
+            model.DefaultTemperature = request.DefaultTemperature.Value;
+        if (request.DefaultMaxTokens.HasValue)
+            model.DefaultMaxTokens = request.DefaultMaxTokens.Value;
+        if (request.DefaultReasoningEffort is not null)
+            model.DefaultReasoningEffort = request.DefaultReasoningEffort;
+        if (request.InputCostPerMillion.HasValue)
+            model.InputCostPerMillion = request.InputCostPerMillion.Value;
+        if (request.OutputCostPerMillion.HasValue)
+            model.OutputCostPerMillion = request.OutputCostPerMillion.Value;
 
         // Auto-enable manual override when cost/context fields are explicitly set
-        if (request.InputCostPerMillion.HasValue || request.OutputCostPerMillion.HasValue ||
-            request.MaxInputTokens.HasValue || request.MaxOutputTokens.HasValue)
+        if (
+            request.InputCostPerMillion.HasValue
+            || request.OutputCostPerMillion.HasValue
+            || request.MaxInputTokens.HasValue
+            || request.MaxOutputTokens.HasValue
+        )
             model.HasManualCostOverride = true;
 
         // Allow explicit toggle of the override flag
@@ -255,27 +318,45 @@ public class AiProviderService(
         return Result.Success;
     }
 
-    private static Models.Enums.AiApiMode? ParseApiMode(string? value)
-        => value is not null && Enum.TryParse<Models.Enums.AiApiMode>(value, ignoreCase: true, out var mode)
+    private static Models.Enums.AiApiMode? ParseApiMode(string? value) =>
+        value is not null
+        && Enum.TryParse<Models.Enums.AiApiMode>(value, ignoreCase: true, out var mode)
             ? mode
             : null;
 
-    private static AiProviderResponse ToResponse(AiProvider p) => new(
-        p.Id, p.Name, p.EndpointUrl, p.IsActive, p.ApiMode.ToString(), p.SortOrder,
-        !string.IsNullOrEmpty(p.ApiKeyEncrypted),
-        p.Models.Select(ToModelResponse).ToList(),
-        p.CreatedAt, p.UpdatedAt
-    );
+    private static AiProviderResponse ToResponse(AiProvider p) =>
+        new(
+            p.Id,
+            p.Name,
+            p.EndpointUrl,
+            p.IsActive,
+            p.ApiMode.ToString(),
+            p.SortOrder,
+            !string.IsNullOrEmpty(p.ApiKeyEncrypted),
+            p.Models.Select(ToModelResponse).ToList(),
+            p.CreatedAt,
+            p.UpdatedAt
+        );
 
-    private static AiProviderModelResponse ToModelResponse(AiProviderModel m) => new(
-        m.Id, m.ModelId, m.DisplayName, m.IsReasoning,
-        m.SupportsFunctionCalling, m.SupportsResponseSchema,
-        m.MaxInputTokens, m.MaxOutputTokens,
-        m.DefaultTemperature, m.DefaultMaxTokens, m.DefaultReasoningEffort,
-        m.InputCostPerMillion, m.OutputCostPerMillion,
-        m.HasManualCostOverride,
-        m.IsActive, m.SortOrder
-    );
+    private static AiProviderModelResponse ToModelResponse(AiProviderModel m) =>
+        new(
+            m.Id,
+            m.ModelId,
+            m.DisplayName,
+            m.IsReasoning,
+            m.SupportsFunctionCalling,
+            m.SupportsResponseSchema,
+            m.MaxInputTokens,
+            m.MaxOutputTokens,
+            m.DefaultTemperature,
+            m.DefaultMaxTokens,
+            m.DefaultReasoningEffort,
+            m.InputCostPerMillion,
+            m.OutputCostPerMillion,
+            m.HasManualCostOverride,
+            m.IsActive,
+            m.SortOrder
+        );
 
     private static Error? ValidateReasoningEffort(string? effort)
     {
@@ -283,8 +364,10 @@ public class AiProviderService(
             return null;
 
         if (!ValidReasoningEfforts.Contains(effort))
-            return Error.Validation("INVALID_REASONING_EFFORT",
-                "DefaultReasoningEffort must be one of: low, medium, high, extra-high.");
+            return Error.Validation(
+                "INVALID_REASONING_EFFORT",
+                "DefaultReasoningEffort must be one of: low, medium, high, extra-high."
+            );
 
         return null;
     }
@@ -304,7 +387,9 @@ public class AiProviderService(
         if (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback)
             return null;
 
-        return Error.Validation("INSECURE_ENDPOINT",
-            "Endpoint URL must use HTTPS. HTTP is only allowed for localhost.");
+        return Error.Validation(
+            "INSECURE_ENDPOINT",
+            "Endpoint URL must use HTTPS. HTTP is only allowed for localhost."
+        );
     }
 }

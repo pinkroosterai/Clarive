@@ -12,7 +12,11 @@ public record LiteLlmModelInfo(
 
 public interface ILiteLlmRegistryCache
 {
-    Task<LiteLlmModelInfo?> TryGetModelInfoAsync(string providerName, string modelId, CancellationToken ct = default);
+    Task<LiteLlmModelInfo?> TryGetModelInfoAsync(
+        string providerName,
+        string modelId,
+        CancellationToken ct = default
+    );
     bool IsKnownNonChatModel(string providerName, string modelId);
     Task LoadFromJsonAsync(string json, CancellationToken ct = default);
     Task LoadFromFileAsync(string path, CancellationToken ct = default);

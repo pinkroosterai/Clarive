@@ -11,7 +11,9 @@ public class ClariveDbContext : DbContext
 
     public ClariveDbContext(
         DbContextOptions<ClariveDbContext> options,
-        ITenantProvider? tenantProvider = null) : base(options)
+        ITenantProvider? tenantProvider = null
+    )
+        : base(options)
     {
         TenantId = tenantProvider?.TenantId;
     }
@@ -27,7 +29,7 @@ public class ClariveDbContext : DbContext
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
     public DbSet<AiSession> AiSessions => Set<AiSession>();
     public DbSet<ToolDescription> ToolDescriptions => Set<ToolDescription>();
-public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<LoginSession> LoginSessions => Set<LoginSession>();
@@ -56,18 +58,21 @@ public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
             var parameter = Expression.Parameter(entityType.ClrType, "e");
             var tenantIdProp = Expression.Property(parameter, nameof(ITenantScoped.TenantId));
             var contextTenantId = Expression.Property(
-                Expression.Constant(this, typeof(ClariveDbContext)), nameof(TenantId));
+                Expression.Constant(this, typeof(ClariveDbContext)),
+                nameof(TenantId)
+            );
 
             // TenantId == null || (Guid?)e.TenantId == TenantId
             var filter = Expression.Lambda(
                 Expression.OrElse(
-                    Expression.Equal(
-                        contextTenantId,
-                        Expression.Constant(null, typeof(Guid?))),
+                    Expression.Equal(contextTenantId, Expression.Constant(null, typeof(Guid?))),
                     Expression.Equal(
                         Expression.Convert(tenantIdProp, typeof(Guid?)),
-                        contextTenantId)),
-                parameter);
+                        contextTenantId
+                    )
+                ),
+                parameter
+            );
 
             entityType.SetQueryFilter(filter);
         }

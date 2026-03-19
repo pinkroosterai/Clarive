@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Entries;
@@ -11,22 +11,29 @@ namespace Clarive.Api.IntegrationTests.Tests.Entries;
 [Collection("Integration")]
 public class EntryTagFilterTests : IntegrationTestBase
 {
-    public EntryTagFilterTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public EntryTagFilterTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     private async Task<string> CreateEntryWithTagsAsync(string token, string[] tags)
     {
         Client.WithBearerToken(token);
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Test prompt" } }
-        });
+        var (response, body) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Test prompt" } },
+            }
+        );
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var entryId = body.GetProperty("id").GetString()!;
 
         if (tags.Length > 0)
         {
-            var tagResponse = await Client.PostAsJsonAsync($"/api/entries/{entryId}/tags", new { tags });
+            var tagResponse = await Client.PostAsJsonAsync(
+                $"/api/entries/{entryId}/tags",
+                new { tags }
+            );
             tagResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
@@ -44,11 +51,14 @@ public class EntryTagFilterTests : IntegrationTestBase
         var entryId3 = await CreateEntryWithTagsAsync(token, ["filter-or-unrelated"]);
 
         Client.WithBearerToken(token);
-        var response = await Client.GetAsync("/api/entries?folderId=all&tags=filter-or-a,filter-or-b");
+        var response = await Client.GetAsync(
+            "/api/entries?folderId=all&tags=filter-or-a,filter-or-b"
+        );
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var json = await response.ReadJsonAsync();
-        var ids = json.GetProperty("items").EnumerateArray()
+        var ids = json.GetProperty("items")
+            .EnumerateArray()
             .Select(e => e.GetProperty("id").GetString())
             .ToList();
 
@@ -67,11 +77,14 @@ public class EntryTagFilterTests : IntegrationTestBase
         var entryOnlyY = await CreateEntryWithTagsAsync(token, ["filter-and-y"]);
 
         Client.WithBearerToken(token);
-        var response = await Client.GetAsync("/api/entries?folderId=all&tags=filter-and-x,filter-and-y&tagMode=and");
+        var response = await Client.GetAsync(
+            "/api/entries?folderId=all&tags=filter-and-x,filter-and-y&tagMode=and"
+        );
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var json = await response.ReadJsonAsync();
-        var ids = json.GetProperty("items").EnumerateArray()
+        var ids = json.GetProperty("items")
+            .EnumerateArray()
             .Select(e => e.GetProperty("id").GetString())
             .ToList();
 
@@ -106,7 +119,8 @@ public class EntryTagFilterTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var json = await response.ReadJsonAsync();
-        var ids = json.GetProperty("items").EnumerateArray()
+        var ids = json.GetProperty("items")
+            .EnumerateArray()
             .Select(e => e.GetProperty("id").GetString())
             .ToList();
 

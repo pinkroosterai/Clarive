@@ -27,7 +27,8 @@ public class SuperAdminServiceTests : IDisposable
             .Options;
         _db = new ClariveDbContext(options);
 
-        _userRepo.UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
+        _userRepo
+            .UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<User>());
 
         _sut = new SuperAdminService(_db, _userRepo, _passwordHasher);
@@ -44,7 +45,8 @@ public class SuperAdminServiceTests : IDisposable
     [Fact]
     public async Task SoftDeleteUserAsync_UserNotFound_ReturnsFalse()
     {
-        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
             .Returns((User?)null);
 
         var result = await _sut.SoftDeleteUserAsync(UserId, default);
@@ -56,8 +58,7 @@ public class SuperAdminServiceTests : IDisposable
     public async Task SoftDeleteUserAsync_Valid_SetsDeleteScheduledAt()
     {
         var user = new User { Id = UserId, Email = "user@test.com" };
-        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>()).Returns(user);
 
         var before = DateTime.UtcNow;
         var result = await _sut.SoftDeleteUserAsync(UserId, default);
@@ -73,7 +74,8 @@ public class SuperAdminServiceTests : IDisposable
     [Fact]
     public async Task ResetUserPasswordAsync_UserNotFound_ReturnsNotFound()
     {
-        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
             .Returns((User?)null);
 
         var result = await _sut.ResetUserPasswordAsync(UserId, default);
@@ -85,7 +87,8 @@ public class SuperAdminServiceTests : IDisposable
     [Fact]
     public async Task ResetUserPasswordAsync_GoogleAccount_ReturnsValidationError()
     {
-        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
             .Returns(new User { Id = UserId, GoogleId = "google123" });
 
         var result = await _sut.ResetUserPasswordAsync(UserId, default);
@@ -97,9 +100,13 @@ public class SuperAdminServiceTests : IDisposable
     [Fact]
     public async Task ResetUserPasswordAsync_Valid_ReturnsPasswordAndUpdatesHash()
     {
-        var user = new User { Id = UserId, Email = "user@test.com", PasswordHash = "old-hash" };
-        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        var user = new User
+        {
+            Id = UserId,
+            Email = "user@test.com",
+            PasswordHash = "old-hash",
+        };
+        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>()).Returns(user);
 
         var result = await _sut.ResetUserPasswordAsync(UserId, default);
 
@@ -114,8 +121,7 @@ public class SuperAdminServiceTests : IDisposable
     public async Task ResetUserPasswordAsync_GeneratesUniquePasswords()
     {
         var user = new User { Id = UserId, Email = "user@test.com" };
-        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>()).Returns(user);
 
         var password1 = (await _sut.ResetUserPasswordAsync(UserId, default)).Value;
         var password2 = (await _sut.ResetUserPasswordAsync(UserId, default)).Value;

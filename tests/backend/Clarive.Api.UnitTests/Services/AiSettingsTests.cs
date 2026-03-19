@@ -38,7 +38,12 @@ public class AiSettingsTests
     {
         var settings = new AiSettings
         {
-            Generation = new ActionAiConfig { Model = "gpt-4o", ProviderId = "p1", Temperature = 0.9f }
+            Generation = new ActionAiConfig
+            {
+                Model = "gpt-4o",
+                ProviderId = "p1",
+                Temperature = 0.9f,
+            },
         };
 
         var config = settings.GetActionConfig(AiActionType.Generation);
@@ -53,7 +58,7 @@ public class AiSettingsTests
     {
         var settings = new AiSettings
         {
-            Evaluation = new ActionAiConfig { Model = "gpt-4o-mini", MaxTokens = 2048 }
+            Evaluation = new ActionAiConfig { Model = "gpt-4o-mini", MaxTokens = 2048 },
         };
 
         var config = settings.GetActionConfig(AiActionType.Evaluation);
@@ -90,12 +95,18 @@ public class AiSettingsTests
     {
         var settings = new AiSettings();
 
-        foreach (var action in new[]
-        {
-            AiActionType.Generation, AiActionType.Evaluation, AiActionType.Clarification,
-            AiActionType.SystemMessage, AiActionType.Decomposition,
-            AiActionType.FillTemplateFields, AiActionType.PlaygroundJudge
-        })
+        foreach (
+            var action in new[]
+            {
+                AiActionType.Generation,
+                AiActionType.Evaluation,
+                AiActionType.Clarification,
+                AiActionType.SystemMessage,
+                AiActionType.Decomposition,
+                AiActionType.FillTemplateFields,
+                AiActionType.PlaygroundJudge,
+            }
+        )
         {
             var config = settings.GetActionConfig(action);
             config!.Model.Should().BeEmpty($"default {action} model should be empty");

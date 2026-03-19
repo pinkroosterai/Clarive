@@ -66,7 +66,10 @@ public class SecurityHeadersMiddlewareTests : IAsyncDisposable
     [InlineData("Permissions-Policy", "camera=()")]
     [InlineData("Strict-Transport-Security", "max-age=")]
     [InlineData("Content-Security-Policy", "default-src 'self'")]
-    public async Task Response_ContainsSecurityHeaderSubstring(string headerName, string expectedSubstring)
+    public async Task Response_ContainsSecurityHeaderSubstring(
+        string headerName,
+        string expectedSubstring
+    )
     {
         var response = await _client.GetAsync("/test");
         GetHeader(response, headerName).Should().Contain(expectedSubstring);

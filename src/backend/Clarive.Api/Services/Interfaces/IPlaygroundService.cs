@@ -13,12 +13,14 @@ public interface IPlaygroundService
         Guid entryId,
         TestEntryRequest request,
         CancellationToken ct,
-        Func<TestStreamChunk, Task>? onChunk = null);
+        Func<TestStreamChunk, Task>? onChunk = null
+    );
 
     Task<ErrorOr<OutputEvaluation>> JudgePlaygroundRunAsync(
         Guid tenantId,
         Guid userId,
         Guid entryId,
         Guid runId,
-        CancellationToken ct);
+        CancellationToken ct
+    );
 }

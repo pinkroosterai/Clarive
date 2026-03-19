@@ -13,6 +13,7 @@ public class Folder : ITenantScoped
     // Navigation (excluded from JSON serialization to avoid cycles)
     [JsonIgnore]
     public Folder? Parent { get; set; }
+
     [JsonIgnore]
     public List<Folder> Children { get; set; } = [];
 }

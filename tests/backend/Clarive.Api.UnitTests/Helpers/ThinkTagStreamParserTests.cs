@@ -204,13 +204,18 @@ public class ThinkTagStreamParserTests
 
     // ── Helpers ──
 
-    private static List<(string Text, bool IsThinking)> Collect(ThinkTagStreamParser parser, string input)
+    private static List<(string Text, bool IsThinking)> Collect(
+        ThinkTagStreamParser parser,
+        string input
+    )
     {
         var segments = parser.ProcessChunk(input);
         var flushed = parser.Flush();
         return segments.Concat(flushed).ToList();
     }
 
-    private static string ConcatText(IEnumerable<(string Text, bool IsThinking)> segments, bool thinking)
-        => string.Concat(segments.Where(s => s.IsThinking == thinking).Select(s => s.Text));
+    private static string ConcatText(
+        IEnumerable<(string Text, bool IsThinking)> segments,
+        bool thinking
+    ) => string.Concat(segments.Where(s => s.IsThinking == thinking).Select(s => s.Text));
 }

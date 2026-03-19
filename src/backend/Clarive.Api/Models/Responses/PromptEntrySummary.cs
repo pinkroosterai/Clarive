@@ -22,8 +22,11 @@ public record PromptEntrySummary(
 )
 {
     public static PromptEntrySummary FromEntryAndVersion(
-        PromptEntry entry, PromptEntryVersion? version,
-        List<string>? tags = null, bool isFavorited = false)
+        PromptEntry entry,
+        PromptEntryVersion? version,
+        List<string>? tags = null,
+        bool isFavorited = false
+    )
     {
         var preview = version?.Prompts.OrderBy(p => p.Order).FirstOrDefault()?.Content;
         if (preview is not null && preview.Length > 100)

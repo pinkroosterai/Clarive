@@ -17,7 +17,8 @@ public static partial class TemplateParser
         foreach (Match match in TagRegex().Matches(content))
         {
             var name = match.Groups[1].Value;
-            if (!seen.Add(name)) continue;
+            if (!seen.Add(name))
+                continue;
 
             var rawType = match.Groups[2].Success ? match.Groups[2].Value : "string";
             var options = match.Groups[3].Success ? match.Groups[3].Value : "";
@@ -32,12 +33,17 @@ public static partial class TemplateParser
 
             var field = new TemplateField { Name = name, Type = type };
 
-            if (type is TemplateFieldType.Int or TemplateFieldType.Float && !string.IsNullOrEmpty(options))
+            if (
+                type is TemplateFieldType.Int or TemplateFieldType.Float
+                && !string.IsNullOrEmpty(options)
+            )
             {
                 var parts = options.Split('-');
-                if (parts.Length == 2
+                if (
+                    parts.Length == 2
                     && double.TryParse(parts[0], out var min)
-                    && double.TryParse(parts[1], out var max))
+                    && double.TryParse(parts[1], out var max)
+                )
                 {
                     field.Min = min;
                     field.Max = max;
@@ -46,7 +52,8 @@ public static partial class TemplateParser
 
             if (type == TemplateFieldType.Enum && !string.IsNullOrEmpty(options))
             {
-                field.EnumValues = options.Split(',')
+                field.EnumValues = options
+                    .Split(',')
                     .Select(v => v.Trim())
                     .Where(v => v.Length > 0)
                     .ToList();
@@ -60,12 +67,16 @@ public static partial class TemplateParser
 
     public static string Render(string content, Dictionary<string, string> values)
     {
-        return TagRegex().Replace(content, match =>
-        {
-            var name = match.Groups[1].Value;
-            return values.TryGetValue(name, out var value) && !string.IsNullOrEmpty(value)
-                ? value
-                : match.Value;
-        });
+        return TagRegex()
+            .Replace(
+                content,
+                match =>
+                {
+                    var name = match.Groups[1].Value;
+                    return values.TryGetValue(name, out var value) && !string.IsNullOrEmpty(value)
+                        ? value
+                        : match.Value;
+                }
+            );
     }
 }

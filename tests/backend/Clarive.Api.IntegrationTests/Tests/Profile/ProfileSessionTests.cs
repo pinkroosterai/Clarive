@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Profile;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Profile;
 [Collection("Integration")]
 public class ProfileSessionTests : IntegrationTestBase
 {
-    public ProfileSessionTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ProfileSessionTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task GetSessions_WithToken_ReturnsSessions()
@@ -54,12 +55,15 @@ public class ProfileSessionTests : IntegrationTestBase
     {
         // Register fresh user with no avatar
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securepassword123",
-            name = "No Avatar User"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securepassword123",
+                name = "No Avatar User",
+            }
+        );
         regResponse.EnsureSuccessStatusCode();
         var regJson = await regResponse.ReadJsonAsync();
         var freshToken = regJson.GetProperty("token").GetString()!;

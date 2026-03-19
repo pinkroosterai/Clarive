@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Super;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Super;
 [Collection("Integration")]
 public class SuperAdminTests : IntegrationTestBase
 {
-    public SuperAdminTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public SuperAdminTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     // ── Stats ──
 
@@ -63,18 +64,18 @@ public class SuperAdminTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Enable
-        var (enableResponse, enableBody) = await Client.PostJsonAsync<JsonElement>("/api/super/maintenance", new
-        {
-            enabled = true
-        });
+        var (enableResponse, enableBody) = await Client.PostJsonAsync<JsonElement>(
+            "/api/super/maintenance",
+            new { enabled = true }
+        );
         enableResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         enableBody.GetProperty("enabled").GetBoolean().Should().BeTrue();
 
         // Disable (cleanup)
-        var (disableResponse, disableBody) = await Client.PostJsonAsync<JsonElement>("/api/super/maintenance", new
-        {
-            enabled = false
-        });
+        var (disableResponse, disableBody) = await Client.PostJsonAsync<JsonElement>(
+            "/api/super/maintenance",
+            new { enabled = false }
+        );
         disableResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disableBody.GetProperty("enabled").GetBoolean().Should().BeFalse();
     }
@@ -85,10 +86,10 @@ public class SuperAdminTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.PostAsJsonAsync("/api/super/maintenance", new
-        {
-            enabled = true
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/super/maintenance",
+            new { enabled = true }
+        );
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
@@ -126,14 +127,19 @@ public class SuperAdminTests : IntegrationTestBase
         var json = await response.ReadJsonAsync();
         var users = json.GetProperty("users").EnumerateArray().ToList();
         users.Should().NotBeEmpty();
-        users.Should().AllSatisfy(u =>
-        {
-            var email = u.GetProperty("email").GetString()!;
-            var name = u.GetProperty("name").GetString()!;
-            (email.Contains("admin", StringComparison.OrdinalIgnoreCase)
-             || name.Contains("admin", StringComparison.OrdinalIgnoreCase))
-                .Should().BeTrue();
-        });
+        users
+            .Should()
+            .AllSatisfy(u =>
+            {
+                var email = u.GetProperty("email").GetString()!;
+                var name = u.GetProperty("name").GetString()!;
+                (
+                    email.Contains("admin", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("admin", StringComparison.OrdinalIgnoreCase)
+                )
+                    .Should()
+                    .BeTrue();
+            });
     }
 
     // ── Delete User ──
@@ -145,14 +151,21 @@ public class SuperAdminTests : IntegrationTestBase
 
         // Register a throwaway user
         var email = TestData.UniqueEmail();
-        await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email, password = "securepassword123", name = "To Delete"
-        });
+        await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securepassword123",
+                name = "To Delete",
+            }
+        );
 
         // Find user ID from super users list
         Client.WithBearerToken(token);
-        var listResponse = await Client.GetAsync($"/api/super/users?search={Uri.EscapeDataString(email)}");
+        var listResponse = await Client.GetAsync(
+            $"/api/super/users?search={Uri.EscapeDataString(email)}"
+        );
         var listJson = await listResponse.ReadJsonAsync();
         var userId = listJson.GetProperty("users")[0].GetProperty("id").GetString();
 
@@ -190,20 +203,29 @@ public class SuperAdminTests : IntegrationTestBase
 
         // Register a throwaway user
         var email = TestData.UniqueEmail();
-        await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email, password = "securepassword123", name = "PW Reset Target"
-        });
+        await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securepassword123",
+                name = "PW Reset Target",
+            }
+        );
 
         // Find user ID
         Client.WithBearerToken(token);
-        var listResponse = await Client.GetAsync($"/api/super/users?search={Uri.EscapeDataString(email)}");
+        var listResponse = await Client.GetAsync(
+            $"/api/super/users?search={Uri.EscapeDataString(email)}"
+        );
         var listJson = await listResponse.ReadJsonAsync();
         var userId = listJson.GetProperty("users")[0].GetProperty("id").GetString();
 
         // Reset password
         var (resetResponse, resetBody) = await Client.PostJsonAsync<JsonElement>(
-            $"/api/super/users/{userId}/reset-password", new { });
+            $"/api/super/users/{userId}/reset-password",
+            new { }
+        );
 
         resetResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         resetBody.GetProperty("newPassword").GetString().Should().HaveLength(16);
@@ -216,7 +238,9 @@ public class SuperAdminTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
-            $"/api/super/users/{Guid.NewGuid()}/reset-password", new { });
+            $"/api/super/users/{Guid.NewGuid()}/reset-password",
+            new { }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

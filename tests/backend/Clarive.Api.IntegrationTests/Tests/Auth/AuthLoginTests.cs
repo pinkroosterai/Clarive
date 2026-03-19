@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Auth;
@@ -10,16 +10,16 @@ namespace Clarive.Api.IntegrationTests.Tests.Auth;
 [Collection("Integration")]
 public class AuthLoginTests : IntegrationTestBase
 {
-    public AuthLoginTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public AuthLoginTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Login_ValidCredentials_ReturnsTokenAndUser()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email = TestData.AdminEmail,
-            password = TestData.SeedPassword
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = TestData.AdminEmail, password = TestData.SeedPassword }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -36,11 +36,10 @@ public class AuthLoginTests : IntegrationTestBase
     [Fact]
     public async Task Login_WrongPassword_Returns401()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email = TestData.AdminEmail,
-            password = "wrong-password"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = TestData.AdminEmail, password = "wrong-password" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -48,11 +47,10 @@ public class AuthLoginTests : IntegrationTestBase
     [Fact]
     public async Task Login_NonexistentEmail_Returns401()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email = "nobody@example.com",
-            password = TestData.SeedPassword
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = "nobody@example.com", password = TestData.SeedPassword }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

@@ -13,7 +13,8 @@ namespace Clarive.Api.IntegrationTests.Tests.ImportExport;
 [Collection("Integration")]
 public class ImportExportTests : IntegrationTestBase
 {
-    public ImportExportTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ImportExportTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     // ── Export ──
 
@@ -37,10 +38,10 @@ public class ImportExportTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.PostAsJsonAsync("/api/export", new
-        {
-            folderIds = new[] { TestData.FolderContentWriting }
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/export",
+            new { folderIds = new[] { TestData.FolderContentWriting } }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
@@ -53,10 +54,10 @@ public class ImportExportTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.PostAsJsonAsync("/api/export", new
-        {
-            entryIds = new[] { TestData.EntryBlogPostGenerator }
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/export",
+            new { entryIds = new[] { TestData.EntryBlogPostGenerator } }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();

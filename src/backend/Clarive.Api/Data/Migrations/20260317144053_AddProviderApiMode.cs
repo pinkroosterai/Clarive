@@ -15,15 +15,14 @@ namespace Clarive.Api.Data.Migrations
                 table: "ai_providers",
                 type: "integer",
                 nullable: false,
-                defaultValue: 0);
+                defaultValue: 0
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "api_mode",
-                table: "ai_providers");
+            migrationBuilder.DropColumn(name: "api_mode", table: "ai_providers");
         }
     }
 }

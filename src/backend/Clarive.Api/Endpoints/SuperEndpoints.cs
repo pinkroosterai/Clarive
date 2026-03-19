@@ -28,14 +28,14 @@ public static class SuperEndpoints
 
     private static async Task<IResult> HandleGetStats(
         ISuperAdminService superAdminService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var stats = await superAdminService.GetPlatformStatsAsync(ct);
         return Results.Ok(stats);
     }
 
-    private static IResult HandleGetMaintenance(
-        IMaintenanceModeService maintenanceMode)
+    private static IResult HandleGetMaintenance(IMaintenanceModeService maintenanceMode)
     {
         return Results.Ok(new { enabled = maintenanceMode.IsEnabled });
     }
@@ -45,7 +45,8 @@ public static class SuperEndpoints
         MaintenanceRequest request,
         IMaintenanceModeService maintenanceMode,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var changedBy = $"dashboard:{ctx.GetUserName()}";
         await maintenanceMode.SetEnabledAsync(request.Enabled, changedBy, ct);
@@ -59,7 +60,8 @@ public static class SuperEndpoints
             Guid.Empty,
             "MaintenanceMode",
             $"Maintenance mode {(request.Enabled ? "enabled" : "disabled")} via dashboard",
-            ct);
+            ct
+        );
 
         return Results.Ok(new { enabled = maintenanceMode.IsEnabled });
     }
@@ -73,10 +75,18 @@ public static class SuperEndpoints
         string? search = null,
         string? sortBy = null,
         bool sortDesc = true,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         pageSize = Math.Min(pageSize, MaxPageSize);
-        var (users, total) = await superAdminService.GetAllUsersPagedAsync(page, pageSize, search, sortBy, sortDesc, ct);
+        var (users, total) = await superAdminService.GetAllUsersPagedAsync(
+            page,
+            pageSize,
+            search,
+            sortBy,
+            sortDesc,
+            ct
+        );
         return Results.Ok(new SuperUsersPagedResponse(users, total, page, pageSize));
     }
 
@@ -85,7 +95,8 @@ public static class SuperEndpoints
         Guid userId,
         ISuperAdminService superAdminService,
         bool hard = false,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         var currentUserId = ctx.GetUserId();
         if (currentUserId == userId)
@@ -104,7 +115,8 @@ public static class SuperEndpoints
         HttpContext ctx,
         Guid userId,
         ISuperAdminService superAdminService,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         var result = await superAdminService.ResetUserPasswordAsync(userId, ct);
 

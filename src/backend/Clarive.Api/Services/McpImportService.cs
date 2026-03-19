@@ -21,19 +21,20 @@ public class McpImportService : IMcpImportService
     }
 
     public async Task<McpImportResult> ImportToolsAsync(
-        string serverUrl, string? bearerToken, Guid tenantId, CancellationToken ct)
+        string serverUrl,
+        string? bearerToken,
+        Guid tenantId,
+        CancellationToken ct
+    )
     {
         // 1. Build transport with optional bearer token
-        var transportOptions = new HttpClientTransportOptions
-        {
-            Endpoint = new Uri(serverUrl),
-        };
+        var transportOptions = new HttpClientTransportOptions { Endpoint = new Uri(serverUrl) };
 
         if (bearerToken is not null)
         {
             transportOptions.AdditionalHeaders = new Dictionary<string, string>
             {
-                ["Authorization"] = $"Bearer {bearerToken}"
+                ["Authorization"] = $"Bearer {bearerToken}",
             };
         }
 
@@ -48,7 +49,9 @@ public class McpImportService : IMcpImportService
 
         _logger.LogInformation(
             "MCP server {ServerUrl} returned {ToolCount} tools",
-            serverUrl, mcpTools.Count);
+            serverUrl,
+            mcpTools.Count
+        );
 
         // 4. Cap at MaxTools
         var toolsToProcess = mcpTools.Take(MaxTools).ToList();
@@ -69,18 +72,21 @@ public class McpImportService : IMcpImportService
                 continue;
             }
 
-            newTools.Add(new ToolDescription
-            {
-                Id = Guid.NewGuid(),
-                TenantId = tenantId,
-                Name = (mcp.Title ?? mcp.Name.Humanize(LetterCasing.Sentence)).Truncate(100),
-                ToolName = mcp.Name.Truncate(100),
-                Description = (mcp.Description ?? "").Truncate(500),
-                InputSchema = mcp.JsonSchema.ValueKind != System.Text.Json.JsonValueKind.Undefined
-                    ? JsonNode.Parse(mcp.JsonSchema.GetRawText())
-                    : null,
-                CreatedAt = DateTime.UtcNow
-            });
+            newTools.Add(
+                new ToolDescription
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Name = (mcp.Title ?? mcp.Name.Humanize(LetterCasing.Sentence)).Truncate(100),
+                    ToolName = mcp.Name.Truncate(100),
+                    Description = (mcp.Description ?? "").Truncate(500),
+                    InputSchema =
+                        mcp.JsonSchema.ValueKind != System.Text.Json.JsonValueKind.Undefined
+                            ? JsonNode.Parse(mcp.JsonSchema.GetRawText())
+                            : null,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
         }
 
         // 7. Persist
@@ -89,5 +95,4 @@ public class McpImportService : IMcpImportService
 
         return new McpImportResult(newTools, skippedCount);
     }
-
 }

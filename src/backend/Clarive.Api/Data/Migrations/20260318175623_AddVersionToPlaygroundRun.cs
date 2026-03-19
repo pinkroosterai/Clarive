@@ -14,25 +14,23 @@ namespace Clarive.Api.Data.Migrations
                 name: "VersionLabel",
                 table: "playground_runs",
                 type: "text",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddColumn<int>(
                 name: "VersionNumber",
                 table: "playground_runs",
                 type: "integer",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "VersionLabel",
-                table: "playground_runs");
+            migrationBuilder.DropColumn(name: "VersionLabel", table: "playground_runs");
 
-            migrationBuilder.DropColumn(
-                name: "VersionNumber",
-                table: "playground_runs");
+            migrationBuilder.DropColumn(name: "VersionNumber", table: "playground_runs");
         }
     }
 }

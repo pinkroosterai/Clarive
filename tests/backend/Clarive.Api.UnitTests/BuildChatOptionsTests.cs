@@ -18,11 +18,7 @@ public class BuildChatOptionsTests
     [Fact]
     public void AllDefaultsNull_ReturnsNull()
     {
-        var model = new AiProviderModel
-        {
-            ModelId = "gpt-4o",
-                        IsReasoning = false
-        };
+        var model = new AiProviderModel { ModelId = "gpt-4o", IsReasoning = false };
 
         var result = ChatOptionsBuilder.BuildChatOptions(model);
         result.Should().BeNull();
@@ -31,11 +27,7 @@ public class BuildChatOptionsTests
     [Fact]
     public void TemperatureSet_OnConfigurableModel_SetsTemperature()
     {
-        var model = new AiProviderModel
-        {
-            ModelId = "gpt-4o",
-                        DefaultTemperature = 0.7f
-        };
+        var model = new AiProviderModel { ModelId = "gpt-4o", DefaultTemperature = 0.7f };
 
         var result = ChatOptionsBuilder.BuildChatOptions(model);
 
@@ -50,7 +42,7 @@ public class BuildChatOptionsTests
         {
             ModelId = "o1",
             IsReasoning = true,
-            DefaultTemperature = 0.5f
+            DefaultTemperature = 0.5f,
         };
 
         var result = ChatOptionsBuilder.BuildChatOptions(model);
@@ -62,11 +54,7 @@ public class BuildChatOptionsTests
     [Fact]
     public void MaxTokensSet_SetsMaxOutputTokens()
     {
-        var model = new AiProviderModel
-        {
-            ModelId = "gpt-4o",
-            DefaultMaxTokens = 8192
-        };
+        var model = new AiProviderModel { ModelId = "gpt-4o", DefaultMaxTokens = 8192 };
 
         var result = ChatOptionsBuilder.BuildChatOptions(model);
 
@@ -81,7 +69,7 @@ public class BuildChatOptionsTests
         {
             ModelId = "o1",
             IsReasoning = true,
-            DefaultReasoningEffort = "high"
+            DefaultReasoningEffort = "high",
         };
 
         var result = ChatOptionsBuilder.BuildChatOptions(model);
@@ -98,7 +86,7 @@ public class BuildChatOptionsTests
         {
             ModelId = "gpt-4o",
             IsReasoning = false,
-            DefaultReasoningEffort = "high"
+            DefaultReasoningEffort = "high",
         };
 
         var result = ChatOptionsBuilder.BuildChatOptions(model);
@@ -115,7 +103,7 @@ public class BuildChatOptionsTests
             ModelId = "gpt-4o",
             IsReasoning = false,
             DefaultTemperature = 0.3f,
-            DefaultMaxTokens = 16384
+            DefaultMaxTokens = 16384,
         };
 
         var result = ChatOptionsBuilder.BuildChatOptions(model);
@@ -135,7 +123,7 @@ public class BuildChatOptionsTests
             IsReasoning = true,
             DefaultTemperature = 0.3f,
             DefaultMaxTokens = 16384,
-            DefaultReasoningEffort = "low"
+            DefaultReasoningEffort = "low",
         };
 
         var result = ChatOptionsBuilder.BuildChatOptions(model);

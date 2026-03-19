@@ -10,7 +10,9 @@ public class PromptSet
     [Description("A concise, descriptive title for the prompt entry (max 100 chars)")]
     public string Title { get; set; } = "";
 
-    [Description("System message defining the LLM's role and persona. Null unless system message generation was requested.")]
+    [Description(
+        "System message defining the LLM's role and persona. Null unless system message generation was requested."
+    )]
     public string? SystemMessage { get; set; }
 
     [Description("The ordered list of prompt messages")]

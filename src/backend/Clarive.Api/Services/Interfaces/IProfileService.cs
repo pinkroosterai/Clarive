@@ -7,8 +7,15 @@ namespace Clarive.Api.Services.Interfaces;
 public interface IProfileService
 {
     Task<ErrorOr<User>> UpdateProfileAsync(
-        Guid tenantId, Guid userId, UpdateProfileRequest request, CancellationToken ct = default);
+        Guid tenantId,
+        Guid userId,
+        UpdateProfileRequest request,
+        CancellationToken ct = default
+    );
 
     Task<ErrorOr<Success>> CompleteOnboardingAsync(
-        Guid tenantId, Guid userId, CancellationToken ct = default);
+        Guid tenantId,
+        Guid userId,
+        CancellationToken ct = default
+    );
 }

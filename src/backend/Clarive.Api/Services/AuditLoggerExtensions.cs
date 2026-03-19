@@ -16,15 +16,32 @@ public static class AuditLoggerExtensions
         Guid entityId,
         string entityTitle,
         string? details,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         try
         {
-            await logger.LogAsync(tenantId, userId, userName, action, entityType, entityId, entityTitle, details, ct);
+            await logger.LogAsync(
+                tenantId,
+                userId,
+                userName,
+                action,
+                entityType,
+                entityId,
+                entityTitle,
+                details,
+                ct
+            );
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Audit logging failed for {Action} on {EntityType} {EntityId}", action, entityType, entityId);
+            Log.Warning(
+                ex,
+                "Audit logging failed for {Action} on {EntityType} {EntityId}",
+                action,
+                entityType,
+                entityId
+            );
         }
     }
 }

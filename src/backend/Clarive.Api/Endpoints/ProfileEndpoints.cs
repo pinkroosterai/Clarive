@@ -12,16 +12,13 @@ public static class ProfileEndpoints
 {
     public static RouteGroupBuilder MapProfileEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/profile")
-            .WithTags("Profile")
-            .RequireAuthorization();
+        var group = app.MapGroup("/api/profile").WithTags("Profile").RequireAuthorization();
 
         group.MapGet("/me", HandleGetMe);
         group.MapPatch("/", HandleUpdateProfile);
         group.MapPost("/complete-onboarding", HandleCompleteOnboarding);
 
-        group.MapPost("/avatar", HandleUploadAvatar)
-            .DisableAntiforgery();
+        group.MapPost("/avatar", HandleUploadAvatar).DisableAntiforgery();
 
         group.MapDelete("/avatar", HandleDeleteAvatar);
 
@@ -37,7 +34,8 @@ public static class ProfileEndpoints
         IUserRepository userRepo,
         ITenantMembershipRepository membershipRepo,
         ITenantRepository tenantRepo,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -48,18 +46,30 @@ public static class ProfileEndpoints
 
         var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, userId, ct);
         var dto = ToUserDto(user);
-        return Results.Ok(new
-        {
-            dto.Id, dto.Email, dto.Name, dto.Role, dto.EmailVerified, dto.OnboardingCompleted, dto.AvatarUrl,
-            dto.HasPassword, dto.IsSuperUser, dto.ThemePreference, Workspaces = workspaces
-        });
+        return Results.Ok(
+            new
+            {
+                dto.Id,
+                dto.Email,
+                dto.Name,
+                dto.Role,
+                dto.EmailVerified,
+                dto.OnboardingCompleted,
+                dto.AvatarUrl,
+                dto.HasPassword,
+                dto.IsSuperUser,
+                dto.ThemePreference,
+                Workspaces = workspaces,
+            }
+        );
     }
 
     private static async Task<IResult> HandleUpdateProfile(
         HttpContext ctx,
         UpdateProfileRequest request,
         IProfileService profileService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -74,7 +84,8 @@ public static class ProfileEndpoints
     private static async Task<IResult> HandleCompleteOnboarding(
         HttpContext ctx,
         IProfileService profileService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -90,7 +101,8 @@ public static class ProfileEndpoints
         HttpContext ctx,
         IUserRepository userRepo,
         IAvatarService avatarService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -123,7 +135,8 @@ public static class ProfileEndpoints
         HttpContext ctx,
         IUserRepository userRepo,
         IAvatarService avatarService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -144,7 +157,8 @@ public static class ProfileEndpoints
         ILoginSessionRepository sessionRepo,
         IRefreshTokenRepository refreshTokenRepo,
         string? currentRefreshToken,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var userId = ctx.GetUserId();
         var sessions = await sessionRepo.GetByUserAsync(userId, ct: ct);
@@ -157,14 +171,16 @@ public static class ProfileEndpoints
             currentRefreshTokenId = token?.Id;
         }
 
-        var dtos = sessions.Select(s => new SessionDto(
-            s.Id,
-            s.IpAddress,
-            s.Browser,
-            s.Os,
-            s.CreatedAt,
-            currentRefreshTokenId.HasValue && s.RefreshTokenId == currentRefreshTokenId.Value
-        )).ToList();
+        var dtos = sessions
+            .Select(s => new SessionDto(
+                s.Id,
+                s.IpAddress,
+                s.Browser,
+                s.Os,
+                s.CreatedAt,
+                currentRefreshTokenId.HasValue && s.RefreshTokenId == currentRefreshTokenId.Value
+            ))
+            .ToList();
 
         return Results.Ok(dtos);
     }
@@ -173,7 +189,8 @@ public static class ProfileEndpoints
         HttpContext ctx,
         Guid sessionId,
         ILoginSessionRepository sessionRepo,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var userId = ctx.GetUserId();
         var revoked = await sessionRepo.RevokeAsync(userId, sessionId, ct);
@@ -189,12 +206,17 @@ public static class ProfileEndpoints
         ILoginSessionRepository sessionRepo,
         IRefreshTokenRepository refreshTokenRepo,
         string? currentRefreshToken,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var userId = ctx.GetUserId();
 
         if (string.IsNullOrWhiteSpace(currentRefreshToken))
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Current refresh token is required to identify your session.");
+            return ctx.ErrorResult(
+                422,
+                "VALIDATION_ERROR",
+                "Current refresh token is required to identify your session."
+            );
 
         var hash = JwtService.HashRefreshToken(currentRefreshToken);
         var token = await refreshTokenRepo.GetByHashAsync(hash, ct);

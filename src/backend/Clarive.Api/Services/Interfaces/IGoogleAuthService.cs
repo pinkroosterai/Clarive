@@ -10,5 +10,9 @@ public interface IGoogleAuthService
     /// Validates a Google ID token and extracts user info.
     /// Throws if the token is invalid.
     /// </summary>
-    Task<GoogleUserInfo> ValidateIdTokenAsync(string idToken, string? nonce = null, CancellationToken ct = default);
+    Task<GoogleUserInfo> ValidateIdTokenAsync(
+        string idToken,
+        string? nonce = null,
+        CancellationToken ct = default
+    );
 }

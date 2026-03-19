@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Entries;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Entries;
 [Collection("Integration")]
 public class EntryTrashDeleteTests : IntegrationTestBase
 {
-    public EntryTrashDeleteTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public EntryTrashDeleteTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Trash_Entry_Returns204()
@@ -20,11 +21,14 @@ public class EntryTrashDeleteTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create a fresh entry to trash
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Will be trashed" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Will be trashed" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
 
         var response = await Client.PostAsync($"/api/entries/{entryId}/trash", null);
@@ -39,11 +43,14 @@ public class EntryTrashDeleteTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create + trash
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Will be restored" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Will be restored" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
 
         await Client.PostAsync($"/api/entries/{entryId}/trash", null);
@@ -64,11 +71,14 @@ public class EntryTrashDeleteTests : IntegrationTestBase
         var editorToken = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(editorToken);
 
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Will be permanently deleted" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Will be permanently deleted" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
 
         await Client.PostAsync($"/api/entries/{entryId}/trash", null);
@@ -93,11 +103,14 @@ public class EntryTrashDeleteTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create a fresh entry (not trashed)
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Not trashed" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Not trashed" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
 
         var response = await Client.DeleteAsync($"/api/entries/{entryId}/permanent-delete");
@@ -112,11 +125,14 @@ public class EntryTrashDeleteTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create + trash
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/entries", new
-        {
-            title = TestData.UniqueEntryTitle(),
-            prompts = new[] { new { content = "Editor tries to delete" } }
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/entries",
+            new
+            {
+                title = TestData.UniqueEntryTitle(),
+                prompts = new[] { new { content = "Editor tries to delete" } },
+            }
+        );
         var entryId = created.GetProperty("id").GetString();
 
         await Client.PostAsync($"/api/entries/{entryId}/trash", null);

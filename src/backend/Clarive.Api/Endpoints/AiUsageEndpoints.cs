@@ -34,18 +34,36 @@ public static class AiUsageEndpoints
         bool sortDesc = true,
         int page = 1,
         int pageSize = DefaultPageSize,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         if (dateFrom.HasValue && dateTo.HasValue && dateFrom > dateTo)
-            return Results.BadRequest(new { error = new { code = "INVALID_DATE_RANGE", message = "dateFrom must be before dateTo" } });
+            return Results.BadRequest(
+                new
+                {
+                    error = new
+                    {
+                        code = "INVALID_DATE_RANGE",
+                        message = "dateFrom must be before dateTo",
+                    },
+                }
+            );
 
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = DefaultPageSize;
-        if (pageSize > MaxPageSize) pageSize = MaxPageSize;
+        if (page < 1)
+            page = 1;
+        if (pageSize < 1)
+            pageSize = DefaultPageSize;
+        if (pageSize > MaxPageSize)
+            pageSize = MaxPageSize;
 
         var filter = new AiUsageFilterRequest(
-            ParseGuids(tenantId), userId, ParseStrings(model),
-            ParseActionTypes(actionType), dateFrom, dateTo);
+            ParseGuids(tenantId),
+            userId,
+            ParseStrings(model),
+            ParseActionTypes(actionType),
+            dateFrom,
+            dateTo
+        );
         var result = await repo.GetFilteredAsync(filter, page, pageSize, sortBy, sortDesc, ct);
         return Results.Ok(result);
     }
@@ -54,7 +72,8 @@ public static class AiUsageEndpoints
         IAiUsageLogRepository repo,
         DateTime? dateFrom,
         DateTime? dateTo,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         var result = await repo.GetFilterOptionsAsync(dateFrom, dateTo, ct);
         return Results.Ok(result);
@@ -68,35 +87,54 @@ public static class AiUsageEndpoints
         string? actionType,
         DateTime? dateFrom,
         DateTime? dateTo,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         if (dateFrom.HasValue && dateTo.HasValue && dateFrom > dateTo)
-            return Results.BadRequest(new { error = new { code = "INVALID_DATE_RANGE", message = "dateFrom must be before dateTo" } });
+            return Results.BadRequest(
+                new
+                {
+                    error = new
+                    {
+                        code = "INVALID_DATE_RANGE",
+                        message = "dateFrom must be before dateTo",
+                    },
+                }
+            );
 
         var filter = new AiUsageFilterRequest(
-            ParseGuids(tenantId), userId, ParseStrings(model),
-            ParseActionTypes(actionType), dateFrom, dateTo);
+            ParseGuids(tenantId),
+            userId,
+            ParseStrings(model),
+            ParseActionTypes(actionType),
+            dateFrom,
+            dateTo
+        );
         var result = await repo.GetStatsAsync(filter, ct);
         return Results.Ok(result);
     }
 
-    private static List<string>? ParseStrings(string? value)
-        => string.IsNullOrWhiteSpace(value)
+    private static List<string>? ParseStrings(string? value) =>
+        string.IsNullOrWhiteSpace(value)
             ? null
-            : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+            : value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
 
-    private static List<Guid>? ParseGuids(string? value)
-        => string.IsNullOrWhiteSpace(value)
+    private static List<Guid>? ParseGuids(string? value) =>
+        string.IsNullOrWhiteSpace(value)
             ? null
-            : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Where(s => Guid.TryParse(s, out _))
                 .Select(Guid.Parse)
                 .ToList();
 
-    private static List<AiActionType>? ParseActionTypes(string? value)
-        => string.IsNullOrWhiteSpace(value)
+    private static List<AiActionType>? ParseActionTypes(string? value) =>
+        string.IsNullOrWhiteSpace(value)
             ? null
-            : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Where(s => Enum.TryParse<AiActionType>(s, out _))
                 .Select(Enum.Parse<AiActionType>)
                 .ToList();

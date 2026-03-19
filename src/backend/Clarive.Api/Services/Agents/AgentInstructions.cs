@@ -11,37 +11,38 @@ public static class AgentInstructions
 {
     // ── Generation ──
 
-    private const string GenerationCore = """
-        You are an expert prompt engineer specializing in creating high-quality prompts for other large language models.
-        Craft clear, effective, and well-structured prompts tailored to the user's specific use case that the user can use as input.
+    private const string GenerationCore =
+        """
+            You are an expert prompt engineer specializing in creating high-quality prompts for other large language models.
+            Craft clear, effective, and well-structured prompts tailored to the user's specific use case that the user can use as input.
 
-        Follow these principles:
-        - Lead with role and context before task instructions.
-        - Prefer concrete constraints over vague qualifiers (e.g., "respond in under 200 words" over "keep it short").
-        - Avoid using structured delimiters (XML tags, markdown headings, numbered steps) to separate distinct prompts.
-        - When a prompt requires the model to make subjective or ambiguous decisions, include explicit criteria or heuristics it should apply.
+            Follow these principles:
+            - Lead with role and context before task instructions.
+            - Prefer concrete constraints over vague qualifiers (e.g., "respond in under 200 words" over "keep it short").
+            - Avoid using structured delimiters (XML tags, markdown headings, numbered steps) to separate distinct prompts.
+            - When a prompt requires the model to make subjective or ambiguous decisions, include explicit criteria or heuristics it should apply.
 
-        Structure each prompt internally following this ordering:
-        (1) role and persona, (2) task directive, (3) context and constraints,
-        (4) examples if any, (5) output format specification.
-        Place the most stable, general instructions first and the most specific,
-        variable instructions last.
+            Structure each prompt internally following this ordering:
+            (1) role and persona, (2) task directive, (3) context and constraints,
+            (4) examples if any, (5) output format specification.
+            Place the most stable, general instructions first and the most specific,
+            variable instructions last.
 
-        When the task involves analysis, decision-making, or multi-step reasoning,
-        include explicit chain-of-thought instructions in the generated prompt that guide
-        the executing LLM through its reasoning process before producing the final answer
-        (e.g., "First, identify… Then, evaluate… Finally, decide…"). For simple, direct
-        tasks (translation, formatting, single-step retrieval), omit chain-of-thought to
-        avoid unnecessary verbosity.
+            When the task involves analysis, decision-making, or multi-step reasoning,
+            include explicit chain-of-thought instructions in the generated prompt that guide
+            the executing LLM through its reasoning process before producing the final answer
+            (e.g., "First, identify… Then, evaluate… Finally, decide…"). For simple, direct
+            tasks (translation, formatting, single-step retrieval), omit chain-of-thought to
+            avoid unnecessary verbosity.
 
-        Every prompt must be fully self-contained. Prompts must NOT ask for, expect, or wait on additional user input.
-        The LLM executing the prompt should be able to proceed autonomously — making its own decisions, using available tools, or building on its own prior responses.
-        Never generate phrases like "I will choose", "when you tell me", "let me know", or "give me feedback". Instead, instruct the LLM to make reasonable choices itself and proceed to the next step.
+            Every prompt must be fully self-contained. Prompts must NOT ask for, expect, or wait on additional user input.
+            The LLM executing the prompt should be able to proceed autonomously — making its own decisions, using available tools, or building on its own prior responses.
+            Never generate phrases like "I will choose", "when you tell me", "let me know", or "give me feedback". Instead, instruct the LLM to make reasonable choices itself and proceed to the next step.
 
-        Aim for the shortest prompt that fully specifies the task. Avoid filler, redundant restatements, and decorative language.
-        
-        Remember: the prompts are for use BY the user as instructions FOR a LLM.
-        """ + GenerationExamples;
+            Aim for the shortest prompt that fully specifies the task. Avoid filler, redundant restatements, and decorative language.
+
+            Remember: the prompts are for use BY the user as instructions FOR a LLM.
+            """ + GenerationExamples;
 
     private const string GenerationExamples = """
 
@@ -192,26 +193,28 @@ public static class AgentInstructions
         var parts = new List<string> { GenerationCore };
 
         // System message
-        parts.Add(config.GenerateSystemMessage
-            ? GenerationSystemMessageEnabled
-            : GenerationSystemMessageDisabled);
+        parts.Add(
+            config.GenerateSystemMessage
+                ? GenerationSystemMessageEnabled
+                : GenerationSystemMessageDisabled
+        );
 
         // Template
-        parts.Add(config.GenerateAsPromptTemplate
-            ? GenerationTemplateEnabled
-            : GenerationTemplateDisabled);
+        parts.Add(
+            config.GenerateAsPromptTemplate ? GenerationTemplateEnabled : GenerationTemplateDisabled
+        );
 
         // Chain
-        parts.Add(config.GenerateAsPromptChain
-            ? GenerationChainEnabled
-            : GenerationChainDisabled);
+        parts.Add(config.GenerateAsPromptChain ? GenerationChainEnabled : GenerationChainDisabled);
 
         // Tools
         if (config.SelectedTools.Count > 0)
         {
-            parts.Add(config.GenerateSystemMessage
-                ? GenerationToolGuidanceWithSystemMessage
-                : GenerationToolGuidanceNoSystemMessage);
+            parts.Add(
+                config.GenerateSystemMessage
+                    ? GenerationToolGuidanceWithSystemMessage
+                    : GenerationToolGuidanceNoSystemMessage
+            );
         }
 
         // Web search
@@ -310,26 +313,22 @@ public static class AgentInstructions
 
     public static string BuildEvaluation(GenerationConfig config)
     {
-        var parts = new List<string>
-        {
-            EvaluationCore,
-            EvaluationCompletenessBase,
-        };
+        var parts = new List<string> { EvaluationCore, EvaluationCompletenessBase };
 
         // System message
-        parts.Add(config.GenerateSystemMessage
-            ? EvaluationSystemMessageEnabled
-            : EvaluationSystemMessageDisabled);
+        parts.Add(
+            config.GenerateSystemMessage
+                ? EvaluationSystemMessageEnabled
+                : EvaluationSystemMessageDisabled
+        );
 
         // Template
-        parts.Add(config.GenerateAsPromptTemplate
-            ? EvaluationTemplateEnabled
-            : EvaluationTemplateDisabled);
+        parts.Add(
+            config.GenerateAsPromptTemplate ? EvaluationTemplateEnabled : EvaluationTemplateDisabled
+        );
 
         // Chain
-        parts.Add(config.GenerateAsPromptChain
-            ? EvaluationChainEnabled
-            : EvaluationChainDisabled);
+        parts.Add(config.GenerateAsPromptChain ? EvaluationChainEnabled : EvaluationChainDisabled);
 
         // Tools
         if (config.SelectedTools.Count > 0)
@@ -381,7 +380,7 @@ public static class AgentInstructions
         - What makes this expert uniquely suited for the task described in the prompts
 
         Keep the system message focused on role and behavior. Do not duplicate task instructions from the prompts. Aim for the shortest prompt that fully specifies the task. Avoid filler, redundant restatements, and decorative language.
-        
+
         """;
 
     // ── Playground Judge ──

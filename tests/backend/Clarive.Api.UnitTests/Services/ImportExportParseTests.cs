@@ -9,8 +9,10 @@ public class ImportExportParseTests
 {
     private static List<Prompt> ParseImportPrompts(Dictionary<object, object> raw)
     {
-        var method = typeof(ImportExportService)
-            .GetMethod("ParseImportPrompts", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var method = typeof(ImportExportService).GetMethod(
+            "ParseImportPrompts",
+            BindingFlags.NonPublic | BindingFlags.Static
+        )!;
         return (List<Prompt>)method.Invoke(null, [raw])!;
     }
 
@@ -38,9 +40,9 @@ public class ImportExportParseTests
                 new Dictionary<object, object>
                 {
                     ["content"] = "Hello world",
-                    ["isTemplate"] = "false"
-                }
-            }
+                    ["isTemplate"] = "false",
+                },
+            },
         };
 
         var result = ParseImportPrompts(raw);
@@ -61,9 +63,9 @@ public class ImportExportParseTests
                 new Dictionary<object, object>
                 {
                     ["content"] = "Hello {{name}}",
-                    ["isTemplate"] = "true"
-                }
-            }
+                    ["isTemplate"] = "true",
+                },
+            },
         };
 
         var result = ParseImportPrompts(raw);
@@ -81,8 +83,8 @@ public class ImportExportParseTests
             {
                 new Dictionary<object, object> { ["content"] = "First" },
                 new Dictionary<object, object> { ["content"] = "Second" },
-                new Dictionary<object, object> { ["content"] = "Third" }
-            }
+                new Dictionary<object, object> { ["content"] = "Third" },
+            },
         };
 
         var result = ParseImportPrompts(raw);
@@ -100,8 +102,8 @@ public class ImportExportParseTests
         {
             ["prompts"] = new List<object>
             {
-                new Dictionary<object, object> { ["isTemplate"] = "false" }
-            }
+                new Dictionary<object, object> { ["isTemplate"] = "false" },
+            },
         };
 
         var result = ParseImportPrompts(raw);
@@ -114,7 +116,7 @@ public class ImportExportParseTests
     {
         var raw = new Dictionary<object, object>
         {
-            ["prompts"] = new List<object> { "not a dict", 42 }
+            ["prompts"] = new List<object> { "not a dict", 42 },
         };
 
         ParseImportPrompts(raw).Should().BeEmpty();
@@ -127,8 +129,8 @@ public class ImportExportParseTests
         {
             ["prompts"] = new List<object>
             {
-                new Dictionary<object, object> { ["content"] = "Hello" }
-            }
+                new Dictionary<object, object> { ["content"] = "Hello" },
+            },
         };
 
         var result = ParseImportPrompts(raw);

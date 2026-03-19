@@ -12,8 +12,13 @@ public interface IInvitationService
     /// Returns an error if validation fails (ALREADY_MEMBER, INVITATION_EXISTS), or a result on success.
     /// </summary>
     Task<ErrorOr<CreateInvitationResult>> CreateAsync(
-        Guid tenantId, Guid invitedById, string inviterName,
-        string email, UserRole role, CancellationToken ct = default);
+        Guid tenantId,
+        Guid invitedById,
+        string inviterName,
+        string email,
+        UserRole role,
+        CancellationToken ct = default
+    );
 
     /// <summary>
     /// Validates an invitation token and returns invitation info.
@@ -26,7 +31,11 @@ public interface IInvitationService
     /// Returns null if the invitation is not found.
     /// </summary>
     Task<ResendInvitationResult?> ResendAsync(
-        Guid tenantId, Guid invitationId, string inviterName, CancellationToken ct = default);
+        Guid tenantId,
+        Guid invitationId,
+        string inviterName,
+        CancellationToken ct = default
+    );
 
     /// <summary>
     /// Revokes (deletes) an invitation.
@@ -39,7 +48,11 @@ public interface IInvitationService
     /// Returns an error if validation fails, or a result on success.
     /// </summary>
     Task<ErrorOr<RespondInvitationResult>> RespondAsync(
-        Guid userId, Guid invitationId, bool accept, CancellationToken ct = default);
+        Guid userId,
+        Guid invitationId,
+        bool accept,
+        CancellationToken ct = default
+    );
 
     /// <summary>
     /// Gets all pending (non-expired) invitations for a user, enriched with workspace/inviter info.
@@ -55,5 +68,10 @@ public interface IInvitationService
 public record InvitationValidation(string Email, string Role, string WorkspaceName);
 
 public record PendingInvitationInfo(
-    Guid Id, string WorkspaceName, string Role, string InvitedBy,
-    DateTime CreatedAt, DateTime ExpiresAt);
+    Guid Id,
+    string WorkspaceName,
+    string Role,
+    string InvitedBy,
+    DateTime CreatedAt,
+    DateTime ExpiresAt
+);

@@ -25,40 +25,55 @@ public static class ShareLinkEndpoints
         HttpContext ctx,
         CreateShareLinkRequest request,
         IShareLinkService shareLinkService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
         if (request.Password is not null && request.Password.Length < 8)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Share link password must be at least 8 characters.");
+            return ctx.ErrorResult(
+                422,
+                "VALIDATION_ERROR",
+                "Share link password must be at least 8 characters."
+            );
 
         var result = await shareLinkService.CreateAsync(
-            tenantId, entryId, userId,
-            request.ExpiresAt, request.Password, request.PinnedVersion, ct);
+            tenantId,
+            entryId,
+            userId,
+            request.ExpiresAt,
+            request.Password,
+            request.PinnedVersion,
+            ct
+        );
 
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "ShareLink");
 
         var (rawToken, link) = result.Value;
-        return Results.Created($"/api/entries/{entryId}/share-link", new
-        {
-            link.Id,
-            Token = rawToken,
-            link.EntryId,
-            link.ExpiresAt,
-            HasPassword = link.PasswordHash is not null,
-            link.PinnedVersion,
-            link.AccessCount,
-            link.CreatedAt
-        });
+        return Results.Created(
+            $"/api/entries/{entryId}/share-link",
+            new
+            {
+                link.Id,
+                Token = rawToken,
+                link.EntryId,
+                link.ExpiresAt,
+                HasPassword = link.PasswordHash is not null,
+                link.PinnedVersion,
+                link.AccessCount,
+                link.CreatedAt,
+            }
+        );
     }
 
     private static async Task<IResult> HandleGet(
         Guid entryId,
         HttpContext ctx,
         IShareLinkService shareLinkService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
 
@@ -67,25 +82,28 @@ public static class ShareLinkEndpoints
             return result.Errors.ToHttpResult(ctx, "ShareLink");
 
         var link = result.Value;
-        return Results.Ok(new
-        {
-            link.Id,
-            link.EntryId,
-            link.Token,
-            link.ExpiresAt,
-            HasPassword = link.PasswordHash is not null,
-            link.PinnedVersion,
-            link.AccessCount,
-            link.IsActive,
-            link.CreatedAt
-        });
+        return Results.Ok(
+            new
+            {
+                link.Id,
+                link.EntryId,
+                link.Token,
+                link.ExpiresAt,
+                HasPassword = link.PasswordHash is not null,
+                link.PinnedVersion,
+                link.AccessCount,
+                link.IsActive,
+                link.CreatedAt,
+            }
+        );
     }
 
     private static async Task<IResult> HandleDelete(
         Guid entryId,
         HttpContext ctx,
         IShareLinkService shareLinkService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
 

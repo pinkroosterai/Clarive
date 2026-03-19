@@ -1,11 +1,11 @@
 using System.ComponentModel;
+using Clarive.Api.Auth;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Services.Interfaces;
-using Clarive.Api.Auth;
-using Clarive.Api.Helpers;
 using Clarive.Api.Services;
+using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Endpoints;
 
@@ -13,9 +13,7 @@ public static partial class EntryEndpoints
 {
     public static RouteGroupBuilder MapEntryEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/entries")
-            .WithTags("Entries")
-            .RequireAuthorization();
+        var group = app.MapGroup("/api/entries").WithTags("Entries").RequireAuthorization();
 
         group.MapGet("/", HandleList);
         group.MapGet("/trash", HandleListTrashed);
@@ -26,32 +24,33 @@ public static partial class EntryEndpoints
 
         // Tags
         group.MapGet("/{entryId:guid}/tags", HandleGetEntryTags);
-        group.MapPost("/{entryId:guid}/tags", HandleAddTags)
-            .RequireAuthorization("EditorOrAdmin");
-        group.MapDelete("/{entryId:guid}/tags/{tagName}", HandleRemoveTag)
+        group.MapPost("/{entryId:guid}/tags", HandleAddTags).RequireAuthorization("EditorOrAdmin");
+        group
+            .MapDelete("/{entryId:guid}/tags/{tagName}", HandleRemoveTag)
             .RequireAuthorization("EditorOrAdmin");
 
         // Favorites
         group.MapPost("/{entryId:guid}/favorite", HandleFavorite);
         group.MapDelete("/{entryId:guid}/favorite", HandleUnfavorite);
 
-        group.MapPost("/", HandleCreate)
+        group.MapPost("/", HandleCreate).RequireAuthorization("EditorOrAdmin");
+        group.MapPut("/{entryId:guid}", HandleUpdate).RequireAuthorization("EditorOrAdmin");
+        group
+            .MapPost("/{entryId:guid}/publish", HandlePublish)
             .RequireAuthorization("EditorOrAdmin");
-        group.MapPut("/{entryId:guid}", HandleUpdate)
+        group
+            .MapPost("/{entryId:guid}/versions/{version:int}/promote", HandlePromote)
             .RequireAuthorization("EditorOrAdmin");
-        group.MapPost("/{entryId:guid}/publish", HandlePublish)
+        group
+            .MapDelete("/{entryId:guid}/draft", HandleDeleteDraft)
             .RequireAuthorization("EditorOrAdmin");
-        group.MapPost("/{entryId:guid}/versions/{version:int}/promote", HandlePromote)
+        group.MapPost("/{entryId:guid}/move", HandleMove).RequireAuthorization("EditorOrAdmin");
+        group.MapPost("/{entryId:guid}/trash", HandleTrash).RequireAuthorization("EditorOrAdmin");
+        group
+            .MapPost("/{entryId:guid}/restore", HandleRestore)
             .RequireAuthorization("EditorOrAdmin");
-        group.MapDelete("/{entryId:guid}/draft", HandleDeleteDraft)
-            .RequireAuthorization("EditorOrAdmin");
-        group.MapPost("/{entryId:guid}/move", HandleMove)
-            .RequireAuthorization("EditorOrAdmin");
-        group.MapPost("/{entryId:guid}/trash", HandleTrash)
-            .RequireAuthorization("EditorOrAdmin");
-        group.MapPost("/{entryId:guid}/restore", HandleRestore)
-            .RequireAuthorization("EditorOrAdmin");
-        group.MapDelete("/{entryId:guid}/permanent-delete", HandlePermanentDelete)
+        group
+            .MapDelete("/{entryId:guid}/permanent-delete", HandlePermanentDelete)
             .RequireAuthorization("AdminOnly");
 
         return group;
@@ -61,6 +60,7 @@ public static partial class EntryEndpoints
     private const int DefaultPageSize = 50;
     private const int MaxActivityPageSize = 50;
     private const int DefaultActivityPageSize = 20;
+
     private static (int page, int pageSize) NormalizePagination(int? page, int? pageSize)
     {
         var p = page is > 0 ? page.Value : 1;
@@ -80,7 +80,8 @@ public static partial class EntryEndpoints
         [Description("Items per page (max 100)")] int? pageSize = null,
         [Description("Search by title (case-insensitive)")] string? search = null,
         [Description("Filter by status: 'draft' or 'published'")] string? status = null,
-        [Description("Sort order: 'recent', 'alphabetical', or 'oldest'")] string? sortBy = null)
+        [Description("Sort order: 'recent', 'alphabetical', or 'oldest'")] string? sortBy = null
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -95,8 +96,20 @@ public static partial class EntryEndpoints
         }
 
         var (p, ps) = NormalizePagination(page, pageSize);
-        var result = await entryService.ListEntriesAsync(tenantId, userId, parsedFolderId, includeAll,
-            tags, tagMode, p, ps, search, status, sortBy, ct);
+        var result = await entryService.ListEntriesAsync(
+            tenantId,
+            userId,
+            parsedFolderId,
+            includeAll,
+            tags,
+            tagMode,
+            p,
+            ps,
+            search,
+            status,
+            sortBy,
+            ct
+        );
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
@@ -110,7 +123,8 @@ public static partial class EntryEndpoints
         IEntryService entryService,
         CancellationToken ct,
         [Description("Page number (1-based)")] int? page = null,
-        [Description("Items per page (max 100)")] int? pageSize = null)
+        [Description("Items per page (max 100)")] int? pageSize = null
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -128,7 +142,8 @@ public static partial class EntryEndpoints
         Guid entryId,
         HttpContext ctx,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -143,7 +158,8 @@ public static partial class EntryEndpoints
         Guid entryId,
         HttpContext ctx,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var result = await entryService.GetVersionHistoryAsync(tenantId, entryId, ct);
@@ -158,7 +174,8 @@ public static partial class EntryEndpoints
         int version,
         HttpContext ctx,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var result = await entryService.GetVersionDetailAsync(tenantId, entryId, version, ct);
@@ -173,12 +190,14 @@ public static partial class EntryEndpoints
         CreateEntryRequest request,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
 
         var result = await entryService.CreateEntryAsync(tenantId, userId, request, ct);
         if (result.IsError)
@@ -186,10 +205,26 @@ public static partial class EntryEndpoints
 
         var (entry, version) = result.Value;
 
-        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryCreated,
-            "prompt_entry", entry.Id, entry.Title, $"Created '{entry.Title}'", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            userId,
+            ctx.GetUserName(),
+            AuditAction.EntryCreated,
+            "prompt_entry",
+            entry.Id,
+            entry.Title,
+            $"Created '{entry.Title}'",
+            ct
+        );
 
-        var responseResult = await entryService.BuildEntryResponseAsync(entry, version, tenantId, false, ct);
+        var responseResult = await entryService.BuildEntryResponseAsync(
+            entry,
+            version,
+            tenantId,
+            false,
+            ct
+        );
         return responseResult.IsError
             ? responseResult.Errors.ToHttpResult(ctx)
             : Results.Created($"/api/entries/{entry.Id}", responseResult.Value);
@@ -202,12 +237,14 @@ public static partial class EntryEndpoints
         UpdateEntryRequest request,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
 
         var result = await entryService.UpdateEntryAsync(tenantId, entryId, request, ct);
         if (result.IsError)
@@ -215,10 +252,26 @@ public static partial class EntryEndpoints
 
         var (entry, working) = result.Value;
 
-        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryDraftUpdated,
-            "prompt_entry", entry.Id, entry.Title, $"Updated draft v{working.Version}", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            userId,
+            ctx.GetUserName(),
+            AuditAction.EntryDraftUpdated,
+            "prompt_entry",
+            entry.Id,
+            entry.Title,
+            $"Updated draft v{working.Version}",
+            ct
+        );
 
-        var responseResult = await entryService.BuildEntryResponseAsync(entry, working, tenantId, false, ct);
+        var responseResult = await entryService.BuildEntryResponseAsync(
+            entry,
+            working,
+            tenantId,
+            false,
+            ct
+        );
         return responseResult.IsError
             ? responseResult.Errors.ToHttpResult(ctx)
             : Results.Ok(responseResult.Value);
@@ -230,7 +283,8 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -241,10 +295,26 @@ public static partial class EntryEndpoints
 
         var (entry, published) = result.Value;
 
-        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.EntryPublished,
-            "prompt_entry", entry.Id, entry.Title, $"Published version {published.Version}", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            userId,
+            ctx.GetUserName(),
+            AuditAction.EntryPublished,
+            "prompt_entry",
+            entry.Id,
+            entry.Title,
+            $"Published version {published.Version}",
+            ct
+        );
 
-        var responseResult = await entryService.BuildEntryResponseAsync(entry, published, tenantId, false, ct);
+        var responseResult = await entryService.BuildEntryResponseAsync(
+            entry,
+            published,
+            tenantId,
+            false,
+            ct
+        );
         return responseResult.IsError
             ? responseResult.Errors.ToHttpResult(ctx)
             : Results.Ok(responseResult.Value);
@@ -257,7 +327,8 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -268,10 +339,26 @@ public static partial class EntryEndpoints
 
         var (entry, newDraft) = result.Value;
 
-        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.VersionPromoted,
-            "prompt_entry", entry.Id, entry.Title, $"Restored v{version} as new draft v{newDraft.Version}", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            userId,
+            ctx.GetUserName(),
+            AuditAction.VersionPromoted,
+            "prompt_entry",
+            entry.Id,
+            entry.Title,
+            $"Restored v{version} as new draft v{newDraft.Version}",
+            ct
+        );
 
-        var responseResult = await entryService.BuildEntryResponseAsync(entry, newDraft, tenantId, false, ct);
+        var responseResult = await entryService.BuildEntryResponseAsync(
+            entry,
+            newDraft,
+            tenantId,
+            false,
+            ct
+        );
         return responseResult.IsError
             ? responseResult.Errors.ToHttpResult(ctx)
             : Results.Ok(responseResult.Value);
@@ -283,7 +370,8 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -294,14 +382,30 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(), AuditAction.DraftDeleted,
-            "prompt_entry", entry.Id, entry.Title, "Deleted draft, reverted to published version", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            userId,
+            ctx.GetUserName(),
+            AuditAction.DraftDeleted,
+            "prompt_entry",
+            entry.Id,
+            entry.Title,
+            "Deleted draft, reverted to published version",
+            ct
+        );
 
         var versionResult = await entryService.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (versionResult.IsError)
             return versionResult.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-        var responseResult = await entryService.BuildEntryResponseAsync(entry, versionResult.Value, tenantId, false, ct);
+        var responseResult = await entryService.BuildEntryResponseAsync(
+            entry,
+            versionResult.Value,
+            tenantId,
+            false,
+            ct
+        );
         return responseResult.IsError
             ? responseResult.Errors.ToHttpResult(ctx)
             : Results.Ok(responseResult.Value);
@@ -313,7 +417,8 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         MoveEntryRequest request,
         IEntryService entryService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
 
@@ -327,7 +432,13 @@ public static partial class EntryEndpoints
         if (versionResult.IsError)
             return versionResult.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-        var responseResult = await entryService.BuildEntryResponseAsync(entry, versionResult.Value, tenantId, false, ct);
+        var responseResult = await entryService.BuildEntryResponseAsync(
+            entry,
+            versionResult.Value,
+            tenantId,
+            false,
+            ct
+        );
         return responseResult.IsError
             ? responseResult.Errors.ToHttpResult(ctx)
             : Results.Ok(responseResult.Value);
@@ -339,7 +450,8 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
 
@@ -349,8 +461,18 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryTrashed,
-            "prompt_entry", entry.Id, entry.Title, $"Moved '{entry.Title}' to trash", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            ctx.GetUserId(),
+            ctx.GetUserName(),
+            AuditAction.EntryTrashed,
+            "prompt_entry",
+            entry.Id,
+            entry.Title,
+            $"Moved '{entry.Title}' to trash",
+            ct
+        );
 
         return Results.NoContent();
     }
@@ -361,7 +483,8 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
 
@@ -371,14 +494,30 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryRestored,
-            "prompt_entry", entry.Id, entry.Title, $"Restored '{entry.Title}' from trash", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            ctx.GetUserId(),
+            ctx.GetUserName(),
+            AuditAction.EntryRestored,
+            "prompt_entry",
+            entry.Id,
+            entry.Title,
+            $"Restored '{entry.Title}' from trash",
+            ct
+        );
 
         var versionResult = await entryService.GetWorkingVersionAsync(tenantId, entryId, ct);
         if (versionResult.IsError)
             return versionResult.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-        var responseResult = await entryService.BuildEntryResponseAsync(entry, versionResult.Value, tenantId, false, ct);
+        var responseResult = await entryService.BuildEntryResponseAsync(
+            entry,
+            versionResult.Value,
+            tenantId,
+            false,
+            ct
+        );
         return responseResult.IsError
             ? responseResult.Errors.ToHttpResult(ctx)
             : Results.Ok(responseResult.Value);
@@ -390,7 +529,8 @@ public static partial class EntryEndpoints
         HttpContext ctx,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
 
@@ -400,8 +540,18 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        await SafeLogAsync(auditLogger, tenantId, ctx.GetUserId(), ctx.GetUserName(), AuditAction.EntryDeleted,
-            "prompt_entry", entryId, entry.Title, $"Permanently deleted '{entry.Title}'", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            ctx.GetUserId(),
+            ctx.GetUserName(),
+            AuditAction.EntryDeleted,
+            "prompt_entry",
+            entryId,
+            entry.Title,
+            $"Permanently deleted '{entry.Title}'",
+            ct
+        );
 
         return Results.NoContent();
     }

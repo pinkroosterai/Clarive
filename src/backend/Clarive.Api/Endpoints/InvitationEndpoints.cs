@@ -1,12 +1,12 @@
+using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
+using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
-using Clarive.Api.Auth;
-using Clarive.Api.Models.Entities;
 using static Clarive.Api.Helpers.ResponseMappers;
 
 namespace Clarive.Api.Endpoints;
@@ -15,33 +15,23 @@ public static class InvitationEndpoints
 {
     public static RouteGroupBuilder MapInvitationEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/invitations")
-            .WithTags("Invitations");
+        var group = app.MapGroup("/api/invitations").WithTags("Invitations");
 
-        group.MapPost("/", HandleCreate)
-            .RequireAuthorization("AdminOnly");
+        group.MapPost("/", HandleCreate).RequireAuthorization("AdminOnly");
 
-        group.MapGet("/{token}/validate", HandleValidate)
-            .AllowAnonymous();
+        group.MapGet("/{token}/validate", HandleValidate).AllowAnonymous();
 
-        group.MapPost("/{token}/accept", HandleAccept)
-            .AllowAnonymous()
-            .RequireRateLimiting("auth");
+        group.MapPost("/{token}/accept", HandleAccept).AllowAnonymous().RequireRateLimiting("auth");
 
-        group.MapPost("/{id:guid}/resend", HandleResend)
-            .RequireAuthorization("AdminOnly");
+        group.MapPost("/{id:guid}/resend", HandleResend).RequireAuthorization("AdminOnly");
 
-        group.MapDelete("/{id:guid}", HandleRevoke)
-            .RequireAuthorization("AdminOnly");
+        group.MapDelete("/{id:guid}", HandleRevoke).RequireAuthorization("AdminOnly");
 
-        group.MapGet("/pending", HandleGetPending)
-            .RequireAuthorization();
+        group.MapGet("/pending", HandleGetPending).RequireAuthorization();
 
-        group.MapGet("/pending/count", HandlePendingCount)
-            .RequireAuthorization();
+        group.MapGet("/pending/count", HandlePendingCount).RequireAuthorization();
 
-        group.MapPost("/{id:guid}/respond", HandleRespond)
-            .RequireAuthorization();
+        group.MapPost("/{id:guid}/respond", HandleRespond).RequireAuthorization();
 
         return group;
     }
@@ -50,15 +40,23 @@ public static class InvitationEndpoints
         HttpContext ctx,
         CreateInvitationRequest request,
         IInvitationService invitationService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
-        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
 
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role) || role == UserRole.Admin)
             return ctx.ErrorResult(422, "VALIDATION_ERROR", "Role must be 'editor' or 'viewer'.");
 
         var result = await invitationService.CreateAsync(
-            ctx.GetTenantId(), ctx.GetUserId(), ctx.GetUserName(), request.Email, role, ct);
+            ctx.GetTenantId(),
+            ctx.GetUserId(),
+            ctx.GetUserName(),
+            request.Email,
+            role,
+            ct
+        );
 
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
@@ -66,38 +64,56 @@ public static class InvitationEndpoints
         var inv = result.Value.Invitation;
         if (result.Value.IsExistingUser)
         {
-            return Results.Created($"/api/invitations/{inv.Id}", new
+            return Results.Created(
+                $"/api/invitations/{inv.Id}",
+                new
+                {
+                    inv.Id,
+                    inv.Email,
+                    Role = inv.Role.ToString().ToLower(),
+                    Status = "pending",
+                    inv.ExpiresAt,
+                    inv.CreatedAt,
+                }
+            );
+        }
+
+        return Results.Created(
+            $"/api/invitations/{inv.Id}",
+            new
             {
                 inv.Id,
                 inv.Email,
                 Role = inv.Role.ToString().ToLower(),
-                Status = "pending",
                 inv.ExpiresAt,
-                inv.CreatedAt
-            });
-        }
-
-        return Results.Created($"/api/invitations/{inv.Id}", new
-        {
-            inv.Id,
-            inv.Email,
-            Role = inv.Role.ToString().ToLower(),
-            inv.ExpiresAt,
-            inv.CreatedAt
-        });
+                inv.CreatedAt,
+            }
+        );
     }
 
     private static async Task<IResult> HandleValidate(
         string token,
         HttpContext ctx,
         IInvitationService invitationService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var result = await invitationService.ValidateAsync(token, ct);
         if (result is null)
-            return ctx.ErrorResult(404, "INVITATION_NOT_FOUND", "This invitation is invalid or has expired.");
+            return ctx.ErrorResult(
+                404,
+                "INVITATION_NOT_FOUND",
+                "This invitation is invalid or has expired."
+            );
 
-        return Results.Ok(new { result.Email, result.Role, result.WorkspaceName });
+        return Results.Ok(
+            new
+            {
+                result.Email,
+                result.Role,
+                result.WorkspaceName,
+            }
+        );
     }
 
     private static async Task<IResult> HandleAccept(
@@ -109,42 +125,91 @@ public static class InvitationEndpoints
         ITenantMembershipRepository membershipRepo,
         ITenantRepository tenantRepo,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
-        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
 
-        var result = await accountService.AcceptInvitationAsync(token, request.Name, request.Password, ct);
+        var result = await accountService.AcceptInvitationAsync(
+            token,
+            request.Name,
+            request.Password,
+            ct
+        );
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
-        await LoginSessionHelper.RecordAsync(ctx, sessionRepo, result.Value.User.Id, result.Value.RefreshTokenId, ct);
+        await LoginSessionHelper.RecordAsync(
+            ctx,
+            sessionRepo,
+            result.Value.User.Id,
+            result.Value.RefreshTokenId,
+            ct
+        );
 
-        await auditLogger.SafeLogAsync(result.Value.User.TenantId, result.Value.User.Id, result.Value.User.Name, AuditAction.InvitationAccepted,
-            "invitation", Guid.Empty, result.Value.User.Email, $"{result.Value.User.Name} accepted invitation", ct);
+        await auditLogger.SafeLogAsync(
+            result.Value.User.TenantId,
+            result.Value.User.Id,
+            result.Value.User.Name,
+            AuditAction.InvitationAccepted,
+            "invitation",
+            Guid.Empty,
+            result.Value.User.Email,
+            $"{result.Value.User.Name} accepted invitation",
+            ct
+        );
 
-        var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, result.Value.User.Id, ct);
-        return Results.Created($"/api/auth/me", new AuthResponse(result.Value.AccessToken, result.Value.RawRefreshToken, ToUserDto(result.Value.User), workspaces));
+        var workspaces = await BuildWorkspaceListAsync(
+            membershipRepo,
+            tenantRepo,
+            result.Value.User.Id,
+            ct
+        );
+        return Results.Created(
+            $"/api/auth/me",
+            new AuthResponse(
+                result.Value.AccessToken,
+                result.Value.RawRefreshToken,
+                ToUserDto(result.Value.User),
+                workspaces
+            )
+        );
     }
 
     private static async Task<IResult> HandleResend(
         Guid id,
         HttpContext ctx,
         IInvitationService invitationService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
-        var result = await invitationService.ResendAsync(ctx.GetTenantId(), id, ctx.GetUserName(), ct);
+        var result = await invitationService.ResendAsync(
+            ctx.GetTenantId(),
+            id,
+            ctx.GetUserName(),
+            ct
+        );
         if (result is null)
-            return ctx.ErrorResult(404, "NOT_FOUND", "Invitation not found.", "Invitation", id.ToString());
+            return ctx.ErrorResult(
+                404,
+                "NOT_FOUND",
+                "Invitation not found.",
+                "Invitation",
+                id.ToString()
+            );
 
         var inv = result.Invitation;
-        return Results.Ok(new
-        {
-            inv.Id,
-            inv.Email,
-            Role = inv.Role.ToString().ToLower(),
-            inv.ExpiresAt,
-            inv.CreatedAt
-        });
+        return Results.Ok(
+            new
+            {
+                inv.Id,
+                inv.Email,
+                Role = inv.Role.ToString().ToLower(),
+                inv.ExpiresAt,
+                inv.CreatedAt,
+            }
+        );
     }
 
     private static async Task<IResult> HandleRevoke(
@@ -152,14 +217,30 @@ public static class InvitationEndpoints
         HttpContext ctx,
         IInvitationService invitationService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var invitation = await invitationService.RevokeAsync(ctx.GetTenantId(), id, ct);
         if (invitation is null)
-            return ctx.ErrorResult(404, "NOT_FOUND", "Invitation not found.", "Invitation", id.ToString());
+            return ctx.ErrorResult(
+                404,
+                "NOT_FOUND",
+                "Invitation not found.",
+                "Invitation",
+                id.ToString()
+            );
 
-        await auditLogger.SafeLogAsync(ctx.GetTenantId(), ctx.GetUserId(), ctx.GetUserName(), AuditAction.InvitationRevoked,
-            "invitation", id, invitation.Email, $"Revoked invitation for {invitation.Email}", ct);
+        await auditLogger.SafeLogAsync(
+            ctx.GetTenantId(),
+            ctx.GetUserId(),
+            ctx.GetUserName(),
+            AuditAction.InvitationRevoked,
+            "invitation",
+            id,
+            invitation.Email,
+            $"Revoked invitation for {invitation.Email}",
+            ct
+        );
 
         return Results.NoContent();
     }
@@ -167,7 +248,8 @@ public static class InvitationEndpoints
     private static async Task<IResult> HandleGetPending(
         HttpContext ctx,
         IInvitationService invitationService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var invitations = await invitationService.GetPendingAsync(ctx.GetUserId(), ct);
         return Results.Ok(new { invitations });
@@ -176,7 +258,8 @@ public static class InvitationEndpoints
     private static async Task<IResult> HandlePendingCount(
         HttpContext ctx,
         IInvitationService invitationService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var count = await invitationService.GetPendingCountAsync(ctx.GetUserId(), ct);
         return Results.Ok(new { count });
@@ -188,7 +271,8 @@ public static class InvitationEndpoints
         RespondToInvitationRequest request,
         IInvitationService invitationService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var userId = ctx.GetUserId();
         var userName = ctx.GetUserName();
@@ -200,26 +284,46 @@ public static class InvitationEndpoints
 
         if (!result.Value.Accepted)
         {
-            await auditLogger.SafeLogAsync(Guid.Empty, userId, userName, AuditAction.InvitationDeclined,
-                "invitation", id, "", $"{userName} declined invitation to workspace", ct);
+            await auditLogger.SafeLogAsync(
+                Guid.Empty,
+                userId,
+                userName,
+                AuditAction.InvitationDeclined,
+                "invitation",
+                id,
+                "",
+                $"{userName} declined invitation to workspace",
+                ct
+            );
 
             return Results.Ok(new { message = "Invitation declined" });
         }
 
-        await auditLogger.SafeLogAsync(result.Value.Membership!.TenantId, userId, userName, AuditAction.InvitationAccepted,
-            "invitation", id, "", $"{userName} accepted invitation as {result.Value.Membership.Role.ToString().ToLower()}", ct);
+        await auditLogger.SafeLogAsync(
+            result.Value.Membership!.TenantId,
+            userId,
+            userName,
+            AuditAction.InvitationAccepted,
+            "invitation",
+            id,
+            "",
+            $"{userName} accepted invitation as {result.Value.Membership.Role.ToString().ToLower()}",
+            ct
+        );
 
-        return Results.Ok(new
-        {
-            message = $"You have joined {result.Value.WorkspaceName}",
-            workspace = new WorkspaceDto(
-                result.Value.Membership.TenantId,
-                result.Value.WorkspaceName ?? "Unknown",
-                result.Value.Membership.Role.ToString().ToLower(),
-                false,
-                result.Value.MemberCount ?? 0,
-                result.Value.AvatarUrl)
-        });
+        return Results.Ok(
+            new
+            {
+                message = $"You have joined {result.Value.WorkspaceName}",
+                workspace = new WorkspaceDto(
+                    result.Value.Membership.TenantId,
+                    result.Value.WorkspaceName ?? "Unknown",
+                    result.Value.Membership.Role.ToString().ToLower(),
+                    false,
+                    result.Value.MemberCount ?? 0,
+                    result.Value.AvatarUrl
+                ),
+            }
+        );
     }
-
 }

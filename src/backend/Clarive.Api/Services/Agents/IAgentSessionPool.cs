@@ -15,7 +15,11 @@ public interface IAgentSessionPool
     /// Creates a new generation agent + session pair and returns a correlation ID.
     /// Throws InvalidOperationException if the pool is at capacity.
     /// </summary>
-    Task<string> CreateSessionAsync(GenerationConfig config, CancellationToken ct = default, IList<AITool>? tools = null);
+    Task<string> CreateSessionAsync(
+        GenerationConfig config,
+        CancellationToken ct = default,
+        IList<AITool>? tools = null
+    );
 
     /// <summary>
     /// Retrieves an existing agent session. Returns null if expired or not found.
@@ -33,7 +37,12 @@ public interface IAgentSessionPool
     void InvalidateAll();
 }
 
-public record AgentSessionEntry(AIAgent Agent, AgentSession Session, DateTime CreatedAt, ToolProgressReporter? ToolProgress = null)
+public record AgentSessionEntry(
+    AIAgent Agent,
+    AgentSession Session,
+    DateTime CreatedAt,
+    ToolProgressReporter? ToolProgress = null
+)
 {
     /// <summary>
     /// Serializes concurrent access to the agent session (e.g., two /refine requests).

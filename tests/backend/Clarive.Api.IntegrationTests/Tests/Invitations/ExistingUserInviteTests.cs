@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Clarive.Api.Data;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Invitations;
@@ -14,7 +14,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Invitations;
 [Collection("Integration")]
 public class ExistingUserInviteTests : IntegrationTestBase
 {
-    public ExistingUserInviteTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ExistingUserInviteTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     // ── Helpers ──
 
@@ -26,7 +27,13 @@ public class ExistingUserInviteTests : IntegrationTestBase
         var email = TestData.UniqueEmail();
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             "/api/auth/register",
-            new { email, password = "securepassword123", name = "Test User" });
+            new
+            {
+                email,
+                password = "securepassword123",
+                name = "Test User",
+            }
+        );
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var token = body.GetProperty("token").GetString()!;
         return (email, token);
@@ -41,11 +48,10 @@ public class ExistingUserInviteTests : IntegrationTestBase
         var adminToken = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(adminToken);
 
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role
-        });
+        var (response, body) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.GetProperty("status").GetString().Should().Be("pending");
@@ -77,9 +83,10 @@ public class ExistingUserInviteTests : IntegrationTestBase
         // Verify no membership was created in admin's workspace
         using var scope = Fixture.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-        var membership = await db.TenantMemberships
-            .FirstOrDefaultAsync(m => m.TenantId == TestData.TenantId
-                && db.Users.Any(u => u.Id == m.UserId && u.Email == email));
+        var membership = await db.TenantMemberships.FirstOrDefaultAsync(m =>
+            m.TenantId == TestData.TenantId
+            && db.Users.Any(u => u.Id == m.UserId && u.Email == email)
+        );
         membership.Should().BeNull("existing user should NOT be auto-added as member");
     }
 
@@ -90,11 +97,10 @@ public class ExistingUserInviteTests : IntegrationTestBase
         await InviteExistingUserAsync(email);
 
         // Second invite for same email should fail
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "viewer"
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "viewer" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.ReadJsonAsync();
@@ -165,7 +171,8 @@ public class ExistingUserInviteTests : IntegrationTestBase
         Client.WithBearerToken(userToken);
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{invitationId}/respond",
-            new { accept = true });
+            new { accept = true }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.TryGetProperty("message", out _).Should().BeTrue();
@@ -176,13 +183,16 @@ public class ExistingUserInviteTests : IntegrationTestBase
         // Verify membership was created
         using var scope = Fixture.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-        var membership = await db.TenantMemberships
-            .FirstOrDefaultAsync(m => m.TenantId == TestData.TenantId
-                && db.Users.Any(u => u.Id == m.UserId && u.Email == email));
+        var membership = await db.TenantMemberships.FirstOrDefaultAsync(m =>
+            m.TenantId == TestData.TenantId
+            && db.Users.Any(u => u.Id == m.UserId && u.Email == email)
+        );
         membership.Should().NotBeNull("membership should be created after accepting");
 
         // Verify invitation was deleted
-        var invitation = await db.Invitations.FirstOrDefaultAsync(i => i.Id == Guid.Parse(invitationId));
+        var invitation = await db.Invitations.FirstOrDefaultAsync(i =>
+            i.Id == Guid.Parse(invitationId)
+        );
         invitation.Should().BeNull("invitation should be deleted after accepting");
     }
 
@@ -197,7 +207,8 @@ public class ExistingUserInviteTests : IntegrationTestBase
         Client.WithBearerToken(userToken);
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{invitationId}/respond",
-            new { accept = false });
+            new { accept = false }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.GetProperty("message").GetString().Should().Contain("declined");
@@ -205,9 +216,10 @@ public class ExistingUserInviteTests : IntegrationTestBase
         // Verify NO membership was created
         using var scope = Fixture.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-        var membership = await db.TenantMemberships
-            .FirstOrDefaultAsync(m => m.TenantId == TestData.TenantId
-                && db.Users.Any(u => u.Id == m.UserId && u.Email == email));
+        var membership = await db.TenantMemberships.FirstOrDefaultAsync(m =>
+            m.TenantId == TestData.TenantId
+            && db.Users.Any(u => u.Id == m.UserId && u.Email == email)
+        );
         membership.Should().BeNull("no membership should exist after declining");
 
         // Verify pending count is now 0
@@ -230,7 +242,8 @@ public class ExistingUserInviteTests : IntegrationTestBase
 
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{invitationId}/respond",
-            new { accept = true });
+            new { accept = true }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -247,7 +260,8 @@ public class ExistingUserInviteTests : IntegrationTestBase
         Client.WithBearerToken(userToken);
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{invitationId}/respond",
-            new { accept = true });
+            new { accept = true }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -260,7 +274,8 @@ public class ExistingUserInviteTests : IntegrationTestBase
 
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{Guid.NewGuid()}/respond",
-            new { accept = true });
+            new { accept = true }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

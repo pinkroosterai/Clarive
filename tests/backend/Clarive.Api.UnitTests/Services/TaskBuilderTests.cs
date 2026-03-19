@@ -7,10 +7,8 @@ namespace Clarive.Api.UnitTests.Services;
 
 public class TaskBuilderTests
 {
-    private static GenerationConfig DefaultConfig(string description = "Test purpose") => new()
-    {
-        Description = description
-    };
+    private static GenerationConfig DefaultConfig(string description = "Test purpose") =>
+        new() { Description = description };
 
     [Fact]
     public void BuildGenerationTask_IncludesDescription()
@@ -48,7 +46,7 @@ public class TaskBuilderTests
     {
         var config = DefaultConfig() with
         {
-            SelectedTools = [new ToolInfo("web_search", "Search the web")]
+            SelectedTools = [new ToolInfo("web_search", "Search the web")],
         };
         var result = TaskBuilder.BuildGenerationTask(config);
         result.Should().Contain("web_search").And.Contain("Search the web");
@@ -64,10 +62,7 @@ public class TaskBuilderTests
     [Fact]
     public void BuildEvaluationTask_IncludesDescriptionAndPrompts()
     {
-        var prompts = new PromptSet
-        {
-            Prompts = [new PromptMessage { Content = "Do X" }]
-        };
+        var prompts = new PromptSet { Prompts = [new PromptMessage { Content = "Do X" }] };
         var result = TaskBuilder.BuildEvaluationTask(DefaultConfig("My purpose"), prompts);
 
         result.Should().Contain("My purpose").And.Contain("Do X");
@@ -78,7 +73,7 @@ public class TaskBuilderTests
     {
         var prompts = new PromptSet
         {
-            Prompts = [new PromptMessage { Content = "Analyze {{topic}}", IsTemplate = true }]
+            Prompts = [new PromptMessage { Content = "Analyze {{topic}}", IsTemplate = true }],
         };
         var config = DefaultConfig() with { GenerateAsPromptTemplate = true };
         var result = TaskBuilder.BuildClarificationTask(config, prompts);
@@ -89,10 +84,7 @@ public class TaskBuilderTests
     [Fact]
     public void BuildClarificationTask_NoTemplate_NoPlaceholderSection()
     {
-        var prompts = new PromptSet
-        {
-            Prompts = [new PromptMessage { Content = "Analyze data" }]
-        };
+        var prompts = new PromptSet { Prompts = [new PromptMessage { Content = "Analyze data" }] };
         var result = TaskBuilder.BuildClarificationTask(DefaultConfig(), prompts);
 
         result.Should().NotContain("placeholders are already parameterized");
@@ -105,19 +97,24 @@ public class TaskBuilderTests
         {
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
-                ["Clarity"] = new() { Score = 6, Feedback = "Needs work" }
-            }
+                ["Clarity"] = new() { Score = 6, Feedback = "Needs work" },
+            },
         };
-        var answers = new List<AnsweredQuestion>
-        {
-            new("What tone?", "Formal")
-        };
+        var answers = new List<AnsweredQuestion> { new("What tone?", "Formal") };
 
         var result = TaskBuilder.BuildRevisionTask(
-            DefaultConfig(), evaluation, answers, ["Add examples"]);
+            DefaultConfig(),
+            evaluation,
+            answers,
+            ["Add examples"]
+        );
 
-        result.Should().Contain("Clarity").And.Contain("6/10")
-            .And.Contain("Formal").And.Contain("Add examples");
+        result
+            .Should()
+            .Contain("Clarity")
+            .And.Contain("6/10")
+            .And.Contain("Formal")
+            .And.Contain("Add examples");
     }
 
     [Fact]
@@ -127,8 +124,8 @@ public class TaskBuilderTests
         {
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
-                ["Clarity"] = new() { Score = 8, Feedback = "OK" }
-            }
+                ["Clarity"] = new() { Score = 8, Feedback = "OK" },
+            },
         };
 
         var result = TaskBuilder.BuildRevisionTask(DefaultConfig(), evaluation, [], []);
@@ -144,13 +141,17 @@ public class TaskBuilderTests
         {
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
-                ["Clarity"] = new() { Score = 8, Feedback = "OK" }
-            }
+                ["Clarity"] = new() { Score = 8, Feedback = "OK" },
+            },
         };
 
         var result = TaskBuilder.BuildRevisionTask(
-            DefaultConfig(), evaluation, [], [],
-            scoreHistory: [5.0, 6.5, 7.0]);
+            DefaultConfig(),
+            evaluation,
+            [],
+            [],
+            scoreHistory: [5.0, 6.5, 7.0]
+        );
 
         result.Should().Contain("Score trend").And.Contain("improving");
     }
@@ -161,7 +162,7 @@ public class TaskBuilderTests
         var prompts = new List<PromptInput>
         {
             new("Write a poem about nature"),
-            new("Make it rhyme")
+            new("Make it rhyme"),
         };
 
         var result = TaskBuilder.BuildSystemMessageTask(prompts);
@@ -196,16 +197,16 @@ public class TaskBuilderTests
     [Fact]
     public void BuildEnhanceBootstrapTask_IncludesPrompts()
     {
-        var prompts = new List<PromptInput>
-        {
-            new("Step 1", true),
-            new("Step 2")
-        };
+        var prompts = new List<PromptInput> { new("Step 1", true), new("Step 2") };
 
         var result = TaskBuilder.BuildEnhanceBootstrapTask("System msg", prompts);
 
-        result.Should().Contain("System msg").And.Contain("Step 1")
-            .And.Contain("(template)").And.Contain("Step 2");
+        result
+            .Should()
+            .Contain("System msg")
+            .And.Contain("Step 1")
+            .And.Contain("(template)")
+            .And.Contain("Step 2");
     }
 
     [Fact]
@@ -225,13 +226,17 @@ public class TaskBuilderTests
         var prompts = new PromptSet
         {
             SystemMessage = "You are an expert",
-            Prompts = [new PromptMessage { Content = "Do X" }]
+            Prompts = [new PromptMessage { Content = "Do X" }],
         };
 
         var result = TaskBuilder.FormatPromptsAsText(prompts);
 
-        result.Should().Contain("[System Message]").And.Contain("You are an expert")
-            .And.Contain("[Step 1]").And.Contain("Do X");
+        result
+            .Should()
+            .Contain("[System Message]")
+            .And.Contain("You are an expert")
+            .And.Contain("[Step 1]")
+            .And.Contain("Do X");
     }
 
     [Fact]
@@ -239,7 +244,7 @@ public class TaskBuilderTests
     {
         var prompts = new PromptSet
         {
-            Prompts = [new PromptMessage { Content = "Analyze {{topic}}", IsTemplate = true }]
+            Prompts = [new PromptMessage { Content = "Analyze {{topic}}", IsTemplate = true }],
         };
 
         var result = TaskBuilder.FormatPromptsAsText(prompts);

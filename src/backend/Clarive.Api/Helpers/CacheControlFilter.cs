@@ -8,7 +8,8 @@ public class CacheControlFilter(int maxAgeSeconds) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
-        EndpointFilterDelegate next)
+        EndpointFilterDelegate next
+    )
     {
         var result = await next(context);
         context.HttpContext.Response.Headers.CacheControl =

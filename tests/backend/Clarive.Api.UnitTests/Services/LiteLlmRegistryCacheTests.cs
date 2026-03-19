@@ -13,80 +13,93 @@ public class LiteLlmRegistryCacheTests
     private readonly LiteLlmRegistryCache _cache;
 
     private const string TestJson = """
-    {
-        "openai/gpt-4o": {
-            "input_cost_per_token": 0.0000025,
-            "output_cost_per_token": 0.00001,
-            "max_input_tokens": 128000,
-            "max_output_tokens": 16384,
-            "mode": "chat",
-            "supports_reasoning": false,
-            "supports_function_calling": true,
-            "supports_response_schema": true,
-            "litellm_provider": "openai"
-        },
-        "anthropic/claude-3-5-sonnet": {
-            "input_cost_per_token": 0.000003,
-            "output_cost_per_token": 0.000015,
-            "max_input_tokens": 200000,
-            "max_output_tokens": 8192,
-            "mode": "chat",
-            "supports_reasoning": false,
-            "supports_function_calling": true,
-            "supports_response_schema": false,
-            "litellm_provider": "anthropic"
-        },
-        "text-embedding-3-small": {
-            "input_cost_per_token": 0.00000002,
-            "max_input_tokens": 8191,
-            "mode": "embedding",
-            "litellm_provider": "openai"
-        },
-        "no-cost-model": {
-            "max_input_tokens": 32000,
-            "max_output_tokens": 4096,
-            "mode": "chat",
-            "litellm_provider": "custom"
-        },
-        "gpt-4o-mini": {
-            "input_cost_per_token": 0.00000015,
-            "output_cost_per_token": 0.0000006,
-            "max_input_tokens": 128000,
-            "max_output_tokens": 16384,
-            "mode": "chat",
-            "litellm_provider": "openai"
-        },
-        "gemini/gemini-2.5-flash": {
-            "input_cost_per_token": 1.5e-07,
-            "output_cost_per_token": 6e-07,
-            "max_input_tokens": 1048576,
-            "max_output_tokens": 65535,
-            "mode": "chat",
-            "supports_reasoning": true,
-            "litellm_provider": "gemini"
-        },
-        "custom/sci-notation-model": {
-            "input_cost_per_token": 1e-06,
-            "output_cost_per_token": 2e-06,
-            "max_input_tokens": 2e5,
-            "max_output_tokens": 4096,
-            "mode": "chat",
-            "litellm_provider": "custom"
+        {
+            "openai/gpt-4o": {
+                "input_cost_per_token": 0.0000025,
+                "output_cost_per_token": 0.00001,
+                "max_input_tokens": 128000,
+                "max_output_tokens": 16384,
+                "mode": "chat",
+                "supports_reasoning": false,
+                "supports_function_calling": true,
+                "supports_response_schema": true,
+                "litellm_provider": "openai"
+            },
+            "anthropic/claude-3-5-sonnet": {
+                "input_cost_per_token": 0.000003,
+                "output_cost_per_token": 0.000015,
+                "max_input_tokens": 200000,
+                "max_output_tokens": 8192,
+                "mode": "chat",
+                "supports_reasoning": false,
+                "supports_function_calling": true,
+                "supports_response_schema": false,
+                "litellm_provider": "anthropic"
+            },
+            "text-embedding-3-small": {
+                "input_cost_per_token": 0.00000002,
+                "max_input_tokens": 8191,
+                "mode": "embedding",
+                "litellm_provider": "openai"
+            },
+            "no-cost-model": {
+                "max_input_tokens": 32000,
+                "max_output_tokens": 4096,
+                "mode": "chat",
+                "litellm_provider": "custom"
+            },
+            "gpt-4o-mini": {
+                "input_cost_per_token": 0.00000015,
+                "output_cost_per_token": 0.0000006,
+                "max_input_tokens": 128000,
+                "max_output_tokens": 16384,
+                "mode": "chat",
+                "litellm_provider": "openai"
+            },
+            "gemini/gemini-2.5-flash": {
+                "input_cost_per_token": 1.5e-07,
+                "output_cost_per_token": 6e-07,
+                "max_input_tokens": 1048576,
+                "max_output_tokens": 65535,
+                "mode": "chat",
+                "supports_reasoning": true,
+                "litellm_provider": "gemini"
+            },
+            "custom/sci-notation-model": {
+                "input_cost_per_token": 1e-06,
+                "output_cost_per_token": 2e-06,
+                "max_input_tokens": 2e5,
+                "max_output_tokens": 4096,
+                "mode": "chat",
+                "litellm_provider": "custom"
+            }
         }
-    }
-    """;
+        """;
 
     public LiteLlmRegistryCacheTests()
     {
         // Capture what's written to the distributed cache so reads return it
         byte[]? stored = null;
-        _distributedCache.SetAsync(
-            Arg.Any<string>(), Arg.Any<byte[]>(), Arg.Any<DistributedCacheEntryOptions>(), Arg.Any<CancellationToken>())
-            .Returns(ci => { stored = ci.ArgAt<byte[]>(1); return Task.CompletedTask; });
-        _distributedCache.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _distributedCache
+            .SetAsync(
+                Arg.Any<string>(),
+                Arg.Any<byte[]>(),
+                Arg.Any<DistributedCacheEntryOptions>(),
+                Arg.Any<CancellationToken>()
+            )
+            .Returns(ci =>
+            {
+                stored = ci.ArgAt<byte[]>(1);
+                return Task.CompletedTask;
+            });
+        _distributedCache
+            .GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(_ => stored);
 
-        _cache = new LiteLlmRegistryCache(_distributedCache, NullLogger<LiteLlmRegistryCache>.Instance);
+        _cache = new LiteLlmRegistryCache(
+            _distributedCache,
+            NullLogger<LiteLlmRegistryCache>.Instance
+        );
         _cache.LoadFromJsonAsync(TestJson).GetAwaiter().GetResult();
     }
 
@@ -181,9 +194,13 @@ public class LiteLlmRegistryCacheTests
     public async Task IsLoadedAsync_ReturnsFalseBeforeLoad()
     {
         var emptyDistributed = Substitute.For<IDistributedCache>();
-        emptyDistributed.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        emptyDistributed
+            .GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((byte[]?)null);
-        var cache = new LiteLlmRegistryCache(emptyDistributed, NullLogger<LiteLlmRegistryCache>.Instance);
+        var cache = new LiteLlmRegistryCache(
+            emptyDistributed,
+            NullLogger<LiteLlmRegistryCache>.Instance
+        );
 
         Assert.False(await cache.IsLoadedAsync());
     }

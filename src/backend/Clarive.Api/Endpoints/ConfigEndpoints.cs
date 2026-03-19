@@ -1,10 +1,10 @@
+using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
-using Clarive.Api.Auth;
 
 namespace Clarive.Api.Endpoints;
 
@@ -35,7 +35,8 @@ public static class ConfigEndpoints
         IAiProviderRepository aiProviderRepo,
         IServiceConfigRepository configRepo,
         IConfiguration configuration,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var unconfigured = new List<string>();
 
@@ -55,23 +56,22 @@ public static class ConfigEndpoints
         var dbOverrides = await configRepo.GetAllAsync(ct);
         var hasAnyDbConfig = dbOverrides.Count > 0 || providers.Count > 0;
 
-        return Results.Ok(new
-        {
-            requiresSetup = !hasAnyDbConfig,
-            unconfiguredSections = unconfigured
-        });
+        return Results.Ok(
+            new { requiresSetup = !hasAnyDbConfig, unconfiguredSections = unconfigured }
+        );
     }
 
     private static async Task<IResult> HandleGetAll(
         IServiceConfigRepository configRepo,
         IConfiguration configuration,
         IEncryptionService encryption,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var overrides = await configRepo.GetAllAsync(ct);
 
-        var result = ConfigRegistry.All
-            .Select(def => ResolveConfigSetting(def, overrides, configuration))
+        var result = ConfigRegistry
+            .All.Select(def => ResolveConfigSetting(def, overrides, configuration))
             .ToList();
 
         return Results.Ok(new { settings = result, serverStartedAtUtc = ServerStartedAtUtc });
@@ -80,7 +80,8 @@ public static class ConfigEndpoints
     private static ConfigSettingResponse ResolveConfigSetting(
         ConfigDefinition def,
         Dictionary<string, ServiceConfig> overrides,
-        IConfiguration configuration)
+        IConfiguration configuration
+    )
     {
         var hasOverride = overrides.ContainsKey(def.Key);
         var effectiveValue = configuration[def.Key];
@@ -89,17 +90,17 @@ public static class ConfigEndpoints
         string? value = null;
         if (!def.IsSecret)
         {
-            value = hasOverride && !overrides[def.Key].IsEncrypted
-                ? overrides[def.Key].EncryptedValue
-                : effectiveValue ?? "";
+            value =
+                hasOverride && !overrides[def.Key].IsEncrypted
+                    ? overrides[def.Key].EncryptedValue
+                    : effectiveValue ?? "";
         }
 
         // For secrets: configured only if there's a DB override (env vars removed)
-        var isConfigured = def.IsSecret
-            ? hasOverride
-            : !string.IsNullOrEmpty(effectiveValue);
+        var isConfigured = def.IsSecret ? hasOverride : !string.IsNullOrEmpty(effectiveValue);
 
-        var source = hasOverride ? "dashboard"
+        var source =
+            hasOverride ? "dashboard"
             : isConfigured ? "default"
             : "none";
 
@@ -120,7 +121,8 @@ public static class ConfigEndpoints
             SubGroup: def.SubGroup,
             VisibleWhen: def.VisibleWhen is not null
                 ? new ConfigVisibleWhenResponse(def.VisibleWhen.Key, def.VisibleWhen.Values)
-                : null);
+                : null
+        );
     }
 
     private static async Task<IResult> HandleSetValue(
@@ -130,31 +132,46 @@ public static class ConfigEndpoints
         IServiceConfigRepository configRepo,
         IEncryptionService encryption,
         TenantCacheService cache,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         key = Uri.UnescapeDataString(key);
 
         if (!ConfigRegistry.ByKey.TryGetValue(key, out var def))
-            return Results.NotFound(new
-            {
-                error = new { code = "CONFIG_KEY_NOT_FOUND", message = $"Unknown config key: {key}" }
-            });
+            return Results.NotFound(
+                new
+                {
+                    error = new
+                    {
+                        code = "CONFIG_KEY_NOT_FOUND",
+                        message = $"Unknown config key: {key}",
+                    },
+                }
+            );
 
         if (string.IsNullOrEmpty(request.Value))
-            return Results.BadRequest(new
-            {
-                error = new { code = "EMPTY_VALUE", message = "Value cannot be empty. Use DELETE to reset to default." }
-            });
+            return Results.BadRequest(
+                new
+                {
+                    error = new
+                    {
+                        code = "EMPTY_VALUE",
+                        message = "Value cannot be empty. Use DELETE to reset to default.",
+                    },
+                }
+            );
 
         if (def.IsSecret && !encryption.IsAvailable)
-            return Results.BadRequest(new
-            {
-                error = new
+            return Results.BadRequest(
+                new
                 {
-                    code = "ENCRYPTION_UNAVAILABLE",
-                    message = "CONFIG_ENCRYPTION_KEY is not configured — cannot store secret values."
+                    error = new
+                    {
+                        code = "ENCRYPTION_UNAVAILABLE",
+                        message = "CONFIG_ENCRYPTION_KEY is not configured — cannot store secret values.",
+                    },
                 }
-            });
+            );
 
         string storedValue;
         bool isEncrypted;
@@ -170,20 +187,30 @@ public static class ConfigEndpoints
             isEncrypted = false;
         }
 
-        await configRepo.CreateOrUpdateAsync(new ServiceConfig
-        {
-            Key = key,
-            EncryptedValue = storedValue,
-            IsEncrypted = isEncrypted,
-            UpdatedAt = DateTime.UtcNow,
-            UpdatedBy = ctx.GetUserName()
-        }, ct);
+        await configRepo.CreateOrUpdateAsync(
+            new ServiceConfig
+            {
+                Key = key,
+                EncryptedValue = storedValue,
+                IsEncrypted = isEncrypted,
+                UpdatedAt = DateTime.UtcNow,
+                UpdatedBy = ctx.GetUserName(),
+            },
+            ct
+        );
 
         // Invalidate playground model cache when AI config changes
         if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
             await TenantCacheKeys.EvictAiData(cache);
 
-        return Results.Ok(new { key, updated = true, requiresRestart = def.RequiresRestart });
+        return Results.Ok(
+            new
+            {
+                key,
+                updated = true,
+                requiresRestart = def.RequiresRestart,
+            }
+        );
     }
 
     private static async Task<IResult> HandleDeleteValue(
@@ -191,15 +218,22 @@ public static class ConfigEndpoints
         HttpContext ctx,
         IServiceConfigRepository configRepo,
         TenantCacheService cache,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         key = Uri.UnescapeDataString(key);
 
         if (!ConfigRegistry.ByKey.ContainsKey(key))
-            return Results.NotFound(new
-            {
-                error = new { code = "CONFIG_KEY_NOT_FOUND", message = $"Unknown config key: {key}" }
-            });
+            return Results.NotFound(
+                new
+                {
+                    error = new
+                    {
+                        code = "CONFIG_KEY_NOT_FOUND",
+                        message = $"Unknown config key: {key}",
+                    },
+                }
+            );
 
         await configRepo.DeleteByKeyAsync(key, ct);
 
@@ -209,5 +243,4 @@ public static class ConfigEndpoints
 
         return Results.Ok(new { key, reset = true });
     }
-
 }

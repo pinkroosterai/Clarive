@@ -21,13 +21,12 @@ public class AiProviderConfiguration : IEntityTypeConfiguration<AiProvider>
         builder.Property(p => p.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(p => p.UpdatedAt).HasColumnName("updated_at").IsRequired();
 
-        builder.HasMany(p => p.Models)
+        builder
+            .HasMany(p => p.Models)
             .WithOne(m => m.Provider)
             .HasForeignKey(m => m.ProviderId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(p => p.Name)
-            .IsUnique()
-            .HasDatabaseName("ix_ai_providers_name");
+        builder.HasIndex(p => p.Name).IsUnique().HasDatabaseName("ix_ai_providers_name");
     }
 }

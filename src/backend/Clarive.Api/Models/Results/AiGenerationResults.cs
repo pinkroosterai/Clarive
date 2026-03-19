@@ -9,4 +9,5 @@ public record AiGenerationResult(
     List<ClarificationQuestionDto> Questions,
     List<string> Enhancements,
     EvaluationDto? Evaluation,
-    List<IterationScoreDto> ScoreHistory);
+    List<IterationScoreDto> ScoreHistory
+);

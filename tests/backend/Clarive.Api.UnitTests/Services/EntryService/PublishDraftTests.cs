@@ -1,8 +1,8 @@
+using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 using ErrorOr;
 using FluentAssertions;
 using NSubstitute;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
 
 namespace Clarive.Api.UnitTests.Services.EntryService;
 
@@ -12,7 +12,8 @@ public class PublishDraftTests : EntryServiceTestBase
     public async Task Publish_EntryNotFound_ReturnsNotFoundError()
     {
         var entryId = Guid.NewGuid();
-        EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
         var result = await Sut.PublishDraftAsync(TenantId, entryId, UserId, CancellationToken.None);
@@ -26,10 +27,16 @@ public class PublishDraftTests : EntryServiceTestBase
     {
         var entry = MakeEntry();
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var result = await Sut.PublishDraftAsync(TenantId, entry.Id, UserId, CancellationToken.None);
+        var result = await Sut.PublishDraftAsync(
+            TenantId,
+            entry.Id,
+            UserId,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.Conflict);
@@ -43,9 +50,16 @@ public class PublishDraftTests : EntryServiceTestBase
         var published = MakeVersion(entry.Id, state: VersionState.Published);
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(published);
+        EntryRepo
+            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(published);
 
-        var result = await Sut.PublishDraftAsync(TenantId, entry.Id, UserId, CancellationToken.None);
+        var result = await Sut.PublishDraftAsync(
+            TenantId,
+            entry.Id,
+            UserId,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.Conflict);
@@ -59,11 +73,19 @@ public class PublishDraftTests : EntryServiceTestBase
         var draft = MakeVersion(entry.Id, state: VersionState.Draft);
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(draft);
-        EntryRepo.GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(draft);
+        EntryRepo
+            .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null); // no prior published
 
-        var result = await Sut.PublishDraftAsync(TenantId, entry.Id, UserId, CancellationToken.None);
+        var result = await Sut.PublishDraftAsync(
+            TenantId,
+            entry.Id,
+            UserId,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeFalse();
         var (_, resultVersion) = result.Value;
@@ -83,10 +105,19 @@ public class PublishDraftTests : EntryServiceTestBase
         var oldPublished = MakeVersion(entry.Id, version: 1, state: VersionState.Published);
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo.GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(draft);
-        EntryRepo.GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(oldPublished);
+        EntryRepo
+            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(draft);
+        EntryRepo
+            .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(oldPublished);
 
-        var result = await Sut.PublishDraftAsync(TenantId, entry.Id, UserId, CancellationToken.None);
+        var result = await Sut.PublishDraftAsync(
+            TenantId,
+            entry.Id,
+            UserId,
+            CancellationToken.None
+        );
 
         result.IsError.Should().BeFalse();
         oldPublished.VersionState.Should().Be(VersionState.Historical);

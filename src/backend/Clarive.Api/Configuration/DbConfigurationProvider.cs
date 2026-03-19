@@ -31,11 +31,22 @@ public class DbConfigurationProvider : ConfigurationProvider, IDisposable
             }
         }
 
-        _reloadTimer = new Timer(_ =>
-        {
-            try { LoadFromDb(); }
-            catch (Exception ex) { Log.Warning(ex, "Failed to reload config from database"); }
-        }, null, Timeout.Infinite, Timeout.Infinite);
+        _reloadTimer = new Timer(
+            _ =>
+            {
+                try
+                {
+                    LoadFromDb();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to reload config from database");
+                }
+            },
+            null,
+            Timeout.Infinite,
+            Timeout.Infinite
+        );
     }
 
     public override void Load()
@@ -63,12 +74,17 @@ public class DbConfigurationProvider : ConfigurationProvider, IDisposable
 
         // Check if table exists (handles first startup before migration)
         using var checkCmd = new NpgsqlCommand(
-            "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = 'service_config')", conn);
+            "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = 'service_config')",
+            conn
+        );
         var exists = (bool)checkCmd.ExecuteScalar()!;
-        if (!exists) return;
+        if (!exists)
+            return;
 
         using var cmd = new NpgsqlCommand(
-            "SELECT key, encrypted_value, is_encrypted FROM service_config", conn);
+            "SELECT key, encrypted_value, is_encrypted FROM service_config",
+            conn
+        );
         using var reader = cmd.ExecuteReader();
 
         while (reader.Read())
@@ -77,10 +93,12 @@ public class DbConfigurationProvider : ConfigurationProvider, IDisposable
             var encryptedValue = reader.IsDBNull(1) ? null : reader.GetString(1);
             var isEncrypted = reader.GetBoolean(2);
 
-            if (encryptedValue is null) continue;
+            if (encryptedValue is null)
+                continue;
 
             // Only process keys in the registry whitelist
-            if (!ConfigRegistry.ByKey.ContainsKey(key)) continue;
+            if (!ConfigRegistry.ByKey.ContainsKey(key))
+                continue;
 
             string value;
             if (isEncrypted && _encryptionKey is not null)
@@ -104,8 +122,11 @@ public class DbConfigurationProvider : ConfigurationProvider, IDisposable
         }
 
         // Only update and notify if data actually changed
-        var changed = Data.Count != data.Count ||
-                      data.Any(kvp => !Data.TryGetValue(kvp.Key, out var existing) || existing != kvp.Value);
+        var changed =
+            Data.Count != data.Count
+            || data.Any(kvp =>
+                !Data.TryGetValue(kvp.Key, out var existing) || existing != kvp.Value
+            );
 
         if (changed)
         {

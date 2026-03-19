@@ -1,12 +1,12 @@
 using System.ComponentModel;
 using Clarive.Api.Auth;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
-using Clarive.Api.Helpers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -48,11 +48,18 @@ public static class PublicApiEndpoints
         var apiKeyIdClaim = ctx.User.FindFirst("apiKeyId")?.Value;
         var apiKeyNameClaim = ctx.User.FindFirst("apiKeyName")?.Value;
 
-        if (tenantClaim is null || !Guid.TryParse(tenantClaim, out var tenantId) ||
-            apiKeyIdClaim is null || !Guid.TryParse(apiKeyIdClaim, out var apiKeyId) ||
-            apiKeyNameClaim is null)
+        if (
+            tenantClaim is null
+            || !Guid.TryParse(tenantClaim, out var tenantId)
+            || apiKeyIdClaim is null
+            || !Guid.TryParse(apiKeyIdClaim, out var apiKeyId)
+            || apiKeyNameClaim is null
+        )
         {
-            return (null, ctx.ErrorResult(401, "UNAUTHORIZED", "Invalid or missing API key claims."));
+            return (
+                null,
+                ctx.ErrorResult(401, "UNAUTHORIZED", "Invalid or missing API key claims.")
+            );
         }
 
         return (new ApiKeyClaims(tenantId, apiKeyId, apiKeyNameClaim), null);
@@ -77,10 +84,12 @@ public static class PublicApiEndpoints
         [Description("Page number (1-based)")] int? page = null,
         [Description("Items per page (max 100)")] int? pageSize = null,
         [Description("Search by title (case-insensitive)")] string? search = null,
-        [Description("Sort order: 'recent', 'alphabetical', or 'oldest'")] string? sortBy = null)
+        [Description("Sort order: 'recent', 'alphabetical', or 'oldest'")] string? sortBy = null
+    )
     {
         var (claims, claimsError) = GetApiKeyClaims(ctx);
-        if (claims is null) return claimsError!;
+        if (claims is null)
+            return claimsError!;
 
         bool includeAll = string.Equals(folderId, "all", StringComparison.OrdinalIgnoreCase);
         Guid? parsedFolderId = null;
@@ -96,17 +105,39 @@ public static class PublicApiEndpoints
 
         // Force status=published — the public API only exposes published entries
         var result = await entryService.ListEntriesAsync(
-            claims.TenantId, Guid.Empty, parsedFolderId, includeAll || folderId is null,
-            tags, tagMode, p, ps, search, "published", sortBy, ct);
+            claims.TenantId,
+            Guid.Empty,
+            parsedFolderId,
+            includeAll || folderId is null,
+            tags,
+            tagMode,
+            p,
+            ps,
+            search,
+            "published",
+            sortBy,
+            ct
+        );
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
         var (summaries, totalCount) = result.Value;
 
-        var items = summaries.Select(s => new PublicEntrySummary(
-            s.Id, s.Title, s.Version, s.HasSystemMessage,
-            s.IsTemplate, s.IsChain, s.PromptCount,
-            s.FirstPromptPreview, s.Tags, s.CreatedAt, s.UpdatedAt)).ToList();
+        var items = summaries
+            .Select(s => new PublicEntrySummary(
+                s.Id,
+                s.Title,
+                s.Version,
+                s.HasSystemMessage,
+                s.IsTemplate,
+                s.IsChain,
+                s.PromptCount,
+                s.FirstPromptPreview,
+                s.Tags,
+                s.CreatedAt,
+                s.UpdatedAt
+            ))
+            .ToList();
 
         return Results.Ok(new PaginatedResponse<PublicEntrySummary>(items, totalCount, p, ps));
     }
@@ -120,10 +151,12 @@ public static class PublicApiEndpoints
         ITagRepository tagRepo,
         TenantCacheService cache,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var (claims, claimsError) = GetApiKeyClaims(ctx);
-        if (claims is null) return claimsError!;
+        if (claims is null)
+            return claimsError!;
 
         var result = await entryService.GetPublishedEntryAsync(claims.TenantId, entryId, ct);
         if (result.IsError)
@@ -132,22 +165,40 @@ public static class PublicApiEndpoints
         var (entry, published) = result.Value;
 
         await auditLogger.LogAsync(
-            claims.TenantId, claims.ApiKeyId, claims.ApiKeyName,
-            AuditAction.ApiGet, "entry", entry.Id, entry.Title, ct: ct);
+            claims.TenantId,
+            claims.ApiKeyId,
+            claims.ApiKeyName,
+            AuditAction.ApiGet,
+            "entry",
+            entry.Id,
+            entry.Title,
+            ct: ct
+        );
 
         var entryTags = await tagRepo.GetByEntryIdAsync(claims.TenantId, entryId, ct);
 
-        var prompts = published.Prompts
-            .OrderBy(p => p.Order)
+        var prompts = published
+            .Prompts.OrderBy(p => p.Order)
             .Select(p => new PublicPrompt(
-                p.Content, p.Order, p.IsTemplate,
-                p.IsTemplate && p.TemplateFields.Count > 0 ? p.TemplateFields : null))
+                p.Content,
+                p.Order,
+                p.IsTemplate,
+                p.IsTemplate && p.TemplateFields.Count > 0 ? p.TemplateFields : null
+            ))
             .ToList();
 
-        return Results.Ok(new PublicPromptEntry(
-            entry.Id, entry.Title, published.SystemMessage,
-            published.Version, prompts,
-            entryTags, entry.UpdatedAt, published.PublishedAt));
+        return Results.Ok(
+            new PublicPromptEntry(
+                entry.Id,
+                entry.Title,
+                published.SystemMessage,
+                published.Version,
+                prompts,
+                entryTags,
+                entry.UpdatedAt,
+                published.PublishedAt
+            )
+        );
     }
 
     // ── Generate (render templates) ──
@@ -158,10 +209,12 @@ public static class PublicApiEndpoints
         PublicGenerateRequest request,
         IEntryService entryService,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var (claims, claimsError) = GetApiKeyClaims(ctx);
-        if (claims is null) return claimsError!;
+        if (claims is null)
+            return claimsError!;
 
         var result = await entryService.GetPublishedEntryAsync(claims.TenantId, entryId, ct);
         if (result.IsError)
@@ -171,8 +224,8 @@ public static class PublicApiEndpoints
 
         // Collect all template fields across all prompts, deduplicated by name.
         // GroupBy guarantees non-empty groups, so First() is always safe here.
-        var allFields = published.Prompts
-            .Where(p => p.IsTemplate)
+        var allFields = published
+            .Prompts.Where(p => p.IsTemplate)
             .SelectMany(p => p.TemplateFields)
             .GroupBy(f => f.Name)
             .Select(g => g.First())
@@ -182,14 +235,20 @@ public static class PublicApiEndpoints
         var fields = request.Fields ?? new Dictionary<string, string>();
         var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
         if (errors.Count > 0)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Template field validation failed.", errors);
+            return ctx.ErrorResult(
+                422,
+                "VALIDATION_ERROR",
+                "Template field validation failed.",
+                errors
+            );
 
         // Render prompts
-        var rendered = published.Prompts
-            .OrderBy(p => p.Order)
+        var rendered = published
+            .Prompts.OrderBy(p => p.Order)
             .Select(p => new RenderedPrompt(
                 p.IsTemplate ? TemplateParser.Render(p.Content, fields) : p.Content,
-                p.Order))
+                p.Order
+            ))
             .ToList();
 
         // Render system message if it contains templates
@@ -198,12 +257,25 @@ public static class PublicApiEndpoints
             systemMessage = TemplateParser.Render(systemMessage, fields);
 
         await auditLogger.LogAsync(
-            claims.TenantId, claims.ApiKeyId, claims.ApiKeyName,
-            AuditAction.ApiGenerate, "entry", entry.Id, entry.Title, ct: ct);
+            claims.TenantId,
+            claims.ApiKeyId,
+            claims.ApiKeyName,
+            AuditAction.ApiGenerate,
+            "entry",
+            entry.Id,
+            entry.Title,
+            ct: ct
+        );
 
-        return Results.Ok(new PublicGenerateResponse(
-            entry.Id, entry.Title, published.Version,
-            systemMessage, rendered));
+        return Results.Ok(
+            new PublicGenerateResponse(
+                entry.Id,
+                entry.Title,
+                published.Version,
+                systemMessage,
+                rendered
+            )
+        );
     }
 
     // ── List tags ──
@@ -212,19 +284,23 @@ public static class PublicApiEndpoints
         HttpContext ctx,
         ITagRepository tagRepo,
         TenantCacheService cache,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var (claims, claimsError) = GetApiKeyClaims(ctx);
-        if (claims is null) return claimsError!;
+        if (claims is null)
+            return claimsError!;
 
         var tags = await cache.GetOrCreateAsync(
             TenantCacheKeys.WorkspaceTagsKey,
             claims.TenantId,
             _ => tagRepo.GetAllWithCountsAsync(claims.TenantId, ct),
             TenantCacheKeys.WorkspaceTagsTtl,
-            ct);
+            ct
+        );
 
-        var response = tags.Select(t => new { name = t.TagName, entryCount = t.EntryCount }).ToList();
+        var response = tags.Select(t => new { name = t.TagName, entryCount = t.EntryCount })
+            .ToList();
         return Results.Ok(response);
     }
 
@@ -233,14 +309,17 @@ public static class PublicApiEndpoints
     private static async Task<IResult> HandleOpenApiSpec(
         HttpContext ctx,
         IWebHostEnvironment env,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         // In Docker: /app/docs/api-reference.yaml
         // In dev:    {ContentRootPath}/../../../docs/api-reference.yaml
         var candidates = new[]
         {
             Path.Combine(env.ContentRootPath, "docs", "api-reference.yaml"),
-            Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", "..", "..", "docs", "api-reference.yaml"))
+            Path.GetFullPath(
+                Path.Combine(env.ContentRootPath, "..", "..", "..", "docs", "api-reference.yaml")
+            ),
         };
 
         var specPath = candidates.FirstOrDefault(File.Exists);

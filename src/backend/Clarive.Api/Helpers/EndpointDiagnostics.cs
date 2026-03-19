@@ -15,11 +15,14 @@ public static class EndpointDiagnostics
         string errorCode,
         string message,
         string? entityType = null,
-        string? entityId = null)
+        string? entityId = null
+    )
     {
         ctx.Items["log:ErrorCode"] = errorCode;
-        if (entityType is not null) ctx.Items["log:EntityType"] = entityType;
-        if (entityId is not null) ctx.Items["log:EntityId"] = entityId;
+        if (entityType is not null)
+            ctx.Items["log:EntityType"] = entityType;
+        if (entityId is not null)
+            ctx.Items["log:EntityId"] = entityId;
 
         return Results.Json(new ErrorResponse(new(errorCode, message)), statusCode: statusCode);
     }
@@ -33,10 +36,14 @@ public static class EndpointDiagnostics
         int statusCode,
         string errorCode,
         string message,
-        object details)
+        object details
+    )
     {
         ctx.Items["log:ErrorCode"] = errorCode;
 
-        return Results.Json(new ErrorResponse(new(errorCode, message, details)), statusCode: statusCode);
+        return Results.Json(
+            new ErrorResponse(new(errorCode, message, details)),
+            statusCode: statusCode
+        );
     }
 }

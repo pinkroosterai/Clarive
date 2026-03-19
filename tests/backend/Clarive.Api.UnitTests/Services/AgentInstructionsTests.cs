@@ -9,11 +9,7 @@ public class AgentInstructionsTests
     [Fact]
     public void BuildGeneration_WebSearchEnabled_IncludesWebResearchSection()
     {
-        var config = new GenerationConfig
-        {
-            Description = "Test prompt",
-            EnableWebSearch = true
-        };
+        var config = new GenerationConfig { Description = "Test prompt", EnableWebSearch = true };
 
         var result = AgentInstructions.BuildGeneration(config);
 
@@ -24,11 +20,7 @@ public class AgentInstructionsTests
     [Fact]
     public void BuildGeneration_WebSearchDisabled_ExcludesWebResearchSection()
     {
-        var config = new GenerationConfig
-        {
-            Description = "Test prompt",
-            EnableWebSearch = false
-        };
+        var config = new GenerationConfig { Description = "Test prompt", EnableWebSearch = false };
 
         var result = AgentInstructions.BuildGeneration(config);
 
@@ -39,10 +31,7 @@ public class AgentInstructionsTests
     [Fact]
     public void BuildGeneration_DefaultConfig_ExcludesWebResearch()
     {
-        var config = new GenerationConfig
-        {
-            Description = "Test prompt"
-        };
+        var config = new GenerationConfig { Description = "Test prompt" };
 
         var result = AgentInstructions.BuildGeneration(config);
 
@@ -50,17 +39,21 @@ public class AgentInstructionsTests
     }
 
     private static GenerationConfig ConfigWith(
-        bool systemMessage = false, bool template = false,
-        bool chain = false, bool webSearch = false,
-        List<ToolInfo>? tools = null) => new()
-    {
-        Description = "Test",
-        GenerateSystemMessage = systemMessage,
-        GenerateAsPromptTemplate = template,
-        GenerateAsPromptChain = chain,
-        EnableWebSearch = webSearch,
-        SelectedTools = tools ?? []
-    };
+        bool systemMessage = false,
+        bool template = false,
+        bool chain = false,
+        bool webSearch = false,
+        List<ToolInfo>? tools = null
+    ) =>
+        new()
+        {
+            Description = "Test",
+            GenerateSystemMessage = systemMessage,
+            GenerateAsPromptTemplate = template,
+            GenerateAsPromptChain = chain,
+            EnableWebSearch = webSearch,
+            SelectedTools = tools ?? [],
+        };
 
     // ── BuildGeneration conditional sections ──
 
@@ -110,7 +103,8 @@ public class AgentInstructionsTests
     public void BuildGeneration_WithTools_IncludesToolGuidance()
     {
         var result = AgentInstructions.BuildGeneration(
-            ConfigWith(tools: [new ToolInfo("search", "Search web")]));
+            ConfigWith(tools: [new ToolInfo("search", "Search web")])
+        );
         result.Should().Contain("tool's purpose and usage rules");
     }
 
@@ -118,7 +112,8 @@ public class AgentInstructionsTests
     public void BuildGeneration_WithToolsAndSystemMessage_UsesSystemMessageToolGuidance()
     {
         var result = AgentInstructions.BuildGeneration(
-            ConfigWith(systemMessage: true, tools: [new ToolInfo("search", "Search")]));
+            ConfigWith(systemMessage: true, tools: [new ToolInfo("search", "Search")])
+        );
         result.Should().Contain("in the system message");
     }
 
@@ -126,7 +121,8 @@ public class AgentInstructionsTests
     public void BuildGeneration_WithToolsNoSystemMessage_UsesFirstPromptToolGuidance()
     {
         var result = AgentInstructions.BuildGeneration(
-            ConfigWith(systemMessage: false, tools: [new ToolInfo("search", "Search")]));
+            ConfigWith(systemMessage: false, tools: [new ToolInfo("search", "Search")])
+        );
         result.Should().Contain("in the first prompt");
     }
 
@@ -136,7 +132,9 @@ public class AgentInstructionsTests
     public void BuildEvaluation_Default_IncludesCore()
     {
         var result = AgentInstructions.BuildEvaluation(ConfigWith());
-        result.Should().Contain("prompt quality evaluator")
+        result
+            .Should()
+            .Contain("prompt quality evaluator")
             .And.Contain("Clarity")
             .And.Contain("Effectiveness");
     }
@@ -187,7 +185,8 @@ public class AgentInstructionsTests
     public void BuildEvaluation_WithTools_IncludesToolCriteria()
     {
         var result = AgentInstructions.BuildEvaluation(
-            ConfigWith(tools: [new ToolInfo("search", "Search")]));
+            ConfigWith(tools: [new ToolInfo("search", "Search")])
+        );
         result.Should().Contain("every specified tool");
     }
 

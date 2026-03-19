@@ -14,5 +14,6 @@ public interface IAiUsageLogger
         long outputTokens,
         long durationMs,
         Guid? entryId = null,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+    );
 }

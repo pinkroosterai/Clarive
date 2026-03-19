@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Entries;
@@ -10,7 +10,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Entries;
 [Collection("Integration")]
 public class EntryReadTests : IntegrationTestBase
 {
-    public EntryReadTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public EntryReadTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task List_AllEntries_ReturnsAtLeastSeedCount()
@@ -38,7 +39,9 @@ public class EntryReadTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.GetAsync($"/api/entries?folderId={TestData.FolderContentWriting}");
+        var response = await Client.GetAsync(
+            $"/api/entries?folderId={TestData.FolderContentWriting}"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -46,8 +49,14 @@ public class EntryReadTests : IntegrationTestBase
         var entries = json.GetProperty("items").EnumerateArray().ToList();
         // e-001 "Blog Post Generator" is in Content Writing
         entries.Should().HaveCountGreaterThanOrEqualTo(1);
-        entries.Should().AllSatisfy(e =>
-            e.GetProperty("folderId").GetString().Should().Be(TestData.FolderContentWriting.ToString()));
+        entries
+            .Should()
+            .AllSatisfy(e =>
+                e.GetProperty("folderId")
+                    .GetString()
+                    .Should()
+                    .Be(TestData.FolderContentWriting.ToString())
+            );
     }
 
     [Fact]
@@ -65,8 +74,7 @@ public class EntryReadTests : IntegrationTestBase
         var entries = json.GetProperty("items").EnumerateArray().ToList();
         // Seed has 1 trashed entry (e-009)
         entries.Should().HaveCountGreaterThanOrEqualTo(1);
-        entries.Should().AllSatisfy(e =>
-            e.GetProperty("isTrashed").GetBoolean().Should().BeTrue());
+        entries.Should().AllSatisfy(e => e.GetProperty("isTrashed").GetBoolean().Should().BeTrue());
     }
 
     [Fact]

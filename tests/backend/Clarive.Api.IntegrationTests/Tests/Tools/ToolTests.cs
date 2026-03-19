@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Tools;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Tools;
 [Collection("Integration")]
 public class ToolTests : IntegrationTestBase
 {
-    public ToolTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ToolTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task List_AsViewer_ReturnsSeedTools()
@@ -40,12 +41,15 @@ public class ToolTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, body) = await Client.PostJsonAsync<JsonElement>("/api/tools", new
-        {
-            name = "Email Sender",
-            toolName = "send_email",
-            description = "Sends emails via SMTP"
-        });
+        var (response, body) = await Client.PostJsonAsync<JsonElement>(
+            "/api/tools",
+            new
+            {
+                name = "Email Sender",
+                toolName = "send_email",
+                description = "Sends emails via SMTP",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.GetProperty("name").GetString().Should().Be("Email Sender");
@@ -58,12 +62,15 @@ public class ToolTests : IntegrationTestBase
         var token = await AuthHelper.GetViewerTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var response = await Client.PostAsJsonAsync("/api/tools", new
-        {
-            name = "Test",
-            toolName = "test_tool",
-            description = "Forbidden"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/tools",
+            new
+            {
+                name = "Test",
+                toolName = "test_tool",
+                description = "Forbidden",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -74,12 +81,15 @@ public class ToolTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/tools", new
-        {
-            name = "",
-            toolName = "test_tool",
-            description = "Test"
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/tools",
+            new
+            {
+                name = "",
+                toolName = "test_tool",
+                description = "Test",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -90,12 +100,15 @@ public class ToolTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/tools", new
-        {
-            name = "Test Tool",
-            toolName = "invalid tool name!",
-            description = "Test"
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/tools",
+            new
+            {
+                name = "Test Tool",
+                toolName = "invalid tool name!",
+                description = "Test",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -107,20 +120,22 @@ public class ToolTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create first
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/tools", new
-        {
-            name = "Original Tool",
-            toolName = "orig_tool",
-            description = "Original"
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/tools",
+            new
+            {
+                name = "Original Tool",
+                toolName = "orig_tool",
+                description = "Original",
+            }
+        );
         var toolId = created.GetProperty("id").GetString();
 
         // Update
-        var (updateResponse, updated) = await Client.PatchJsonAsync<JsonElement>($"/api/tools/{toolId}", new
-        {
-            name = "Updated Tool",
-            description = "Updated description"
-        });
+        var (updateResponse, updated) = await Client.PatchJsonAsync<JsonElement>(
+            $"/api/tools/{toolId}",
+            new { name = "Updated Tool", description = "Updated description" }
+        );
 
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         updated.GetProperty("name").GetString().Should().Be("Updated Tool");
@@ -134,10 +149,10 @@ public class ToolTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PatchJsonAsync<JsonElement>($"/api/tools/{Guid.NewGuid()}", new
-        {
-            name = "Nope"
-        });
+        var (response, _) = await Client.PatchJsonAsync<JsonElement>(
+            $"/api/tools/{Guid.NewGuid()}",
+            new { name = "Nope" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -149,12 +164,15 @@ public class ToolTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         // Create then delete
-        var (_, created) = await Client.PostJsonAsync<JsonElement>("/api/tools", new
-        {
-            name = "To Delete",
-            toolName = "to_delete",
-            description = "Will be removed"
-        });
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/tools",
+            new
+            {
+                name = "To Delete",
+                toolName = "to_delete",
+                description = "Will be removed",
+            }
+        );
         var toolId = created.GetProperty("id").GetString();
 
         var deleteResponse = await Client.DeleteAsync($"/api/tools/{toolId}");
@@ -177,10 +195,10 @@ public class ToolTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        var (response, _) = await Client.PostJsonAsync<JsonElement>("/api/tools/import-mcp", new
-        {
-            serverUrl = "not-a-valid-url"
-        });
+        var (response, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/tools/import-mcp",
+            new { serverUrl = "not-a-valid-url" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }

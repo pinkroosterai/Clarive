@@ -14,15 +14,14 @@ namespace Clarive.Api.Data.Migrations
                 name: "reasoning",
                 table: "playground_runs",
                 type: "jsonb",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "reasoning",
-                table: "playground_runs");
+            migrationBuilder.DropColumn(name: "reasoning", table: "playground_runs");
         }
     }
 }

@@ -13,8 +13,11 @@ public class ServiceConfigConfiguration : IEntityTypeConfiguration<ServiceConfig
         builder.HasKey(c => c.Key);
         builder.Property(c => c.Key).HasColumnName("key").HasMaxLength(128);
         builder.Property(c => c.EncryptedValue).HasColumnName("encrypted_value");
-        builder.Property(c => c.IsEncrypted).HasColumnName("is_encrypted")
-            .IsRequired().HasDefaultValue(false);
+        builder
+            .Property(c => c.IsEncrypted)
+            .HasColumnName("is_encrypted")
+            .IsRequired()
+            .HasDefaultValue(false);
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
         builder.Property(c => c.UpdatedBy).HasColumnName("updated_by").HasMaxLength(255);
     }

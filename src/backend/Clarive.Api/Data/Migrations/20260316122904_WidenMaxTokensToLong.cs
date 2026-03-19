@@ -17,7 +17,8 @@ namespace Clarive.Api.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(int),
                 oldType: "integer",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<long>(
                 name: "max_input_tokens",
@@ -26,7 +27,8 @@ namespace Clarive.Api.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(int),
                 oldType: "integer",
-                oldNullable: true);
+                oldNullable: true
+            );
         }
 
         /// <inheritdoc />
@@ -39,7 +41,8 @@ namespace Clarive.Api.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(long),
                 oldType: "bigint",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "max_input_tokens",
@@ -48,7 +51,8 @@ namespace Clarive.Api.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(long),
                 oldType: "bigint",
-                oldNullable: true);
+                oldNullable: true
+            );
         }
     }
 }

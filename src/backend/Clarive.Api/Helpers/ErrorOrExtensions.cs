@@ -12,7 +12,8 @@ public static class ErrorOrExtensions
         this List<Error> errors,
         HttpContext ctx,
         string? entityType = null,
-        string? entityId = null)
+        string? entityId = null
+    )
     {
         var error = errors[0];
 
@@ -24,7 +25,7 @@ public static class ErrorOrExtensions
             ErrorType.Unauthorized => 401,
             ErrorType.Forbidden => 403,
             _ when error.NumericType >= 400 && error.NumericType < 600 => error.NumericType,
-            _ => 400
+            _ => 400,
         };
 
         return ctx.ErrorResult(statusCode, error.Code, error.Description, entityType, entityId);

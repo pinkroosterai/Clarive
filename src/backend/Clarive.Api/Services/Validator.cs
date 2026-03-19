@@ -17,17 +17,18 @@ public static partial class Validator
     /// Validates a request object using Data Annotations via MiniValidation.
     /// Returns a 422 error result if invalid; null if valid.
     /// </summary>
-    public static IResult? ValidateRequest<T>(T request) where T : class
+    public static IResult? ValidateRequest<T>(T request)
+        where T : class
     {
         if (!MiniValidator.TryValidate(request, out var errors))
         {
             var firstError = errors.Values.ToArray()[0][0];
             return Results.Json(
                 new ErrorResponse(new("VALIDATION_ERROR", firstError)),
-                statusCode: 422);
+                statusCode: 422
+            );
         }
 
         return null;
     }
-
 }

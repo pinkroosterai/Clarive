@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Playground;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Playground;
 [Collection("Integration")]
 public class PlaygroundTests : IntegrationTestBase
 {
-    public PlaygroundTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public PlaygroundTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     // ── Test Entry (error paths) ──
 
@@ -23,7 +24,8 @@ public class PlaygroundTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/test",
-            new { temperature = 1.0, maxTokens = 100 });
+            new { temperature = 1.0, maxTokens = 100 }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -36,11 +38,14 @@ public class PlaygroundTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{Guid.NewGuid()}/test",
-            new { temperature = 1.0, maxTokens = 100 });
+            new { temperature = 1.0, maxTokens = 100 }
+        );
 
         // The service will return NOT_FOUND which maps to 404
         // (or 500 if OpenAI client fails first — but the entry check comes first)
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.InternalServerError);
+        response
+            .StatusCode.Should()
+            .BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.InternalServerError);
     }
 
     [Fact]
@@ -51,7 +56,8 @@ public class PlaygroundTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/test",
-            new { temperature = 5.0, maxTokens = 100 });
+            new { temperature = 5.0, maxTokens = 100 }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -64,7 +70,8 @@ public class PlaygroundTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/test",
-            new { temperature = 1.0, maxTokens = 0 });
+            new { temperature = 1.0, maxTokens = 0 }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -74,7 +81,8 @@ public class PlaygroundTests : IntegrationTestBase
     {
         var response = await Client.PostAsJsonAsync(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/test",
-            new { temperature = 1.0, maxTokens = 100 });
+            new { temperature = 1.0, maxTokens = 100 }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -88,7 +96,8 @@ public class PlaygroundTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var response = await Client.GetAsync(
-            $"/api/entries/{TestData.EntryBlogPostGenerator}/test-runs");
+            $"/api/entries/{TestData.EntryBlogPostGenerator}/test-runs"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.ReadJsonAsync();
@@ -103,7 +112,8 @@ public class PlaygroundTests : IntegrationTestBase
         Client.WithBearerToken(token);
 
         var response = await Client.GetAsync(
-            $"/api/entries/{TestData.EntryBlogPostGenerator}/test-runs");
+            $"/api/entries/{TestData.EntryBlogPostGenerator}/test-runs"
+        );
 
         // Viewers have RequireAuthorization() but the endpoint doesn't specify EditorOrAdmin
         // for GET test-runs — they should be able to read
@@ -114,7 +124,8 @@ public class PlaygroundTests : IntegrationTestBase
     public async Task GetTestRuns_Unauthenticated_Returns401()
     {
         var response = await Client.GetAsync(
-            $"/api/entries/{TestData.EntryBlogPostGenerator}/test-runs");
+            $"/api/entries/{TestData.EntryBlogPostGenerator}/test-runs"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

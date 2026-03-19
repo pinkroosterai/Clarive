@@ -6,9 +6,8 @@ namespace Clarive.Api.Services.Background;
 /// Periodically deletes old Serilog log entries from the database.
 /// Runs every 24 hours, removing records older than 30 days.
 /// </summary>
-public class LogCleanupService(
-    IServiceScopeFactory scopeFactory,
-    ILogger<LogCleanupService> logger) : BackgroundService
+public class LogCleanupService(IServiceScopeFactory scopeFactory, ILogger<LogCleanupService> logger)
+    : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromHours(24);
     private static readonly TimeSpan MaxAge = TimeSpan.FromDays(30);
@@ -31,7 +30,8 @@ public class LogCleanupService(
 
             var cutoff = DateTime.UtcNow - MaxAge;
             await using var cmd = dataSource.CreateCommand(
-                "DELETE FROM logs WHERE timestamp < @cutoff");
+                "DELETE FROM logs WHERE timestamp < @cutoff"
+            );
             cmd.Parameters.AddWithValue("@cutoff", cutoff);
 
             await using var conn = await dataSource.OpenConnectionAsync(ct);

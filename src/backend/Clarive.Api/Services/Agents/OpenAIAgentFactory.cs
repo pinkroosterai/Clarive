@@ -27,7 +27,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         AiActionType.SystemMessage,
         AiActionType.Decomposition,
         AiActionType.FillTemplateFields,
-        AiActionType.PlaygroundJudge
+        AiActionType.PlaygroundJudge,
     ];
 
     private readonly ILoggerFactory _loggerFactory;
@@ -37,7 +37,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly IDisposable? _changeSubscription;
     private readonly Dictionary<AiActionType, IChatClient> _actionClients = new();
-    private readonly Dictionary<AiActionType, (string ModelId, string ProviderName)> _actionModelInfo = new();
+    private readonly Dictionary<
+        AiActionType,
+        (string ModelId, string ProviderName)
+    > _actionModelInfo = new();
 
     private OpenAIClient? _openAiClient;
     private bool _isConfigured;
@@ -47,8 +50,14 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         get
         {
             _lock.EnterReadLock();
-            try { return _isConfigured; }
-            finally { _lock.ExitReadLock(); }
+            try
+            {
+                return _isConfigured;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
         }
     }
 
@@ -57,11 +66,12 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         _lock.EnterReadLock();
         try
         {
-            return _actionModelInfo.TryGetValue(actionType, out var info)
-                ? info
-                : (null, null);
+            return _actionModelInfo.TryGetValue(actionType, out var info) ? info : (null, null);
         }
-        finally { _lock.ExitReadLock(); }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
     public event Action? OnReconfigured;
@@ -70,25 +80,35 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         IOptionsMonitor<AiSettings> optionsMonitor,
         IServiceScopeFactory scopeFactory,
         IEncryptionService encryption,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory
+    )
     {
         _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<OpenAIAgentFactory>();
         _scopeFactory = scopeFactory;
         _encryption = encryption;
 
-        Task.Run(() => ReinitializeClientsAsync(optionsMonitor.CurrentValue)).GetAwaiter().GetResult();
+        Task.Run(() => ReinitializeClientsAsync(optionsMonitor.CurrentValue))
+            .GetAwaiter()
+            .GetResult();
 
-        _changeSubscription = optionsMonitor.OnChange((newSettings, __) =>
-        {
-            _logger.LogInformation("AI settings changed, reinitializing clients");
-            _ = ReinitializeClientsAsync(newSettings).ContinueWith(
-                t => _logger.LogWarning(t.Exception, "Failed to reinitialize AI clients"),
-                TaskContinuationOptions.OnlyOnFaulted);
-        });
+        _changeSubscription = optionsMonitor.OnChange(
+            (newSettings, __) =>
+            {
+                _logger.LogInformation("AI settings changed, reinitializing clients");
+                _ = ReinitializeClientsAsync(newSettings)
+                    .ContinueWith(
+                        t => _logger.LogWarning(t.Exception, "Failed to reinitialize AI clients"),
+                        TaskContinuationOptions.OnlyOnFaulted
+                    );
+            }
+        );
     }
 
-    public (AIAgent Agent, ToolProgressReporter? ToolProgress) CreateGenerationAgent(GenerationConfig config, IList<AITool>? tools = null)
+    public (AIAgent Agent, ToolProgressReporter? ToolProgress) CreateGenerationAgent(
+        GenerationConfig config,
+        IList<AITool>? tools = null
+    )
     {
         _lock.EnterReadLock();
         try
@@ -105,7 +125,9 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                     .Use(innerClient =>
                     {
                         var eefic = new EventEmittingFunctionInvokingChatClient(
-                            innerClient, _loggerFactory);
+                            innerClient,
+                            _loggerFactory
+                        );
                         eefic.ToolCallStarting += handler.OnToolCallStartingAsync;
                         eefic.ToolCallCompleted += handler.OnToolCallCompletedAsync;
                         return eefic;
@@ -116,7 +138,8 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                     instructions: AgentInstructions.BuildGeneration(config),
                     name: "PromptGenerator",
                     tools: tools,
-                    loggerFactory: _loggerFactory);
+                    loggerFactory: _loggerFactory
+                );
 
                 return (agent, reporter);
             }
@@ -124,43 +147,76 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             var standardAgent = client.AsAIAgent(
                 instructions: AgentInstructions.BuildGeneration(config),
                 name: "PromptGenerator",
-                loggerFactory: _loggerFactory);
+                loggerFactory: _loggerFactory
+            );
 
             return (standardAgent, null);
         }
-        finally { _lock.ExitReadLock(); }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
-    public AIAgent CreateEvaluationAgent(GenerationConfig config)
-        => CreateActionAgent(AiActionType.Evaluation, AgentInstructions.BuildEvaluation(config), "PromptEvaluator");
+    public AIAgent CreateEvaluationAgent(GenerationConfig config) =>
+        CreateActionAgent(
+            AiActionType.Evaluation,
+            AgentInstructions.BuildEvaluation(config),
+            "PromptEvaluator"
+        );
 
-    public AIAgent CreateClarificationAgent()
-        => CreateActionAgent(AiActionType.Clarification, AgentInstructions.Clarification, "PromptClarifier");
+    public AIAgent CreateClarificationAgent() =>
+        CreateActionAgent(
+            AiActionType.Clarification,
+            AgentInstructions.Clarification,
+            "PromptClarifier"
+        );
 
-    public AIAgent CreateSystemMessageAgent()
-        => CreateActionAgent(AiActionType.SystemMessage, AgentInstructions.SystemMessage, "SystemMessageGenerator");
+    public AIAgent CreateSystemMessageAgent() =>
+        CreateActionAgent(
+            AiActionType.SystemMessage,
+            AgentInstructions.SystemMessage,
+            "SystemMessageGenerator"
+        );
 
-    public AIAgent CreateDecomposeAgent()
-        => CreateActionAgent(AiActionType.Decomposition, AgentInstructions.Decompose, "PromptDecomposer");
+    public AIAgent CreateDecomposeAgent() =>
+        CreateActionAgent(
+            AiActionType.Decomposition,
+            AgentInstructions.Decompose,
+            "PromptDecomposer"
+        );
 
-    public AIAgent CreateFillTemplateFieldsAgent()
-        => CreateActionAgent(AiActionType.FillTemplateFields, AgentInstructions.FillTemplateFields, "TemplateFieldFiller");
+    public AIAgent CreateFillTemplateFieldsAgent() =>
+        CreateActionAgent(
+            AiActionType.FillTemplateFields,
+            AgentInstructions.FillTemplateFields,
+            "TemplateFieldFiller"
+        );
 
-    public AIAgent CreatePlaygroundJudgeAgent()
-        => CreateActionAgent(AiActionType.PlaygroundJudge, AgentInstructions.PlaygroundJudge, "PlaygroundJudge");
+    public AIAgent CreatePlaygroundJudgeAgent() =>
+        CreateActionAgent(
+            AiActionType.PlaygroundJudge,
+            AgentInstructions.PlaygroundJudge,
+            "PlaygroundJudge"
+        );
 
-    private ChatClientAgent CreateActionAgent(AiActionType actionType, string instructions, string name)
+    private ChatClientAgent CreateActionAgent(
+        AiActionType actionType,
+        string instructions,
+        string name
+    )
     {
         _lock.EnterReadLock();
         try
         {
             EnsureConfigured();
-            return _actionClients[actionType].AsAIAgent(
-                instructions: instructions,
-                name: name,
-                loggerFactory: _loggerFactory);
+            return _actionClients[actionType]
+                .AsAIAgent(instructions: instructions, name: name, loggerFactory: _loggerFactory);
         }
-        finally { _lock.ExitReadLock(); }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
     internal static OpenAIClient CreateOpenAIClient(string apiKey, string? endpointUrl)
@@ -169,7 +225,8 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         {
             return new OpenAIClient(
                 new ApiKeyCredential(apiKey),
-                new OpenAIClientOptions { Endpoint = new Uri(endpointUrl) });
+                new OpenAIClientOptions { Endpoint = new Uri(endpointUrl) }
+            );
         }
 
         return new OpenAIClient(apiKey);
@@ -202,7 +259,8 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         }
 
         // Resolve providers for all actions
-        var resolvedActions = new Dictionary<AiActionType, (ActionAiConfig Config, ResolvedProvider Provider)>();
+        var resolvedActions =
+            new Dictionary<AiActionType, (ActionAiConfig Config, ResolvedProvider Provider)>();
         foreach (var action in ConfigurableActions)
         {
             var config = settings.GetActionConfig(action)!;
@@ -210,8 +268,11 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             if (resolved is null)
             {
                 ResetClients();
-                _logger.LogWarning("AI not configured — no active provider found for {Action} model ({Model})",
-                    action, config.Model);
+                _logger.LogWarning(
+                    "AI not configured — no active provider found for {Action} model ({Model})",
+                    action,
+                    config.Model
+                );
                 return;
             }
             resolvedActions[action] = (config, resolved);
@@ -222,12 +283,17 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         var genInfo = resolvedActions[AiActionType.Generation];
         _logger.LogInformation(
             "AI clients initialized — {Count} actions configured (generation: {Model} via {Provider})",
-            ConfigurableActions.Length, genInfo.Config.Model, genInfo.Provider.ProviderName);
+            ConfigurableActions.Length,
+            genInfo.Config.Model,
+            genInfo.Provider.ProviderName
+        );
 
         OnReconfigured?.Invoke();
     }
 
-    private void SwapClients(Dictionary<AiActionType, (ActionAiConfig Config, ResolvedProvider Provider)> resolvedActions)
+    private void SwapClients(
+        Dictionary<AiActionType, (ActionAiConfig Config, ResolvedProvider Provider)> resolvedActions
+    )
     {
         // Group by provider to reuse OpenAIClient instances
         var openAiClients = new Dictionary<string, OpenAIClient>();
@@ -267,7 +333,8 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                     ChatOptionsBuilder.WrapWithModelDefaults(baseClient, provider.Model),
                     config.Temperature,
                     config.MaxTokens,
-                    config.ReasoningEffort);
+                    config.ReasoningEffort
+                );
 
                 _actionClients[action] = wrappedClient;
                 _actionModelInfo[action] = (config.Model, provider.ProviderName);
@@ -275,7 +342,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
             _isConfigured = _actionClients.Count == ConfigurableActions.Length;
         }
-        finally { _lock.ExitWriteLock(); }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     private void ResetClients()
@@ -291,7 +361,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             _openAiClient = null;
             _isConfigured = false;
         }
-        finally { _lock.ExitWriteLock(); }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     private async Task<List<AiProvider>> LoadProvidersAsync()
@@ -301,9 +374,18 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         return await repo.GetAllAsync();
     }
 
-    internal record ResolvedProvider(string ApiKey, string? EndpointUrl, string ProviderName, AiProviderModel Model);
+    internal record ResolvedProvider(
+        string ApiKey,
+        string? EndpointUrl,
+        string ProviderName,
+        AiProviderModel Model
+    );
 
-    internal ResolvedProvider? ResolveProviderForModel(List<AiProvider> providers, string modelId, string? providerId = null)
+    internal ResolvedProvider? ResolveProviderForModel(
+        List<AiProvider> providers,
+        string modelId,
+        string? providerId = null
+    )
     {
         var activeProviders = providers.Where(p => p.IsActive);
 
@@ -313,10 +395,13 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
         var match = activeProviders
             .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
-            .FirstOrDefault(x => x.Model.IsActive &&
-                x.Model.ModelId.Equals(modelId, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(x =>
+                x.Model.IsActive
+                && x.Model.ModelId.Equals(modelId, StringComparison.OrdinalIgnoreCase)
+            );
 
-        if (match is null || !_encryption.IsAvailable) return null;
+        if (match is null || !_encryption.IsAvailable)
+            return null;
 
         string apiKey;
         try
@@ -325,10 +410,20 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to decrypt API key for provider {ProviderName} (model {ModelId}) — treating as unconfigured", match.Provider.Name, modelId);
+            _logger.LogWarning(
+                ex,
+                "Failed to decrypt API key for provider {ProviderName} (model {ModelId}) — treating as unconfigured",
+                match.Provider.Name,
+                modelId
+            );
             return null;
         }
-        return new ResolvedProvider(apiKey, match.Provider.EndpointUrl, match.Provider.Name, match.Model);
+        return new ResolvedProvider(
+            apiKey,
+            match.Provider.EndpointUrl,
+            match.Provider.Name,
+            match.Model
+        );
     }
 
     public IChatClient CreateChatClient(string model)
@@ -338,15 +433,23 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         {
             EnsureConfigured();
 #pragma warning disable OPENAI001 // Responses API is experimental
-            return new ChatClientBuilder(_openAiClient!.GetResponsesClient(model).AsIChatClient())
+            return new ChatClientBuilder(_openAiClient!.GetResponsesClient().AsIChatClient(model))
                 .UseLogging(_loggerFactory)
                 .Build();
 #pragma warning restore OPENAI001
         }
-        finally { _lock.ExitReadLock(); }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
-    public IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model, AiApiMode apiMode = AiApiMode.ResponsesApi)
+    public IChatClient CreateChatClientForProvider(
+        string apiKey,
+        string? endpointUrl,
+        string model,
+        AiApiMode apiMode = AiApiMode.ResponsesApi
+    )
     {
         var client = CreateOpenAIClient(apiKey, endpointUrl);
         IChatClient baseClient;
@@ -357,12 +460,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         else
         {
 #pragma warning disable OPENAI001 // Responses API is experimental
-            baseClient = client.GetResponsesClient(model).AsIChatClient();
+            baseClient = client.GetResponsesClient().AsIChatClient(model);
 #pragma warning restore OPENAI001
         }
-        return new ChatClientBuilder(baseClient)
-            .UseLogging(_loggerFactory)
-            .Build();
+        return new ChatClientBuilder(baseClient).UseLogging(_loggerFactory).Build();
     }
 
     public OpenAIClient GetOpenAIClient()
@@ -373,14 +474,18 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             EnsureConfigured();
             return _openAiClient!;
         }
-        finally { _lock.ExitReadLock(); }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
     private void EnsureConfigured()
     {
         if (!_isConfigured)
             throw new InvalidOperationException(
-                "AI features are not configured. Set a model for each AI action in Super Admin > AI.");
+                "AI features are not configured. Set a model for each AI action in Super Admin > AI."
+            );
     }
 
     public void Dispose()
@@ -393,7 +498,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                 (client as IDisposable)?.Dispose();
             _actionClients.Clear();
         }
-        finally { _lock.ExitWriteLock(); }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
         _lock.Dispose();
     }
 }

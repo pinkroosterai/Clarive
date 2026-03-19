@@ -11,7 +11,10 @@ namespace Clarive.Api.Services.Agents;
 /// </summary>
 public interface IAgentFactory
 {
-    (AIAgent Agent, ToolProgressReporter? ToolProgress) CreateGenerationAgent(GenerationConfig config, IList<AITool>? tools = null);
+    (AIAgent Agent, ToolProgressReporter? ToolProgress) CreateGenerationAgent(
+        GenerationConfig config,
+        IList<AITool>? tools = null
+    );
     AIAgent CreateEvaluationAgent(GenerationConfig config);
     AIAgent CreateClarificationAgent();
     AIAgent CreateSystemMessageAgent();
@@ -19,7 +22,12 @@ public interface IAgentFactory
     AIAgent CreateFillTemplateFieldsAgent();
     AIAgent CreatePlaygroundJudgeAgent();
     IChatClient CreateChatClient(string model);
-    IChatClient CreateChatClientForProvider(string apiKey, string? endpointUrl, string model, AiApiMode apiMode = AiApiMode.ResponsesApi);
+    IChatClient CreateChatClientForProvider(
+        string apiKey,
+        string? endpointUrl,
+        string model,
+        AiApiMode apiMode = AiApiMode.ResponsesApi
+    );
     OpenAI.OpenAIClient GetOpenAIClient();
     bool IsConfigured { get; }
     (string? ModelId, string? ProviderName) GetModelInfo(AiActionType actionType);

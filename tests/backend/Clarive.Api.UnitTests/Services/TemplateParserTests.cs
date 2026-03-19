@@ -54,7 +54,9 @@ public class TemplateParserTests
     [Fact]
     public void Parse_MultipleVariables_ReturnsAll()
     {
-        var fields = TemplateParser.Parse("Hello {{name}}, you have {{count|int:1-100}} messages in {{lang|enum:en,fr}}");
+        var fields = TemplateParser.Parse(
+            "Hello {{name}}, you have {{count|int:1-100}} messages in {{lang|enum:en,fr}}"
+        );
 
         fields.Should().HaveCount(3);
         fields[0].Name.Should().Be("name");
@@ -92,7 +94,8 @@ public class TemplateParserTests
     {
         var result = TemplateParser.Render(
             "Hello {{name}}, you are {{age|int:1-120}} years old",
-            new Dictionary<string, string> { ["name"] = "Alice", ["age"] = "30" });
+            new Dictionary<string, string> { ["name"] = "Alice", ["age"] = "30" }
+        );
 
         result.Should().Be("Hello Alice, you are 30 years old");
     }
@@ -100,9 +103,7 @@ public class TemplateParserTests
     [Fact]
     public void Render_UnknownVariable_KeepsOriginal()
     {
-        var result = TemplateParser.Render(
-            "Hello {{name}}",
-            new Dictionary<string, string>());
+        var result = TemplateParser.Render("Hello {{name}}", new Dictionary<string, string>());
 
         result.Should().Be("Hello {{name}}");
     }
@@ -112,7 +113,8 @@ public class TemplateParserTests
     {
         var result = TemplateParser.Render(
             "Hello {{name}}",
-            new Dictionary<string, string> { ["name"] = "" });
+            new Dictionary<string, string> { ["name"] = "" }
+        );
 
         result.Should().Be("Hello {{name}}");
     }

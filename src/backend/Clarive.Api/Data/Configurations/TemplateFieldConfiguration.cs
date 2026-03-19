@@ -1,7 +1,7 @@
 using Clarive.Api.Models.Entities;
+using Clarive.Api.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Clarive.Api.Models.Enums;
 
 namespace Clarive.Api.Data.Configurations;
 
@@ -15,8 +15,12 @@ public class TemplateFieldConfiguration : IEntityTypeConfiguration<TemplateField
         builder.Property(tf => tf.Id).HasColumnName("id");
         builder.Property(tf => tf.PromptId).HasColumnName("prompt_id").IsRequired();
         builder.Property(tf => tf.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
-        builder.Property(tf => tf.Type).HasColumnName("type").HasMaxLength(20)
-            .HasConversion<string>().IsRequired();
+        builder
+            .Property(tf => tf.Type)
+            .HasColumnName("type")
+            .HasMaxLength(20)
+            .HasConversion<string>()
+            .IsRequired();
         builder.Property(tf => tf.EnumValues).HasColumnName("enum_values");
         builder.Property(tf => tf.DefaultValue).HasColumnName("default_value");
         builder.Property(tf => tf.Min).HasColumnName("min");

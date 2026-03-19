@@ -1,9 +1,9 @@
-using ErrorOr;
-using FluentAssertions;
-using NSubstitute;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
+using ErrorOr;
+using FluentAssertions;
+using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services.EntryService;
 
@@ -28,15 +28,20 @@ public class CreateEntryTests : EntryServiceTestBase
         version.VersionState.Should().Be(VersionState.Draft);
         version.Prompts.Should().HaveCount(1);
 
-        await EntryRepo.Received(1).CreateAsync(Arg.Any<PromptEntry>(), Arg.Any<CancellationToken>());
-        await EntryRepo.Received(1).CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>());
+        await EntryRepo
+            .Received(1)
+            .CreateAsync(Arg.Any<PromptEntry>(), Arg.Any<CancellationToken>());
+        await EntryRepo
+            .Received(1)
+            .CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task CreateEntry_FolderNotFound_ReturnsNotFoundError()
     {
         var folderId = Guid.NewGuid();
-        FolderRepo.GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
+        FolderRepo
+            .GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
             .Returns((Folder?)null);
 
         var request = ValidCreateRequest(folderId: folderId);
@@ -51,8 +56,7 @@ public class CreateEntryTests : EntryServiceTestBase
     public async Task CreateEntry_FolderExists_EntryHasCorrectFolderId()
     {
         var folder = MakeFolder();
-        FolderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
+        FolderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
 
         var request = ValidCreateRequest(folderId: folder.Id);
 

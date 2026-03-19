@@ -9,7 +9,8 @@ namespace Clarive.Api.Services.Background;
 /// </summary>
 public class AiSessionCleanupService(
     IServiceScopeFactory scopeFactory,
-    ILogger<AiSessionCleanupService> logger) : BackgroundService
+    ILogger<AiSessionCleanupService> logger
+) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
     private static readonly TimeSpan AiSessionMaxAge = TimeSpan.FromHours(24);
@@ -32,16 +33,16 @@ public class AiSessionCleanupService(
             var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
 
             var aiCutoff = DateTime.UtcNow - AiSessionMaxAge;
-            var deletedSessions = await db.AiSessions
-                .Where(s => s.CreatedAt < aiCutoff)
+            var deletedSessions = await db
+                .AiSessions.Where(s => s.CreatedAt < aiCutoff)
                 .ExecuteDeleteAsync(ct);
 
             if (deletedSessions > 0)
                 logger.LogInformation("Cleaned up {Count} expired AI sessions", deletedSessions);
 
             var runCutoff = DateTime.UtcNow - PlaygroundRunMaxAge;
-            var deletedRuns = await db.PlaygroundRuns
-                .Where(r => r.CreatedAt < runCutoff)
+            var deletedRuns = await db
+                .PlaygroundRuns.Where(r => r.CreatedAt < runCutoff)
                 .ExecuteDeleteAsync(ct);
 
             if (deletedRuns > 0)

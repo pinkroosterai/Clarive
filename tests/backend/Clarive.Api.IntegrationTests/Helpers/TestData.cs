@@ -10,8 +10,8 @@ namespace Clarive.Api.IntegrationTests.Helpers;
 public static class TestData
 {
     // Mirror the seed's deterministic GUID algorithm
-    private static Guid DeterministicGuid(string name)
-        => new(MD5.HashData(Encoding.UTF8.GetBytes(name)));
+    private static Guid DeterministicGuid(string name) =>
+        new(MD5.HashData(Encoding.UTF8.GetBytes(name)));
 
     // ── Tenant + Users ──
     public static readonly Guid TenantId = DeterministicGuid("clarive-default-tenant");
@@ -30,10 +30,10 @@ public static class TestData
     // ── Entries ──
     public static readonly Guid EntryBlogPostGenerator = DeterministicGuid("entry-e-001");
     public static readonly Guid EntryCodeReviewPipeline = DeterministicGuid("entry-e-002");
-    public static readonly Guid EntryCsvSummarizer = DeterministicGuid("entry-e-003");       // draft
+    public static readonly Guid EntryCsvSummarizer = DeterministicGuid("entry-e-003"); // draft
     public static readonly Guid EntryTutorialWriter = DeterministicGuid("entry-e-004");
     public static readonly Guid EntrySalesAnalyzer = DeterministicGuid("entry-e-005");
-    public static readonly Guid EntryMeetingNotes = DeterministicGuid("entry-e-006");         // draft, root
+    public static readonly Guid EntryMeetingNotes = DeterministicGuid("entry-e-006"); // draft, root
     public static readonly Guid EntryOwaspChecker = DeterministicGuid("entry-e-007");
     public static readonly Guid EntryEmailToneAdjuster = DeterministicGuid("entry-e-008");
     public static readonly Guid EntryDeprecatedSummarizer = DeterministicGuid("entry-e-009"); // trashed
@@ -52,12 +52,9 @@ public static class TestData
     // ── Factory methods for unique test data ──
     private static int _counter;
 
-    public static string UniqueEmail()
-        => $"test-{Guid.NewGuid():N}@clarive.dev";
+    public static string UniqueEmail() => $"test-{Guid.NewGuid():N}@clarive.dev";
 
-    public static string UniqueFolderName()
-        => $"Test Folder {Interlocked.Increment(ref _counter)}";
+    public static string UniqueFolderName() => $"Test Folder {Interlocked.Increment(ref _counter)}";
 
-    public static string UniqueEntryTitle()
-        => $"Test Entry {Interlocked.Increment(ref _counter)}";
+    public static string UniqueEntryTitle() => $"Test Entry {Interlocked.Increment(ref _counter)}";
 }

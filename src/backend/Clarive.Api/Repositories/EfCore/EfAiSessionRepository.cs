@@ -14,10 +14,16 @@ public class EfAiSessionRepository(ClariveDbContext db) : IAiSessionRepository
         return session;
     }
 
-    public async Task<AiSession?> GetByIdAsync(Guid tenantId, Guid sessionId, CancellationToken ct = default)
+    public async Task<AiSession?> GetByIdAsync(
+        Guid tenantId,
+        Guid sessionId,
+        CancellationToken ct = default
+    )
     {
-        return await db.AiSessions
-            .FirstOrDefaultAsync(s => s.Id == sessionId && s.TenantId == tenantId, ct);
+        return await db.AiSessions.FirstOrDefaultAsync(
+            s => s.Id == sessionId && s.TenantId == tenantId,
+            ct
+        );
     }
 
     public async Task UpdateAsync(AiSession session, CancellationToken ct = default)

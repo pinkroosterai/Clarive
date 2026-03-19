@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Auth;
@@ -11,17 +11,21 @@ namespace Clarive.Api.IntegrationTests.Tests.Auth;
 [Collection("Integration")]
 public class ThemePreferenceTests : IntegrationTestBase
 {
-    public ThemePreferenceTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public ThemePreferenceTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     private async Task<(string Token, HttpClient Client)> RegisterFreshUserAsync()
     {
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securePassword123",
-            name = "Theme Test User"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securePassword123",
+                name = "Theme Test User",
+            }
+        );
         var regJson = await regResponse.ReadJsonAsync();
         var token = regJson.GetProperty("token").GetString()!;
         Client.WithBearerToken(token);
@@ -33,10 +37,10 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            themePreference = "dark"
-        });
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>(
+            "/api/profile",
+            new { themePreference = "dark" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         json.GetProperty("themePreference").GetString().Should().Be("dark");
@@ -47,10 +51,10 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            themePreference = "light"
-        });
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>(
+            "/api/profile",
+            new { themePreference = "light" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         json.GetProperty("themePreference").GetString().Should().Be("light");
@@ -61,10 +65,10 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            themePreference = "system"
-        });
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>(
+            "/api/profile",
+            new { themePreference = "system" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         json.GetProperty("themePreference").GetString().Should().Be("system");
@@ -75,10 +79,10 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, _) = await Client.PatchJsonAsync<object>("/api/profile", new
-        {
-            themePreference = "invalid-value"
-        });
+        var (response, _) = await Client.PatchJsonAsync<object>(
+            "/api/profile",
+            new { themePreference = "invalid-value" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -89,10 +93,7 @@ public class ThemePreferenceTests : IntegrationTestBase
         await RegisterFreshUserAsync();
 
         // Set theme
-        await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            themePreference = "light"
-        });
+        await Client.PatchJsonAsync<JsonElement>("/api/profile", new { themePreference = "light" });
 
         // Verify it persists via GET /me
         var meResponse = await Client.GetAsync("/api/profile/me");
@@ -106,11 +107,10 @@ public class ThemePreferenceTests : IntegrationTestBase
     {
         await RegisterFreshUserAsync();
 
-        var (response, json) = await Client.PatchJsonAsync<JsonElement>("/api/profile", new
-        {
-            name = "Updated Name",
-            themePreference = "dark"
-        });
+        var (response, json) = await Client.PatchJsonAsync<JsonElement>(
+            "/api/profile",
+            new { name = "Updated Name", themePreference = "dark" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         json.GetProperty("name").GetString().Should().Be("Updated Name");
@@ -125,7 +125,9 @@ public class ThemePreferenceTests : IntegrationTestBase
         var meResponse = await Client.GetAsync("/api/profile/me");
         var meJson = await meResponse.ReadJsonAsync();
         // WhenWritingNull is configured, so null themePreference is omitted from JSON
-        meJson.TryGetProperty("themePreference", out _).Should().BeFalse(
-            "new user should have no themePreference (omitted when null)");
+        meJson
+            .TryGetProperty("themePreference", out _)
+            .Should()
+            .BeFalse("new user should have no themePreference (omitted when null)");
     }
 }

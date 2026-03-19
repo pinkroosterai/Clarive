@@ -19,7 +19,11 @@ internal class MockMcpImportService : IMcpImportService
     }
 
     public async Task<McpImportResult> ImportToolsAsync(
-        string serverUrl, string? bearerToken, Guid tenantId, CancellationToken ct = default)
+        string serverUrl,
+        string? bearerToken,
+        Guid tenantId,
+        CancellationToken ct = default
+    )
     {
         var tools = new List<ToolDescription>
         {
@@ -30,8 +34,10 @@ internal class MockMcpImportService : IMcpImportService
                 Name = "List Resources",
                 ToolName = "list_resources",
                 Description = $"Lists resources from {serverUrl}.",
-                InputSchema = JsonNode.Parse("""{"type":"object","properties":{"filter":{"type":"string"}},"required":["filter"]}"""),
-                CreatedAt = DateTime.UtcNow
+                InputSchema = JsonNode.Parse(
+                    """{"type":"object","properties":{"filter":{"type":"string"}},"required":["filter"]}"""
+                ),
+                CreatedAt = DateTime.UtcNow,
             },
             new()
             {
@@ -40,8 +46,8 @@ internal class MockMcpImportService : IMcpImportService
                 Name = "Execute Action",
                 ToolName = "execute_action",
                 Description = $"Executes an action on {serverUrl}.",
-                CreatedAt = DateTime.UtcNow
-            }
+                CreatedAt = DateTime.UtcNow,
+            },
         };
 
         await _toolRepo.CreateManyAsync(tools, ct);

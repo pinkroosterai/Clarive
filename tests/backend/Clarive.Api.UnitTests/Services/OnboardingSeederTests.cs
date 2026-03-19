@@ -62,12 +62,14 @@ public class OnboardingSeederTests : IDisposable
 
         var versions = await _db.PromptEntryVersions.ToListAsync();
         versions.Should().HaveCount(3);
-        versions.Should().AllSatisfy(v =>
-        {
-            v.VersionState.Should().Be(VersionState.Published);
-            v.Version.Should().Be(1);
-            v.PublishedBy.Should().Be(UserId);
-        });
+        versions
+            .Should()
+            .AllSatisfy(v =>
+            {
+                v.VersionState.Should().Be(VersionState.Published);
+                v.Version.Should().Be(1);
+                v.PublishedBy.Should().Be(UserId);
+            });
     }
 
     [Fact]
@@ -76,8 +78,7 @@ public class OnboardingSeederTests : IDisposable
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
         var versions = await _db.PromptEntryVersions.ToListAsync();
-        versions.Should().AllSatisfy(v =>
-            v.SystemMessage.Should().NotBeNullOrWhiteSpace());
+        versions.Should().AllSatisfy(v => v.SystemMessage.Should().NotBeNullOrWhiteSpace());
     }
 
     [Fact]
@@ -86,8 +87,8 @@ public class OnboardingSeederTests : IDisposable
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
         var emailEntry = await _db.PromptEntries.FirstAsync(e => e.Title == "Email Composer");
-        var version = await _db.PromptEntryVersions
-            .Include(v => v.Prompts)
+        var version = await _db
+            .PromptEntryVersions.Include(v => v.Prompts)
             .FirstAsync(v => v.EntryId == emailEntry.Id);
 
         version.Prompts.Should().HaveCount(2);
@@ -110,9 +111,9 @@ public class OnboardingSeederTests : IDisposable
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
         var blogEntry = await _db.PromptEntries.FirstAsync(e => e.Title == "Blog Post Writer");
-        var version = await _db.PromptEntryVersions
-            .Include(v => v.Prompts)
-            .ThenInclude(p => p.TemplateFields)
+        var version = await _db
+            .PromptEntryVersions.Include(v => v.Prompts)
+                .ThenInclude(p => p.TemplateFields)
             .FirstAsync(v => v.EntryId == blogEntry.Id);
 
         var prompt = version.Prompts.First();

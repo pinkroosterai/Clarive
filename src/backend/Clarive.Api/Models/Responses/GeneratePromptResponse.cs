@@ -11,7 +11,4 @@ public record GeneratePromptResponse(
     List<IterationScoreDto>? ScoreHistory = null
 );
 
-public record ClarificationQuestionDto(
-    string Text,
-    List<string> Suggestions
-);
+public record ClarificationQuestionDto(string Text, List<string> Suggestions);

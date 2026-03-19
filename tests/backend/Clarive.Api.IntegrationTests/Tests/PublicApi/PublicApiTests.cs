@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.PublicApi;
@@ -11,7 +11,8 @@ namespace Clarive.Api.IntegrationTests.Tests.PublicApi;
 [Collection("Integration")]
 public class PublicApiTests : IntegrationTestBase
 {
-    public PublicApiTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public PublicApiTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Get_WithValidApiKey_PublishedEntry_Returns200()
@@ -19,7 +20,9 @@ public class PublicApiTests : IntegrationTestBase
         Client.WithApiKey(TestData.ApiKey1);
 
         // e-001 "Blog Post Generator" is published
-        var response = await Client.GetAsync($"/public/v1/entries/{TestData.EntryBlogPostGenerator}");
+        var response = await Client.GetAsync(
+            $"/public/v1/entries/{TestData.EntryBlogPostGenerator}"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -33,7 +36,9 @@ public class PublicApiTests : IntegrationTestBase
     public async Task Get_WithoutApiKey_Returns401()
     {
         // No API key header
-        var response = await Client.GetAsync($"/public/v1/entries/{TestData.EntryBlogPostGenerator}");
+        var response = await Client.GetAsync(
+            $"/public/v1/entries/{TestData.EntryBlogPostGenerator}"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -55,7 +60,9 @@ public class PublicApiTests : IntegrationTestBase
         Client.WithApiKey(TestData.ApiKey1);
 
         // e-009 "Deprecated Summarizer" is trashed
-        var response = await Client.GetAsync($"/public/v1/entries/{TestData.EntryDeprecatedSummarizer}");
+        var response = await Client.GetAsync(
+            $"/public/v1/entries/{TestData.EntryDeprecatedSummarizer}"
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -75,15 +82,18 @@ public class PublicApiTests : IntegrationTestBase
                     ["tone"] = "professional",
                     ["topic"] = "AI testing",
                     ["audience"] = "developers",
-                    ["wordCount"] = "500"
-                }
-            });
+                    ["wordCount"] = "500",
+                },
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.GetProperty("renderedPrompts").GetArrayLength().Should().BeGreaterOrEqualTo(1);
 
         // Verify template fields were rendered (no {{...}} placeholders remain)
-        var firstPromptContent = body.GetProperty("renderedPrompts")[0].GetProperty("content").GetString()!;
+        var firstPromptContent = body.GetProperty("renderedPrompts")[0]
+            .GetProperty("content")
+            .GetString()!;
         firstPromptContent.Should().Contain("professional");
         firstPromptContent.Should().Contain("AI testing");
     }
@@ -96,10 +106,8 @@ public class PublicApiTests : IntegrationTestBase
         // e-001 has template fields but we send empty fields dict
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             $"/public/v1/entries/{TestData.EntryBlogPostGenerator}/generate",
-            new
-            {
-                fields = new Dictionary<string, string>()
-            });
+            new { fields = new Dictionary<string, string>() }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }

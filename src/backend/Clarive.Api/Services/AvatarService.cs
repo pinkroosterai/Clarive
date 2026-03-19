@@ -9,7 +9,8 @@ public class AvatarSettings
     public string StoragePath { get; set; } = Path.Combine("/app", "data", "avatars");
 }
 
-public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSettings> settings) : IAvatarService
+public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSettings> settings)
+    : IAvatarService
 {
     private const int AvatarSize = 256;
     private const int MaxFileBytes = 3 * 1024 * 1024; // 3 MB
@@ -20,7 +21,7 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
     [
         "image/jpeg",
         "image/png",
-        "image/webp"
+        "image/webp",
     ];
 
     private static readonly byte[] JpegMagic = [0xFF, 0xD8, 0xFF];
@@ -30,27 +31,46 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
 
     private static bool HasValidMagicBytes(ReadOnlySpan<byte> data)
     {
-        if (data.Length < 12) return false;
-        if (data[..3].SequenceEqual(JpegMagic)) return true;
-        if (data[..4].SequenceEqual(PngMagic)) return true;
-        if (data[..4].SequenceEqual(WebPRiff) && data[8..12].SequenceEqual(WebPTag)) return true;
+        if (data.Length < 12)
+            return false;
+        if (data[..3].SequenceEqual(JpegMagic))
+            return true;
+        if (data[..4].SequenceEqual(PngMagic))
+            return true;
+        if (data[..4].SequenceEqual(WebPRiff) && data[8..12].SequenceEqual(WebPTag))
+            return true;
         return false;
     }
 
-    public async Task<string> SaveAsync(Guid userId, Stream imageStream, string contentType, CancellationToken ct = default)
+    public async Task<string> SaveAsync(
+        Guid userId,
+        Stream imageStream,
+        string contentType,
+        CancellationToken ct = default
+    )
     {
         if (!AllowedContentTypes.Contains(contentType))
-            throw new InvalidOperationException("Unsupported image format. Use JPEG, PNG, or WebP.");
+            throw new InvalidOperationException(
+                "Unsupported image format. Use JPEG, PNG, or WebP."
+            );
 
         // Read stream into memory (with size limit)
         using var memoryStream = new MemoryStream();
         await imageStream.CopyToAsync(memoryStream, ct);
 
         if (memoryStream.Length > MaxFileBytes)
-            throw new InvalidOperationException($"Image exceeds the {MaxFileBytes / 1024} KB size limit.");
+            throw new InvalidOperationException(
+                $"Image exceeds the {MaxFileBytes / 1024} KB size limit."
+            );
 
-        if (!HasValidMagicBytes(memoryStream.GetBuffer().AsSpan(0, (int)Math.Min(memoryStream.Length, 12))))
-            throw new InvalidOperationException("File content does not match a supported image format.");
+        if (
+            !HasValidMagicBytes(
+                memoryStream.GetBuffer().AsSpan(0, (int)Math.Min(memoryStream.Length, 12))
+            )
+        )
+            throw new InvalidOperationException(
+                "File content does not match a supported image format."
+            );
 
         memoryStream.Position = 0;
 
@@ -59,7 +79,10 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
         if (original is null)
             throw new InvalidOperationException("Unable to decode the image.");
 
-        using var resized = original.Resize(new SKSizeI(AvatarSize, AvatarSize), SKSamplingOptions.Default);
+        using var resized = original.Resize(
+            new SKSizeI(AvatarSize, AvatarSize),
+            SKSamplingOptions.Default
+        );
         if (resized is null)
             throw new InvalidOperationException("Unable to resize the image.");
 
@@ -72,7 +95,11 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
         var relativePath = $"avatars/{userId}.webp";
         var absolutePath = Path.Combine(StorageRoot, $"{userId}.webp");
 
-        await using var fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write);
+        await using var fileStream = new FileStream(
+            absolutePath,
+            FileMode.Create,
+            FileAccess.Write
+        );
         data.SaveTo(fileStream);
 
         logger.LogInformation("Avatar saved for user {UserId} ({Bytes} bytes)", userId, data.Size);
@@ -92,19 +119,34 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
         return Task.CompletedTask;
     }
 
-    public async Task<string> SaveTenantAvatarAsync(Guid tenantId, Stream imageStream, string contentType, CancellationToken ct = default)
+    public async Task<string> SaveTenantAvatarAsync(
+        Guid tenantId,
+        Stream imageStream,
+        string contentType,
+        CancellationToken ct = default
+    )
     {
         if (!AllowedContentTypes.Contains(contentType))
-            throw new InvalidOperationException("Unsupported image format. Use JPEG, PNG, or WebP.");
+            throw new InvalidOperationException(
+                "Unsupported image format. Use JPEG, PNG, or WebP."
+            );
 
         using var memoryStream = new MemoryStream();
         await imageStream.CopyToAsync(memoryStream, ct);
 
         if (memoryStream.Length > MaxFileBytes)
-            throw new InvalidOperationException($"Image exceeds the {MaxFileBytes / 1024} KB size limit.");
+            throw new InvalidOperationException(
+                $"Image exceeds the {MaxFileBytes / 1024} KB size limit."
+            );
 
-        if (!HasValidMagicBytes(memoryStream.GetBuffer().AsSpan(0, (int)Math.Min(memoryStream.Length, 12))))
-            throw new InvalidOperationException("File content does not match a supported image format.");
+        if (
+            !HasValidMagicBytes(
+                memoryStream.GetBuffer().AsSpan(0, (int)Math.Min(memoryStream.Length, 12))
+            )
+        )
+            throw new InvalidOperationException(
+                "File content does not match a supported image format."
+            );
 
         memoryStream.Position = 0;
 
@@ -112,7 +154,10 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
         if (original is null)
             throw new InvalidOperationException("Unable to decode the image.");
 
-        using var resized = original.Resize(new SKSizeI(AvatarSize, AvatarSize), SKSamplingOptions.Default);
+        using var resized = original.Resize(
+            new SKSizeI(AvatarSize, AvatarSize),
+            SKSamplingOptions.Default
+        );
         if (resized is null)
             throw new InvalidOperationException("Unable to resize the image.");
 
@@ -124,10 +169,18 @@ public class AvatarService(ILogger<AvatarService> logger, IOptions<AvatarSetting
         var relativePath = $"avatars/{fileName}";
         var absolutePath = Path.Combine(StorageRoot, fileName);
 
-        await using var fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write);
+        await using var fileStream = new FileStream(
+            absolutePath,
+            FileMode.Create,
+            FileAccess.Write
+        );
         data.SaveTo(fileStream);
 
-        logger.LogInformation("Avatar saved for tenant {TenantId} ({Bytes} bytes)", tenantId, data.Size);
+        logger.LogInformation(
+            "Avatar saved for tenant {TenantId} ({Bytes} bytes)",
+            tenantId,
+            data.Size
+        );
         return relativePath;
     }
 

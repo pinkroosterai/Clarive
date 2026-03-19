@@ -1,8 +1,8 @@
+using Clarive.Api.Auth;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
-using Clarive.Api.Auth;
-using Clarive.Api.Helpers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -12,9 +12,7 @@ public static class AccountEndpoints
 
     public static RouteGroupBuilder MapAccountEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/account")
-            .WithTags("Account")
-            .RequireAuthorization();
+        var group = app.MapGroup("/api/account").WithTags("Account").RequireAuthorization();
 
         group.MapPost("/delete", HandleDeleteAccount);
         group.MapPost("/cancel-deletion", HandleCancelDeletion);
@@ -30,11 +28,15 @@ public static class AccountEndpoints
         IRefreshTokenRepository refreshTokenRepo,
         IEmailService emailService,
         ILoggerFactory loggerFactory,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         if (request.Confirmation != "DELETE")
-            return ctx.ErrorResult(422, "VALIDATION_ERROR",
-                "You must type DELETE to confirm account deletion.");
+            return ctx.ErrorResult(
+                422,
+                "VALIDATION_ERROR",
+                "You must type DELETE to confirm account deletion."
+            );
 
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -43,8 +45,11 @@ public static class AccountEndpoints
             return ctx.ErrorResult(404, "NOT_FOUND", "User not found.", "User", userId.ToString());
 
         if (user.DeleteScheduledAt is not null)
-            return ctx.ErrorResult(409, "ALREADY_SCHEDULED",
-                "Account deletion is already scheduled.");
+            return ctx.ErrorResult(
+                409,
+                "ALREADY_SCHEDULED",
+                "Account deletion is already scheduled."
+            );
 
         var now = DateTime.UtcNow;
         var deleteAt = now + DeletionGracePeriod;
@@ -56,8 +61,11 @@ public static class AccountEndpoints
             var activeUsers = tenantUsers.Where(u => u.DeleteScheduledAt is null).ToList();
 
             if (activeUsers.Count > 1)
-                return ctx.ErrorResult(409, "TRANSFER_OWNERSHIP",
-                    "You must remove all other users or transfer ownership before deleting the organization.");
+                return ctx.ErrorResult(
+                    409,
+                    "TRANSFER_OWNERSHIP",
+                    "You must remove all other users or transfer ownership before deleting the organization."
+                );
 
             // Schedule tenant deletion (cascades to all entities)
             var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
@@ -79,23 +87,34 @@ public static class AccountEndpoints
 
         // Send notification email
         var emailLogger = loggerFactory.CreateLogger("AccountEndpoints");
-        _ = emailService.SendAccountDeletionScheduledAsync(
-            user.Email, user.Name, deleteAt, CancellationToken.None)
-            .ContinueWith(t => emailLogger.LogWarning(t.Exception, "Failed to send deletion-scheduled email to {Email}", user.Email),
-                TaskContinuationOptions.OnlyOnFaulted);
+        _ = emailService
+            .SendAccountDeletionScheduledAsync(
+                user.Email,
+                user.Name,
+                deleteAt,
+                CancellationToken.None
+            )
+            .ContinueWith(
+                t =>
+                    emailLogger.LogWarning(
+                        t.Exception,
+                        "Failed to send deletion-scheduled email to {Email}",
+                        user.Email
+                    ),
+                TaskContinuationOptions.OnlyOnFaulted
+            );
 
-        return Results.Ok(new
-        {
-            message = "Account deletion scheduled.",
-            deleteScheduledAt = deleteAt
-        });
+        return Results.Ok(
+            new { message = "Account deletion scheduled.", deleteScheduledAt = deleteAt }
+        );
     }
 
     private static async Task<IResult> HandleCancelDeletion(
         HttpContext ctx,
         IUserRepository userRepo,
         ITenantRepository tenantRepo,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
@@ -104,8 +123,7 @@ public static class AccountEndpoints
             return ctx.ErrorResult(404, "NOT_FOUND", "User not found.", "User", userId.ToString());
 
         if (user.DeleteScheduledAt is null)
-            return ctx.ErrorResult(409, "NOT_SCHEDULED",
-                "No account deletion is scheduled.");
+            return ctx.ErrorResult(409, "NOT_SCHEDULED", "No account deletion is scheduled.");
 
         // Clear user deletion
         user.DeletedAt = null;

@@ -7,7 +7,7 @@ public class Tenant
     public DateTime CreatedAt { get; set; }
 
     public Guid? OwnerId { get; set; }
-public DateTime? DeletedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
     public DateTime? DeleteScheduledAt { get; set; }
     public string? AvatarPath { get; set; }
 

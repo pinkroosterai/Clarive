@@ -64,9 +64,9 @@ public class OpenAIAgentFactoryTests
                         IsActive = true,
                         IsReasoning = false,
                         MaxInputTokens = 128000,
-                    }
-                ]
-            }
+                    },
+                ],
+            },
         ];
     }
 
@@ -74,24 +74,30 @@ public class OpenAIAgentFactoryTests
     public void ResolveProviderForModel_DecryptionFails_ReturnsNullAndLogsWarning()
     {
         var providers = MakeProviders("TestProvider", "gpt-4o");
-        _encryption.Decrypt("encrypted-key").Returns(_ => throw new InvalidOperationException("corrupt key"));
+        _encryption
+            .Decrypt("encrypted-key")
+            .Returns(_ => throw new InvalidOperationException("corrupt key"));
 
         var result = _sut.ResolveProviderForModel(providers, "gpt-4o");
 
         result.Should().BeNull();
 
         // Verify warning was logged with provider context
-        var warningCalls = _logger.ReceivedCalls()
+        var warningCalls = _logger
+            .ReceivedCalls()
             .Where(c => c.GetMethodInfo().Name == "Log")
             .Select(c => c.GetArguments())
             .Where(a => a.Length > 0 && (LogLevel)a[0]! == LogLevel.Warning)
             .ToList();
 
         // Filter to the decryption warning (not the constructor's "AI not configured" warning)
-        var decryptionWarning = warningCalls
-            .FirstOrDefault(a => a[2]!.ToString()!.Contains("decrypt", StringComparison.OrdinalIgnoreCase));
+        var decryptionWarning = warningCalls.FirstOrDefault(a =>
+            a[2]!.ToString()!.Contains("decrypt", StringComparison.OrdinalIgnoreCase)
+        );
 
-        decryptionWarning.Should().NotBeNull("a Warning log about decryption should have been emitted");
+        decryptionWarning
+            .Should()
+            .NotBeNull("a Warning log about decryption should have been emitted");
         var state = decryptionWarning![2]!.ToString()!;
         state.Should().Contain("TestProvider");
         state.Should().Contain("gpt-4o");
@@ -137,11 +143,15 @@ public class OpenAIAgentFactoryTests
             AiActionType.SystemMessage,
             AiActionType.Decomposition,
             AiActionType.FillTemplateFields,
-            AiActionType.PlaygroundJudge
+            AiActionType.PlaygroundJudge,
         };
 
-        OpenAIAgentFactory.ConfigurableActions.Should().BeEquivalentTo(expected,
-            "ConfigurableActions changed — update CONFIGURABLE_ACTIONS in ActionModelTable.tsx");
+        OpenAIAgentFactory
+            .ConfigurableActions.Should()
+            .BeEquivalentTo(
+                expected,
+                "ConfigurableActions changed — update CONFIGURABLE_ACTIONS in ActionModelTable.tsx"
+            );
     }
 
     // ── Issue 122: ReinitializeClientsAsync coverage ──
@@ -214,7 +224,8 @@ public class OpenAIAgentFactoryTests
     public void Constructor_ProviderLoadFails_IsConfiguredFalse()
     {
         var providerRepo = Substitute.For<IAiProviderRepository>();
-        providerRepo.GetAllAsync(Arg.Any<CancellationToken>())
+        providerRepo
+            .GetAllAsync(Arg.Any<CancellationToken>())
             .Returns<List<AiProvider>>(_ => throw new Exception("DB down"));
 
         var factory = CreateFactory(MakeAllActionsSettings(), providerRepo);
@@ -226,7 +237,8 @@ public class OpenAIAgentFactoryTests
     {
         var settings = MakeAllActionsSettings();
         var providerRepo = Substitute.For<IAiProviderRepository>();
-        providerRepo.GetAllAsync(Arg.Any<CancellationToken>())
+        providerRepo
+            .GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(MakeProviders("TestProvider", "gpt-4o"));
 
         _encryption.Decrypt("encrypted-key").Returns("decrypted-api-key");
@@ -234,13 +246,15 @@ public class OpenAIAgentFactoryTests
         return CreateFactory(settings, providerRepo);
     }
 
-    private OpenAIAgentFactory CreateFactory(AiSettings settings, IAiProviderRepository? providerRepo = null)
+    private OpenAIAgentFactory CreateFactory(
+        AiSettings settings,
+        IAiProviderRepository? providerRepo = null
+    )
     {
         if (providerRepo is null)
         {
             providerRepo = Substitute.For<IAiProviderRepository>();
-            providerRepo.GetAllAsync(Arg.Any<CancellationToken>())
-                .Returns(new List<AiProvider>());
+            providerRepo.GetAllAsync(Arg.Any<CancellationToken>()).Returns(new List<AiProvider>());
         }
 
         var serviceProvider = Substitute.For<IServiceProvider>();
@@ -253,7 +267,9 @@ public class OpenAIAgentFactoryTests
         scopeFactory.CreateScope().Returns(scope);
 
         var loggerFactory = Substitute.For<ILoggerFactory>();
-        loggerFactory.CreateLogger(Arg.Any<string>()).Returns(Substitute.For<ILogger<OpenAIAgentFactory>>());
+        loggerFactory
+            .CreateLogger(Arg.Any<string>())
+            .Returns(Substitute.For<ILogger<OpenAIAgentFactory>>());
 
         var optionsMonitor = Substitute.For<IOptionsMonitor<AiSettings>>();
         optionsMonitor.CurrentValue.Returns(settings);
@@ -261,14 +277,15 @@ public class OpenAIAgentFactoryTests
         return new OpenAIAgentFactory(optionsMonitor, scopeFactory, _encryption, loggerFactory);
     }
 
-    private static AiSettings MakeAllActionsSettings() => new()
-    {
-        Generation = new ActionAiConfig { Model = "gpt-4o" },
-        Evaluation = new ActionAiConfig { Model = "gpt-4o" },
-        Clarification = new ActionAiConfig { Model = "gpt-4o" },
-        SystemMessage = new ActionAiConfig { Model = "gpt-4o" },
-        Decomposition = new ActionAiConfig { Model = "gpt-4o" },
-        FillTemplateFields = new ActionAiConfig { Model = "gpt-4o" },
-        PlaygroundJudge = new ActionAiConfig { Model = "gpt-4o" },
-    };
+    private static AiSettings MakeAllActionsSettings() =>
+        new()
+        {
+            Generation = new ActionAiConfig { Model = "gpt-4o" },
+            Evaluation = new ActionAiConfig { Model = "gpt-4o" },
+            Clarification = new ActionAiConfig { Model = "gpt-4o" },
+            SystemMessage = new ActionAiConfig { Model = "gpt-4o" },
+            Decomposition = new ActionAiConfig { Model = "gpt-4o" },
+            FillTemplateFields = new ActionAiConfig { Model = "gpt-4o" },
+            PlaygroundJudge = new ActionAiConfig { Model = "gpt-4o" },
+        };
 }

@@ -14,7 +14,8 @@ public static class DimensionNormalizer
     public static Dictionary<string, TEntry> Normalize<TEntry>(
         Dictionary<string, TEntry> raw,
         string[] expectedDimensions,
-        Func<TEntry> createDefault)
+        Func<TEntry> createDefault
+    )
         where TEntry : class
     {
         var normalized = new Dictionary<string, TEntry>();
@@ -40,7 +41,8 @@ public static class DimensionNormalizer
     private static (string Key, TEntry Entry)? FindBestMatch<TEntry>(
         string expected,
         Dictionary<string, TEntry> candidates,
-        HashSet<string> consumed)
+        HashSet<string> consumed
+    )
         where TEntry : class
     {
         // Pass 1: exact case-insensitive match
@@ -57,8 +59,10 @@ public static class DimensionNormalizer
         {
             if (consumed.Contains(kvp.Key))
                 continue;
-            if (kvp.Key.Contains(expected, StringComparison.OrdinalIgnoreCase) ||
-                expected.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
+            if (
+                kvp.Key.Contains(expected, StringComparison.OrdinalIgnoreCase)
+                || expected.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase)
+            )
                 return (kvp.Key, kvp.Value);
         }
 
@@ -72,7 +76,10 @@ public static class DimensionNormalizer
         {
             if (consumed.Contains(kvp.Key))
                 continue;
-            var distance = LevenshteinDistance(expected.ToLowerInvariant(), kvp.Key.ToLowerInvariant());
+            var distance = LevenshteinDistance(
+                expected.ToLowerInvariant(),
+                kvp.Key.ToLowerInvariant()
+            );
             if (distance < bestDistance)
             {
                 bestDistance = distance;
@@ -86,13 +93,17 @@ public static class DimensionNormalizer
 
     internal static int LevenshteinDistance(string a, string b)
     {
-        if (a.Length == 0) return b.Length;
-        if (b.Length == 0) return a.Length;
+        if (a.Length == 0)
+            return b.Length;
+        if (b.Length == 0)
+            return a.Length;
 
         var matrix = new int[a.Length + 1, b.Length + 1];
 
-        for (var i = 0; i <= a.Length; i++) matrix[i, 0] = i;
-        for (var j = 0; j <= b.Length; j++) matrix[0, j] = j;
+        for (var i = 0; i <= a.Length; i++)
+            matrix[i, 0] = i;
+        for (var j = 0; j <= b.Length; j++)
+            matrix[0, j] = j;
 
         for (var i = 1; i <= a.Length; i++)
         {
@@ -101,7 +112,8 @@ public static class DimensionNormalizer
                 var cost = a[i - 1] == b[j - 1] ? 0 : 1;
                 matrix[i, j] = Math.Min(
                     Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
-                    matrix[i - 1, j - 1] + cost);
+                    matrix[i - 1, j - 1] + cost
+                );
             }
         }
 

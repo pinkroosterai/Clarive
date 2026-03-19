@@ -26,7 +26,11 @@ public static class ChatOptionsBuilder
     }
 
     public static IChatClient WrapWithRoleOverrides(
-        IChatClient client, float? temperature, int? maxTokens, string? reasoningEffort)
+        IChatClient client,
+        float? temperature,
+        int? maxTokens,
+        string? reasoningEffort
+    )
     {
         if (temperature is null && maxTokens is null && string.IsNullOrWhiteSpace(reasoningEffort))
             return client;
@@ -42,7 +46,7 @@ public static class ChatOptionsBuilder
                 if (!string.IsNullOrWhiteSpace(reasoningEffort))
                     options.Reasoning = new ReasoningOptions
                     {
-                        Effort = ParseReasoningEffort(reasoningEffort)
+                        Effort = ParseReasoningEffort(reasoningEffort),
                     };
             })
             .Build();
@@ -55,7 +59,8 @@ public static class ChatOptionsBuilder
 
         var hasTemp = !model.IsReasoning && model.DefaultTemperature.HasValue;
         var hasTokens = model.DefaultMaxTokens.HasValue;
-        var hasReasoning = model.IsReasoning && !string.IsNullOrWhiteSpace(model.DefaultReasoningEffort);
+        var hasReasoning =
+            model.IsReasoning && !string.IsNullOrWhiteSpace(model.DefaultReasoningEffort);
 
         if (!hasTemp && !hasTokens && !hasReasoning)
             return null;
@@ -72,7 +77,7 @@ public static class ChatOptionsBuilder
         {
             options.Reasoning = new ReasoningOptions
             {
-                Effort = ParseReasoningEffort(model.DefaultReasoningEffort!)
+                Effort = ParseReasoningEffort(model.DefaultReasoningEffort!),
             };
         }
 

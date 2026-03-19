@@ -13,8 +13,10 @@ namespace Clarive.Api.UnitTests.Services;
 public class UserManagementServiceTests : IDisposable
 {
     private readonly IUserRepository _userRepo = Substitute.For<IUserRepository>();
-    private readonly ITenantMembershipRepository _membershipRepo = Substitute.For<ITenantMembershipRepository>();
-    private readonly IInvitationRepository _invitationRepo = Substitute.For<IInvitationRepository>();
+    private readonly ITenantMembershipRepository _membershipRepo =
+        Substitute.For<ITenantMembershipRepository>();
+    private readonly IInvitationRepository _invitationRepo =
+        Substitute.For<IInvitationRepository>();
     private readonly ClariveDbContext _db;
     private readonly UserManagementService _sut;
 
@@ -29,9 +31,11 @@ public class UserManagementServiceTests : IDisposable
             .Options;
         _db = new ClariveDbContext(options);
 
-        _userRepo.UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
+        _userRepo
+            .UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<User>());
-        _membershipRepo.UpdateAsync(Arg.Any<TenantMembership>(), Arg.Any<CancellationToken>())
+        _membershipRepo
+            .UpdateAsync(Arg.Any<TenantMembership>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
         _sut = new UserManagementService(_userRepo, _membershipRepo, _invitationRepo, _db);
@@ -50,16 +54,32 @@ public class UserManagementServiceTests : IDisposable
     {
         var users = new List<User>
         {
-            new() { Id = Guid.NewGuid(), Email = "a@test.com", Name = "Alice", Role = UserRole.Admin, CreatedAt = DateTime.UtcNow }
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Email = "a@test.com",
+                Name = "Alice",
+                Role = UserRole.Admin,
+                CreatedAt = DateTime.UtcNow,
+            },
         };
         var invitations = new List<Invitation>
         {
-            new() { Id = Guid.NewGuid(), Email = "b@test.com", Role = UserRole.Editor, CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7) }
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Email = "b@test.com",
+                Role = UserRole.Editor,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+            },
         };
 
-        _userRepo.GetByTenantPagedAsync(TenantId, 1, 50, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByTenantPagedAsync(TenantId, 1, 50, Arg.Any<CancellationToken>())
             .Returns((users, 1));
-        _invitationRepo.GetActiveByTenantAsync(TenantId, Arg.Any<CancellationToken>())
+        _invitationRepo
+            .GetActiveByTenantAsync(TenantId, Arg.Any<CancellationToken>())
             .Returns(invitations);
 
         var result = await _sut.ListMembersAsync(TenantId, 1, 50, default);
@@ -72,9 +92,11 @@ public class UserManagementServiceTests : IDisposable
     [Fact]
     public async Task ListMembersAsync_ClampsPagination()
     {
-        _userRepo.GetByTenantPagedAsync(TenantId, 1, 50, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByTenantPagedAsync(TenantId, 1, 50, Arg.Any<CancellationToken>())
             .Returns((new List<User>(), 0));
-        _invitationRepo.GetActiveByTenantAsync(TenantId, Arg.Any<CancellationToken>())
+        _invitationRepo
+            .GetActiveByTenantAsync(TenantId, Arg.Any<CancellationToken>())
             .Returns(new List<Invitation>());
 
         var result = await _sut.ListMembersAsync(TenantId, -1, 999, default);
@@ -88,8 +110,7 @@ public class UserManagementServiceTests : IDisposable
     [Fact]
     public async Task ChangeRoleAsync_UserNotFound_ReturnsNotFound()
     {
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns((User?)null);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns((User?)null);
 
         var result = await _sut.ChangeRoleAsync(TenantId, UserId, UserRole.Editor, default);
 
@@ -100,9 +121,18 @@ public class UserManagementServiceTests : IDisposable
     [Fact]
     public async Task ChangeRoleAsync_MembershipNotFound_ReturnsNotFound()
     {
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(new User { Id = UserId, TenantId = TenantId, Role = UserRole.Admin });
-        _membershipRepo.GetAsync(UserId, TenantId, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
+            .Returns(
+                new User
+                {
+                    Id = UserId,
+                    TenantId = TenantId,
+                    Role = UserRole.Admin,
+                }
+            );
+        _membershipRepo
+            .GetAsync(UserId, TenantId, Arg.Any<CancellationToken>())
             .Returns((TenantMembership?)null);
 
         var result = await _sut.ChangeRoleAsync(TenantId, UserId, UserRole.Editor, default);
@@ -114,11 +144,23 @@ public class UserManagementServiceTests : IDisposable
     [Fact]
     public async Task ChangeRoleAsync_ActiveWorkspace_UpdatesUserAndMembership()
     {
-        var user = new User { Id = UserId, TenantId = TenantId, Role = UserRole.Viewer };
-        var membership = new TenantMembership { UserId = UserId, TenantId = TenantId, Role = UserRole.Viewer };
+        var user = new User
+        {
+            Id = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Viewer,
+        };
+        var membership = new TenantMembership
+        {
+            UserId = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Viewer,
+        };
 
         _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
-        _membershipRepo.GetAsync(UserId, TenantId, Arg.Any<CancellationToken>()).Returns(membership);
+        _membershipRepo
+            .GetAsync(UserId, TenantId, Arg.Any<CancellationToken>())
+            .Returns(membership);
 
         var result = await _sut.ChangeRoleAsync(TenantId, UserId, UserRole.Editor, default);
 
@@ -134,11 +176,23 @@ public class UserManagementServiceTests : IDisposable
     public async Task ChangeRoleAsync_NonActiveWorkspace_OnlyUpdatesMembership()
     {
         var otherTenantId = Guid.NewGuid();
-        var user = new User { Id = UserId, TenantId = otherTenantId, Role = UserRole.Admin };
-        var membership = new TenantMembership { UserId = UserId, TenantId = TenantId, Role = UserRole.Viewer };
+        var user = new User
+        {
+            Id = UserId,
+            TenantId = otherTenantId,
+            Role = UserRole.Admin,
+        };
+        var membership = new TenantMembership
+        {
+            UserId = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Viewer,
+        };
 
         _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
-        _membershipRepo.GetAsync(UserId, TenantId, Arg.Any<CancellationToken>()).Returns(membership);
+        _membershipRepo
+            .GetAsync(UserId, TenantId, Arg.Any<CancellationToken>())
+            .Returns(membership);
 
         var result = await _sut.ChangeRoleAsync(TenantId, UserId, UserRole.Editor, default);
 
@@ -153,8 +207,7 @@ public class UserManagementServiceTests : IDisposable
     [Fact]
     public async Task RemoveMemberAsync_UserNotFound_ReturnsNotFound()
     {
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns((User?)null);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns((User?)null);
 
         var result = await _sut.RemoveMemberAsync(TenantId, UserId, default);
 
@@ -165,11 +218,23 @@ public class UserManagementServiceTests : IDisposable
     [Fact]
     public async Task RemoveMemberAsync_LastAdmin_ReturnsConflict()
     {
-        var user = new User { Id = UserId, TenantId = TenantId, Role = UserRole.Admin };
-        var membership = new TenantMembership { UserId = UserId, TenantId = TenantId, Role = UserRole.Admin };
+        var user = new User
+        {
+            Id = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Admin,
+        };
+        var membership = new TenantMembership
+        {
+            UserId = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Admin,
+        };
 
         _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
-        _membershipRepo.GetAsync(UserId, TenantId, Arg.Any<CancellationToken>()).Returns(membership);
+        _membershipRepo
+            .GetAsync(UserId, TenantId, Arg.Any<CancellationToken>())
+            .Returns(membership);
         _membershipRepo.CountAdminsAsync(TenantId, Arg.Any<CancellationToken>()).Returns(1);
 
         var result = await _sut.RemoveMemberAsync(TenantId, UserId, default);
@@ -181,25 +246,48 @@ public class UserManagementServiceTests : IDisposable
     [Fact]
     public async Task RemoveMemberAsync_NotLastAdmin_RemovesMembership()
     {
-        var user = new User { Id = UserId, TenantId = TenantId, Role = UserRole.Admin };
-        var membership = new TenantMembership { UserId = UserId, TenantId = TenantId, Role = UserRole.Admin };
+        var user = new User
+        {
+            Id = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Admin,
+        };
+        var membership = new TenantMembership
+        {
+            UserId = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Admin,
+        };
         var personalTenantId = Guid.NewGuid();
 
         _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
-        _membershipRepo.GetAsync(UserId, TenantId, Arg.Any<CancellationToken>()).Returns(membership);
+        _membershipRepo
+            .GetAsync(UserId, TenantId, Arg.Any<CancellationToken>())
+            .Returns(membership);
         _membershipRepo.CountAdminsAsync(TenantId, Arg.Any<CancellationToken>()).Returns(2);
-        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
             .Returns(new User { Id = UserId, TenantId = TenantId });
-        _membershipRepo.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
-            .Returns(new List<TenantMembership>
-            {
-                new() { TenantId = personalTenantId, Role = UserRole.Admin, IsPersonal = true }
-            });
+        _membershipRepo
+            .GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+            .Returns(
+                new List<TenantMembership>
+                {
+                    new()
+                    {
+                        TenantId = personalTenantId,
+                        Role = UserRole.Admin,
+                        IsPersonal = true,
+                    },
+                }
+            );
 
         var result = await _sut.RemoveMemberAsync(TenantId, UserId, default);
 
         result.IsError.Should().BeFalse();
-        await _membershipRepo.Received(1).DeleteAsync(UserId, TenantId, Arg.Any<CancellationToken>());
+        await _membershipRepo
+            .Received(1)
+            .DeleteAsync(UserId, TenantId, Arg.Any<CancellationToken>());
     }
 
     // ── TransferOwnershipAsync ──
@@ -207,7 +295,8 @@ public class UserManagementServiceTests : IDisposable
     [Fact]
     public async Task TransferOwnershipAsync_TargetNotFound_ReturnsNotFound()
     {
-        _userRepo.GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((User?)null);
 
         var result = await _sut.TransferOwnershipAsync(TenantId, Guid.NewGuid(), UserId, default);
@@ -220,9 +309,11 @@ public class UserManagementServiceTests : IDisposable
     public async Task TransferOwnershipAsync_CurrentNotFound_ReturnsNotFound()
     {
         var currentUserId = Guid.NewGuid();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
             .Returns(new User { Id = UserId });
-        _userRepo.GetByIdAsync(TenantId, currentUserId, Arg.Any<CancellationToken>())
+        _userRepo
+            .GetByIdAsync(TenantId, currentUserId, Arg.Any<CancellationToken>())
             .Returns((User?)null);
 
         var result = await _sut.TransferOwnershipAsync(TenantId, currentUserId, UserId, default);
@@ -235,15 +326,41 @@ public class UserManagementServiceTests : IDisposable
     public async Task TransferOwnershipAsync_Valid_SwapsRoles()
     {
         var currentUserId = Guid.NewGuid();
-        var currentUser = new User { Id = currentUserId, TenantId = TenantId, Role = UserRole.Admin };
-        var targetUser = new User { Id = UserId, TenantId = TenantId, Role = UserRole.Editor };
-        var currentMembership = new TenantMembership { UserId = currentUserId, TenantId = TenantId, Role = UserRole.Admin };
-        var targetMembership = new TenantMembership { UserId = UserId, TenantId = TenantId, Role = UserRole.Editor };
+        var currentUser = new User
+        {
+            Id = currentUserId,
+            TenantId = TenantId,
+            Role = UserRole.Admin,
+        };
+        var targetUser = new User
+        {
+            Id = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Editor,
+        };
+        var currentMembership = new TenantMembership
+        {
+            UserId = currentUserId,
+            TenantId = TenantId,
+            Role = UserRole.Admin,
+        };
+        var targetMembership = new TenantMembership
+        {
+            UserId = UserId,
+            TenantId = TenantId,
+            Role = UserRole.Editor,
+        };
 
         _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(targetUser);
-        _userRepo.GetByIdAsync(TenantId, currentUserId, Arg.Any<CancellationToken>()).Returns(currentUser);
-        _membershipRepo.GetAsync(currentUserId, TenantId, Arg.Any<CancellationToken>()).Returns(currentMembership);
-        _membershipRepo.GetAsync(UserId, TenantId, Arg.Any<CancellationToken>()).Returns(targetMembership);
+        _userRepo
+            .GetByIdAsync(TenantId, currentUserId, Arg.Any<CancellationToken>())
+            .Returns(currentUser);
+        _membershipRepo
+            .GetAsync(currentUserId, TenantId, Arg.Any<CancellationToken>())
+            .Returns(currentMembership);
+        _membershipRepo
+            .GetAsync(UserId, TenantId, Arg.Any<CancellationToken>())
+            .Returns(targetMembership);
 
         var result = await _sut.TransferOwnershipAsync(TenantId, currentUserId, UserId, default);
 

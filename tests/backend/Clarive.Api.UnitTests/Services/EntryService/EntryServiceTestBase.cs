@@ -1,14 +1,14 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using NSubstitute;
 using Clarive.Api.Data;
 using Clarive.Api.Models.Entities;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services.EntryService;
 
@@ -31,27 +31,40 @@ public abstract class EntryServiceTestBase : IDisposable
     {
         var options = new DbContextOptionsBuilder<ClariveDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(
-                InMemoryEventId.TransactionIgnoredWarning))
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         Db = new ClariveDbContext(options);
         Cache = new TenantCacheService(
             Substitute.For<IDistributedCache>(),
-            Substitute.For<ILogger<TenantCacheService>>());
-        Sut = new Api.Services.EntryService(EntryRepo, FolderRepo, TagRepo, FavoriteRepo, UserRepo, AuditRepo, Cache, Db);
+            Substitute.For<ILogger<TenantCacheService>>()
+        );
+        Sut = new Api.Services.EntryService(
+            EntryRepo,
+            FolderRepo,
+            TagRepo,
+            FavoriteRepo,
+            UserRepo,
+            AuditRepo,
+            Cache,
+            Db
+        );
 
         // Default: CreateAsync / CreateVersionAsync return whatever is passed in
-        EntryRepo.CreateAsync(Arg.Any<PromptEntry>(), Arg.Any<CancellationToken>())
+        EntryRepo
+            .CreateAsync(Arg.Any<PromptEntry>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<PromptEntry>());
 
-        EntryRepo.CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>())
+        EntryRepo
+            .CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<PromptEntryVersion>());
 
-        EntryRepo.UpdateAsync(Arg.Any<PromptEntry>(), Arg.Any<CancellationToken>())
+        EntryRepo
+            .UpdateAsync(Arg.Any<PromptEntry>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<PromptEntry>());
 
-        EntryRepo.UpdateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>())
+        EntryRepo
+            .UpdateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<PromptEntryVersion>());
     }
 
@@ -61,7 +74,8 @@ public abstract class EntryServiceTestBase : IDisposable
         string title = "Test Prompt",
         string? systemMessage = null,
         List<PromptInput>? prompts = null,
-        Guid? folderId = null)
+        Guid? folderId = null
+    )
     {
         prompts ??= [new PromptInput("Hello {{name}}")];
         return new CreateEntryRequest(title, systemMessage, prompts, folderId);
@@ -70,7 +84,8 @@ public abstract class EntryServiceTestBase : IDisposable
     protected static UpdateEntryRequest ValidUpdateRequest(
         string? title = "Updated Title",
         string? systemMessage = null,
-        List<PromptInput>? prompts = null)
+        List<PromptInput>? prompts = null
+    )
     {
         return new UpdateEntryRequest(title, systemMessage, prompts);
     }
@@ -78,7 +93,8 @@ public abstract class EntryServiceTestBase : IDisposable
     protected static PromptEntry MakeEntry(
         Guid? id = null,
         bool isTrashed = false,
-        Guid? folderId = null)
+        Guid? folderId = null
+    )
     {
         return new PromptEntry
         {
@@ -89,7 +105,7 @@ public abstract class EntryServiceTestBase : IDisposable
             IsTrashed = isTrashed,
             CreatedBy = UserId,
             CreatedAt = DateTime.UtcNow.AddDays(-1),
-            UpdatedAt = DateTime.UtcNow.AddDays(-1)
+            UpdatedAt = DateTime.UtcNow.AddDays(-1),
         };
     }
 
@@ -97,7 +113,8 @@ public abstract class EntryServiceTestBase : IDisposable
         Guid entryId,
         int version = 1,
         VersionState state = VersionState.Draft,
-        string? systemMessage = "You are helpful.")
+        string? systemMessage = "You are helpful."
+    )
     {
         return new PromptEntryVersion
         {
@@ -113,10 +130,10 @@ public abstract class EntryServiceTestBase : IDisposable
                     Id = Guid.NewGuid(),
                     Content = "Hello",
                     Order = 0,
-                    IsTemplate = false
-                }
+                    IsTemplate = false,
+                },
             ],
-            CreatedAt = DateTime.UtcNow.AddDays(-1)
+            CreatedAt = DateTime.UtcNow.AddDays(-1),
         };
     }
 
@@ -127,7 +144,7 @@ public abstract class EntryServiceTestBase : IDisposable
             Id = id ?? Guid.NewGuid(),
             TenantId = TenantId,
             Name = "Test Folder",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
     }
 

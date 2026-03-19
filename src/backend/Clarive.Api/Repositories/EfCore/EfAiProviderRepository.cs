@@ -9,8 +9,8 @@ public class EfAiProviderRepository(ClariveDbContext db) : IAiProviderRepository
 {
     public async Task<List<AiProvider>> GetAllAsync(CancellationToken ct = default)
     {
-        return await db.AiProviders
-            .Include(p => p.Models.OrderBy(m => m.SortOrder))
+        return await db
+            .AiProviders.Include(p => p.Models.OrderBy(m => m.SortOrder))
             .OrderBy(p => p.SortOrder)
             .ThenBy(p => p.Name)
             .AsNoTracking()
@@ -19,8 +19,8 @@ public class EfAiProviderRepository(ClariveDbContext db) : IAiProviderRepository
 
     public async Task<AiProvider?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await db.AiProviders
-            .Include(p => p.Models.OrderBy(m => m.SortOrder))
+        return await db
+            .AiProviders.Include(p => p.Models.OrderBy(m => m.SortOrder))
             .FirstOrDefaultAsync(p => p.Id == id, ct);
     }
 
@@ -39,13 +39,14 @@ public class EfAiProviderRepository(ClariveDbContext db) : IAiProviderRepository
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var deleted = await db.AiProviders
-            .Where(p => p.Id == id)
-            .ExecuteDeleteAsync(ct);
+        var deleted = await db.AiProviders.Where(p => p.Id == id).ExecuteDeleteAsync(ct);
         return deleted > 0;
     }
 
-    public async Task<AiProviderModel> AddModelAsync(AiProviderModel model, CancellationToken ct = default)
+    public async Task<AiProviderModel> AddModelAsync(
+        AiProviderModel model,
+        CancellationToken ct = default
+    )
     {
         db.AiProviderModels.Add(model);
         await db.SaveChangesAsync(ct);
@@ -60,23 +61,25 @@ public class EfAiProviderRepository(ClariveDbContext db) : IAiProviderRepository
 
     public async Task<bool> DeleteModelAsync(Guid modelId, CancellationToken ct = default)
     {
-        var deleted = await db.AiProviderModels
-            .Where(m => m.Id == modelId)
-            .ExecuteDeleteAsync(ct);
+        var deleted = await db.AiProviderModels.Where(m => m.Id == modelId).ExecuteDeleteAsync(ct);
         return deleted > 0;
     }
 
-    public async Task<AiProviderModel?> GetModelByIdAsync(Guid modelId, CancellationToken ct = default)
+    public async Task<AiProviderModel?> GetModelByIdAsync(
+        Guid modelId,
+        CancellationToken ct = default
+    )
     {
-        return await db.AiProviderModels
-            .FirstOrDefaultAsync(m => m.Id == modelId, ct);
+        return await db.AiProviderModels.FirstOrDefaultAsync(m => m.Id == modelId, ct);
     }
 
-    public async Task<(decimal? InputCostPerMillion, decimal? OutputCostPerMillion)?> GetModelCostAsync(
-        string providerName, string modelId, CancellationToken ct = default)
+    public async Task<(
+        decimal? InputCostPerMillion,
+        decimal? OutputCostPerMillion
+    )?> GetModelCostAsync(string providerName, string modelId, CancellationToken ct = default)
     {
-        var cost = await db.AiProviderModels
-            .Where(m => m.Provider.Name == providerName && m.ModelId == modelId)
+        var cost = await db
+            .AiProviderModels.Where(m => m.Provider.Name == providerName && m.ModelId == modelId)
             .Select(m => new { m.InputCostPerMillion, m.OutputCostPerMillion })
             .AsNoTracking()
             .FirstOrDefaultAsync(ct);

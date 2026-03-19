@@ -1,10 +1,10 @@
 using Clarive.Api.Auth;
+using Clarive.Api.Helpers;
 using Clarive.Api.Models.Enums;
 using Clarive.Api.Models.Requests;
+using Clarive.Api.Models.Responses;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services.Interfaces;
-using Clarive.Api.Helpers;
-using Clarive.Api.Models.Responses;
 using Serilog;
 using static Clarive.Api.Helpers.ResponseMappers;
 
@@ -14,9 +14,7 @@ public static class WorkspaceEndpoints
 {
     public static RouteGroupBuilder MapWorkspaceEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api")
-            .WithTags("Workspaces")
-            .RequireAuthorization();
+        var group = app.MapGroup("/api").WithTags("Workspaces").RequireAuthorization();
 
         group.MapPost("/auth/switch-workspace", HandleSwitchWorkspace);
         group.MapGet("/workspaces", HandleList);
@@ -33,7 +31,8 @@ public static class WorkspaceEndpoints
         ITenantRepository tenantRepo,
         IRefreshTokenRepository refreshTokenRepo,
         JwtService jwtService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var userId = ctx.GetUserId();
 
@@ -58,23 +57,34 @@ public static class WorkspaceEndpoints
         // Issue a new refresh token so the old one (bound to previous tenant context)
         // cannot regenerate a JWT with stale tenant claims.
         var (rawRefresh, refreshHash) = jwtService.GenerateRefreshToken();
-        await refreshTokenRepo.CreateAsync(new Models.Entities.RefreshToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TokenHash = refreshHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(jwtService.RefreshTokenExpirationDays),
-            CreatedAt = DateTime.UtcNow
-        }, ct);
+        await refreshTokenRepo.CreateAsync(
+            new Models.Entities.RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = refreshHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(jwtService.RefreshTokenExpirationDays),
+                CreatedAt = DateTime.UtcNow,
+            },
+            ct
+        );
 
-        return Results.Ok(new { token = accessToken, refreshToken = rawRefresh, user = ToUserDto(user) });
+        return Results.Ok(
+            new
+            {
+                token = accessToken,
+                refreshToken = rawRefresh,
+                user = ToUserDto(user),
+            }
+        );
     }
 
     private static async Task<IResult> HandleList(
         HttpContext ctx,
         ITenantMembershipRepository membershipRepo,
         ITenantRepository tenantRepo,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var userId = ctx.GetUserId();
         var workspaces = await BuildWorkspaceListAsync(membershipRepo, tenantRepo, userId, ct);
@@ -87,7 +97,8 @@ public static class WorkspaceEndpoints
         ITenantMembershipRepository membershipRepo,
         IUserRepository userRepo,
         IAuditLogger auditLogger,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var userId = ctx.GetUserId();
 
@@ -96,13 +107,21 @@ public static class WorkspaceEndpoints
             return ctx.ErrorResult(404, "NOT_FOUND", "You are not a member of this workspace.");
 
         if (membership.IsPersonal)
-            return ctx.ErrorResult(403, "CANNOT_LEAVE_PERSONAL", "Cannot leave your personal workspace.");
+            return ctx.ErrorResult(
+                403,
+                "CANNOT_LEAVE_PERSONAL",
+                "Cannot leave your personal workspace."
+            );
 
         if (membership.Role == UserRole.Admin)
         {
             var adminCount = await membershipRepo.CountAdminsAsync(tenantId, ct);
             if (adminCount <= 1)
-                return ctx.ErrorResult(409, "LAST_ADMIN", "You are the only admin. Transfer ownership before leaving.");
+                return ctx.ErrorResult(
+                    409,
+                    "LAST_ADMIN",
+                    "You are the only admin. Transfer ownership before leaving."
+                );
         }
 
         await membershipRepo.DeleteAsync(userId, tenantId, ct);
@@ -121,9 +140,18 @@ public static class WorkspaceEndpoints
             }
         }
 
-        await SafeLogAsync(auditLogger, tenantId, userId, ctx.GetUserName(),
-            AuditAction.MemberRemoved, "User", userId,
-            ctx.GetUserName(), "Left workspace", ct);
+        await SafeLogAsync(
+            auditLogger,
+            tenantId,
+            userId,
+            ctx.GetUserName(),
+            AuditAction.MemberRemoved,
+            "User",
+            userId,
+            ctx.GetUserName(),
+            "Left workspace",
+            ct
+        );
 
         return Results.NoContent();
     }
@@ -138,15 +166,32 @@ public static class WorkspaceEndpoints
         Guid entityId,
         string entityTitle,
         string? details,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         try
         {
-            await auditLogger.LogAsync(tenantId, userId, userName, action, entityType, entityId, entityTitle, details, ct);
+            await auditLogger.LogAsync(
+                tenantId,
+                userId,
+                userName,
+                action,
+                entityType,
+                entityId,
+                entityTitle,
+                details,
+                ct
+            );
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Audit logging failed for {Action} on {EntityType} {EntityId}", action, entityType, entityId);
+            Log.Warning(
+                ex,
+                "Audit logging failed for {Action} on {EntityType} {EntityId}",
+                action,
+                entityType,
+                entityId
+            );
         }
     }
 }

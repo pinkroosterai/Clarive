@@ -22,7 +22,8 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
     public Task<GenerateOrchestratorResult> GenerateAsync(
         GenerationConfig config,
         CancellationToken ct = default,
-        Func<ProgressEvent, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null
+    )
     {
         if (ShouldThrowOnGenerate)
         {
@@ -36,30 +37,48 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             SystemMessage = config.GenerateSystemMessage
                 ? $"You are an expert assistant for: {config.Description}"
                 : null,
-            Prompts = config.GenerateAsPromptChain
-                ? [
-                    new PromptMessage { Content = $"Step 1: Analyze {config.Description}" },
-                    new PromptMessage { Content = "Step 2: Plan the approach" },
-                    new PromptMessage { Content = "Step 3: Execute and deliver" }
-                ]
+            Prompts =
+                config.GenerateAsPromptChain
+                    ?
+                    [
+                        new PromptMessage { Content = $"Step 1: Analyze {config.Description}" },
+                        new PromptMessage { Content = "Step 2: Plan the approach" },
+                        new PromptMessage { Content = "Step 3: Execute and deliver" },
+                    ]
                 : config.GenerateAsPromptTemplate
-                    ? [new PromptMessage
-                    {
-                        Content = $"Write a {{{{tone|enum:formal,casual}}}} response about {{{{topic|string}}}} for: {config.Description}",
-                        IsTemplate = true
-                    }]
-                    : [new PromptMessage { Content = $"Generated prompt for: {config.Description}" }]
+                    ?
+                    [
+                        new PromptMessage
+                        {
+                            Content =
+                                $"Write a {{{{tone|enum:formal,casual}}}} response about {{{{topic|string}}}} for: {config.Description}",
+                            IsTemplate = true,
+                        },
+                    ]
+                : [new PromptMessage { Content = $"Generated prompt for: {config.Description}" }],
         };
 
         var evaluation = new PromptEvaluation
         {
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
-                ["Clarity"] = new() { Score = 7, Feedback = "Clear instructions with minor ambiguities." },
-                ["Effectiveness"] = new() { Score = 7, Feedback = "Well-structured and practical with minor gaps." },
+                ["Clarity"] = new()
+                {
+                    Score = 7,
+                    Feedback = "Clear instructions with minor ambiguities.",
+                },
+                ["Effectiveness"] = new()
+                {
+                    Score = 7,
+                    Feedback = "Well-structured and practical with minor gaps.",
+                },
                 ["Completeness"] = new() { Score = 7, Feedback = "Covers main requirements." },
-                ["Faithfulness"] = new() { Score = 8, Feedback = "Closely matches the stated purpose." }
-            }
+                ["Faithfulness"] = new()
+                {
+                    Score = 8,
+                    Feedback = "Closely matches the stated purpose.",
+                },
+            },
         };
 
         var clarification = new ClarificationResult
@@ -69,39 +88,42 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
                 new ClarificationQuestion
                 {
                     Text = $"What aspects of '{config.Description}' matter most?",
-                    Suggestions = ["Accuracy", "Creativity", "Brevity"]
+                    Suggestions = ["Accuracy", "Creativity", "Brevity"],
                 },
                 new ClarificationQuestion
                 {
                     Text = "What level of detail is needed?",
-                    Suggestions = ["Summary", "Detailed", "Comprehensive"]
+                    Suggestions = ["Summary", "Detailed", "Comprehensive"],
                 },
                 new ClarificationQuestion
                 {
                     Text = "Any formatting requirements?",
-                    Suggestions = ["Markdown", "Plain text", "Structured JSON"]
-                }
+                    Suggestions = ["Markdown", "Plain text", "Structured JSON"],
+                },
             ],
-            Enhancements =
-            [
-                "Add structured formatting",
-                "Include examples",
-                "Add error handling"
-            ]
+            Enhancements = ["Add structured formatting", "Include examples", "Add error handling"],
         };
 
-        return Task.FromResult(new GenerateOrchestratorResult(
-            "mock-session-" + Guid.NewGuid().ToString("N")[..8],
-            prompts, evaluation, clarification));
+        return Task.FromResult(
+            new GenerateOrchestratorResult(
+                "mock-session-" + Guid.NewGuid().ToString("N")[..8],
+                prompts,
+                evaluation,
+                clarification
+            )
+        );
     }
 
     public Task<GenerateOrchestratorResult> RefineAsync(
-        string agentSessionId, GenerationConfig config,
+        string agentSessionId,
+        GenerationConfig config,
         PromptEvaluation currentEvaluation,
-        List<AnsweredQuestion> answers, List<string> selectedEnhancements,
+        List<AnsweredQuestion> answers,
+        List<string> selectedEnhancements,
         List<double>? scoreHistory,
         CancellationToken ct = default,
-        Func<ProgressEvent, Task>? onProgress = null)
+        Func<ProgressEvent, Task>? onProgress = null
+    )
     {
         var prompts = new PromptSet
         {
@@ -109,7 +131,7 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             SystemMessage = config.GenerateSystemMessage
                 ? $"You are an expert assistant for: {config.Description}"
                 : null,
-            Prompts = [new PromptMessage { Content = $"Refined prompt for: {config.Description}" }]
+            Prompts = [new PromptMessage { Content = $"Refined prompt for: {config.Description}" }],
         };
 
         var evaluation = new PromptEvaluation
@@ -119,8 +141,8 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
                 ["Clarity"] = new() { Score = 8, Feedback = "Improved clarity after refinement." },
                 ["Effectiveness"] = new() { Score = 8, Feedback = "Well-structured and concise." },
                 ["Completeness"] = new() { Score = 8, Feedback = "Addresses feedback." },
-                ["Faithfulness"] = new() { Score = 9, Feedback = "Closely matches intent." }
-            }
+                ["Faithfulness"] = new() { Score = 9, Feedback = "Closely matches intent." },
+            },
         };
 
         var clarification = new ClarificationResult
@@ -130,40 +152,46 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
                 new ClarificationQuestion
                 {
                     Text = "Adjust the tone?",
-                    Suggestions = ["More formal", "More casual", "Keep as-is"]
+                    Suggestions = ["More formal", "More casual", "Keep as-is"],
                 },
                 new ClarificationQuestion
                 {
                     Text = "Add domain terminology?",
-                    Suggestions = ["Yes", "No", "Minimal"]
-                }
+                    Suggestions = ["Yes", "No", "Minimal"],
+                },
             ],
             Enhancements =
             [
                 "Make it more concise",
                 "Add role-playing context",
-                "Add output format spec"
-            ]
+                "Add output format spec",
+            ],
         };
 
-        return Task.FromResult(new GenerateOrchestratorResult(
-            agentSessionId, prompts, evaluation, clarification));
+        return Task.FromResult(
+            new GenerateOrchestratorResult(agentSessionId, prompts, evaluation, clarification)
+        );
     }
 
     public Task<EnhanceOrchestratorResult> EnhanceAsync(
-        string? systemMessage, List<PromptInput> prompts,
-        GenerationConfig config, CancellationToken ct = default,
-        Func<ProgressEvent, Task>? onProgress = null)
+        string? systemMessage,
+        List<PromptInput> prompts,
+        GenerationConfig config,
+        CancellationToken ct = default,
+        Func<ProgressEvent, Task>? onProgress = null
+    )
     {
         var enhancedPrompts = new PromptSet
         {
             Title = "Enhanced Entry",
             SystemMessage = systemMessage,
-            Prompts = prompts.Select(p => new PromptMessage
-            {
-                Content = $"Enhanced: {p.Content}",
-                IsTemplate = p.IsTemplate
-            }).ToList()
+            Prompts = prompts
+                .Select(p => new PromptMessage
+                {
+                    Content = $"Enhanced: {p.Content}",
+                    IsTemplate = p.IsTemplate,
+                })
+                .ToList(),
         };
 
         var evaluation = new PromptEvaluation
@@ -171,10 +199,14 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
             {
                 ["Clarity"] = new() { Score = 6, Feedback = "Moderate clarity." },
-                ["Effectiveness"] = new() { Score = 6, Feedback = "Reasonable but needs tighter constraints." },
+                ["Effectiveness"] = new()
+                {
+                    Score = 6,
+                    Feedback = "Reasonable but needs tighter constraints.",
+                },
                 ["Completeness"] = new() { Score = 4, Feedback = "Missing edge cases." },
-                ["Faithfulness"] = new() { Score = 7, Feedback = "Aligns with original intent." }
-            }
+                ["Faithfulness"] = new() { Score = 7, Feedback = "Aligns with original intent." },
+            },
         };
 
         var clarification = new ClarificationResult
@@ -184,52 +216,67 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
                 new ClarificationQuestion
                 {
                     Text = "What improvements are you looking for?",
-                    Suggestions = ["Clarity", "Completeness", "Structure"]
+                    Suggestions = ["Clarity", "Completeness", "Structure"],
                 },
                 new ClarificationQuestion
                 {
                     Text = "Is the tone appropriate?",
-                    Suggestions = ["Yes", "Too formal", "Too casual"]
-                }
+                    Suggestions = ["Yes", "Too formal", "Too casual"],
+                },
             ],
-            Enhancements =
-            [
-                "Improve clarity",
-                "Add constraints",
-                "Optimize for consistency"
-            ]
+            Enhancements = ["Improve clarity", "Add constraints", "Optimize for consistency"],
         };
 
-        return Task.FromResult(new EnhanceOrchestratorResult(
-            "mock-enhance-session",
-            enhancedPrompts, evaluation, clarification));
+        return Task.FromResult(
+            new EnhanceOrchestratorResult(
+                "mock-enhance-session",
+                enhancedPrompts,
+                evaluation,
+                clarification
+            )
+        );
     }
 
     public Task<AgentResult<string>> GenerateSystemMessageAsync(
-        List<PromptInput> prompts, CancellationToken ct = default)
+        List<PromptInput> prompts,
+        CancellationToken ct = default
+    )
     {
-        return Task.FromResult(new AgentResult<string>("You are a helpful AI assistant specialized in this domain."));
+        return Task.FromResult(
+            new AgentResult<string>("You are a helpful AI assistant specialized in this domain.")
+        );
     }
 
     public Task<AgentResult<List<PromptInput>>> DecomposeAsync(
-        string promptContent, bool isTemplate = false, string? systemMessage = null,
-        CancellationToken ct = default)
+        string promptContent,
+        bool isTemplate = false,
+        string? systemMessage = null,
+        CancellationToken ct = default
+    )
     {
-        return Task.FromResult(new AgentResult<List<PromptInput>>(new List<PromptInput>
-        {
-            new("Step 1: Understand the task"),
-            new("Step 2: Research and plan"),
-            new("Step 3: Execute and deliver")
-        }));
+        return Task.FromResult(
+            new AgentResult<List<PromptInput>>(
+                new List<PromptInput>
+                {
+                    new("Step 1: Understand the task"),
+                    new("Step 2: Research and plan"),
+                    new("Step 3: Execute and deliver"),
+                }
+            )
+        );
     }
 
     public Task<AgentResult<Dictionary<string, string>>> FillTemplateFieldsAsync(
-        List<TemplateFieldInfo> fields, List<PromptInput> prompts, string? systemMessage = null,
-        CancellationToken ct = default)
+        List<TemplateFieldInfo> fields,
+        List<PromptInput> prompts,
+        string? systemMessage = null,
+        CancellationToken ct = default
+    )
     {
         var values = fields.ToDictionary(
             f => f.Name,
-            f => f.EnumValues is { Count: > 0 } ? f.EnumValues[0] : $"example-{f.Name}");
+            f => f.EnumValues is { Count: > 0 } ? f.EnumValues[0] : $"example-{f.Name}"
+        );
         return Task.FromResult(new AgentResult<Dictionary<string, string>>(values));
     }
 }

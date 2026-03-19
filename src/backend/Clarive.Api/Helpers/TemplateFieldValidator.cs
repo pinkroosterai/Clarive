@@ -8,7 +8,9 @@ public static class TemplateFieldValidator
     private const int MaxFieldValueLength = 10_000;
 
     public static Dictionary<string, string> ValidateFields(
-        List<TemplateField> definitions, Dictionary<string, string> values)
+        List<TemplateField> definitions,
+        Dictionary<string, string> values
+    )
     {
         var errors = new Dictionary<string, string>();
 
@@ -22,7 +24,8 @@ public static class TemplateFieldValidator
 
             if (value.Length > MaxFieldValueLength)
             {
-                errors[field.Name] = $"Field '{field.Name}' exceeds maximum length of {MaxFieldValueLength} characters.";
+                errors[field.Name] =
+                    $"Field '{field.Name}' exceeds maximum length of {MaxFieldValueLength} characters.";
                 continue;
             }
 
@@ -30,11 +33,11 @@ public static class TemplateFieldValidator
             {
                 TemplateFieldType.Int => ValidateNumeric<int>(field, value, int.TryParse),
                 TemplateFieldType.Float => ValidateNumeric<double>(field, value, double.TryParse),
-                TemplateFieldType.Enum => field.EnumValues is { Count: > 0 } &&
-                    !field.EnumValues.Contains(value, StringComparer.OrdinalIgnoreCase)
+                TemplateFieldType.Enum => field.EnumValues is { Count: > 0 }
+                && !field.EnumValues.Contains(value, StringComparer.OrdinalIgnoreCase)
                     ? $"Field '{field.Name}' must be one of: {string.Join(", ", field.EnumValues)}."
                     : null,
-                _ => null
+                _ => null,
             };
 
             if (error is not null)
@@ -49,7 +52,9 @@ public static class TemplateFieldValidator
     /// Prevents storage of arbitrary extra data.
     /// </summary>
     public static Dictionary<string, string> FilterToDefinedFields(
-        List<TemplateField> definitions, Dictionary<string, string> values)
+        List<TemplateField> definitions,
+        Dictionary<string, string> values
+    )
     {
         var definedNames = new HashSet<string>(definitions.Select(f => f.Name));
         return values
@@ -59,7 +64,11 @@ public static class TemplateFieldValidator
 
     private delegate bool TryParseDelegate<T>(string input, out T result);
 
-    private static string? ValidateNumeric<T>(TemplateField field, string value, TryParseDelegate<T> tryParse)
+    private static string? ValidateNumeric<T>(
+        TemplateField field,
+        string value,
+        TryParseDelegate<T> tryParse
+    )
         where T : IComparable<T>
     {
         if (!tryParse(value, out var parsed))

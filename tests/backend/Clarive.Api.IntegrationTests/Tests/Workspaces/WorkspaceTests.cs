@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Clarive.Api.Data;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Workspaces;
@@ -14,7 +14,8 @@ namespace Clarive.Api.IntegrationTests.Tests.Workspaces;
 [Collection("Integration")]
 public class WorkspaceTests : IntegrationTestBase
 {
-    public WorkspaceTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public WorkspaceTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     // ── Registration creates personal membership ──
 
@@ -22,12 +23,15 @@ public class WorkspaceTests : IntegrationTestBase
     public async Task Register_CreatesPersonalMembership()
     {
         var email = TestData.UniqueEmail();
-        var response = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securepassword123",
-            name = "Workspace Tester"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securepassword123",
+                name = "Workspace Tester",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var json = await response.ReadJsonAsync();
@@ -47,11 +51,10 @@ public class WorkspaceTests : IntegrationTestBase
     [Fact]
     public async Task Login_ReturnsWorkspaceList()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email = TestData.AdminEmail,
-            password = TestData.SeedPassword
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = TestData.AdminEmail, password = TestData.SeedPassword }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.ReadJsonAsync();
@@ -78,7 +81,9 @@ public class WorkspaceTests : IntegrationTestBase
         // Should have at least personal + invited workspace
         workspaces.GetArrayLength().Should().BeGreaterOrEqualTo(2);
 
-        var hasPersonal = workspaces.EnumerateArray().Any(w => w.GetProperty("isPersonal").GetBoolean());
+        var hasPersonal = workspaces
+            .EnumerateArray()
+            .Any(w => w.GetProperty("isPersonal").GetBoolean());
         hasPersonal.Should().BeTrue();
     }
 
@@ -93,7 +98,8 @@ public class WorkspaceTests : IntegrationTestBase
         Client.WithBearerToken(token);
         var (response, body) = await Client.PostJsonAsync<JsonElement>(
             "/api/auth/switch-workspace",
-            new { tenantId = personalTenantId });
+            new { tenantId = personalTenantId }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.TryGetProperty("token", out _).Should().BeTrue();
@@ -105,12 +111,15 @@ public class WorkspaceTests : IntegrationTestBase
     {
         // Register a fresh user
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securepassword123",
-            name = "Switcher"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securepassword123",
+                name = "Switcher",
+            }
+        );
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var regJson = await regResponse.ReadJsonAsync();
         var token = regJson.GetProperty("token").GetString()!;
@@ -119,7 +128,8 @@ public class WorkspaceTests : IntegrationTestBase
         Client.WithBearerToken(token);
         var (response, _) = await Client.PostJsonAsync<JsonElement>(
             "/api/auth/switch-workspace",
-            new { tenantId = TestData.TenantId });
+            new { tenantId = TestData.TenantId }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -133,7 +143,8 @@ public class WorkspaceTests : IntegrationTestBase
         Client.WithBearerToken(token);
         var (switchRes, switchBody) = await Client.PostJsonAsync<JsonElement>(
             "/api/auth/switch-workspace",
-            new { tenantId = personalTenantId });
+            new { tenantId = personalTenantId }
+        );
         switchRes.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // After switching, the returned user's role should be "admin" (personal workspace role)
@@ -175,12 +186,15 @@ public class WorkspaceTests : IntegrationTestBase
     {
         // Register a fresh user
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securepassword123",
-            name = "Leaver"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securepassword123",
+                name = "Leaver",
+            }
+        );
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var regJson = await regResponse.ReadJsonAsync();
         var token = regJson.GetProperty("token").GetString()!;
@@ -202,10 +216,15 @@ public class WorkspaceTests : IntegrationTestBase
 
         // Step 1: Register User A (gets personal workspace)
         var emailA = TestData.UniqueEmail();
-        var regA = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email = emailA, password = "securepassword123", name = "Owner A"
-        });
+        var regA = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email = emailA,
+                password = "securepassword123",
+                name = "Owner A",
+            }
+        );
         regA.StatusCode.Should().Be(HttpStatusCode.Created);
         var regJsonA = await regA.ReadJsonAsync();
         var tokenA = regJsonA.GetProperty("token").GetString()!;
@@ -214,10 +233,10 @@ public class WorkspaceTests : IntegrationTestBase
         // Step 2: User A invites User B as editor → User B accepts
         Client.WithBearerToken(tokenA);
         var emailB = TestData.UniqueEmail();
-        var (inviteRes, _) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email = emailB, role = "editor"
-        });
+        var (inviteRes, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email = emailB, role = "editor" }
+        );
         inviteRes.EnsureSuccessStatusCode();
 
         var acceptUrl = TestEmailService.GetInvitationUrl(emailB);
@@ -226,7 +245,8 @@ public class WorkspaceTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Authorization = null;
         var (acceptRes, acceptBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{rawToken}/accept",
-            new { name = "Member B", password = "securepassword123" });
+            new { name = "Member B", password = "securepassword123" }
+        );
         acceptRes.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Get User B's ID and login token for User A's workspace
@@ -234,10 +254,10 @@ public class WorkspaceTests : IntegrationTestBase
 
         // Step 3: User A transfers ownership to User B
         Client.WithBearerToken(tokenA);
-        var (transferRes, _) = await Client.PostJsonAsync<JsonElement>("/api/users/transfer-ownership", new
-        {
-            targetUserId = userBId, confirmation = "TRANSFER"
-        });
+        var (transferRes, _) = await Client.PostJsonAsync<JsonElement>(
+            "/api/users/transfer-ownership",
+            new { targetUserId = userBId, confirmation = "TRANSFER" }
+        );
         transferRes.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Now User A = editor, User B = admin (sole admin) in User A's workspace
@@ -245,10 +265,10 @@ public class WorkspaceTests : IntegrationTestBase
 
         // Step 4: Login as User B and switch to User A's workspace
         Client.DefaultRequestHeaders.Authorization = null;
-        var loginB = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email = emailB, password = "securepassword123"
-        });
+        var loginB = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = emailB, password = "securepassword123" }
+        );
         loginB.StatusCode.Should().Be(HttpStatusCode.OK);
         var loginBJson = await loginB.ReadJsonAsync();
         var tokenB = loginBJson.GetProperty("token").GetString()!;
@@ -257,7 +277,8 @@ public class WorkspaceTests : IntegrationTestBase
         Client.WithBearerToken(tokenB);
         var (switchRes, switchBody) = await Client.PostJsonAsync<JsonElement>(
             "/api/auth/switch-workspace",
-            new { tenantId = personalWsId });
+            new { tenantId = personalWsId }
+        );
         switchRes.StatusCode.Should().Be(HttpStatusCode.OK);
         var tokenBSwitched = switchBody.GetProperty("token").GetString()!;
 
@@ -281,7 +302,8 @@ public class WorkspaceTests : IntegrationTestBase
         Client.WithBearerToken(userToken);
         var (switchRes, switchBody) = await Client.PostJsonAsync<JsonElement>(
             "/api/auth/switch-workspace",
-            new { tenantId = TestData.TenantId });
+            new { tenantId = TestData.TenantId }
+        );
         switchRes.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Get the user's ID from the switch response
@@ -308,16 +330,22 @@ public class WorkspaceTests : IntegrationTestBase
     /// Registers a new user, has the admin invite them to the seed workspace,
     /// then accepts the pending invitation. Returns (userToken, personalTenantId).
     /// </summary>
-    private async Task<(string UserToken, string PersonalTenantId)> RegisterAndInviteToAdminWorkspaceAsync()
+    private async Task<(
+        string UserToken,
+        string PersonalTenantId
+    )> RegisterAndInviteToAdminWorkspaceAsync()
     {
         // Register a new user
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securepassword123",
-            name = "Multi WS User"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securepassword123",
+                name = "Multi WS User",
+            }
+        );
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var regJson = await regResponse.ReadJsonAsync();
         var userToken = regJson.GetProperty("token").GetString()!;
@@ -327,11 +355,10 @@ public class WorkspaceTests : IntegrationTestBase
         var adminToken = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(adminToken);
 
-        var (inviteRes, inviteBody) = await Client.PostJsonAsync<JsonElement>("/api/invitations", new
-        {
-            email,
-            role = "editor"
-        });
+        var (inviteRes, inviteBody) = await Client.PostJsonAsync<JsonElement>(
+            "/api/invitations",
+            new { email, role = "editor" }
+        );
         inviteRes.StatusCode.Should().Be(HttpStatusCode.Created);
         var invitationId = inviteBody.GetProperty("id").GetString()!;
 
@@ -339,16 +366,16 @@ public class WorkspaceTests : IntegrationTestBase
         Client.WithBearerToken(userToken);
         var (acceptRes, _) = await Client.PostJsonAsync<JsonElement>(
             $"/api/invitations/{invitationId}/respond",
-            new { accept = true });
+            new { accept = true }
+        );
         acceptRes.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Re-login to get a fresh token reflecting the new membership
         Client.DefaultRequestHeaders.Authorization = null;
-        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email,
-            password = "securepassword123"
-        });
+        var loginResponse = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email, password = "securepassword123" }
+        );
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var loginJson = await loginResponse.ReadJsonAsync();
         userToken = loginJson.GetProperty("token").GetString()!;

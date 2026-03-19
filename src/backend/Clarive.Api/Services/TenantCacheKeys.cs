@@ -28,20 +28,20 @@ public static class TenantCacheKeys
     public static readonly TimeSpan ModelCostTtl = TimeSpan.FromHours(1);
 
     /// <summary>Evict all cached data for a tenant's entries (dashboard stats + recent entries).</summary>
-    public static Task EvictEntryData(TenantCacheService cache, Guid tenantId)
-        => cache.EvictAsync([DashboardStatsKey, RecentEntriesKey], tenantId);
+    public static Task EvictEntryData(TenantCacheService cache, Guid tenantId) =>
+        cache.EvictAsync([DashboardStatsKey, RecentEntriesKey], tenantId);
 
     /// <summary>Evict all cached data for a tenant's folders (tree + dashboard stats + recent).</summary>
-    public static Task EvictFolderData(TenantCacheService cache, Guid tenantId)
-        => cache.EvictAsync([FolderTreeKey, DashboardStatsKey, RecentEntriesKey], tenantId);
+    public static Task EvictFolderData(TenantCacheService cache, Guid tenantId) =>
+        cache.EvictAsync([FolderTreeKey, DashboardStatsKey, RecentEntriesKey], tenantId);
 
     /// <summary>Evict cached workspace tag data.</summary>
-    public static Task EvictTagData(TenantCacheService cache, Guid tenantId)
-        => cache.EvictAsync(WorkspaceTagsKey, tenantId);
+    public static Task EvictTagData(TenantCacheService cache, Guid tenantId) =>
+        cache.EvictAsync(WorkspaceTagsKey, tenantId);
 
     /// <summary>Evict cached published entry ID set.</summary>
-    public static Task EvictPublishedEntryIds(TenantCacheService cache, Guid tenantId)
-        => cache.EvictAsync(PublishedEntryIdsKey, tenantId);
+    public static Task EvictPublishedEntryIds(TenantCacheService cache, Guid tenantId) =>
+        cache.EvictAsync(PublishedEntryIdsKey, tenantId);
 
     /// <summary>Evict all AI-related global caches (providers, models).
     /// Note: Per-model cost caches expire naturally via TTL (1 hour) since they use
@@ -54,10 +54,10 @@ public static class TenantCacheKeys
     }
 
     /// <summary>Format a model cost cache key.</summary>
-    public static string FormatModelCostKey(string provider, string model)
-        => $"{ModelCostKeyPrefix}:{provider}:{model}";
+    public static string FormatModelCostKey(string provider, string model) =>
+        $"{ModelCostKeyPrefix}:{provider}:{model}";
 
     /// <summary>Evict a specific model's cost cache.</summary>
-    public static Task EvictModelCost(TenantCacheService cache, string provider, string model)
-        => cache.EvictGlobalAsync(FormatModelCostKey(provider, model));
+    public static Task EvictModelCost(TenantCacheService cache, string provider, string model) =>
+        cache.EvictGlobalAsync(FormatModelCostKey(provider, model));
 }

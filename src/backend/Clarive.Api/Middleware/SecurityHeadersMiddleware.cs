@@ -13,7 +13,8 @@ public class SecurityHeadersMiddleware(RequestDelegate next)
             headers["X-XSS-Protection"] = "0"; // Modern browsers: CSP replaces this; 0 avoids XSS auditor bugs
             headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
             headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload";
-            headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';";
+            headers["Content-Security-Policy"] =
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';";
             return Task.CompletedTask;
         });
 

@@ -4,7 +4,8 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace Clarive.Api.Services;
 
-public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegistryCache> logger) : ILiteLlmRegistryCache
+public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegistryCache> logger)
+    : ILiteLlmRegistryCache
 {
     private const string CacheKey = "clarive:global:litellm_model_registry";
     private const decimal PerTokenToPerMillion = 1_000_000m;
@@ -22,14 +23,21 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
             var data = await cache.GetStringAsync(CacheKey, ct);
             return data is not null;
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch
         {
             return false;
         }
     }
 
-    public async Task<LiteLlmModelInfo?> TryGetModelInfoAsync(string providerName, string modelId, CancellationToken ct = default)
+    public async Task<LiteLlmModelInfo?> TryGetModelInfoAsync(
+        string providerName,
+        string modelId,
+        CancellationToken ct = default
+    )
     {
         try
         {
@@ -56,7 +64,10 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
             if (registry.TryGetValue(modelId, out info))
                 return info;
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Failed to read LiteLLM registry from cache");
@@ -68,7 +79,8 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
     public bool IsKnownNonChatModel(string providerName, string modelId)
     {
         var nonChat = _nonChatModels;
-        if (nonChat is null) return false;
+        if (nonChat is null)
+            return false;
 
         var key = $"{providerName.ToLowerInvariant()}/{modelId}";
         return nonChat.Contains(key) || nonChat.Contains(modelId);
@@ -89,8 +101,11 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
             try
             {
                 // Track non-chat models so callers can filter them out
-                if (prop.Value.TryGetProperty("mode", out var modeEl) &&
-                    modeEl.GetString() is string modeStr && modeStr != "chat")
+                if (
+                    prop.Value.TryGetProperty("mode", out var modeEl)
+                    && modeEl.GetString() is string modeStr
+                    && modeStr != "chat"
+                )
                 {
                     nonChat.Add(prop.Name);
                 }
@@ -102,17 +117,23 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
             catch (Exception ex)
             {
                 skipped++;
-                logger.LogWarning(ex, "Failed to parse LiteLLM model entry '{ModelKey}', skipping", prop.Name);
+                logger.LogWarning(
+                    ex,
+                    "Failed to parse LiteLLM model entry '{ModelKey}', skipping",
+                    prop.Name
+                );
             }
         }
 
         try
         {
             var serialized = JsonSerializer.Serialize(registry);
-            await cache.SetStringAsync(CacheKey, serialized, new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = CacheTtl
-            }, ct);
+            await cache.SetStringAsync(
+                CacheKey,
+                serialized,
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheTtl },
+                ct
+            );
         }
         catch (Exception ex)
         {
@@ -123,8 +144,11 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
         _localRegistry = registry;
         _nonChatModels = nonChat;
 
-        logger.LogInformation("Loaded {Count} models into LiteLLM registry cache (skipped {Skipped})",
-            registry.Count, skipped);
+        logger.LogInformation(
+            "Loaded {Count} models into LiteLLM registry cache (skipped {Skipped})",
+            registry.Count,
+            skipped
+        );
     }
 
     public async Task LoadFromFileAsync(string path, CancellationToken ct = default)
@@ -148,8 +172,11 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
     private static LiteLlmModelInfo? ParseEntry(JsonElement element)
     {
         // Only include chat models (skip embeddings, image generation, etc.)
-        if (element.TryGetProperty("mode", out var mode) &&
-            mode.GetString() is string m && m != "chat")
+        if (
+            element.TryGetProperty("mode", out var mode)
+            && mode.GetString() is string m
+            && m != "chat"
+        )
             return null;
 
         decimal? inputCost = GetDecimalProperty(element, "input_cost_per_token");
@@ -163,7 +190,9 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
         // Convert per-token to per-million
         return new LiteLlmModelInfo(
             InputCostPerMillion: inputCost.HasValue ? inputCost.Value * PerTokenToPerMillion : null,
-            OutputCostPerMillion: outputCost.HasValue ? outputCost.Value * PerTokenToPerMillion : null,
+            OutputCostPerMillion: outputCost.HasValue
+                ? outputCost.Value * PerTokenToPerMillion
+                : null,
             MaxInputTokens: maxInputTokens,
             MaxOutputTokens: maxOutputTokens,
             IsReasoning: isReasoning,
@@ -209,7 +238,7 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
         {
             JsonValueKind.True => true,
             JsonValueKind.False => false,
-            _ => null
+            _ => null,
         };
     }
 }

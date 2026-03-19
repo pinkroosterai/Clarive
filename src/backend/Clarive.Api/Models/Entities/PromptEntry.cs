@@ -20,6 +20,7 @@ public class PromptEntry : ITenantScoped
     // Navigation (excluded from JSON serialization to avoid cycles)
     [JsonIgnore]
     public Folder? Folder { get; set; }
+
     [JsonIgnore]
     public List<PromptEntryVersion> Versions { get; set; } = [];
 }

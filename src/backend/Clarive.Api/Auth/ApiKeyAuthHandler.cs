@@ -12,8 +12,8 @@ public class ApiKeyAuthHandler(
     ILoggerFactory logger,
     UrlEncoder encoder,
     IApiKeyRepository keyRepo,
-    IServiceScopeFactory scopeFactory)
-    : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+    IServiceScopeFactory scopeFactory
+) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     public const string SchemeName = "ApiKey";
     public const string HeaderName = "X-Api-Key";
@@ -26,8 +26,11 @@ public class ApiKeyAuthHandler(
         var rawKey = headerValue.ToString();
         if (string.IsNullOrWhiteSpace(rawKey))
         {
-            Logger.LogWarning("API key auth failed: empty key on {Path} from {ClientIp}",
-                Request.Path, Context.Connection.RemoteIpAddress);
+            Logger.LogWarning(
+                "API key auth failed: empty key on {Path} from {ClientIp}",
+                Request.Path,
+                Context.Connection.RemoteIpAddress
+            );
             return AuthenticateResult.Fail("API key is empty.");
         }
 
@@ -35,15 +38,22 @@ public class ApiKeyAuthHandler(
         var apiKey = await keyRepo.GetByHashAsync(hash, Context.RequestAborted);
         if (apiKey is null)
         {
-            Logger.LogWarning("API key auth failed: invalid key on {Path} from {ClientIp}",
-                Request.Path, Context.Connection.RemoteIpAddress);
+            Logger.LogWarning(
+                "API key auth failed: invalid key on {Path} from {ClientIp}",
+                Request.Path,
+                Context.Connection.RemoteIpAddress
+            );
             return AuthenticateResult.Fail("Invalid API key.");
         }
 
         if (apiKey.ExpiresAt.HasValue && apiKey.ExpiresAt.Value < DateTime.UtcNow)
         {
-            Logger.LogWarning("API key auth failed: expired key {ApiKeyId} on {Path} from {ClientIp}",
-                apiKey.Id, Request.Path, Context.Connection.RemoteIpAddress);
+            Logger.LogWarning(
+                "API key auth failed: expired key {ApiKeyId} on {Path} from {ClientIp}",
+                apiKey.Id,
+                Request.Path,
+                Context.Connection.RemoteIpAddress
+            );
             return AuthenticateResult.Fail("API key has expired.");
         }
 
@@ -59,7 +69,11 @@ public class ApiKeyAuthHandler(
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to update LastUsedAt for API key {ApiKeyId}", apiKey.Id);
+                Logger.LogWarning(
+                    ex,
+                    "Failed to update LastUsedAt for API key {ApiKeyId}",
+                    apiKey.Id
+                );
             }
         });
 
@@ -67,7 +81,7 @@ public class ApiKeyAuthHandler(
         {
             new Claim("tenantId", apiKey.TenantId.ToString()),
             new Claim("apiKeyId", apiKey.Id.ToString()),
-            new Claim("apiKeyName", apiKey.Name)
+            new Claim("apiKeyName", apiKey.Name),
         };
 
         var identity = new ClaimsIdentity(claims, SchemeName);

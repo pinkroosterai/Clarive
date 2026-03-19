@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.AuditLog;
@@ -10,7 +10,8 @@ namespace Clarive.Api.IntegrationTests.Tests.AuditLog;
 [Collection("Integration")]
 public class AuditLogTests : IntegrationTestBase
 {
-    public AuditLogTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public AuditLogTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task GetPage_AsAdmin_ReturnsPaginatedLogs()

@@ -19,13 +19,17 @@ public class EfTenantRepository(ClariveDbContext db) : ITenantRepository
         return await db.Tenants.FirstOrDefaultAsync(t => t.Id == id, ct);
     }
 
-    public async Task<Dictionary<Guid, Tenant>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    public async Task<Dictionary<Guid, Tenant>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken ct = default
+    )
     {
         var idList = ids.ToList();
-        if (idList.Count == 0) return [];
+        if (idList.Count == 0)
+            return [];
 
-        var tenants = await db.Tenants
-            .AsNoTracking()
+        var tenants = await db
+            .Tenants.AsNoTracking()
             .Where(t => idList.Contains(t.Id))
             .ToListAsync(ct);
 

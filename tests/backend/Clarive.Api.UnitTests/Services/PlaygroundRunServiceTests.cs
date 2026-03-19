@@ -15,12 +15,13 @@ public class PlaygroundRunServiceTests
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
     public PlaygroundRunServiceTests()
     {
-        _runRepo.AddAsync(Arg.Any<PlaygroundRun>(), Arg.Any<CancellationToken>())
+        _runRepo
+            .AddAsync(Arg.Any<PlaygroundRun>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<PlaygroundRun>());
 
         _sut = new PlaygroundRunService(_runRepo);
@@ -39,7 +40,7 @@ public class PlaygroundRunServiceTests
             Temperature = 0.7f,
             MaxTokens = 1000,
             Responses = JsonSerializer.Serialize(responses, JsonOptions),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
     }
 
@@ -54,7 +55,9 @@ public class PlaygroundRunServiceTests
 
         result.Should().Be(run);
         await _runRepo.Received(1).AddAsync(run, Arg.Any<CancellationToken>());
-        await _runRepo.Received(1).DeleteOldestByEntryIdAsync(run.EntryId, 20, Arg.Any<CancellationToken>());
+        await _runRepo
+            .Received(1)
+            .DeleteOldestByEntryIdAsync(run.EntryId, 20, Arg.Any<CancellationToken>());
     }
 
     // ── GetRunsAsync ──
@@ -64,8 +67,7 @@ public class PlaygroundRunServiceTests
     {
         var entryId = Guid.NewGuid();
         var runs = new List<PlaygroundRun> { MakeRun(entryId) };
-        _runRepo.GetByEntryIdAsync(entryId, 10, Arg.Any<CancellationToken>())
-            .Returns(runs);
+        _runRepo.GetByEntryIdAsync(entryId, 10, Arg.Any<CancellationToken>()).Returns(runs);
 
         var result = await _sut.GetRunsAsync(entryId, default);
 
@@ -79,7 +81,8 @@ public class PlaygroundRunServiceTests
     public async Task GetRunsAsync_EmptyList_ReturnsEmpty()
     {
         var entryId = Guid.NewGuid();
-        _runRepo.GetByEntryIdAsync(entryId, 10, Arg.Any<CancellationToken>())
+        _runRepo
+            .GetByEntryIdAsync(entryId, 10, Arg.Any<CancellationToken>())
             .Returns(new List<PlaygroundRun>());
 
         var result = await _sut.GetRunsAsync(entryId, default);
@@ -93,10 +96,11 @@ public class PlaygroundRunServiceTests
         var entryId = Guid.NewGuid();
         var run = MakeRun(entryId);
         run.TemplateFieldValues = JsonSerializer.Serialize(
-            new Dictionary<string, string> { ["name"] = "Alice" }, JsonOptions);
+            new Dictionary<string, string> { ["name"] = "Alice" },
+            JsonOptions
+        );
 
-        _runRepo.GetByEntryIdAsync(entryId, 10, Arg.Any<CancellationToken>())
-            .Returns([run]);
+        _runRepo.GetByEntryIdAsync(entryId, 10, Arg.Any<CancellationToken>()).Returns([run]);
 
         var result = await _sut.GetRunsAsync(entryId, default);
 

@@ -4,5 +4,5 @@ public enum VersionState
 {
     Draft,
     Published,
-    Historical
+    Historical,
 }

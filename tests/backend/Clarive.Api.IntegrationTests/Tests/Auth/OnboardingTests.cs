@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Clarive.Api.IntegrationTests.Tests.Auth;
@@ -10,19 +10,23 @@ namespace Clarive.Api.IntegrationTests.Tests.Auth;
 [Collection("Integration")]
 public class OnboardingTests : IntegrationTestBase
 {
-    public OnboardingTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public OnboardingTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Register_CreatesStarterTemplatesInGettingStartedFolder()
     {
         // Register a new user
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securePassword123",
-            name = "Onboarding Test User"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securePassword123",
+                name = "Onboarding Test User",
+            }
+        );
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var regJson = await regResponse.ReadJsonAsync();
@@ -36,9 +40,14 @@ public class OnboardingTests : IntegrationTestBase
         var folders = await foldersResponse.ReadJsonAsync();
         var folderList = folders.EnumerateArray().ToList();
         var gettingStarted = folderList.FirstOrDefault(f =>
-            f.GetProperty("name").GetString() == "Getting Started");
-        gettingStarted.ValueKind.Should().NotBe(System.Text.Json.JsonValueKind.Undefined,
-            "a 'Getting Started' folder should exist after registration");
+            f.GetProperty("name").GetString() == "Getting Started"
+        );
+        gettingStarted
+            .ValueKind.Should()
+            .NotBe(
+                System.Text.Json.JsonValueKind.Undefined,
+                "a 'Getting Started' folder should exist after registration"
+            );
 
         var folderId = gettingStarted.GetProperty("id").GetString()!;
 
@@ -60,12 +69,15 @@ public class OnboardingTests : IntegrationTestBase
     public async Task Register_StarterEntriesArePublished()
     {
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securePassword123",
-            name = "Published Check User"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securePassword123",
+                name = "Published Check User",
+            }
+        );
         var regJson = await regResponse.ReadJsonAsync();
         var token = regJson.GetProperty("token").GetString()!;
         Client.WithBearerToken(token);
@@ -73,9 +85,11 @@ public class OnboardingTests : IntegrationTestBase
         // Get folders to find the Getting Started folder
         var foldersResponse = await Client.GetAsync("/api/folders");
         var folders = await foldersResponse.ReadJsonAsync();
-        var folderId = folders.EnumerateArray()
+        var folderId = folders
+            .EnumerateArray()
             .First(f => f.GetProperty("name").GetString() == "Getting Started")
-            .GetProperty("id").GetString()!;
+            .GetProperty("id")
+            .GetString()!;
 
         // Entries should be published
         var entriesResponse = await Client.GetAsync($"/api/entries?folderId={folderId}");
@@ -92,12 +106,15 @@ public class OnboardingTests : IntegrationTestBase
     public async Task Register_SetsOnboardingCompletedFalse()
     {
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securePassword123",
-            name = "Onboarding Flag User"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securePassword123",
+                name = "Onboarding Flag User",
+            }
+        );
 
         var regJson = await regResponse.ReadJsonAsync();
         var user = regJson.GetProperty("user");
@@ -116,12 +133,15 @@ public class OnboardingTests : IntegrationTestBase
     public async Task CompleteOnboarding_SetsFlag()
     {
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securePassword123",
-            name = "Complete Onboarding User"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securePassword123",
+                name = "Complete Onboarding User",
+            }
+        );
         var regJson = await regResponse.ReadJsonAsync();
         var token = regJson.GetProperty("token").GetString()!;
         Client.WithBearerToken(token);
@@ -140,12 +160,15 @@ public class OnboardingTests : IntegrationTestBase
     public async Task CompleteOnboarding_IsIdempotent()
     {
         var email = TestData.UniqueEmail();
-        var regResponse = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email,
-            password = "securePassword123",
-            name = "Idempotent User"
-        });
+        var regResponse = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = "securePassword123",
+                name = "Idempotent User",
+            }
+        );
         var regJson = await regResponse.ReadJsonAsync();
         var token = regJson.GetProperty("token").GetString()!;
         Client.WithBearerToken(token);

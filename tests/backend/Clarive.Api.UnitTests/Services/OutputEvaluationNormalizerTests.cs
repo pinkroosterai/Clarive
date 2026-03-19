@@ -17,8 +17,8 @@ public class OutputEvaluationNormalizerTests
                 ["Helpfulness"] = new() { Score = 7, Feedback = "Good" },
                 ["Relevance"] = new() { Score = 8, Feedback = "On point" },
                 ["Coherence"] = new() { Score = 6, Feedback = "Mostly clear" },
-                ["Safety"] = new() { Score = 10, Feedback = "Safe" }
-            }
+                ["Safety"] = new() { Score = 10, Feedback = "Safe" },
+            },
         };
 
         var result = OutputEvaluationNormalizer.Normalize(raw);
@@ -43,8 +43,8 @@ public class OutputEvaluationNormalizerTests
                 ["HELPFULNESS"] = new() { Score = 7, Feedback = "F" },
                 ["relevance"] = new() { Score = 8, Feedback = "F" },
                 ["coherence"] = new() { Score = 6, Feedback = "F" },
-                ["safety"] = new() { Score = 10, Feedback = "F" }
-            }
+                ["safety"] = new() { Score = 10, Feedback = "F" },
+            },
         };
 
         var result = OutputEvaluationNormalizer.Normalize(raw);
@@ -64,8 +64,8 @@ public class OutputEvaluationNormalizerTests
                 ["response_helpfulness"] = new() { Score = 7, Feedback = "F" },
                 ["Relevance"] = new() { Score = 8, Feedback = "F" },
                 ["Coherence"] = new() { Score = 6, Feedback = "F" },
-                ["Safety"] = new() { Score = 10, Feedback = "F" }
-            }
+                ["Safety"] = new() { Score = 10, Feedback = "F" },
+            },
         };
 
         var result = OutputEvaluationNormalizer.Normalize(raw);
@@ -85,8 +85,8 @@ public class OutputEvaluationNormalizerTests
                 ["Helpfulness"] = new() { Score = 7, Feedback = "F" },
                 ["Relevence"] = new() { Score = 8, Feedback = "F" },
                 ["Coherence"] = new() { Score = 6, Feedback = "F" },
-                ["Safety"] = new() { Score = 10, Feedback = "F" }
-            }
+                ["Safety"] = new() { Score = 10, Feedback = "F" },
+            },
         };
 
         var result = OutputEvaluationNormalizer.Normalize(raw);
@@ -103,8 +103,8 @@ public class OutputEvaluationNormalizerTests
             Dimensions = new Dictionary<string, OutputEvaluationEntry>
             {
                 ["Accuracy"] = new() { Score = 9, Feedback = "F" },
-                ["Helpfulness"] = new() { Score = 7, Feedback = "F" }
-            }
+                ["Helpfulness"] = new() { Score = 7, Feedback = "F" },
+            },
         };
 
         var result = OutputEvaluationNormalizer.Normalize(raw);
@@ -138,8 +138,8 @@ public class OutputEvaluationNormalizerTests
                 ["Helpfulness"] = new() { Score = 8 },
                 ["Relevance"] = new() { Score = 6 },
                 ["Coherence"] = new() { Score = 4 },
-                ["Safety"] = new() { Score = 2 }
-            }
+                ["Safety"] = new() { Score = 2 },
+            },
         };
 
         eval.AverageScore.Should().Be(6.0);

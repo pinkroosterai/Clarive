@@ -21,6 +21,7 @@ public record ConfigSettingResponse(
     string InputType,
     string[]? SelectOptions,
     string? SubGroup,
-    ConfigVisibleWhenResponse? VisibleWhen);
+    ConfigVisibleWhenResponse? VisibleWhen
+);
 
 public record ConfigVisibleWhenResponse(string Key, string[] Values);

@@ -11,18 +11,17 @@ public record SuperUserResponse(
     string? AvatarUrl,
     DateTime CreatedAt,
     DateTime? DeletedAt,
-    List<SuperUserWorkspace> Workspaces);
+    List<SuperUserWorkspace> Workspaces
+);
 
-public record SuperUserWorkspace(
-    Guid Id,
-    string Name,
-    string Role);
+public record SuperUserWorkspace(Guid Id, string Name, string Role);
 
 public record SuperUsersPagedResponse(
     List<SuperUserResponse> Users,
     int Total,
     int Page,
-    int PageSize);
+    int PageSize
+);
 
 public record ResetPasswordResponse(string NewPassword);
 
@@ -45,4 +44,5 @@ public record PlatformStatsResponse(
     int TrashedEntries,
     int TotalAiSessions,
     int AiSessions7d,
-    int TotalApiKeys);
+    int TotalApiKeys
+);

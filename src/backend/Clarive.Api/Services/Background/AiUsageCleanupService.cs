@@ -9,7 +9,8 @@ namespace Clarive.Api.Services.Background;
 /// </summary>
 public class AiUsageCleanupService(
     IServiceScopeFactory scopeFactory,
-    ILogger<AiUsageCleanupService> logger) : BackgroundService
+    ILogger<AiUsageCleanupService> logger
+) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromHours(24);
     private static readonly TimeSpan MaxAge = TimeSpan.FromDays(90);
@@ -31,8 +32,8 @@ public class AiUsageCleanupService(
             var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
 
             var cutoff = DateTime.UtcNow - MaxAge;
-            var deleted = await db.AiUsageLogs
-                .Where(l => l.CreatedAt < cutoff)
+            var deleted = await db
+                .AiUsageLogs.Where(l => l.CreatedAt < cutoff)
                 .ExecuteDeleteAsync(ct);
 
             if (deleted > 0)

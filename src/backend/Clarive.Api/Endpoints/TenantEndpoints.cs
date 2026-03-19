@@ -1,9 +1,9 @@
+using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Repositories.Interfaces;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
-using Clarive.Api.Auth;
 
 namespace Clarive.Api.Endpoints;
 
@@ -11,25 +11,21 @@ public static class TenantEndpoints
 {
     public static RouteGroupBuilder MapTenantEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/tenant")
-            .WithTags("Tenant")
-            .RequireAuthorization();
+        var group = app.MapGroup("/api/tenant").WithTags("Tenant").RequireAuthorization();
 
         group.MapGet("/", HandleGet);
 
-        group.MapPatch("/", HandleUpdate)
-            .RequireAuthorization("AdminOnly");
+        group.MapPatch("/", HandleUpdate).RequireAuthorization("AdminOnly");
 
-        group.MapPost("/avatar", HandleUploadAvatar)
+        group
+            .MapPost("/avatar", HandleUploadAvatar)
             .RequireAuthorization("AdminOnly")
             .DisableAntiforgery();
 
-        group.MapDelete("/avatar", HandleDeleteAvatar)
-            .RequireAuthorization("AdminOnly");
+        group.MapDelete("/avatar", HandleDeleteAvatar).RequireAuthorization("AdminOnly");
 
         // Public endpoint for serving tenant avatars (separate route group, no auth)
-        app.MapGet("/api/tenants/{tenantId:guid}/avatar", HandleServeAvatar)
-            .WithTags("Tenant");
+        app.MapGet("/api/tenants/{tenantId:guid}/avatar", HandleServeAvatar).WithTags("Tenant");
 
         return group;
     }
@@ -37,7 +33,8 @@ public static class TenantEndpoints
     private static async Task<IResult> HandleGet(
         HttpContext ctx,
         ITenantRepository tenantRepo,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
@@ -45,23 +42,27 @@ public static class TenantEndpoints
         if (tenant is null)
             return ctx.ErrorResult(404, "NOT_FOUND", "Tenant not found.");
 
-        return Results.Ok(new
-        {
-            tenant.Id,
-            tenant.Name,
-            AvatarUrl = TenantAvatarUrl(tenant)
-        });
+        return Results.Ok(
+            new
+            {
+                tenant.Id,
+                tenant.Name,
+                AvatarUrl = TenantAvatarUrl(tenant),
+            }
+        );
     }
 
     private static async Task<IResult> HandleUpdate(
         HttpContext ctx,
         UpdateTenantRequest request,
         ITenantRepository tenantRepo,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
 
-        if (Validator.ValidateRequest(request) is { } validationErr) return validationErr;
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
 
         var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
         if (tenant is null)
@@ -70,19 +71,22 @@ public static class TenantEndpoints
         tenant.Name = request.Name.Trim();
         await tenantRepo.UpdateAsync(tenant, ct);
 
-        return Results.Ok(new
-        {
-            tenant.Id,
-            tenant.Name,
-            AvatarUrl = TenantAvatarUrl(tenant)
-        });
+        return Results.Ok(
+            new
+            {
+                tenant.Id,
+                tenant.Name,
+                AvatarUrl = TenantAvatarUrl(tenant),
+            }
+        );
     }
 
     private static async Task<IResult> HandleUploadAvatar(
         HttpContext ctx,
         ITenantRepository tenantRepo,
         IAvatarService avatarService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
@@ -97,7 +101,12 @@ public static class TenantEndpoints
         try
         {
             await using var stream = file!.OpenReadStream();
-            var relativePath = await avatarService.SaveTenantAvatarAsync(tenantId, stream, file.ContentType, ct);
+            var relativePath = await avatarService.SaveTenantAvatarAsync(
+                tenantId,
+                stream,
+                file.ContentType,
+                ct
+            );
 
             tenant.AvatarPath = relativePath;
             await tenantRepo.UpdateAsync(tenant, ct);
@@ -114,7 +123,8 @@ public static class TenantEndpoints
         HttpContext ctx,
         ITenantRepository tenantRepo,
         IAvatarService avatarService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenantId = ctx.GetTenantId();
         var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
@@ -133,7 +143,8 @@ public static class TenantEndpoints
         Guid tenantId,
         ITenantRepository tenantRepo,
         IAvatarService avatarService,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
         if (tenant is null)
@@ -146,6 +157,6 @@ public static class TenantEndpoints
         return Results.File(absolutePath, "image/webp");
     }
 
-    internal static string? TenantAvatarUrl(Models.Entities.Tenant tenant)
-        => AvatarHelpers.TenantAvatarUrl(tenant);
+    internal static string? TenantAvatarUrl(Models.Entities.Tenant tenant) =>
+        AvatarHelpers.TenantAvatarUrl(tenant);
 }

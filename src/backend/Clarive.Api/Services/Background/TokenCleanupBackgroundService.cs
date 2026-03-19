@@ -5,7 +5,8 @@ namespace Clarive.Api.Services.Background;
 
 public class TokenCleanupBackgroundService(
     IServiceScopeFactory scopeFactory,
-    ILogger<TokenCleanupBackgroundService> logger) : BackgroundService
+    ILogger<TokenCleanupBackgroundService> logger
+) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -34,22 +35,22 @@ public class TokenCleanupBackgroundService(
 
         var cutoff = DateTime.UtcNow;
 
-        var refreshDeleted = await db.RefreshTokens
-            .Where(t => t.ExpiresAt < cutoff)
+        var refreshDeleted = await db
+            .RefreshTokens.Where(t => t.ExpiresAt < cutoff)
             .ExecuteDeleteAsync(ct);
 
-        var verificationDeleted = await db.EmailVerificationTokens
-            .Where(t => t.ExpiresAt < cutoff)
+        var verificationDeleted = await db
+            .EmailVerificationTokens.Where(t => t.ExpiresAt < cutoff)
             .ExecuteDeleteAsync(ct);
 
-        var resetDeleted = await db.PasswordResetTokens
-            .Where(t => t.ExpiresAt < cutoff)
+        var resetDeleted = await db
+            .PasswordResetTokens.Where(t => t.ExpiresAt < cutoff)
             .ExecuteDeleteAsync(ct);
 
         // Also clean up revoked refresh tokens older than 7 days
         var revokedCutoff = cutoff.AddDays(-7);
-        var revokedDeleted = await db.RefreshTokens
-            .Where(t => t.RevokedAt != null && t.RevokedAt < revokedCutoff)
+        var revokedDeleted = await db
+            .RefreshTokens.Where(t => t.RevokedAt != null && t.RevokedAt < revokedCutoff)
             .ExecuteDeleteAsync(ct);
 
         var total = refreshDeleted + verificationDeleted + resetDeleted + revokedDeleted;
@@ -57,7 +58,11 @@ public class TokenCleanupBackgroundService(
         {
             logger.LogInformation(
                 "Token cleanup: {RefreshCount} expired refresh, {VerifyCount} verification, {ResetCount} reset, {RevokedCount} revoked tokens deleted",
-                refreshDeleted, verificationDeleted, resetDeleted, revokedDeleted);
+                refreshDeleted,
+                verificationDeleted,
+                resetDeleted,
+                revokedDeleted
+            );
         }
     }
 }

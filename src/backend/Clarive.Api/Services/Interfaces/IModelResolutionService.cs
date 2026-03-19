@@ -10,7 +10,8 @@ public record ResolvedModel(
     string Model,
     string ProviderName,
     bool IsTemperatureConfigurable,
-    AiApiMode ApiMode);
+    AiApiMode ApiMode
+);
 
 public interface IModelResolutionService
 {

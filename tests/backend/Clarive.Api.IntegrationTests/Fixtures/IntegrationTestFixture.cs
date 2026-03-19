@@ -1,3 +1,7 @@
+using Clarive.Api.Data;
+using Clarive.Api.IntegrationTests.Helpers;
+using Clarive.Api.Services.Agents;
+using Clarive.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -5,10 +9,6 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Clarive.Api.Data;
-using Clarive.Api.IntegrationTests.Helpers;
-using Clarive.Api.Services.Agents;
-using Clarive.Api.Services.Interfaces;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -26,6 +26,7 @@ public class IntegrationTestFixture : IAsyncLifetime
     private ClariveApiFactory _factory = null!;
 
     public HttpClient CreateClient() => _factory.CreateClient();
+
     public IServiceProvider Services => _factory.Services;
 
     public async Task InitializeAsync()
@@ -36,7 +37,8 @@ public class IntegrationTestFixture : IAsyncLifetime
         var optionsBuilder = new DbContextOptionsBuilder<ClariveDbContext>();
         optionsBuilder.UseNpgsql(_postgres.GetConnectionString());
         optionsBuilder.ConfigureWarnings(w =>
-            w.Ignore(RelationalEventId.PendingModelChangesWarning));
+            w.Ignore(RelationalEventId.PendingModelChangesWarning)
+        );
         await using (var db = new ClariveDbContext(optionsBuilder.Options))
         {
             await db.Database.MigrateAsync();
@@ -45,8 +47,10 @@ public class IntegrationTestFixture : IAsyncLifetime
         // Set env vars that Program.cs validates BEFORE builder.Build() runs
         var connStr = _postgres.GetConnectionString();
         Environment.SetEnvironmentVariable("CONNECTIONSTRINGS__DEFAULTCONNECTION", connStr);
-        Environment.SetEnvironmentVariable("JWT__SECRET",
-            "integration-test-secret-key-minimum-32-characters-long-for-hmac-sha256");
+        Environment.SetEnvironmentVariable(
+            "JWT__SECRET",
+            "integration-test-secret-key-minimum-32-characters-long-for-hmac-sha256"
+        );
 
         _factory = new ClariveApiFactory(connStr);
 
@@ -77,8 +81,9 @@ internal class ClariveApiFactory : WebApplicationFactory<Program>
         builder.ConfigureServices(services =>
         {
             // Remove the existing DbContext registration
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<ClariveDbContext>));
+            var descriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(DbContextOptions<ClariveDbContext>)
+            );
             if (descriptor is not null)
                 services.Remove(descriptor);
 
@@ -87,7 +92,8 @@ internal class ClariveApiFactory : WebApplicationFactory<Program>
             {
                 options.UseNpgsql(_connectionString);
                 options.ConfigureWarnings(w =>
-                    w.Ignore(RelationalEventId.PendingModelChangesWarning));
+                    w.Ignore(RelationalEventId.PendingModelChangesWarning)
+                );
             });
 
             // Replace real AI orchestrator with deterministic mock
@@ -105,21 +111,28 @@ internal class ClariveApiFactory : WebApplicationFactory<Program>
             // Replace Tavily client with deterministic mock
             services.RemoveAll<ITavilyClientService>();
             services.AddSingleton<ITavilyClientService, MockTavilyClientService>();
-
         });
 
         // Raise rate limit for tests (all requests share loopback IP)
-        builder.ConfigureAppConfiguration((_, config) =>
-        {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
+        builder.ConfigureAppConfiguration(
+            (_, config) =>
             {
-                ["RateLimiting:PermitLimit"] = "10000",
-                ["RateLimiting:StrictPermitLimit"] = "10000",
-                ["ConnectionStrings:DefaultConnection"] = _connectionString,
-                ["Jwt:Secret"] = "integration-test-secret-key-minimum-32-characters-long-for-hmac-sha256",
-                ["Avatar:StoragePath"] = Path.Combine(Path.GetTempPath(), "clarive-test-avatars"),
-                ["CONFIG_ENCRYPTION_KEY"] = "ChR4vnM1Gafgxlak06xIsYYQ8J+oPVmtuhcWQa7PUNQ="  // 32-byte test key
-            });
-        });
+                config.AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        ["RateLimiting:PermitLimit"] = "10000",
+                        ["RateLimiting:StrictPermitLimit"] = "10000",
+                        ["ConnectionStrings:DefaultConnection"] = _connectionString,
+                        ["Jwt:Secret"] =
+                            "integration-test-secret-key-minimum-32-characters-long-for-hmac-sha256",
+                        ["Avatar:StoragePath"] = Path.Combine(
+                            Path.GetTempPath(),
+                            "clarive-test-avatars"
+                        ),
+                        ["CONFIG_ENCRYPTION_KEY"] = "ChR4vnM1Gafgxlak06xIsYYQ8J+oPVmtuhcWQa7PUNQ=", // 32-byte test key
+                    }
+                );
+            }
+        );
     }
 }

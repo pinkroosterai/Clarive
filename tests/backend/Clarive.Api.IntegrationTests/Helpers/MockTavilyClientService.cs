@@ -11,8 +11,8 @@ internal class MockTavilyClientService : ITavilyClientService
 {
     public bool IsConfigured => true;
 
-    public Task<IList<AITool>?> GetToolsAsync(CancellationToken ct = default)
-        => Task.FromResult<IList<AITool>?>(new List<AITool>());
+    public Task<IList<AITool>?> GetToolsAsync(CancellationToken ct = default) =>
+        Task.FromResult<IList<AITool>?>(new List<AITool>());
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

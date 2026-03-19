@@ -12,7 +12,6 @@ public class OutputEvaluation
     public Dictionary<string, OutputEvaluationEntry> Dimensions { get; set; } = new();
 
     [Description("Average score across all dimensions (0-10)")]
-    public double AverageScore => Dimensions.Count > 0
-        ? Dimensions.Values.Average(e => e.Score)
-        : 0;
+    public double AverageScore =>
+        Dimensions.Count > 0 ? Dimensions.Values.Average(e => e.Score) : 0;
 }

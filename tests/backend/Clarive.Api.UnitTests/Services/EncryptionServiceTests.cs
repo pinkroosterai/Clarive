@@ -11,17 +11,23 @@ public class EncryptionServiceTests
     private static EncryptionService CreateService(string? keyBase64 = null)
     {
         var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(keyBase64 != null
-                ? new Dictionary<string, string?> { ["CONFIG_ENCRYPTION_KEY"] = keyBase64 }
-                : [])
+            .AddInMemoryCollection(
+                keyBase64 != null
+                    ? new Dictionary<string, string?> { ["CONFIG_ENCRYPTION_KEY"] = keyBase64 }
+                    : []
+            )
             .Build();
 
         var logger = Substitute.For<ILogger<EncryptionService>>();
         return new EncryptionService(config, logger);
     }
 
-    private static string GenerateValidKey()
-        => Convert.ToBase64String(new byte[32].Select((_, i) => (byte)i).ToArray());
+    private static string GenerateValidKey() =>
+        Convert.ToBase64String(
+            new byte[32]
+                .Select((_, i) => (byte)i)
+                .ToArray()
+        );
 
     [Fact]
     public void IsAvailable_NoKey_ReturnsFalse()

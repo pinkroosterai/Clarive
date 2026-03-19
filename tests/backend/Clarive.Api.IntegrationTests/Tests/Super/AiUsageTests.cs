@@ -18,28 +18,35 @@ public class AiUsageTests : IntegrationTestBase
     private const string UsageUrl = "/api/super/ai-usage";
     private const string StatsUrl = "/api/super/ai-usage/stats";
 
-    public AiUsageTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public AiUsageTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
-    private async Task SeedUsageLogsAsync(int count = 5, string model = "gpt-4o", AiActionType actionType = AiActionType.PlaygroundTest)
+    private async Task SeedUsageLogsAsync(
+        int count = 5,
+        string model = "gpt-4o",
+        AiActionType actionType = AiActionType.PlaygroundTest
+    )
     {
         using var scope = Fixture.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
 
         for (var i = 0; i < count; i++)
         {
-            db.AiUsageLogs.Add(new AiUsageLog
-            {
-                Id = Guid.NewGuid(),
-                TenantId = SeedData.TenantId,
-                UserId = SeedData.AdminUserId,
-                ActionType = actionType,
-                Model = model,
-                Provider = "openai",
-                InputTokens = 100 + i * 10,
-                OutputTokens = 50 + i * 5,
-                DurationMs = 500 + i * 100,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-i)
-            });
+            db.AiUsageLogs.Add(
+                new AiUsageLog
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = SeedData.TenantId,
+                    UserId = SeedData.AdminUserId,
+                    ActionType = actionType,
+                    Model = model,
+                    Provider = "openai",
+                    InputTokens = 100 + i * 10,
+                    OutputTokens = 50 + i * 5,
+                    DurationMs = 500 + i * 100,
+                    CreatedAt = DateTime.UtcNow.AddMinutes(-i),
+                }
+            );
         }
 
         await db.SaveChangesAsync();

@@ -5,7 +5,8 @@ namespace Clarive.Api.Middleware;
 
 public class MaintenanceModeMiddleware(
     RequestDelegate next,
-    IMaintenanceModeService maintenanceMode)
+    IMaintenanceModeService maintenanceMode
+)
 {
     // Exact paths that are exempt from maintenance mode
     private static readonly string[] ExemptExactPaths =
@@ -13,15 +14,11 @@ public class MaintenanceModeMiddleware(
         "/api/auth/login",
         "/api/auth/refresh",
         "/api/auth/google",
-        "/api/status"
+        "/api/status",
     ];
 
     // Prefix paths that are exempt (path must equal or continue with '/')
-    private static readonly string[] ExemptPrefixes =
-    [
-        "/healthz",
-        "/api/super"
-    ];
+    private static readonly string[] ExemptPrefixes = ["/healthz", "/api/super"];
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -52,14 +49,16 @@ public class MaintenanceModeMiddleware(
         context.Response.StatusCode = 503;
         context.Response.ContentType = "application/json";
         context.Response.Headers["Retry-After"] = "60";
-        await context.Response.WriteAsJsonAsync(new
-        {
-            error = new
+        await context.Response.WriteAsJsonAsync(
+            new
             {
-                code = "MAINTENANCE_MODE",
-                message = "Clarive is currently undergoing maintenance. Please try again later."
+                error = new
+                {
+                    code = "MAINTENANCE_MODE",
+                    message = "Clarive is currently undergoing maintenance. Please try again later.",
+                },
             }
-        });
+        );
     }
 
     private static bool IsExemptPath(string path)
@@ -72,8 +71,10 @@ public class MaintenanceModeMiddleware(
 
         foreach (var prefix in ExemptPrefixes)
         {
-            if (path.Equals(prefix, StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith(prefix + "/", StringComparison.OrdinalIgnoreCase))
+            if (
+                path.Equals(prefix, StringComparison.OrdinalIgnoreCase)
+                || path.StartsWith(prefix + "/", StringComparison.OrdinalIgnoreCase)
+            )
                 return true;
         }
 
@@ -83,7 +84,10 @@ public class MaintenanceModeMiddleware(
     private static bool IsSuperUserToken(HttpContext context)
     {
         var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
-        if (authHeader is null || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        if (
+            authHeader is null
+            || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+        )
             return false;
 
         var token = authHeader["Bearer ".Length..];

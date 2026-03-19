@@ -17,24 +17,34 @@ public class EntryTagConfiguration : IEntityTypeConfiguration<EntryTag>
         builder.Property(t => t.TagName).HasColumnName("tag_name").HasMaxLength(50).IsRequired();
         builder.Property(t => t.CreatedAt).HasColumnName("created_at").IsRequired();
 
-        builder.HasOne<Tenant>()
+        builder
+            .HasOne<Tenant>()
             .WithMany()
             .HasForeignKey(t => t.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<PromptEntry>()
+        builder
+            .HasOne<PromptEntry>()
             .WithMany()
             .HasForeignKey(t => t.EntryId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(t => new { t.TenantId, t.EntryId, t.TagName })
+        builder
+            .HasIndex(t => new
+            {
+                t.TenantId,
+                t.EntryId,
+                t.TagName,
+            })
             .IsUnique()
             .HasDatabaseName("uq_entry_tags_tenant_entry_tag");
 
-        builder.HasIndex(t => new { t.TenantId, t.TagName })
+        builder
+            .HasIndex(t => new { t.TenantId, t.TagName })
             .HasDatabaseName("ix_entry_tags_tenant_tag");
 
-        builder.HasIndex(t => new { t.TenantId, t.EntryId })
+        builder
+            .HasIndex(t => new { t.TenantId, t.EntryId })
             .HasDatabaseName("ix_entry_tags_tenant_entry");
     }
 }

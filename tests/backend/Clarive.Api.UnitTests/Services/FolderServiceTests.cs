@@ -22,25 +22,31 @@ public class FolderServiceTests
     public FolderServiceTests()
     {
         var distributedCache = Substitute.For<IDistributedCache>();
-        _cache = new TenantCacheService(distributedCache, Substitute.For<ILogger<TenantCacheService>>());
+        _cache = new TenantCacheService(
+            distributedCache,
+            Substitute.For<ILogger<TenantCacheService>>()
+        );
 
-        _folderRepo.CreateAsync(Arg.Any<Folder>(), Arg.Any<CancellationToken>())
+        _folderRepo
+            .CreateAsync(Arg.Any<Folder>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<Folder>());
 
-        _folderRepo.UpdateAsync(Arg.Any<Folder>(), Arg.Any<CancellationToken>())
+        _folderRepo
+            .UpdateAsync(Arg.Any<Folder>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<Folder>());
 
         _sut = new FolderService(_folderRepo, _entryRepo, _cache);
     }
 
-    private static Folder MakeFolder(Guid? id = null, Guid? parentId = null) => new()
-    {
-        Id = id ?? Guid.NewGuid(),
-        TenantId = TenantId,
-        Name = "Test Folder",
-        ParentId = parentId,
-        CreatedAt = DateTime.UtcNow
-    };
+    private static Folder MakeFolder(Guid? id = null, Guid? parentId = null) =>
+        new()
+        {
+            Id = id ?? Guid.NewGuid(),
+            TenantId = TenantId,
+            Name = "Test Folder",
+            ParentId = parentId,
+            CreatedAt = DateTime.UtcNow,
+        };
 
     // ── GetTreeAsync ──
 
@@ -74,7 +80,8 @@ public class FolderServiceTests
     public async Task CreateAsync_WithValidParent_ReturnsFolder()
     {
         var parentId = Guid.NewGuid();
-        _folderRepo.GetByIdAsync(TenantId, parentId, Arg.Any<CancellationToken>())
+        _folderRepo
+            .GetByIdAsync(TenantId, parentId, Arg.Any<CancellationToken>())
             .Returns(MakeFolder(parentId));
 
         var request = new CreateFolderRequest("Child Folder", parentId);
@@ -88,7 +95,8 @@ public class FolderServiceTests
     public async Task CreateAsync_ParentNotFound_ReturnsNotFound()
     {
         var parentId = Guid.NewGuid();
-        _folderRepo.GetByIdAsync(TenantId, parentId, Arg.Any<CancellationToken>())
+        _folderRepo
+            .GetByIdAsync(TenantId, parentId, Arg.Any<CancellationToken>())
             .Returns((Folder?)null);
 
         var request = new CreateFolderRequest("Child Folder", parentId);
@@ -104,10 +112,14 @@ public class FolderServiceTests
     public async Task RenameAsync_Success_ReturnsRenamedFolder()
     {
         var folder = MakeFolder();
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
 
-        var result = await _sut.RenameAsync(TenantId, folder.Id, new RenameFolderRequest("Renamed"), default);
+        var result = await _sut.RenameAsync(
+            TenantId,
+            folder.Id,
+            new RenameFolderRequest("Renamed"),
+            default
+        );
 
         result.IsError.Should().BeFalse();
         result.Value.Name.Should().Be("Renamed");
@@ -117,10 +129,16 @@ public class FolderServiceTests
     public async Task RenameAsync_FolderNotFound_ReturnsNotFound()
     {
         var folderId = Guid.NewGuid();
-        _folderRepo.GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
+        _folderRepo
+            .GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
             .Returns((Folder?)null);
 
-        var result = await _sut.RenameAsync(TenantId, folderId, new RenameFolderRequest("Renamed"), default);
+        var result = await _sut.RenameAsync(
+            TenantId,
+            folderId,
+            new RenameFolderRequest("Renamed"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NOT_FOUND");
@@ -132,11 +150,18 @@ public class FolderServiceTests
     public async Task DeleteAsync_EmptyFolder_ReturnsSuccess()
     {
         var folder = MakeFolder();
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
-        _folderRepo.GetChildrenAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
+        _folderRepo
+            .GetChildrenAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
             .Returns(new List<Folder>());
-        _entryRepo.GetByFolderAsync(TenantId, folder.Id, false, Arg.Any<EntryQueryOptions>(), Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByFolderAsync(
+                TenantId,
+                folder.Id,
+                false,
+                Arg.Any<EntryQueryOptions>(),
+                Arg.Any<CancellationToken>()
+            )
             .Returns((new List<PromptEntry>(), 0));
 
         var result = await _sut.DeleteAsync(TenantId, folder.Id, default);
@@ -148,7 +173,8 @@ public class FolderServiceTests
     public async Task DeleteAsync_FolderNotFound_ReturnsNotFound()
     {
         var folderId = Guid.NewGuid();
-        _folderRepo.GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
+        _folderRepo
+            .GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
             .Returns((Folder?)null);
 
         var result = await _sut.DeleteAsync(TenantId, folderId, default);
@@ -161,9 +187,9 @@ public class FolderServiceTests
     public async Task DeleteAsync_HasChildFolders_ReturnsConflict()
     {
         var folder = MakeFolder();
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
-        _folderRepo.GetChildrenAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
+        _folderRepo
+            .GetChildrenAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
             .Returns(new List<Folder> { MakeFolder() });
 
         var result = await _sut.DeleteAsync(TenantId, folder.Id, default);
@@ -176,11 +202,18 @@ public class FolderServiceTests
     public async Task DeleteAsync_HasEntries_ReturnsConflict()
     {
         var folder = MakeFolder();
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
-        _folderRepo.GetChildrenAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
+        _folderRepo
+            .GetChildrenAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
             .Returns(new List<Folder>());
-        _entryRepo.GetByFolderAsync(TenantId, folder.Id, false, Arg.Any<EntryQueryOptions>(), Arg.Any<CancellationToken>())
+        _entryRepo
+            .GetByFolderAsync(
+                TenantId,
+                folder.Id,
+                false,
+                Arg.Any<EntryQueryOptions>(),
+                Arg.Any<CancellationToken>()
+            )
             .Returns((new List<PromptEntry>(), 1));
 
         var result = await _sut.DeleteAsync(TenantId, folder.Id, default);
@@ -196,14 +229,20 @@ public class FolderServiceTests
     {
         var folder = MakeFolder();
         var targetParentId = Guid.NewGuid();
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
-        _folderRepo.GetByIdAsync(TenantId, targetParentId, Arg.Any<CancellationToken>())
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
+        _folderRepo
+            .GetByIdAsync(TenantId, targetParentId, Arg.Any<CancellationToken>())
             .Returns(MakeFolder(targetParentId));
-        _folderRepo.IsDescendantOfAsync(TenantId, targetParentId, folder.Id, Arg.Any<CancellationToken>())
+        _folderRepo
+            .IsDescendantOfAsync(TenantId, targetParentId, folder.Id, Arg.Any<CancellationToken>())
             .Returns(false);
 
-        var result = await _sut.MoveAsync(TenantId, folder.Id, new MoveFolderRequest(targetParentId), default);
+        var result = await _sut.MoveAsync(
+            TenantId,
+            folder.Id,
+            new MoveFolderRequest(targetParentId),
+            default
+        );
 
         result.IsError.Should().BeFalse();
         result.Value.ParentId.Should().Be(targetParentId);
@@ -213,10 +252,14 @@ public class FolderServiceTests
     public async Task MoveAsync_ToRoot_ReturnsMovedFolder()
     {
         var folder = MakeFolder(parentId: Guid.NewGuid());
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
 
-        var result = await _sut.MoveAsync(TenantId, folder.Id, new MoveFolderRequest(null), default);
+        var result = await _sut.MoveAsync(
+            TenantId,
+            folder.Id,
+            new MoveFolderRequest(null),
+            default
+        );
 
         result.IsError.Should().BeFalse();
         result.Value.ParentId.Should().BeNull();
@@ -226,7 +269,8 @@ public class FolderServiceTests
     public async Task MoveAsync_FolderNotFound_ReturnsNotFound()
     {
         var folderId = Guid.NewGuid();
-        _folderRepo.GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
+        _folderRepo
+            .GetByIdAsync(TenantId, folderId, Arg.Any<CancellationToken>())
             .Returns((Folder?)null);
 
         var result = await _sut.MoveAsync(TenantId, folderId, new MoveFolderRequest(null), default);
@@ -239,10 +283,14 @@ public class FolderServiceTests
     public async Task MoveAsync_ToSelf_ReturnsConflict()
     {
         var folder = MakeFolder();
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
 
-        var result = await _sut.MoveAsync(TenantId, folder.Id, new MoveFolderRequest(folder.Id), default);
+        var result = await _sut.MoveAsync(
+            TenantId,
+            folder.Id,
+            new MoveFolderRequest(folder.Id),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("CIRCULAR_REFERENCE");
@@ -253,12 +301,17 @@ public class FolderServiceTests
     {
         var folder = MakeFolder();
         var targetParentId = Guid.NewGuid();
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
-        _folderRepo.GetByIdAsync(TenantId, targetParentId, Arg.Any<CancellationToken>())
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
+        _folderRepo
+            .GetByIdAsync(TenantId, targetParentId, Arg.Any<CancellationToken>())
             .Returns((Folder?)null);
 
-        var result = await _sut.MoveAsync(TenantId, folder.Id, new MoveFolderRequest(targetParentId), default);
+        var result = await _sut.MoveAsync(
+            TenantId,
+            folder.Id,
+            new MoveFolderRequest(targetParentId),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NOT_FOUND");
@@ -269,14 +322,20 @@ public class FolderServiceTests
     {
         var folder = MakeFolder();
         var targetParentId = Guid.NewGuid();
-        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>())
-            .Returns(folder);
-        _folderRepo.GetByIdAsync(TenantId, targetParentId, Arg.Any<CancellationToken>())
+        _folderRepo.GetByIdAsync(TenantId, folder.Id, Arg.Any<CancellationToken>()).Returns(folder);
+        _folderRepo
+            .GetByIdAsync(TenantId, targetParentId, Arg.Any<CancellationToken>())
             .Returns(MakeFolder(targetParentId));
-        _folderRepo.IsDescendantOfAsync(TenantId, targetParentId, folder.Id, Arg.Any<CancellationToken>())
+        _folderRepo
+            .IsDescendantOfAsync(TenantId, targetParentId, folder.Id, Arg.Any<CancellationToken>())
             .Returns(true);
 
-        var result = await _sut.MoveAsync(TenantId, folder.Id, new MoveFolderRequest(targetParentId), default);
+        var result = await _sut.MoveAsync(
+            TenantId,
+            folder.Id,
+            new MoveFolderRequest(targetParentId),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("CIRCULAR_REFERENCE");

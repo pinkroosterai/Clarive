@@ -13,5 +13,6 @@ public interface IAuditLogger
         Guid entityId,
         string entityTitle,
         string? details = null,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+    );
 }

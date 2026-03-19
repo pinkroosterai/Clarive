@@ -8,7 +8,8 @@ public sealed record ProgressEvent(
     string Id,
     string Icon,
     string Message,
-    string? Detail = null)
+    string? Detail = null
+)
 {
     // ── Pipeline stage factories ──
 
@@ -29,9 +30,12 @@ public sealed record ProgressEvent(
 
     // ── Tool event factories ──
 
-    public static ProgressEvent ToolStart(string callId, string icon, string message, string? detail = null) =>
-        new("tool_start", callId, icon, message, detail);
+    public static ProgressEvent ToolStart(
+        string callId,
+        string icon,
+        string message,
+        string? detail = null
+    ) => new("tool_start", callId, icon, message, detail);
 
-    public static ProgressEvent ToolEnd(string callId) =>
-        new("tool_end", callId, "", "");
+    public static ProgressEvent ToolEnd(string callId) => new("tool_end", callId, "", "");
 }

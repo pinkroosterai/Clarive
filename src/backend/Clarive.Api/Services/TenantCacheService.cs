@@ -8,9 +8,7 @@ namespace Clarive.Api.Services;
 /// Typed wrapper around IDistributedCache with tenant-scoped keys, graceful degradation,
 /// and stampede protection via per-key locking.
 /// </summary>
-public class TenantCacheService(
-    IDistributedCache cache,
-    ILogger<TenantCacheService> logger)
+public class TenantCacheService(IDistributedCache cache, ILogger<TenantCacheService> logger)
 {
     private static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Locks = new();
@@ -25,7 +23,8 @@ public class TenantCacheService(
         Guid tenantId,
         Func<CancellationToken, Task<T>> factory,
         TimeSpan? ttl = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         var fullKey = FormatKey(key, tenantId);
         return await GetOrCreateInternalAsync(fullKey, factory, ttl, ct);
@@ -39,7 +38,8 @@ public class TenantCacheService(
         string key,
         Func<CancellationToken, Task<T>> factory,
         TimeSpan? ttl = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         var fullKey = $"global:{key}";
         return await GetOrCreateInternalAsync(fullKey, factory, ttl, ct);
@@ -53,7 +53,10 @@ public class TenantCacheService(
         {
             await cache.RemoveAsync(fullKey, ct);
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Valkey evict failed for key {CacheKey}", fullKey);
@@ -75,7 +78,10 @@ public class TenantCacheService(
         {
             await cache.RemoveAsync(fullKey, ct);
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Valkey evict failed for global key {CacheKey}", fullKey);
@@ -86,7 +92,8 @@ public class TenantCacheService(
         string fullKey,
         Func<CancellationToken, Task<T>> factory,
         TimeSpan? ttl,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         // Fast path: try cache read without lock
         try
@@ -95,10 +102,17 @@ public class TenantCacheService(
             if (cached is not null)
                 return JsonSerializer.Deserialize<T>(cached)!;
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Valkey read failed for key {CacheKey}, falling through to factory", fullKey);
+            logger.LogWarning(
+                ex,
+                "Valkey read failed for key {CacheKey}, falling through to factory",
+                fullKey
+            );
         }
 
         // Slow path: acquire per-key lock to prevent stampede
@@ -113,20 +127,33 @@ public class TenantCacheService(
                 if (cached is not null)
                     return JsonSerializer.Deserialize<T>(cached)!;
             }
-            catch (OperationCanceledException) { throw; }
-            catch { /* fall through to factory */ }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            { /* fall through to factory */
+            }
 
             var value = await factory(ct);
 
             try
             {
                 var json = JsonSerializer.Serialize(value);
-                await cache.SetStringAsync(fullKey, json, new DistributedCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = ttl ?? DefaultTtl
-                }, ct);
+                await cache.SetStringAsync(
+                    fullKey,
+                    json,
+                    new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = ttl ?? DefaultTtl,
+                    },
+                    ct
+                );
             }
-            catch (OperationCanceledException) { throw; }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Valkey write failed for key {CacheKey}", fullKey);

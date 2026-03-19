@@ -9,7 +9,12 @@ namespace Clarive.Api.Services.Agents;
 public static class EvaluationNormalizer
 {
     public static readonly string[] ExpectedDimensions =
-        ["Clarity", "Effectiveness", "Completeness", "Faithfulness"];
+    [
+        "Clarity",
+        "Effectiveness",
+        "Completeness",
+        "Faithfulness",
+    ];
 
     public static double ComputeAverageScore(PromptEvaluation evaluation)
     {
@@ -22,11 +27,14 @@ public static class EvaluationNormalizer
         var normalized = DimensionNormalizer.Normalize(
             raw.PromptEvaluations,
             ExpectedDimensions,
-            () => new PromptEvaluationEntry
-            {
-                Score = 0,
-                Feedback = "Not evaluated — dimension was missing from the evaluation response."
-            });
+            () =>
+                new PromptEvaluationEntry
+                {
+                    Score = 0,
+                    Feedback =
+                        "Not evaluated — dimension was missing from the evaluation response.",
+                }
+        );
 
         return new PromptEvaluation { PromptEvaluations = normalized };
     }

@@ -13,13 +13,20 @@ public class UserManagementService(
     IUserRepository userRepo,
     ITenantMembershipRepository membershipRepo,
     IInvitationRepository invitationRepo,
-    ClariveDbContext db) : IUserManagementService
+    ClariveDbContext db
+) : IUserManagementService
 {
     public async Task<MemberListResult> ListMembersAsync(
-        Guid tenantId, int page, int pageSize, CancellationToken ct)
+        Guid tenantId,
+        int page,
+        int pageSize,
+        CancellationToken ct
+    )
     {
-        if (page < 1) page = 1;
-        if (pageSize is < 1 or > 100) pageSize = 50;
+        if (page < 1)
+            page = 1;
+        if (pageSize is < 1 or > 100)
+            pageSize = 50;
 
         var (users, _) = await userRepo.GetByTenantPagedAsync(tenantId, page, pageSize, ct);
         var activeInvitations = await invitationRepo.GetActiveByTenantAsync(tenantId, ct);
@@ -28,12 +35,24 @@ public class UserManagementService(
         _ = invitationRepo.DeleteExpiredAsync(tenantId, ct);
 
         var activeMembers = users.Select(u => new MemberInfo(
-            u.Id, u.Email, u.Name, u.Role.ToString().ToLower(),
-            "active", u.CreatedAt, null));
+            u.Id,
+            u.Email,
+            u.Name,
+            u.Role.ToString().ToLower(),
+            "active",
+            u.CreatedAt,
+            null
+        ));
 
         var pendingMembers = activeInvitations.Select(i => new MemberInfo(
-            i.Id, i.Email, null, i.Role.ToString().ToLower(),
-            "pending", i.CreatedAt, i.ExpiresAt));
+            i.Id,
+            i.Email,
+            null,
+            i.Role.ToString().ToLower(),
+            "pending",
+            i.CreatedAt,
+            i.ExpiresAt
+        ));
 
         var items = activeMembers
             .Concat(pendingMembers)
@@ -45,7 +64,11 @@ public class UserManagementService(
     }
 
     public async Task<ErrorOr<ChangeRoleResult>> ChangeRoleAsync(
-        Guid tenantId, Guid targetUserId, UserRole newRole, CancellationToken ct)
+        Guid tenantId,
+        Guid targetUserId,
+        UserRole newRole,
+        CancellationToken ct
+    )
     {
         var user = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (user is null)
@@ -71,7 +94,10 @@ public class UserManagementService(
     }
 
     public async Task<ErrorOr<User>> RemoveMemberAsync(
-        Guid tenantId, Guid targetUserId, CancellationToken ct)
+        Guid tenantId,
+        Guid targetUserId,
+        CancellationToken ct
+    )
     {
         var user = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (user is null)
@@ -83,7 +109,10 @@ public class UserManagementService(
         {
             var adminCount = await membershipRepo.CountAdminsAsync(tenantId, ct);
             if (adminCount <= 1)
-                return Error.Conflict("LAST_ADMIN", "Cannot remove the last admin. Transfer ownership first.");
+                return Error.Conflict(
+                    "LAST_ADMIN",
+                    "Cannot remove the last admin. Transfer ownership first."
+                );
         }
 
         // Remove membership from this workspace
@@ -114,7 +143,11 @@ public class UserManagementService(
     }
 
     public async Task<ErrorOr<TransferOwnershipResult>> TransferOwnershipAsync(
-        Guid tenantId, Guid currentUserId, Guid targetUserId, CancellationToken ct)
+        Guid tenantId,
+        Guid currentUserId,
+        Guid targetUserId,
+        CancellationToken ct
+    )
     {
         var targetUser = await userRepo.GetByIdAsync(tenantId, targetUserId, ct);
         if (targetUser is null)
@@ -124,30 +157,33 @@ public class UserManagementService(
         if (currentUser is null)
             return DomainErrors.CurrentUserNotFound;
 
-        await db.Database.InTransactionAsync(async () =>
-        {
-            // Update User.Role for both users
-            currentUser.Role = UserRole.Editor;
-            await userRepo.UpdateAsync(currentUser, ct);
-
-            targetUser.Role = UserRole.Admin;
-            await userRepo.UpdateAsync(targetUser, ct);
-
-            // Dual-write: update TenantMembership roles
-            var currentMembership = await membershipRepo.GetAsync(currentUserId, tenantId, ct);
-            if (currentMembership is not null)
+        await db.Database.InTransactionAsync(
+            async () =>
             {
-                currentMembership.Role = UserRole.Editor;
-                await membershipRepo.UpdateAsync(currentMembership, ct);
-            }
+                // Update User.Role for both users
+                currentUser.Role = UserRole.Editor;
+                await userRepo.UpdateAsync(currentUser, ct);
 
-            var targetMembership = await membershipRepo.GetAsync(targetUserId, tenantId, ct);
-            if (targetMembership is not null)
-            {
-                targetMembership.Role = UserRole.Admin;
-                await membershipRepo.UpdateAsync(targetMembership, ct);
-            }
-        }, ct);
+                targetUser.Role = UserRole.Admin;
+                await userRepo.UpdateAsync(targetUser, ct);
+
+                // Dual-write: update TenantMembership roles
+                var currentMembership = await membershipRepo.GetAsync(currentUserId, tenantId, ct);
+                if (currentMembership is not null)
+                {
+                    currentMembership.Role = UserRole.Editor;
+                    await membershipRepo.UpdateAsync(currentMembership, ct);
+                }
+
+                var targetMembership = await membershipRepo.GetAsync(targetUserId, tenantId, ct);
+                if (targetMembership is not null)
+                {
+                    targetMembership.Role = UserRole.Admin;
+                    await membershipRepo.UpdateAsync(targetMembership, ct);
+                }
+            },
+            ct
+        );
 
         return new TransferOwnershipResult(currentUser, targetUser);
     }

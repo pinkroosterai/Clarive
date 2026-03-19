@@ -30,25 +30,53 @@ public class TestEmailService : IEmailService
     /// <summary>Clears all captured invitation URLs. Call between tests if needed.</summary>
     public static void Reset() => InvitationAcceptUrls.Clear();
 
-    public Task SendInvitationEmailAsync(string toEmail, string inviterName, string workspaceName,
-        string role, string acceptUrl, CancellationToken ct = default)
+    public Task SendInvitationEmailAsync(
+        string toEmail,
+        string inviterName,
+        string workspaceName,
+        string role,
+        string acceptUrl,
+        CancellationToken ct = default
+    )
     {
         InvitationAcceptUrls[toEmail.Trim().ToLowerInvariant()] = acceptUrl;
         return Task.CompletedTask;
     }
 
-    public Task SendVerificationEmailAsync(string toEmail, string userName, string verifyUrl,
-        CancellationToken ct = default) => Task.CompletedTask;
+    public Task SendVerificationEmailAsync(
+        string toEmail,
+        string userName,
+        string verifyUrl,
+        CancellationToken ct = default
+    ) => Task.CompletedTask;
 
-    public Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetUrl,
-        CancellationToken ct = default) => Task.CompletedTask;
+    public Task SendPasswordResetEmailAsync(
+        string toEmail,
+        string userName,
+        string resetUrl,
+        CancellationToken ct = default
+    ) => Task.CompletedTask;
 
-    public Task SendAccountDeletionScheduledAsync(string toEmail, string userName, DateTime purgeDate,
-        CancellationToken ct = default) => Task.CompletedTask;
+    public Task SendAccountDeletionScheduledAsync(
+        string toEmail,
+        string userName,
+        DateTime purgeDate,
+        CancellationToken ct = default
+    ) => Task.CompletedTask;
 
-    public Task SendAccountDeletionCompletedAsync(string toEmail, string userName,
-        CancellationToken ct = default) => Task.CompletedTask;
+    public Task SendAccountDeletionCompletedAsync(
+        string toEmail,
+        string userName,
+        CancellationToken ct = default
+    ) => Task.CompletedTask;
 
-    public Task SendWorkspaceInviteEmailAsync(string toEmail, string recipientName, string workspaceName,
-        string role, string inviterName, string loginUrl, CancellationToken ct = default) => Task.CompletedTask;
+    public Task SendWorkspaceInviteEmailAsync(
+        string toEmail,
+        string recipientName,
+        string workspaceName,
+        string role,
+        string inviterName,
+        string loginUrl,
+        CancellationToken ct = default
+    ) => Task.CompletedTask;
 }

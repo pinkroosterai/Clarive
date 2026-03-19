@@ -14,7 +14,8 @@ public class AuditLoggerTests
 
     public AuditLoggerTests()
     {
-        _auditRepo.AddAsync(Arg.Any<AuditLogEntry>(), Arg.Any<CancellationToken>())
+        _auditRepo
+            .AddAsync(Arg.Any<AuditLogEntry>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         _sut = new AuditLogger(_auditRepo);
     }
@@ -26,20 +27,30 @@ public class AuditLoggerTests
         var userId = Guid.NewGuid();
 
         await _sut.LogAsync(
-            tenantId, userId, "Jane Doe",
-            AuditAction.EntryCreated, "PromptEntry",
-            Guid.NewGuid(), "My Prompt", "some details");
+            tenantId,
+            userId,
+            "Jane Doe",
+            AuditAction.EntryCreated,
+            "PromptEntry",
+            Guid.NewGuid(),
+            "My Prompt",
+            "some details"
+        );
 
-        await _auditRepo.Received(1).AddAsync(
-            Arg.Is<AuditLogEntry>(e =>
-                e.TenantId == tenantId &&
-                e.UserId == userId &&
-                e.UserName == "Jane Doe" &&
-                e.Action == AuditAction.EntryCreated &&
-                e.EntityType == "PromptEntry" &&
-                e.EntityTitle == "My Prompt" &&
-                e.Details == "some details"),
-            Arg.Any<CancellationToken>());
+        await _auditRepo
+            .Received(1)
+            .AddAsync(
+                Arg.Is<AuditLogEntry>(e =>
+                    e.TenantId == tenantId
+                    && e.UserId == userId
+                    && e.UserName == "Jane Doe"
+                    && e.Action == AuditAction.EntryCreated
+                    && e.EntityType == "PromptEntry"
+                    && e.EntityTitle == "My Prompt"
+                    && e.Details == "some details"
+                ),
+                Arg.Any<CancellationToken>()
+            );
     }
 
     [Fact]
@@ -48,27 +59,41 @@ public class AuditLoggerTests
         var before = DateTime.UtcNow;
 
         await _sut.LogAsync(
-            Guid.NewGuid(), Guid.NewGuid(), "User",
-            AuditAction.EntryDeleted, "PromptEntry",
-            Guid.NewGuid(), "Title");
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "User",
+            AuditAction.EntryDeleted,
+            "PromptEntry",
+            Guid.NewGuid(),
+            "Title"
+        );
 
-        await _auditRepo.Received(1).AddAsync(
-            Arg.Is<AuditLogEntry>(e =>
-                e.ExpiresAt >= before.AddDays(30) &&
-                e.ExpiresAt <= DateTime.UtcNow.AddDays(30).AddSeconds(1)),
-            Arg.Any<CancellationToken>());
+        await _auditRepo
+            .Received(1)
+            .AddAsync(
+                Arg.Is<AuditLogEntry>(e =>
+                    e.ExpiresAt >= before.AddDays(30)
+                    && e.ExpiresAt <= DateTime.UtcNow.AddDays(30).AddSeconds(1)
+                ),
+                Arg.Any<CancellationToken>()
+            );
     }
 
     [Fact]
     public async Task LogAsync_NullDetails_SetsDetailsNull()
     {
         await _sut.LogAsync(
-            Guid.NewGuid(), Guid.NewGuid(), "User",
-            AuditAction.ApiGet, "PromptEntry",
-            Guid.NewGuid(), "Title");
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "User",
+            AuditAction.ApiGet,
+            "PromptEntry",
+            Guid.NewGuid(),
+            "Title"
+        );
 
-        await _auditRepo.Received(1).AddAsync(
-            Arg.Is<AuditLogEntry>(e => e.Details == null),
-            Arg.Any<CancellationToken>());
+        await _auditRepo
+            .Received(1)
+            .AddAsync(Arg.Is<AuditLogEntry>(e => e.Details == null), Arg.Any<CancellationToken>());
     }
 }

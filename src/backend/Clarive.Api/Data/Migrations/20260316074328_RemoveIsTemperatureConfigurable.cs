@@ -12,7 +12,8 @@ namespace Clarive.Api.Data.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "is_temperature_configurable",
-                table: "ai_provider_models");
+                table: "ai_provider_models"
+            );
         }
 
         /// <inheritdoc />
@@ -23,7 +24,8 @@ namespace Clarive.Api.Data.Migrations
                 table: "ai_provider_models",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
     }
 }

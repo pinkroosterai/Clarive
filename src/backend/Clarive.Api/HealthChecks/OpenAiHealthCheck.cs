@@ -7,7 +7,8 @@ public sealed class OpenAiHealthCheck(IAgentFactory agentFactory) : IHealthCheck
 {
     public Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var result = agentFactory.IsConfigured
             ? HealthCheckResult.Healthy("OpenAI agent factory is configured.")

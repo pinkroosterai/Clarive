@@ -14,15 +14,14 @@ namespace Clarive.Api.Data.Migrations
                 name: "ix_users_is_super_user",
                 table: "users",
                 column: "is_super_user",
-                filter: "is_super_user = true");
+                filter: "is_super_user = true"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "ix_users_is_super_user",
-                table: "users");
+            migrationBuilder.DropIndex(name: "ix_users_is_super_user", table: "users");
         }
     }
 }

@@ -13,9 +13,9 @@ public class GetPublishedEntryTests : EntryServiceTestBase
         var entry = MakeEntry();
         var version = MakeVersion(entry.Id, version: 1, state: VersionState.Published);
 
-        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(entry);
-        EntryRepo.GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
+        EntryRepo
+            .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(version);
 
         var result = await Sut.GetPublishedEntryAsync(TenantId, entry.Id, default);
@@ -29,7 +29,8 @@ public class GetPublishedEntryTests : EntryServiceTestBase
     public async Task GetPublishedEntryAsync_EntryNotFound_ReturnsNotFound()
     {
         var entryId = Guid.NewGuid();
-        EntryRepo.GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
+        EntryRepo
+            .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
         var result = await Sut.GetPublishedEntryAsync(TenantId, entryId, default);
@@ -42,8 +43,7 @@ public class GetPublishedEntryTests : EntryServiceTestBase
     public async Task GetPublishedEntryAsync_EntryTrashed_ReturnsNotFound()
     {
         var entry = MakeEntry(isTrashed: true);
-        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(entry);
+        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
         var result = await Sut.GetPublishedEntryAsync(TenantId, entry.Id, default);
 
@@ -55,9 +55,9 @@ public class GetPublishedEntryTests : EntryServiceTestBase
     public async Task GetPublishedEntryAsync_NoPublishedVersion_ReturnsNotFound()
     {
         var entry = MakeEntry();
-        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(entry);
-        EntryRepo.GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
+        EntryRepo
+            .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
         var result = await Sut.GetPublishedEntryAsync(TenantId, entry.Id, default);

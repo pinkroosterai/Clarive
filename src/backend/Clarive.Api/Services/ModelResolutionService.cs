@@ -14,29 +14,38 @@ public class ModelResolutionService(
     IEncryptionService encryption,
     IOptionsMonitor<AiSettings> aiSettings,
     TenantCacheService cache,
-    ILogger<ModelResolutionService> logger) : IModelResolutionService
+    ILogger<ModelResolutionService> logger
+) : IModelResolutionService
 {
-    public async Task<ErrorOr<ResolvedModel>> ResolveProviderForModelAsync(string model, CancellationToken ct)
+    public async Task<ErrorOr<ResolvedModel>> ResolveProviderForModelAsync(
+        string model,
+        CancellationToken ct
+    )
     {
         // Resolve provider for this model (cached)
         var providers = await cache.GetOrCreateGlobalAsync(
             TenantCacheKeys.AiProvidersKey,
             _ => providerRepo.GetAllAsync(ct),
             TenantCacheKeys.AiCacheTtl,
-            ct);
+            ct
+        );
 
         var providerMatch = providers
             .Where(p => p.IsActive)
             .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
-            .FirstOrDefault(x => x.Model.IsActive &&
-                x.Model.ModelId.Equals(model, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(x =>
+                x.Model.IsActive
+                && x.Model.ModelId.Equals(model, StringComparison.OrdinalIgnoreCase)
+            );
 
         // Check model is available: either configured in a provider, or in the legacy model list
         if (providerMatch is null)
         {
             var availableResult = await GetAvailableModelsAsync(ct);
-            if (!availableResult.IsError &&
-                !availableResult.Value.Contains(model, StringComparer.OrdinalIgnoreCase))
+            if (
+                !availableResult.IsError
+                && !availableResult.Value.Contains(model, StringComparer.OrdinalIgnoreCase)
+            )
             {
                 return Error.Validation("INVALID_MODEL", $"Model '{model}' is not available.");
             }
@@ -55,12 +64,23 @@ public class ModelResolutionService(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to decrypt API key for provider {ProviderName} ({ProviderId})", providerMatch.Provider.Name, providerMatch.Provider.Id);
-                return Error.Failure("DECRYPTION_FAILED",
-                    "Failed to decrypt AI provider credentials. Contact your admin.");
+                logger.LogWarning(
+                    ex,
+                    "Failed to decrypt API key for provider {ProviderName} ({ProviderId})",
+                    providerMatch.Provider.Name,
+                    providerMatch.Provider.Id
+                );
+                return Error.Failure(
+                    "DECRYPTION_FAILED",
+                    "Failed to decrypt AI provider credentials. Contact your admin."
+                );
             }
             chatClient = agentFactory.CreateChatClientForProvider(
-                apiKey, providerMatch.Provider.EndpointUrl, model, apiMode);
+                apiKey,
+                providerMatch.Provider.EndpointUrl,
+                model,
+                apiMode
+            );
         }
         else
         {
@@ -72,10 +92,13 @@ public class ModelResolutionService(
             model,
             providerMatch?.Provider.Name ?? "Default",
             isTemperatureConfigurable,
-            apiMode);
+            apiMode
+        );
     }
 
-    public async Task<ErrorOr<List<EnrichedModelResponse>>> GetEnrichedModelsAsync(CancellationToken ct)
+    public async Task<ErrorOr<List<EnrichedModelResponse>>> GetEnrichedModelsAsync(
+        CancellationToken ct
+    )
     {
         var enriched = await cache.GetOrCreateGlobalAsync(
             TenantCacheKeys.EnrichedModelsKey,
@@ -88,26 +111,28 @@ public class ModelResolutionService(
                     return new List<EnrichedModelResponse>();
 
                 return activeProviders
-                    .SelectMany(p => p.Models
-                        .Where(m => m.IsActive)
-                        .Select(m => new EnrichedModelResponse(
-                            m.ModelId,
-                            m.DisplayName,
-                            p.Id,
-                            p.Name,
-                            m.IsReasoning,
-                            m.SupportsFunctionCalling,
-                            m.SupportsResponseSchema,
-                            m.MaxInputTokens,
-                            m.MaxOutputTokens,
-                            m.DefaultTemperature,
-                            m.DefaultMaxTokens,
-                            m.DefaultReasoningEffort
-                        )))
+                    .SelectMany(p =>
+                        p.Models.Where(m => m.IsActive)
+                            .Select(m => new EnrichedModelResponse(
+                                m.ModelId,
+                                m.DisplayName,
+                                p.Id,
+                                p.Name,
+                                m.IsReasoning,
+                                m.SupportsFunctionCalling,
+                                m.SupportsResponseSchema,
+                                m.MaxInputTokens,
+                                m.MaxOutputTokens,
+                                m.DefaultTemperature,
+                                m.DefaultMaxTokens,
+                                m.DefaultReasoningEffort
+                            ))
+                    )
                     .ToList();
             },
             TenantCacheKeys.AiCacheTtl,
-            ct);
+            ct
+        );
 
         return enriched;
     }
@@ -129,8 +154,8 @@ public class ModelResolutionService(
                     var modelClient = client.GetOpenAIModelClient();
                     var response = await modelClient.GetModelsAsync(cts.Token);
 
-                    var result = response.Value
-                        .Select(m => m.Id)
+                    var result = response
+                        .Value.Select(m => m.Id)
                         .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
                         .ToList();
 
@@ -139,15 +164,21 @@ public class ModelResolutionService(
                     if (!string.IsNullOrWhiteSpace(allowedModels))
                     {
                         var whitelist = new HashSet<string>(
-                            allowedModels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-                            StringComparer.OrdinalIgnoreCase);
+                            allowedModels.Split(
+                                ',',
+                                StringSplitOptions.RemoveEmptyEntries
+                                    | StringSplitOptions.TrimEntries
+                            ),
+                            StringComparer.OrdinalIgnoreCase
+                        );
                         result = result.Where(m => whitelist.Contains(m)).ToList();
                     }
 
                     return result;
                 },
                 TenantCacheKeys.AiCacheTtl,
-                ct);
+                ct
+            );
 
             return cached;
         }

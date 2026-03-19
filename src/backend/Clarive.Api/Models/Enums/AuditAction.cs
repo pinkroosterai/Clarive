@@ -23,5 +23,5 @@ public enum AuditAction
     WorkspaceSwitched,
     MaintenanceEnabled,
     MaintenanceDisabled,
-    EntryDraftUpdated
+    EntryDraftUpdated,
 }

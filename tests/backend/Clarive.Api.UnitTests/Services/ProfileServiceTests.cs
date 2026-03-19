@@ -19,32 +19,38 @@ public class ProfileServiceTests
 
     public ProfileServiceTests()
     {
-        _userRepo.UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
+        _userRepo
+            .UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<User>());
 
         _sut = new ProfileService(_userRepo, _passwordHasher);
     }
 
-    private User MakeUser(bool withPassword = true) => new()
-    {
-        Id = UserId,
-        TenantId = TenantId,
-        Email = "user@test.com",
-        Name = "Test User",
-        PasswordHash = withPassword ? _passwordHasher.Hash("CurrentPassword1!") : null,
-        ThemePreference = "system",
-        OnboardingCompleted = false
-    };
+    private User MakeUser(bool withPassword = true) =>
+        new()
+        {
+            Id = UserId,
+            TenantId = TenantId,
+            Email = "user@test.com",
+            Name = "Test User",
+            PasswordHash = withPassword ? _passwordHasher.Hash("CurrentPassword1!") : null,
+            ThemePreference = "system",
+            OnboardingCompleted = false,
+        };
 
     // ── UpdateProfileAsync — Name ──
 
     [Fact]
     public async Task UpdateProfileAsync_UserNotFound_ReturnsNotFound()
     {
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns((User?)null);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns((User?)null);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId, new UpdateProfileRequest(Name: "New"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(Name: "New"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NOT_FOUND");
@@ -54,11 +60,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_UpdateName_UpdatesSuccessfully()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(Name: "New Name"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(Name: "New Name"),
+            default
+        );
 
         result.IsError.Should().BeFalse();
         result.Value.Name.Should().Be("New Name");
@@ -69,11 +78,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_NameTooLong_ReturnsValidationError()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(Name: new string('A', 256)), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(Name: new string('A', 256)),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("VALIDATION_ERROR");
@@ -86,11 +98,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangeEmail_RequiresCurrentPassword()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(Email: "new@test.com"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(Email: "new@test.com"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("VALIDATION_ERROR");
@@ -101,11 +116,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangeEmail_WrongPassword_ReturnsError()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(Email: "new@test.com", CurrentPassword: "WrongPassword!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(Email: "new@test.com", CurrentPassword: "WrongPassword!"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Description.Should().Contain("incorrect");
@@ -115,11 +133,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangeEmail_InvalidFormat_ReturnsError()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(Email: "not-an-email", CurrentPassword: "CurrentPassword1!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(Email: "not-an-email", CurrentPassword: "CurrentPassword1!"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Description.Should().Contain("email");
@@ -129,13 +150,17 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangeEmail_AlreadyTaken_ReturnsConflict()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
-        _userRepo.GetByEmailAsync("taken@test.com", Arg.Any<CancellationToken>())
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
+        _userRepo
+            .GetByEmailAsync("taken@test.com", Arg.Any<CancellationToken>())
             .Returns(new User { Id = Guid.NewGuid(), Email = "taken@test.com" });
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(Email: "taken@test.com", CurrentPassword: "CurrentPassword1!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(Email: "taken@test.com", CurrentPassword: "CurrentPassword1!"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("EMAIL_EXISTS");
@@ -145,13 +170,17 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangeEmail_Valid_UpdatesAndNormalizes()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
-        _userRepo.GetByEmailAsync("new@test.com", Arg.Any<CancellationToken>())
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
+        _userRepo
+            .GetByEmailAsync("new@test.com", Arg.Any<CancellationToken>())
             .Returns((User?)null);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(Email: "New@Test.COM", CurrentPassword: "CurrentPassword1!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(Email: "New@Test.COM", CurrentPassword: "CurrentPassword1!"),
+            default
+        );
 
         result.IsError.Should().BeFalse();
         result.Value.Email.Should().Be("new@test.com");
@@ -163,11 +192,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangePassword_ExternalAccount_ReturnsError()
     {
         var user = MakeUser(withPassword: false);
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(NewPassword: "NewPassword123!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(NewPassword: "NewPassword123!"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Description.Should().Contain("external sign-in");
@@ -177,11 +209,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangePassword_RequiresCurrentPassword()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(NewPassword: "NewPassword123!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(NewPassword: "NewPassword123!"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Description.Should().Contain("Current password");
@@ -191,11 +226,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangePassword_TooShort_ReturnsError()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(NewPassword: "short", CurrentPassword: "CurrentPassword1!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(NewPassword: "short", CurrentPassword: "CurrentPassword1!"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Description.Should().Contain($"{Validator.MinPasswordLength}");
@@ -205,11 +243,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangePassword_Empty_ReturnsError()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(NewPassword: "  ", CurrentPassword: "CurrentPassword1!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(NewPassword: "  ", CurrentPassword: "CurrentPassword1!"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Description.Should().Contain("required");
@@ -219,11 +260,17 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ChangePassword_Valid_HashesNewPassword()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(NewPassword: "NewPassword123!", CurrentPassword: "CurrentPassword1!"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(
+                NewPassword: "NewPassword123!",
+                CurrentPassword: "CurrentPassword1!"
+            ),
+            default
+        );
 
         result.IsError.Should().BeFalse();
         _passwordHasher.Verify("NewPassword123!", result.Value.PasswordHash!).Should().BeTrue();
@@ -235,11 +282,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_InvalidTheme_ReturnsError()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(ThemePreference: "neon"), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(ThemePreference: "neon"),
+            default
+        );
 
         result.IsError.Should().BeTrue();
         result.FirstError.Description.Should().Contain("light");
@@ -252,11 +302,14 @@ public class ProfileServiceTests
     public async Task UpdateProfileAsync_ValidTheme_UpdatesPreference(string theme)
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.UpdateProfileAsync(TenantId, UserId,
-            new UpdateProfileRequest(ThemePreference: theme), default);
+        var result = await _sut.UpdateProfileAsync(
+            TenantId,
+            UserId,
+            new UpdateProfileRequest(ThemePreference: theme),
+            default
+        );
 
         result.IsError.Should().BeFalse();
         result.Value.ThemePreference.Should().Be(theme);
@@ -267,8 +320,7 @@ public class ProfileServiceTests
     [Fact]
     public async Task CompleteOnboardingAsync_UserNotFound_ReturnsNotFound()
     {
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns((User?)null);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns((User?)null);
 
         var result = await _sut.CompleteOnboardingAsync(TenantId, UserId, default);
 
@@ -280,8 +332,7 @@ public class ProfileServiceTests
     public async Task CompleteOnboardingAsync_Valid_SetsFlag()
     {
         var user = MakeUser();
-        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>())
-            .Returns(user);
+        _userRepo.GetByIdAsync(TenantId, UserId, Arg.Any<CancellationToken>()).Returns(user);
 
         var result = await _sut.CompleteOnboardingAsync(TenantId, UserId, default);
 

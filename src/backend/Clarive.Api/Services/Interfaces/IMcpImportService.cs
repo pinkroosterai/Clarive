@@ -10,5 +10,6 @@ public interface IMcpImportService
         string serverUrl,
         string? bearerToken,
         Guid tenantId,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+    );
 }

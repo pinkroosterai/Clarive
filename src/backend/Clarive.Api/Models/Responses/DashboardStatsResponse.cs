@@ -7,19 +7,12 @@ public record DashboardStatsResponse(
     int TotalFolders,
     List<RecentEntryDto> RecentEntries,
     List<RecentActivityDto> RecentActivity,
-    List<FavoriteEntryDto> FavoriteEntries);
+    List<FavoriteEntryDto> FavoriteEntries
+);
 
-public record RecentEntryDto(
-    Guid Id,
-    string Title,
-    string VersionState,
-    DateTime UpdatedAt);
+public record RecentEntryDto(Guid Id, string Title, string VersionState, DateTime UpdatedAt);
 
-public record FavoriteEntryDto(
-    Guid Id,
-    string Title,
-    string VersionState,
-    DateTime FavoritedAt);
+public record FavoriteEntryDto(Guid Id, string Title, string VersionState, DateTime FavoritedAt);
 
 public record RecentActivityDto(
     Guid Id,
@@ -27,4 +20,5 @@ public record RecentActivityDto(
     string EntityType,
     string UserName,
     string? Details,
-    DateTime Timestamp);
+    DateTime Timestamp
+);

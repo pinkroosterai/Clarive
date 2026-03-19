@@ -11,18 +11,18 @@ namespace Clarive.Api.IntegrationTests.Tests.Auth;
 [Collection("Integration")]
 public class AuthErrorTests : IntegrationTestBase
 {
-    public AuthErrorTests(IntegrationTestFixture fixture) : base(fixture) { }
+    public AuthErrorTests(IntegrationTestFixture fixture)
+        : base(fixture) { }
 
     // ── Invalid email format ──
 
     [Fact]
     public async Task Login_InvalidEmailFormat_Returns401()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email = "not-an-email",
-            password = TestData.SeedPassword
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = "not-an-email", password = TestData.SeedPassword }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -30,12 +30,15 @@ public class AuthErrorTests : IntegrationTestBase
     [Fact]
     public async Task Register_InvalidEmailFormat_Returns422()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email = "missing-at-sign",
-            password = "securePassword123",
-            name = "Test"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email = "missing-at-sign",
+                password = "securePassword123",
+                name = "Test",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -43,12 +46,15 @@ public class AuthErrorTests : IntegrationTestBase
     [Fact]
     public async Task Register_EmptyName_Returns422()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/register", new
-        {
-            email = TestData.UniqueEmail(),
-            password = "securePassword123",
-            name = ""
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email = TestData.UniqueEmail(),
+                password = "securePassword123",
+                name = "",
+            }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -80,10 +86,10 @@ public class AuthErrorTests : IntegrationTestBase
     [Fact]
     public async Task Refresh_ExpiredRefreshToken_Returns401()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new
-        {
-            refreshToken = "expired-or-fake-refresh-token"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new { refreshToken = "expired-or-fake-refresh-token" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -93,31 +99,32 @@ public class AuthErrorTests : IntegrationTestBase
     [Fact]
     public async Task Login_EmptyPassword_Returns401()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email = TestData.AdminEmail,
-            password = ""
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = TestData.AdminEmail, password = "" }
+        );
 
         // Should fail — empty password cannot match
-        response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.Unauthorized,
-            HttpStatusCode.UnprocessableEntity);
+        response
+            .StatusCode.Should()
+            .BeOneOf(HttpStatusCode.Unauthorized, HttpStatusCode.UnprocessableEntity);
     }
 
     [Fact]
     public async Task Login_NullEmail_Returns422Or401()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email = (string?)null,
-            password = "somepassword"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = (string?)null, password = "somepassword" }
+        );
 
-        response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.Unauthorized,
-            HttpStatusCode.UnprocessableEntity,
-            HttpStatusCode.BadRequest);
+        response
+            .StatusCode.Should()
+            .BeOneOf(
+                HttpStatusCode.Unauthorized,
+                HttpStatusCode.UnprocessableEntity,
+                HttpStatusCode.BadRequest
+            );
     }
 
     // ── Password reset edge cases ──
@@ -125,11 +132,10 @@ public class AuthErrorTests : IntegrationTestBase
     [Fact]
     public async Task ResetPassword_ShortPassword_Returns422()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/reset-password", new
-        {
-            token = "some-token",
-            newPassword = "short"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/reset-password",
+            new { token = "some-token", newPassword = "short" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
@@ -138,10 +144,10 @@ public class AuthErrorTests : IntegrationTestBase
     public async Task ForgotPassword_InvalidEmailFormat_Returns200()
     {
         // Should still return 200 to prevent email enumeration
-        var response = await Client.PostAsJsonAsync("/api/auth/forgot-password", new
-        {
-            email = "not-an-email"
-        });
+        var response = await Client.PostAsJsonAsync(
+            "/api/auth/forgot-password",
+            new { email = "not-an-email" }
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

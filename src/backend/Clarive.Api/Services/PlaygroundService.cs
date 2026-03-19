@@ -23,11 +23,12 @@ public class PlaygroundService(
     IAgentFactory agentFactory,
     IAiUsageLogger usageLogger,
     IOptionsMonitor<AiSettings> aiSettings,
-    ILogger<PlaygroundService> logger) : IPlaygroundService
+    ILogger<PlaygroundService> logger
+) : IPlaygroundService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
     public async Task<ErrorOr<TestStreamResult>> TestEntryAsync(
@@ -36,7 +37,8 @@ public class PlaygroundService(
         Guid entryId,
         TestEntryRequest request,
         CancellationToken ct,
-        Func<TestStreamChunk, Task>? onChunk = null)
+        Func<TestStreamChunk, Task>? onChunk = null
+    )
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
@@ -62,8 +64,10 @@ public class PlaygroundService(
 
             var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
             if (errors.Count > 0)
-                return Error.Validation("VALIDATION_ERROR",
-                    string.Join("; ", errors.Select(e => $"{e.Key}: {e.Value}")));
+                return Error.Validation(
+                    "VALIDATION_ERROR",
+                    string.Join("; ", errors.Select(e => $"{e.Key}: {e.Value}"))
+                );
         }
 
         // Resolve model — fall back to Generation model if none specified
@@ -96,46 +100,59 @@ public class PlaygroundService(
             {
                 ModelId = model,
                 Temperature = resolved.IsTemperatureConfigurable ? request.Temperature : null,
-                MaxOutputTokens = request.MaxTokens
+                MaxOutputTokens = request.MaxTokens,
             };
 
-            if (request.ShowReasoning == true && resolved.ApiMode == Models.Enums.AiApiMode.ResponsesApi)
+            if (
+                request.ShowReasoning == true
+                && resolved.ApiMode == Models.Enums.AiApiMode.ResponsesApi
+            )
             {
                 options.Reasoning = new ReasoningOptions
                 {
-                    Effort = ChatOptionsBuilder.ParseReasoningEffort(request.ReasoningEffort ?? "medium"),
+                    Effort = ChatOptionsBuilder.ParseReasoningEffort(
+                        request.ReasoningEffort ?? "medium"
+                    ),
                     Output = ReasoningOutput.Full,
                 };
             }
 
-            var thinkParser = resolved.ApiMode == Models.Enums.AiApiMode.ChatCompletions
-                ? new Helpers.ThinkTagStreamParser()
-                : null;
+            var thinkParser =
+                resolved.ApiMode == Models.Enums.AiApiMode.ChatCompletions
+                    ? new Helpers.ThinkTagStreamParser()
+                    : null;
 
             var conversationMessages = new List<ChatMessage>();
 
             var systemMessage = version.SystemMessage;
             if (!string.IsNullOrEmpty(systemMessage))
             {
-                renderedSystemMessage = allFields.Count > 0
-                    ? TemplateParser.Render(systemMessage, fields)
-                    : systemMessage;
+                renderedSystemMessage =
+                    allFields.Count > 0
+                        ? TemplateParser.Render(systemMessage, fields)
+                        : systemMessage;
                 conversationMessages.Add(new ChatMessage(ChatRole.System, renderedSystemMessage));
             }
 
             for (var i = 0; i < prompts.Count; i++)
             {
                 var prompt = prompts[i];
-                var content = allFields.Count > 0 && prompt.IsTemplate
-                    ? TemplateParser.Render(prompt.Content, fields)
-                    : prompt.Content;
+                var content =
+                    allFields.Count > 0 && prompt.IsTemplate
+                        ? TemplateParser.Render(prompt.Content, fields)
+                        : prompt.Content;
 
                 renderedPromptTexts.Add(new TestRunPromptResponse(i, content));
                 conversationMessages.Add(new ChatMessage(ChatRole.User, content));
 
                 var responseText = new StringBuilder();
-                await foreach (var update in client.GetStreamingResponseAsync(
-                    conversationMessages, options, ct))
+                await foreach (
+                    var update in client.GetStreamingResponseAsync(
+                        conversationMessages,
+                        options,
+                        ct
+                    )
+                )
                 {
                     if (thinkParser is not null && update.Text is not null)
                     {
@@ -167,20 +184,26 @@ public class PlaygroundService(
                     // Responses API reasoning content (not available in Chat Completions)
                     if (thinkParser is null)
                     {
-                        var reasoningContent = update.Contents.OfType<TextReasoningContent>().FirstOrDefault();
+                        var reasoningContent = update
+                            .Contents.OfType<TextReasoningContent>()
+                            .FirstOrDefault();
                         if (reasoningContent?.Text is not null)
                         {
                             reasoningText.Append(reasoningContent.Text);
                             if (onChunk is not null)
-                                await onChunk(new TestStreamChunk(i, reasoningContent.Text, "reasoning"));
+                                await onChunk(
+                                    new TestStreamChunk(i, reasoningContent.Text, "reasoning")
+                                );
                         }
                     }
 
                     var usageContent = update.Contents.OfType<UsageContent>().FirstOrDefault();
                     if (usageContent is not null)
                     {
-                        totalInputTokens = (totalInputTokens ?? 0) + (usageContent.Details.InputTokenCount ?? 0);
-                        totalOutputTokens = (totalOutputTokens ?? 0) + (usageContent.Details.OutputTokenCount ?? 0);
+                        totalInputTokens =
+                            (totalInputTokens ?? 0) + (usageContent.Details.InputTokenCount ?? 0);
+                        totalOutputTokens =
+                            (totalOutputTokens ?? 0) + (usageContent.Details.OutputTokenCount ?? 0);
                     }
                 }
 
@@ -219,9 +242,8 @@ public class PlaygroundService(
         }
 
         // Persist the run
-        var versionLabel = version.VersionState == VersionState.Draft
-            ? "Draft"
-            : $"v{version.Version}";
+        var versionLabel =
+            version.VersionState == VersionState.Draft ? "Draft" : $"v{version.Version}";
 
         var run = new PlaygroundRun
         {
@@ -232,38 +254,58 @@ public class PlaygroundService(
             Model = model,
             Temperature = request.Temperature,
             MaxTokens = request.MaxTokens,
-            TemplateFieldValues = fields.Count > 0
-                ? JsonSerializer.Serialize(fields, JsonOptions)
-                : null,
+            TemplateFieldValues =
+                fields.Count > 0 ? JsonSerializer.Serialize(fields, JsonOptions) : null,
             Responses = JsonSerializer.Serialize(responses, JsonOptions),
-            Reasoning = reasoningPerPrompt.Count > 0
-                ? JsonSerializer.Serialize(reasoningPerPrompt, JsonOptions)
-                : null,
+            Reasoning =
+                reasoningPerPrompt.Count > 0
+                    ? JsonSerializer.Serialize(reasoningPerPrompt, JsonOptions)
+                    : null,
             RenderedSystemMessage = renderedSystemMessage,
             RenderedPrompts = JsonSerializer.Serialize(renderedPromptTexts, JsonOptions),
             VersionNumber = version.Version,
             VersionLabel = versionLabel,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         await runService.SaveRunAsync(run, ct);
         sw.Stop();
 
         await usageLogger.LogAsync(
-            tenantId, userId, AiActionType.PlaygroundTest,
-            model, resolved.ProviderName,
-            totalInputTokens ?? 0, totalOutputTokens ?? 0,
-            sw.ElapsedMilliseconds, entryId, ct);
+            tenantId,
+            userId,
+            AiActionType.PlaygroundTest,
+            model,
+            resolved.ProviderName,
+            totalInputTokens ?? 0,
+            totalOutputTokens ?? 0,
+            sw.ElapsedMilliseconds,
+            entryId,
+            ct
+        );
 
-        var fullReasoning = reasoningPerPrompt.Count > 0
-            ? string.Join("\n\n", reasoningPerPrompt.Select(r => r.Content))
-            : null;
-        return new TestStreamResult(run.Id, responses, totalInputTokens, totalOutputTokens, fullReasoning,
-            VersionNumber: version.Version, VersionLabel: versionLabel);
+        var fullReasoning =
+            reasoningPerPrompt.Count > 0
+                ? string.Join("\n\n", reasoningPerPrompt.Select(r => r.Content))
+                : null;
+        return new TestStreamResult(
+            run.Id,
+            responses,
+            totalInputTokens,
+            totalOutputTokens,
+            fullReasoning,
+            VersionNumber: version.Version,
+            VersionLabel: versionLabel
+        );
     }
 
     public async Task<ErrorOr<OutputEvaluation>> JudgePlaygroundRunAsync(
-        Guid tenantId, Guid userId, Guid entryId, Guid runId, CancellationToken ct)
+        Guid tenantId,
+        Guid userId,
+        Guid entryId,
+        Guid runId,
+        CancellationToken ct
+    )
     {
         var run = await runService.GetByIdAsync(runId, ct);
         if (run is null || run.TenantId != tenantId || run.EntryId != entryId)
@@ -279,12 +321,17 @@ public class PlaygroundService(
         List<TestRunPromptResponse> responses;
         try
         {
-            responses = JsonSerializer.Deserialize<List<TestRunPromptResponse>>(run.Responses, JsonOptions) ?? [];
+            responses =
+                JsonSerializer.Deserialize<List<TestRunPromptResponse>>(run.Responses, JsonOptions)
+                ?? [];
         }
         catch (JsonException ex)
         {
             logger.LogWarning(ex, "Failed to deserialize responses for run {RunId}", runId);
-            return Error.Failure("INVALID_RUN_DATA", "Run data is corrupted. Please re-run the test.");
+            return Error.Failure(
+                "INVALID_RUN_DATA",
+                "Run data is corrupted. Please re-run the test."
+            );
         }
 
         var sw = Stopwatch.StartNew();
@@ -292,7 +339,11 @@ public class PlaygroundService(
         {
             var agent = agentFactory.CreatePlaygroundJudgeAgent();
             var task = TaskBuilder.BuildPlaygroundJudgeTask(
-                version.SystemMessage, promptInputs, responses, run.Model);
+                version.SystemMessage,
+                promptInputs,
+                responses,
+                run.Model
+            );
 
             var response = await agent.RunAsync<OutputEvaluation>(task, cancellationToken: ct);
             var evaluation = OutputEvaluationNormalizer.Normalize(response.Result);
@@ -308,10 +359,17 @@ public class PlaygroundService(
             var (modelId, providerName) = agentFactory.GetModelInfo(AiActionType.PlaygroundJudge);
 
             await usageLogger.LogAsync(
-                tenantId, userId, AiActionType.PlaygroundJudge,
-                modelId ?? "unknown", providerName ?? "unknown",
-                inputTokens, outputTokens,
-                sw.ElapsedMilliseconds, entryId, ct);
+                tenantId,
+                userId,
+                AiActionType.PlaygroundJudge,
+                modelId ?? "unknown",
+                providerName ?? "unknown",
+                inputTokens,
+                outputTokens,
+                sw.ElapsedMilliseconds,
+                entryId,
+                ct
+            );
 
             return evaluation;
         }

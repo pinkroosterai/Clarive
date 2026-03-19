@@ -6,14 +6,12 @@ public static class DomainErrors
 {
     // ── Entry ──
 
-    public static Error EntryNotFound =>
-        Error.NotFound("NOT_FOUND", "Entry not found.");
+    public static Error EntryNotFound => Error.NotFound("NOT_FOUND", "Entry not found.");
 
     public static Error EntryNotFoundByCode =>
         Error.NotFound("ENTRY_NOT_FOUND", "Entry not found.");
 
-    public static Error VersionNotFound =>
-        Error.NotFound("NOT_FOUND", "No version found.");
+    public static Error VersionNotFound => Error.NotFound("NOT_FOUND", "No version found.");
 
     public static Error VersionNotFoundForEntry =>
         Error.NotFound("NOT_FOUND", "No version found for this entry.");
@@ -29,8 +27,7 @@ public static class DomainErrors
 
     // ── Folder ──
 
-    public static Error FolderNotFound =>
-        Error.NotFound("NOT_FOUND", "Folder not found.");
+    public static Error FolderNotFound => Error.NotFound("NOT_FOUND", "Folder not found.");
 
     public static Error ParentFolderNotFound =>
         Error.NotFound("NOT_FOUND", "Parent folder not found.");
@@ -43,8 +40,7 @@ public static class DomainErrors
 
     // ── User ──
 
-    public static Error UserNotFound =>
-        Error.NotFound("NOT_FOUND", "User not found.");
+    public static Error UserNotFound => Error.NotFound("NOT_FOUND", "User not found.");
 
     public static Error TargetUserNotFound =>
         Error.NotFound("TARGET_NOT_FOUND", "Target user not found.");
@@ -57,11 +53,9 @@ public static class DomainErrors
 
     // ── AI Provider ──
 
-    public static Error ProviderNotFound =>
-        Error.NotFound("NOT_FOUND", "Provider not found.");
+    public static Error ProviderNotFound => Error.NotFound("NOT_FOUND", "Provider not found.");
 
-    public static Error AiModelNotFound =>
-        Error.NotFound("NOT_FOUND", "Model not found.");
+    public static Error AiModelNotFound => Error.NotFound("NOT_FOUND", "Model not found.");
 
     // ── Share Link ──
 

@@ -12,14 +12,24 @@ public class EfApiKeyRepository(ClariveDbContext db) : IApiKeyRepository
         return await db.ApiKeys.AsNoTracking().Where(k => k.TenantId == tenantId).ToListAsync(ct);
     }
 
-    public async Task<ApiKey?> GetByIdAsync(Guid tenantId, Guid keyId, CancellationToken ct = default)
+    public async Task<ApiKey?> GetByIdAsync(
+        Guid tenantId,
+        Guid keyId,
+        CancellationToken ct = default
+    )
     {
-        return await db.ApiKeys.FirstOrDefaultAsync(k => k.Id == keyId && k.TenantId == tenantId, ct);
+        return await db.ApiKeys.FirstOrDefaultAsync(
+            k => k.Id == keyId && k.TenantId == tenantId,
+            ct
+        );
     }
 
     public async Task<ApiKey?> GetByHashAsync(string keyHash, CancellationToken ct = default)
     {
-        return await db.ApiKeys.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(k => k.KeyHash == keyHash, ct);
+        return await db
+            .ApiKeys.IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(k => k.KeyHash == keyHash, ct);
     }
 
     public async Task<ApiKey> CreateAsync(ApiKey key, CancellationToken ct = default)
@@ -31,8 +41,12 @@ public class EfApiKeyRepository(ClariveDbContext db) : IApiKeyRepository
 
     public async Task<bool> DeleteAsync(Guid tenantId, Guid keyId, CancellationToken ct = default)
     {
-        var key = await db.ApiKeys.FirstOrDefaultAsync(k => k.Id == keyId && k.TenantId == tenantId, ct);
-        if (key is null) return false;
+        var key = await db.ApiKeys.FirstOrDefaultAsync(
+            k => k.Id == keyId && k.TenantId == tenantId,
+            ct
+        );
+        if (key is null)
+            return false;
         db.ApiKeys.Remove(key);
         await db.SaveChangesAsync(ct);
         return true;
@@ -40,10 +54,14 @@ public class EfApiKeyRepository(ClariveDbContext db) : IApiKeyRepository
 
     public async Task TouchLastUsedAsync(Guid keyId, CancellationToken ct = default)
     {
-        await db.ApiKeys.IgnoreQueryFilters()
+        await db
+            .ApiKeys.IgnoreQueryFilters()
             .Where(k => k.Id == keyId)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(k => k.LastUsedAt, DateTime.UtcNow)
-                .SetProperty(k => k.UsageCount, k => k.UsageCount + 1), ct);
+            .ExecuteUpdateAsync(
+                s =>
+                    s.SetProperty(k => k.LastUsedAt, DateTime.UtcNow)
+                        .SetProperty(k => k.UsageCount, k => k.UsageCount + 1),
+                ct
+            );
     }
 }

@@ -16,27 +16,42 @@ public static partial class UserAgentParser
     {
         // Order matters: check specific browsers before generic ones.
         // Edge must come before Chrome (Edge UA contains "Chrome").
-        if (EdgeRegex().IsMatch(ua)) return ExtractVersion(EdgeRegex(), ua, "Edge");
-        if (OperaGxRegex().IsMatch(ua)) return ExtractVersion(OperaGxRegex(), ua, "Opera GX");
-        if (OperaRegex().IsMatch(ua)) return ExtractVersion(OperaRegex(), ua, "Opera");
-        if (VivaldiRegex().IsMatch(ua)) return ExtractVersion(VivaldiRegex(), ua, "Vivaldi");
-        if (BraveRegex().IsMatch(ua)) return "Brave";
-        if (ChromeRegex().IsMatch(ua)) return ExtractVersion(ChromeRegex(), ua, "Chrome");
-        if (FirefoxRegex().IsMatch(ua)) return ExtractVersion(FirefoxRegex(), ua, "Firefox");
-        if (SafariRegex().IsMatch(ua) && !ua.Contains("Chrome")) return ExtractVersion(SafariVersionRegex(), ua, "Safari");
-        if (ua.Contains("MSIE") || ua.Contains("Trident")) return "Internet Explorer";
+        if (EdgeRegex().IsMatch(ua))
+            return ExtractVersion(EdgeRegex(), ua, "Edge");
+        if (OperaGxRegex().IsMatch(ua))
+            return ExtractVersion(OperaGxRegex(), ua, "Opera GX");
+        if (OperaRegex().IsMatch(ua))
+            return ExtractVersion(OperaRegex(), ua, "Opera");
+        if (VivaldiRegex().IsMatch(ua))
+            return ExtractVersion(VivaldiRegex(), ua, "Vivaldi");
+        if (BraveRegex().IsMatch(ua))
+            return "Brave";
+        if (ChromeRegex().IsMatch(ua))
+            return ExtractVersion(ChromeRegex(), ua, "Chrome");
+        if (FirefoxRegex().IsMatch(ua))
+            return ExtractVersion(FirefoxRegex(), ua, "Firefox");
+        if (SafariRegex().IsMatch(ua) && !ua.Contains("Chrome"))
+            return ExtractVersion(SafariVersionRegex(), ua, "Safari");
+        if (ua.Contains("MSIE") || ua.Contains("Trident"))
+            return "Internet Explorer";
 
         return "Unknown";
     }
 
     private static string ParseOs(string ua)
     {
-        if (ua.Contains("iPhone") || ua.Contains("iPad") || ua.Contains("iPod")) return "iOS";
-        if (ua.Contains("Android")) return "Android";
-        if (ua.Contains("Windows")) return "Windows";
-        if (ua.Contains("Mac OS X") || ua.Contains("Macintosh")) return "macOS";
-        if (ua.Contains("CrOS")) return "ChromeOS";
-        if (ua.Contains("Linux")) return "Linux";
+        if (ua.Contains("iPhone") || ua.Contains("iPad") || ua.Contains("iPod"))
+            return "iOS";
+        if (ua.Contains("Android"))
+            return "Android";
+        if (ua.Contains("Windows"))
+            return "Windows";
+        if (ua.Contains("Mac OS X") || ua.Contains("Macintosh"))
+            return "macOS";
+        if (ua.Contains("CrOS"))
+            return "ChromeOS";
+        if (ua.Contains("Linux"))
+            return "Linux";
 
         return "Unknown";
     }
