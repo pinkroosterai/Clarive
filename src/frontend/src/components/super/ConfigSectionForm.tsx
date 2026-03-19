@@ -9,7 +9,7 @@ import {
   Server,
   Database,
 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -65,9 +65,14 @@ function removeRestartKey(key: string) {
 interface ConfigSectionFormProps {
   settings: ConfigSetting[];
   onSaved: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFormProps) {
+export default function ConfigSectionForm({
+  settings,
+  onSaved,
+  onDirtyChange,
+}: ConfigSectionFormProps) {
   const queryClient = useQueryClient();
   const [dirtyValues, setDirtyValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -142,6 +147,10 @@ export default function ConfigSectionForm({ settings, onSaved }: ConfigSectionFo
   };
 
   const hasDirty = Object.keys(dirtyValues).length > 0;
+
+  useEffect(() => {
+    onDirtyChange?.(hasDirty);
+  }, [hasDirty, onDirtyChange]);
 
   const handleSave = async () => {
     if (!hasDirty) return;

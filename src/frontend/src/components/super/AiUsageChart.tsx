@@ -39,7 +39,15 @@ export default function AiUsageChart({ byModel }: AiUsageChartProps) {
       <h4 className="text-sm font-semibold text-foreground mb-4">Token Usage by Model</h4>
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
         <BarChart data={data} accessibilityLayer>
-          <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+          <XAxis
+            dataKey="name"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            fontSize={11}
+            interval={0}
+            tickFormatter={(v: string) => (v.length > 20 ? `${v.slice(0, 18)}…` : v)}
+          />
           <YAxis
             tickLine={false}
             axisLine={false}

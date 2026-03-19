@@ -1,11 +1,13 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Search, X } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import ConfigSectionForm from './ConfigSectionForm';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ConfigSetting } from '@/services/api/configService';
 
@@ -31,10 +33,48 @@ export default function SettingsTab({
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(SETTINGS_SECTIONS.map((s) => [s.key, true]))
   );
+  const [search, setSearch] = useState('');
+  const [dirtySections, setDirtySections] = useState<Set<string>>(new Set());
+
+  const handleDirtyChange = useCallback((sectionKey: string, isDirty: boolean) => {
+    setDirtySections((prev) => {
+      const next = new Set(prev);
+      if (isDirty) next.add(sectionKey);
+      else next.delete(sectionKey);
+      return next;
+    });
+  }, []);
 
   const toggleSection = (key: string) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  // Filter settings by search term across all sections
+  const filteredBySection = useMemo(() => {
+    if (!search.trim()) return settingsBySection;
+    const q = search.toLowerCase();
+    const result: Record<string, ConfigSetting[]> = {};
+    for (const [section, settings] of Object.entries(settingsBySection)) {
+      const matched = settings.filter(
+        (s) =>
+          s.label.toLowerCase().includes(q) ||
+          s.key.toLowerCase().includes(q) ||
+          s.description?.toLowerCase().includes(q)
+      );
+      if (matched.length > 0) result[section] = matched;
+    }
+    return result;
+  }, [settingsBySection, search]);
+
+  // Auto-expand sections with matches when searching
+  const effectiveOpen = useMemo(() => {
+    if (!search.trim()) return openSections;
+    const expanded: Record<string, boolean> = {};
+    for (const { key } of SETTINGS_SECTIONS) {
+      expanded[key] = (filteredBySection[key]?.length ?? 0) > 0;
+    }
+    return expanded;
+  }, [search, openSections, filteredBySection]);
 
   if (configLoading) {
     return (
@@ -59,29 +99,72 @@ export default function SettingsTab({
 
   return (
     <div className="space-y-6">
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-foreground-muted" />
+        <Input
+          placeholder="Search settings..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9 pr-8"
+        />
+        {search && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 size-6"
+            onClick={() => setSearch('')}
+          >
+            <X className="size-3" />
+          </Button>
+        )}
+      </div>
+
       {SETTINGS_SECTIONS.map(({ key, label }) => {
-        const sectionSettings = settingsBySection[key] ?? [];
-        if (sectionSettings.length === 0) return null;
+        const sectionSettings = filteredBySection[key] ?? [];
+        if (sectionSettings.length === 0 && search.trim()) return null;
+        if ((settingsBySection[key] ?? []).length === 0) return null;
+
+        const isOpen = effectiveOpen[key] ?? true;
 
         return (
-          <Collapsible key={key} open={openSections[key]} onOpenChange={() => toggleSection(key)}>
+          <Collapsible
+            key={key}
+            open={isOpen}
+            onOpenChange={() => {
+              if (!search.trim()) toggleSection(key);
+            }}
+          >
             <CollapsibleTrigger className="flex items-center gap-2 w-full group cursor-pointer">
               <ChevronDown
                 className={`size-4 text-foreground-muted transition-transform ${
-                  openSections[key] ? '' : '-rotate-90'
+                  isOpen ? '' : '-rotate-90'
                 }`}
               />
               <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
                 {label}
               </h3>
+              {dirtySections.has(key) && (
+                <span className="size-2 rounded-full bg-primary animate-pulse" title="Unsaved changes" />
+              )}
               <div className="flex-1 border-b border-border" />
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-4">
-              <ConfigSectionForm settings={sectionSettings} onSaved={onSaved} />
+              <ConfigSectionForm
+                settings={sectionSettings}
+                onSaved={onSaved}
+                onDirtyChange={(isDirty) => handleDirtyChange(key, isDirty)}
+              />
             </CollapsibleContent>
           </Collapsible>
         );
       })}
+
+      {search.trim() && Object.keys(filteredBySection).length === 0 && (
+        <p className="text-sm text-foreground-muted text-center py-8">
+          No settings match &ldquo;{search}&rdquo;
+        </p>
+      )}
     </div>
   );
 }
