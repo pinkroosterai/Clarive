@@ -13,6 +13,7 @@ import {
 import { useState, useEffect, useRef, useCallback, type RefObject } from 'react';
 
 import CopyButton from './CopyButton';
+import { ToolCallBlock } from './ToolCallBlock';
 import ReasoningBlock from './ReasoningBlock';
 
 import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
@@ -298,6 +299,8 @@ interface PlaygroundResultsAreaProps {
   isFillingTemplateFields?: boolean;
   // Clear current run from comparison
   onClearCurrentRun?: () => void;
+  // Tool calls
+  toolCalls?: Record<string, { toolName: string; arguments: string | null; response: string | null; durationMs: number | null; error: string | null; status: 'calling' | 'complete' | 'error' }>;
 }
 
 export default function PlaygroundResultsArea({
@@ -336,6 +339,7 @@ export default function PlaygroundResultsArea({
   onFillTemplateFields,
   isFillingTemplateFields,
   onClearCurrentRun,
+  toolCalls,
 }: PlaygroundResultsAreaProps) {
   const hasPins = pinnedRuns.length > 0;
   const [showPrompts, setShowPrompts] = useState(false);
@@ -631,6 +635,27 @@ export default function PlaygroundResultsArea({
                       })}
                     </div>
                   )}
+
+                  {/* Tool calls section */}
+                  {toolCalls && Object.keys(toolCalls).length > 0 && (
+                    <div className="space-y-1 mt-2">
+                      <p className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider">
+                        Tool Calls
+                      </p>
+                      {Object.entries(toolCalls).map(([callId, tc]) => (
+                        <ToolCallBlock
+                          key={callId}
+                          toolName={tc.toolName}
+                          arguments={tc.arguments}
+                          response={tc.response}
+                          durationMs={tc.durationMs}
+                          error={tc.error}
+                          status={tc.status}
+                        />
+                      ))}
+                    </div>
+                  )}
+
                   {pinnedRuns.map((run, pinIndex) => (
                     <div key={`content-${run.id}`} className="space-y-3 self-start">
                       {showPrompts && run.renderedSystemMessage && (

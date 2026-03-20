@@ -3,7 +3,16 @@ import { api } from './apiClient';
 export interface TestStreamChunk {
   promptIndex: number;
   text: string;
-  type?: 'text' | 'reasoning';
+  type?: 'text' | 'reasoning' | 'tool_start' | 'tool_end';
+}
+
+export interface ToolInvocation {
+  toolName: string;
+  callId: string;
+  arguments: string | null;
+  response: string | null;
+  durationMs: number;
+  error: string | null;
 }
 
 export interface TestRunPromptResponse {
@@ -20,6 +29,7 @@ export interface TestStreamResult {
   judgeScores: Evaluation | null;
   versionNumber: number | null;
   versionLabel: string | null;
+  toolInvocations: ToolInvocation[] | null;
 }
 
 export interface TestRunResponse {
@@ -38,6 +48,7 @@ export interface TestRunResponse {
   renderedPrompts?: TestRunPromptResponse[] | null;
   versionNumber?: number | null;
   versionLabel?: string | null;
+  toolInvocations?: ToolInvocation[] | null;
 }
 
 export interface Evaluation {
@@ -57,6 +68,8 @@ export interface TestEntryParams {
   templateFields?: Record<string, string>;
   reasoningEffort?: string;
   showReasoning?: boolean;
+  mcpServerIds?: string[];
+  excludedToolNames?: string[];
 }
 
 export async function testEntry(
@@ -72,6 +85,8 @@ export async function testEntry(
     templateFields: params.templateFields,
     reasoningEffort: params.reasoningEffort,
     showReasoning: params.showReasoning,
+    mcpServerIds: params.mcpServerIds,
+    excludedToolNames: params.excludedToolNames,
   };
 
   if (onChunk) {

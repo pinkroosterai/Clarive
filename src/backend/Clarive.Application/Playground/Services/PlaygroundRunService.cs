@@ -70,7 +70,13 @@ public class PlaygroundRunService(IPlaygroundRunRepository runRepo) : IPlaygroun
                     )
                     : null,
                 r.VersionNumber,
-                r.VersionLabel
+                r.VersionLabel,
+                !string.IsNullOrEmpty(r.ToolInvocations)
+                    ? JsonSerializer.Deserialize<List<ToolInvocation>>(
+                        r.ToolInvocations,
+                        JsonOptions
+                    )
+                    : null
             ))
             .ToList();
     }

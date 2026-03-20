@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();
         services.AddScoped<IMcpImportService, McpImportService>();
         services.AddScoped<IMcpServerService, McpServerService>();
+        services.AddScoped<IMcpToolProvider, McpToolProvider>();
         services.AddSingleton<ITavilyClientService, TavilyClientService>();
         services.AddSingleton<ILiteLlmRegistryCache, LiteLlmRegistryCache>();
 

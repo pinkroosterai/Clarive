@@ -27,6 +27,15 @@ function estimateTokens(charCount: number): number {
 
 // ── Hook interface ──
 
+export interface ToolCallState {
+  toolName: string;
+  arguments: string | null;
+  response: string | null;
+  durationMs: number | null;
+  error: string | null;
+  status: 'calling' | 'complete' | 'error';
+}
+
 export interface UsePlaygroundStreamingOptions {
   entryId: string | undefined;
   model: string;
@@ -37,6 +46,8 @@ export interface UsePlaygroundStreamingOptions {
   reasoningEffort: string;
   showReasoning: boolean;
   isReasoning: boolean;
+  mcpServerIds?: string[];
+  excludedToolNames?: string[];
 }
 
 export function usePlaygroundStreaming({
@@ -49,6 +60,8 @@ export function usePlaygroundStreaming({
   reasoningEffort,
   showReasoning,
   isReasoning,
+  mcpServerIds,
+  excludedToolNames,
 }: UsePlaygroundStreamingOptions) {
   const queryClient = useQueryClient();
 
@@ -77,6 +90,7 @@ export function usePlaygroundStreaming({
   const [lastJudgeScores, setLastJudgeScores] = useState<Evaluation | null>(null);
   const [lastVersionLabel, setLastVersionLabel] = useState<string | null>(null);
   const [isJudging, setIsJudging] = useState(false);
+  const [toolCalls, setToolCalls] = useState<Record<string, ToolCallState>>({});
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
@@ -160,6 +174,7 @@ export function usePlaygroundStreaming({
     setLastJudgeScores(null);
     setLastVersionLabel(null);
     setIsJudging(false);
+    setToolCalls({});
     setElapsedSeconds(0);
     setApproxOutputTokens(0);
     streamedTextLengthRef.current = 0;
@@ -183,6 +198,8 @@ export function usePlaygroundStreaming({
           templateFields: templateFields.length > 0 ? fieldValues : undefined,
           reasoningEffort: isReasoning && showReasoning ? reasoningEffort : undefined,
           showReasoning: isReasoning ? showReasoning : undefined,
+          mcpServerIds: mcpServerIds?.length ? mcpServerIds : undefined,
+          excludedToolNames: excludedToolNames?.length ? excludedToolNames : undefined,
         },
         (chunk: TestStreamChunk) => {
           // Trigger spinner on first chunk of any type (text or reasoning)
@@ -192,6 +209,37 @@ export function usePlaygroundStreaming({
           }
           if (chunk.type === 'judging') {
             setIsJudging(true);
+            return;
+          }
+          if (chunk.type === 'tool_start') {
+            try {
+              const evt = JSON.parse(chunk.text);
+              setToolCalls((prev) => ({
+                ...prev,
+                [evt.id]: {
+                  toolName: evt.message?.replace('Calling ', '').replace('\u2026', '') || 'Unknown',
+                  arguments: evt.detail || null,
+                  response: null,
+                  durationMs: null,
+                  error: null,
+                  status: 'calling',
+                },
+              }));
+            } catch { /* ignore parse errors */ }
+            return;
+          }
+          if (chunk.type === 'tool_end') {
+            try {
+              const evt = JSON.parse(chunk.text);
+              setToolCalls((prev) => {
+                const existing = prev[evt.id];
+                if (!existing) return prev;
+                return {
+                  ...prev,
+                  [evt.id]: { ...existing, status: 'complete' },
+                };
+              });
+            } catch { /* ignore parse errors */ }
             return;
           }
           if (!chunk.text) return;
@@ -300,6 +348,7 @@ export function usePlaygroundStreaming({
     hasResponses,
     currentPromptIndex,
     responseCount,
+    toolCalls,
     handleRun,
     handleAbort,
     clearCurrentRun,

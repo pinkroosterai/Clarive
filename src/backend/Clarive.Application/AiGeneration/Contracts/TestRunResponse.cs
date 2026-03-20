@@ -18,7 +18,8 @@ public record TestRunResponse(
     string? RenderedSystemMessage = null,
     List<TestRunPromptResponse>? RenderedPrompts = null,
     int? VersionNumber = null,
-    string? VersionLabel = null
+    string? VersionLabel = null,
+    List<ToolInvocation>? ToolInvocations = null
 );
 
 public record TestStreamChunk(int PromptIndex, string Text, string Type = "text");
@@ -31,5 +32,6 @@ public record TestStreamResult(
     string? Reasoning,
     OutputEvaluation? JudgeScores = null,
     int? VersionNumber = null,
-    string? VersionLabel = null
+    string? VersionLabel = null,
+    List<ToolInvocation>? ToolInvocations = null
 );

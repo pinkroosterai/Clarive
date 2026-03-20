@@ -29,6 +29,12 @@ public class PlaygroundRun : ITenantScoped
     [Column(TypeName = "jsonb")]
     public string? RenderedPrompts { get; set; }
 
+    [Column(TypeName = "jsonb")]
+    public string? ToolInvocations { get; set; }
+
+    [Column(TypeName = "jsonb")]
+    public string? McpServerIds { get; set; }
+
     public int? VersionNumber { get; set; }
     public string? VersionLabel { get; set; }
 

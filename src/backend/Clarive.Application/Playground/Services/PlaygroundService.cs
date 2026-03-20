@@ -5,6 +5,7 @@ using Clarive.AI.Pipeline;
 using Clarive.AI.Prompts;
 using Clarive.AI.Evaluation;
 using Clarive.AI.Configuration;
+using Clarive.Application.McpServers.Contracts;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -25,7 +26,9 @@ public class PlaygroundService(
     IPlaygroundRunService runService,
     IAgentFactory agentFactory,
     IAiUsageLogger usageLogger,
+    IMcpToolProvider mcpToolProvider,
     IOptionsMonitor<AiSettings> aiSettings,
+    ILoggerFactory loggerFactory,
     ILogger<PlaygroundService> logger
 ) : IPlaygroundService
 {
@@ -93,17 +96,56 @@ public class PlaygroundService(
 
         var renderedPromptTexts = new List<TestRunPromptResponse>();
         string? renderedSystemMessage = null;
+        McpToolProgressHandler? toolHandler = null;
 
         var sw = Stopwatch.StartNew();
         try
         {
             using var client = resolved.ChatClient;
 
+            // Fetch MCP tools if servers specified
+            IList<AITool>? mcpTools = null;
+            IChatClient effectiveClient = client;
+
+            if (request.McpServerIds is { Count: > 0 })
+            {
+                mcpTools = await mcpToolProvider.GetToolsAsync(
+                    tenantId, request.McpServerIds, request.ExcludedToolNames, ct);
+
+                if (mcpTools.Count > 0)
+                {
+                    var reporter = new ToolProgressReporter();
+                    toolHandler = new McpToolProgressHandler(reporter);
+
+                    var wrappedClient = new ChatClientBuilder(client)
+                        .Use(inner =>
+                        {
+                            var eefic = new EventEmittingFunctionInvokingChatClient(inner, loggerFactory);
+                            eefic.ToolCallStarting += toolHandler.OnToolCallStartingAsync;
+                            eefic.ToolCallCompleted += toolHandler.OnToolCallCompletedAsync;
+                            return eefic;
+                        })
+                        .Build();
+                    effectiveClient = wrappedClient;
+
+                    // Wire progress events to SSE callback
+                    reporter.OnProgress = async (evt) =>
+                    {
+                        if (onChunk is not null)
+                        {
+                            var payload = JsonSerializer.Serialize(evt, JsonOptions);
+                            await onChunk(new TestStreamChunk(0, payload, evt.Type));
+                        }
+                    };
+                }
+            }
+
             var options = new ChatOptions
             {
                 ModelId = model,
                 Temperature = resolved.IsTemperatureConfigurable ? request.Temperature : null,
                 MaxOutputTokens = request.MaxTokens,
+                Tools = mcpTools is { Count: > 0 } ? mcpTools.ToList() : null,
             };
 
             if (
@@ -150,7 +192,7 @@ public class PlaygroundService(
 
                 var responseText = new StringBuilder();
                 await foreach (
-                    var update in client.GetStreamingResponseAsync(
+                    var update in effectiveClient.GetStreamingResponseAsync(
                         conversationMessages,
                         options,
                         ct
@@ -266,6 +308,14 @@ public class PlaygroundService(
                     : null,
             RenderedSystemMessage = renderedSystemMessage,
             RenderedPrompts = JsonSerializer.Serialize(renderedPromptTexts, JsonOptions),
+            ToolInvocations =
+                toolHandler?.Invocations.Count > 0
+                    ? JsonSerializer.Serialize(toolHandler.Invocations, JsonOptions)
+                    : null,
+            McpServerIds =
+                request.McpServerIds is { Count: > 0 }
+                    ? JsonSerializer.Serialize(request.McpServerIds, JsonOptions)
+                    : null,
             VersionNumber = version.Version,
             VersionLabel = versionLabel,
             CreatedAt = DateTime.UtcNow,
@@ -298,7 +348,10 @@ public class PlaygroundService(
             totalOutputTokens,
             fullReasoning,
             VersionNumber: version.Version,
-            VersionLabel: versionLabel
+            VersionLabel: versionLabel,
+            ToolInvocations: toolHandler?.Invocations.Count > 0
+                ? toolHandler.Invocations.ToList()
+                : null
         );
     }
 

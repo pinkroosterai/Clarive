@@ -36,6 +36,14 @@ public class PlaygroundRunConfiguration : IEntityTypeConfiguration<PlaygroundRun
             .Property(r => r.RenderedPrompts)
             .HasColumnName("rendered_prompts")
             .HasColumnType("jsonb");
+        builder
+            .Property(r => r.ToolInvocations)
+            .HasColumnName("tool_invocations")
+            .HasColumnType("jsonb");
+        builder
+            .Property(r => r.McpServerIds)
+            .HasColumnName("mcp_server_ids")
+            .HasColumnType("jsonb");
         builder.Property(r => r.CreatedAt).HasColumnName("created_at").IsRequired();
 
         builder

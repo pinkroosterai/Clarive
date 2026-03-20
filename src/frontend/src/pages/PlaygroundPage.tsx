@@ -144,6 +144,7 @@ const PlaygroundPage = () => {
     hasResponses,
     currentPromptIndex,
     responseCount,
+    toolCalls,
     handleRun,
     handleAbort,
     clearCurrentRun,
@@ -576,6 +577,7 @@ const PlaygroundPage = () => {
           onFillTemplateFields={templateFields.length > 0 ? handleFillTemplateFields : undefined}
           isFillingTemplateFields={isFillingTemplateFields}
           onClearCurrentRun={clearCurrentRun}
+          toolCalls={toolCalls}
         />
 
         {/* ── History sidebar — overlay on small screens, inline on md+ ── */}

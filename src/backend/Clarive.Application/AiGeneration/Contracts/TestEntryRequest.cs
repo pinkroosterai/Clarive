@@ -8,5 +8,7 @@ public record TestEntryRequest(
     [property: Range(1, int.MaxValue)] int MaxTokens = 4096,
     Dictionary<string, string>? TemplateFields = null,
     [property: StringLength(20)] string? ReasoningEffort = null,
-    bool? ShowReasoning = null
+    bool? ShowReasoning = null,
+    List<Guid>? McpServerIds = null,
+    List<string>? ExcludedToolNames = null
 );
