@@ -1,18 +1,12 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Clarive.AI.Configuration;
-using Clarive.Infrastructure.Security;
 using System.ClientModel;
-using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
-using Clarive.Domain.Interfaces.Repositories;
 using Clarive.AI.Pipeline;
 using Clarive.AI.Prompts;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.OpenAI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -22,7 +16,7 @@ namespace Clarive.AI.Agents;
 /// <summary>
 /// Creates AIAgent instances backed by OpenAI-compatible models.
 /// Singleton lifetime — holds per-action OpenAI clients and hot-reloads on config change.
-/// Resolves API credentials from AI providers in the database.
+/// Delegates provider resolution and credential decryption to IAiProviderResolver.
 /// </summary>
 public class OpenAIAgentFactory : IAgentFactory, IDisposable
 {
@@ -33,8 +27,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<OpenAIAgentFactory> _logger;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IEncryptionService _encryption;
+    private readonly IAiProviderResolver _providerResolver;
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly IDisposable? _changeSubscription;
     private readonly Dictionary<AiActionType, IChatClient> _actionClients = new();
@@ -79,15 +72,13 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
     public OpenAIAgentFactory(
         IOptionsMonitor<AiSettings> optionsMonitor,
-        IServiceScopeFactory scopeFactory,
-        IEncryptionService encryption,
+        IAiProviderResolver providerResolver,
         ILoggerFactory loggerFactory
     )
     {
         _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<OpenAIAgentFactory>();
-        _scopeFactory = scopeFactory;
-        _encryption = encryption;
+        _providerResolver = providerResolver;
 
         Task.Run(() => ReinitializeClientsAsync(optionsMonitor.CurrentValue))
             .GetAwaiter()
@@ -222,7 +213,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         List<AiProvider> providers;
         try
         {
-            providers = await LoadProvidersAsync();
+            providers = await _providerResolver.LoadProvidersAsync();
         }
         catch (Exception ex)
         {
@@ -237,7 +228,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         foreach (var action in ConfigurableActions)
         {
             var config = settings.GetActionConfig(action)!;
-            var resolved = ResolveProviderForModel(providers, config.Model, config.ProviderId);
+            var resolved = _providerResolver.ResolveProviderForModel(providers, config.Model, config.ProviderId);
             if (resolved is null)
             {
                 ResetClients();
@@ -339,65 +330,6 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         {
             _lock.ExitWriteLock();
         }
-    }
-
-    private async Task<List<AiProvider>> LoadProvidersAsync()
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var repo = scope.ServiceProvider.GetRequiredService<IAiProviderRepository>();
-        return await repo.GetAllAsync();
-    }
-
-    internal record ResolvedProvider(
-        string ApiKey,
-        string? EndpointUrl,
-        string ProviderName,
-        AiProviderModel Model
-    );
-
-    internal ResolvedProvider? ResolveProviderForModel(
-        List<AiProvider> providers,
-        string modelId,
-        string? providerId = null
-    )
-    {
-        var activeProviders = providers.Where(p => p.IsActive);
-
-        // When a provider ID is specified, filter to that provider first
-        if (!string.IsNullOrWhiteSpace(providerId) && Guid.TryParse(providerId, out var pid))
-            activeProviders = activeProviders.Where(p => p.Id == pid);
-
-        var match = activeProviders
-            .SelectMany(p => p.Models.Select(m => new { Provider = p, Model = m }))
-            .FirstOrDefault(x =>
-                x.Model.IsActive
-                && x.Model.ModelId.Equals(modelId, StringComparison.OrdinalIgnoreCase)
-            );
-
-        if (match is null || !_encryption.IsAvailable)
-            return null;
-
-        string apiKey;
-        try
-        {
-            apiKey = _encryption.Decrypt(match.Provider.ApiKeyEncrypted);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(
-                ex,
-                "Failed to decrypt API key for provider {ProviderName} (model {ModelId}) — treating as unconfigured",
-                match.Provider.Name,
-                modelId
-            );
-            return null;
-        }
-        return new ResolvedProvider(
-            apiKey,
-            match.Provider.EndpointUrl,
-            match.Provider.Name,
-            match.Model
-        );
     }
 
     public IChatClient CreateChatClient(string model)

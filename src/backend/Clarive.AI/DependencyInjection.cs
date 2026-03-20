@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.Configure<AiSettings>(configuration.GetSection("Ai"));
 
         // ── Agent orchestration ──
+        services.AddSingleton<IAiProviderResolver, AiProviderResolver>();
         services.AddSingleton<IAgentFactory, OpenAIAgentFactory>();
         services.AddSingleton<IAgentSessionPool, AgentSessionPool>();
         services.AddScoped<IPromptOrchestrator, PromptOrchestrator>();
