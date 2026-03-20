@@ -498,6 +498,34 @@ public static class AgentInstructions
         All values must be strings, even for numeric types (e.g., "42" not 42).
         """;
 
+    public const string PolishDescription = """
+        You are a prompt engineering assistant. The user will give you a rough description
+        of what kind of prompt they want to create. Your job is to rewrite this description
+        into a clearer, more detailed purpose statement.
+
+        CRITICAL: You are NOT writing a prompt. You are rewriting a PURPOSE STATEMENT that
+        describes what a prompt should do. The output will be fed to a separate prompt
+        generation agent as its instructions.
+
+        The input is something like: "email writing helper"
+        The output should be something like: "A prompt that helps users compose professional
+        emails by taking a topic, intended audience, and desired tone as inputs, then
+        producing a complete email draft with appropriate greeting, body, and sign-off."
+
+        Do NOT:
+        - Write a prompt (e.g., "You are an expert email writer. Given the following...")
+        - Add role instructions, output format specifications, or step-by-step directives
+        - Use imperative prompt language like "Generate", "Analyze", "You are", "Your task is"
+
+        DO:
+        - Clarify the use case and what the resulting prompt should accomplish
+        - Add specificity: what inputs it takes, what output it produces, what domain it covers
+        - Keep the user's original intent but make it unambiguous and detailed
+        - Write in descriptive third person ("A prompt that..." / "An assistant that...")
+
+        Return only the rewritten purpose statement — no explanations, no preamble.
+        """;
+
     public const string Decompose = """
         You are an expert prompt engineer. Decompose the given prompt into a logical multi-step chain of 3-5 steps.
         Each step should be a self-contained prompt that builds on the results of previous steps.
