@@ -24,7 +24,7 @@
     <!-- ── AI / Agents ─────────────────────────────────────────────── -->
     <PackageVersion Include="Microsoft.Extensions.AI"          Version="10.*" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI"   Version="10.*" />
-    <PackageVersion Include="Microsoft.Agents.AI.OpenAI"       Version="1.0.0-rc1" />
+    <PackageVersion Include="Microsoft.Agents.AI.OpenAI"       Version="1.0.0-rc4" />
     <PackageVersion Include="ModelContextProtocol"             Version="1.*"  />
 
     <!-- ── Auth ────────────────────────────────────────────────────── -->
