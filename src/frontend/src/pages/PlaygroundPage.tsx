@@ -133,8 +133,7 @@ const PlaygroundPage = () => {
   const {
     isStreaming,
     firstTokenReceived,
-    streamedResponses,
-    streamedReasoning,
+    segments,
     error,
     wasStopped,
     rateLimitCountdown,
@@ -146,9 +145,7 @@ const PlaygroundPage = () => {
     lastVersionLabel,
     isJudging,
     hasResponses,
-    currentPromptIndex,
     responseCount,
-    toolCalls,
     conversationLog,
     handleRun,
     handleAbort,
@@ -557,8 +554,7 @@ const PlaygroundPage = () => {
           isChain={isChain}
           isStreaming={isStreaming}
           firstTokenReceived={firstTokenReceived}
-          streamedResponses={streamedResponses}
-          streamedReasoning={streamedReasoning}
+          segments={segments}
           error={error}
           wasStopped={wasStopped}
           rateLimitCountdown={rateLimitCountdown}
@@ -566,7 +562,6 @@ const PlaygroundPage = () => {
           approxOutputTokens={approxOutputTokens}
           lastTokens={lastTokens}
           hasResponses={hasResponses}
-          currentPromptIndex={currentPromptIndex}
           responseCount={responseCount}
           responseAreaRef={responseAreaRef}
           templateFields={templateFields}
@@ -588,8 +583,6 @@ const PlaygroundPage = () => {
           onFillTemplateFields={templateFields.length > 0 ? handleFillTemplateFields : undefined}
           isFillingTemplateFields={isFillingTemplateFields}
           onClearCurrentRun={clearCurrentRun}
-          toolCalls={toolCalls}
-          conversationLog={conversationLog}
         />
 
         {/* ── History sidebar — overlay on small screens, inline on md+ ── */}

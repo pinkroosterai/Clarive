@@ -5,11 +5,11 @@ import { toast } from 'sonner';
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import {
   testEntry,
-  type TestStreamChunk,
   type Evaluation,
   type ConversationMessage,
+  type ConversationStreamEvent,
 } from '@/services/api/playgroundService';
-import type { ProgressEvent, TemplateField } from '@/types';
+import type { TemplateField } from '@/types';
 
 // ── Streaming status thresholds ──
 
@@ -32,14 +32,11 @@ function estimateTokens(charCount: number): number {
 
 // ── Hook interface ──
 
-export interface ToolCallState {
-  toolName: string;
-  arguments: string | null;
-  response: string | null;
-  durationMs: number | null;
-  error: string | null;
-  status: 'calling' | 'complete' | 'error';
-}
+export type StreamSegment =
+  | { type: 'reasoning'; text: string }
+  | { type: 'tool_call'; callId: string; toolName: string; arguments?: string | null }
+  | { type: 'tool_result'; callId: string; response?: string | null; error?: string | null; durationMs?: number | null }
+  | { type: 'response'; text: string };
 
 export interface UsePlaygroundStreamingOptions {
   entryId: string | undefined;
@@ -74,8 +71,7 @@ export function usePlaygroundStreaming({
   const [isStreaming, setIsStreaming] = useState(false);
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
   const firstTokenRef = useRef(false);
-  const [streamedResponses, setStreamedResponses] = useState<Record<number, string>>({});
-  const [streamedReasoning, setStreamedReasoning] = useState<Record<number, string>>({});
+  const [segments, setSegments] = useState<StreamSegment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [wasStopped, setWasStopped] = useState(false);
   const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
@@ -95,7 +91,6 @@ export function usePlaygroundStreaming({
   const [lastJudgeScores, setLastJudgeScores] = useState<Evaluation | null>(null);
   const [lastVersionLabel, setLastVersionLabel] = useState<string | null>(null);
   const [isJudging, setIsJudging] = useState(false);
-  const [toolCalls, setToolCalls] = useState<Record<string, ToolCallState>>({});
   const [conversationLog, setConversationLog] = useState<ConversationMessage[] | null>(null);
 
   // ── Scroll refs ──
@@ -143,21 +138,17 @@ export function usePlaygroundStreaming({
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
       scrollRafRef.current = null;
     });
-  }, [streamedResponses, streamedReasoning, isStreaming]);
+  }, [segments, isStreaming]);
 
   // ── Derived values ──
-  // Which prompt is currently being processed? Defaults to 0 when streaming
-  // starts (before any content arrives), so the spinner shows immediately.
-  const currentPromptIndex = useMemo(() => {
-    if (!isStreaming) return -1;
-    const indices = new Set([
-      ...Object.keys(streamedResponses).map(Number),
-      ...Object.keys(streamedReasoning).map(Number),
-    ]);
-    return indices.size > 0 ? Math.max(...indices) : 0;
-  }, [streamedResponses, streamedReasoning, isStreaming]);
-  const responseCount = useMemo(() => Object.keys(streamedResponses).length, [streamedResponses]);
-  const hasResponses = responseCount > 0;
+  const hasResponses = useMemo(
+    () => segments.some((s) => s.type === 'response' && s.text),
+    [segments]
+  );
+  const responseCount = useMemo(
+    () => segments.filter((s) => s.type === 'response').length,
+    [segments]
+  );
 
   // ── Handlers ──
   const handleRun = useCallback(async () => {
@@ -165,8 +156,7 @@ export function usePlaygroundStreaming({
     setIsStreaming(true);
     setFirstTokenReceived(false);
     firstTokenRef.current = false;
-    setStreamedResponses({});
-    setStreamedReasoning({});
+    setSegments([]);
     setError(null);
     setWasStopped(false);
     isAutoFollowRef.current = true;
@@ -180,7 +170,6 @@ export function usePlaygroundStreaming({
     setLastJudgeScores(null);
     setLastVersionLabel(null);
     setIsJudging(false);
-    setToolCalls({});
     setConversationLog(null);
     setElapsedSeconds(0);
     setApproxOutputTokens(0);
@@ -208,52 +197,58 @@ export function usePlaygroundStreaming({
           mcpServerIds: mcpServerIds?.length ? mcpServerIds : undefined,
           excludedToolNames: excludedToolNames?.length ? excludedToolNames : undefined,
         },
-        (chunk: TestStreamChunk) => {
-          // Trigger spinner on first chunk of any type (text or reasoning)
-          if (!firstTokenRef.current && chunk.text !== undefined) {
+        (evt: ConversationStreamEvent) => {
+          // Trigger spinner on first event
+          if (!firstTokenRef.current) {
             firstTokenRef.current = true;
             setFirstTokenReceived(true);
           }
-          if (chunk.type === 'judging') {
+
+          if (evt.type === 'judging') {
             setIsJudging(true);
             return;
           }
-          if (!chunk.text) return;
-          if (chunk.type === 'reasoning') {
-            setStreamedReasoning((prev) => ({
-              ...prev,
-              [chunk.promptIndex]: (prev[chunk.promptIndex] || '') + chunk.text,
-            }));
-          } else {
-            streamedTextLengthRef.current += chunk.text.length;
-            setStreamedResponses((prev) => ({
-              ...prev,
-              [chunk.promptIndex]: (prev[chunk.promptIndex] || '') + chunk.text,
-            }));
-          }
-        },
-        (evt: ProgressEvent) => {
-          if (evt.type === 'tool_start') {
-            setToolCalls((prev) => ({
-              ...prev,
-              [evt.id]: {
-                toolName: evt.message?.replace('Calling ', '').replace('\u2026', '') || 'Unknown',
-                arguments: evt.detail || null,
-                response: null,
-                durationMs: null,
-                error: null,
-                status: 'calling',
-              },
-            }));
-          } else if (evt.type === 'tool_end') {
-            setToolCalls((prev) => {
-              const existing = prev[evt.id];
-              if (!existing) return prev;
-              return {
-                ...prev,
-                [evt.id]: { ...existing, status: 'complete' },
-              };
+
+          if (evt.type === 'reasoning' && evt.text) {
+            setSegments((prev) => {
+              const last = prev[prev.length - 1];
+              if (last?.type === 'reasoning') {
+                // Extend existing reasoning segment
+                return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
+              }
+              return [...prev, { type: 'reasoning', text: evt.text! }];
             });
+          } else if (evt.type === 'text' && evt.text) {
+            streamedTextLengthRef.current += evt.text.length;
+            setSegments((prev) => {
+              const last = prev[prev.length - 1];
+              if (last?.type === 'response') {
+                // Extend existing response segment
+                return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
+              }
+              return [...prev, { type: 'response', text: evt.text! }];
+            });
+          } else if (evt.type === 'tool_start' && evt.callId) {
+            setSegments((prev) => [
+              ...prev,
+              {
+                type: 'tool_call',
+                callId: evt.callId!,
+                toolName: evt.toolName ?? 'Unknown',
+                arguments: evt.arguments,
+              },
+            ]);
+          } else if (evt.type === 'tool_end' && evt.callId) {
+            setSegments((prev) => [
+              ...prev,
+              {
+                type: 'tool_result',
+                callId: evt.callId!,
+                response: evt.result,
+                error: evt.error,
+                durationMs: evt.durationMs,
+              },
+            ]);
           }
         },
         controller.signal
@@ -267,28 +262,9 @@ export function usePlaygroundStreaming({
       setLastVersionLabel(result.versionLabel ?? null);
       setIsJudging(false);
 
-      // Populate toolCalls from conversationLog with full data (args, response, duration)
+      // Store conversation log for pinned run rendering
       if (result.conversationLog?.length) {
         setConversationLog(result.conversationLog);
-        const resultMap = new Map<string, ConversationMessage>();
-        for (const msg of result.conversationLog) {
-          if (msg.role === 'tool_result' && msg.callId) resultMap.set(msg.callId, msg);
-        }
-        const calls: Record<string, ToolCallState> = {};
-        for (const msg of result.conversationLog) {
-          if (msg.role === 'tool_call' && msg.callId) {
-            const resultMsg = resultMap.get(msg.callId);
-            calls[msg.callId] = {
-              toolName: msg.toolName ?? 'Unknown',
-              arguments: msg.arguments ?? null,
-              response: resultMsg?.content ?? null,
-              durationMs: resultMsg?.durationMs ?? null,
-              error: resultMsg?.error ?? null,
-              status: resultMsg ? (resultMsg.error ? 'error' : 'complete') : 'complete',
-            };
-          }
-        }
-        if (Object.keys(calls).length > 0) setToolCalls(calls);
       }
 
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
@@ -343,8 +319,7 @@ export function usePlaygroundStreaming({
   }, []);
 
   const clearCurrentRun = useCallback(() => {
-    setStreamedResponses({});
-    setStreamedReasoning({});
+    setSegments([]);
     setError(null);
     setWasStopped(false);
     setLastTokens(null);
@@ -359,8 +334,7 @@ export function usePlaygroundStreaming({
   return {
     isStreaming,
     firstTokenReceived,
-    streamedResponses,
-    streamedReasoning,
+    segments,
     error,
     wasStopped,
     rateLimitCountdown,
@@ -372,9 +346,7 @@ export function usePlaygroundStreaming({
     lastVersionLabel,
     isJudging,
     hasResponses,
-    currentPromptIndex,
     responseCount,
-    toolCalls,
     conversationLog,
     handleRun,
     handleAbort,

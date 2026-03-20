@@ -1,27 +1,25 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using Humanizer;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
 namespace Clarive.AI.Pipeline;
 
 /// <summary>
-/// A <see cref="FunctionInvokingChatClient"/> that emits events before and after each tool invocation.
+/// A <see cref="FunctionInvokingChatClient"/> that emits a unified stream of conversation events
+/// covering text chunks, reasoning chunks, tool call starts, and tool call completions.
+/// All events flow through <see cref="OnStreamEvent"/> in chronological order.
 /// </summary>
-/// <remarks>
-/// <para>
-/// Subscribe to <see cref="ToolCallStarting"/> and <see cref="ToolCallCompleted"/> to observe every
-/// function invocation that flows through the pipeline. Both events support asynchronous handlers.
-/// </para>
-/// <para>
-/// <strong>Thread safety:</strong> When <see cref="FunctionInvokingChatClient.AllowConcurrentInvocation"/>
-/// is <see langword="true"/>, multiple <see cref="InvokeFunctionAsync"/> calls may execute in parallel.
-/// Event handlers must be safe for concurrent invocation or coordinate their own synchronization.
-/// </para>
-/// </remarks>
 public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClient
 {
+    /// <summary>
+    /// Single callback for all conversation stream events (text, reasoning, tool calls).
+    /// Set this before calling GetStreamingResponseAsync.
+    /// </summary>
+    public Func<ConversationStreamEvent, Task>? OnStreamEvent { get; set; }
+
     /// <summary>
     /// Raised immediately before a function is invoked.
     /// </summary>
@@ -32,9 +30,6 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
     /// </summary>
     public event Func<object, ToolCallCompletedEventArgs, Task>? ToolCallCompleted;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EventEmittingFunctionInvokingChatClient"/> class.
-    /// </summary>
     public EventEmittingFunctionInvokingChatClient(
         IChatClient innerClient,
         ILoggerFactory? loggerFactory = null,
@@ -42,9 +37,6 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
     )
         : base(innerClient, loggerFactory, functionInvocationServices) { }
 
-    /// <summary>
-    /// Called when a <see cref="ToolCallCompleted"/> handler throws inside the <c>finally</c> block.
-    /// </summary>
     protected virtual void OnCompletedHandlerException(
         Exception handlerException,
         Exception? functionException
@@ -59,7 +51,21 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
         CancellationToken cancellationToken
     )
     {
-        // ── Raise "starting" event ──
+        var argsJson = context.Arguments is { Count: > 0 }
+            ? JsonSerializer.Serialize(context.Arguments)
+            : null;
+
+        // ── Emit tool_start via unified stream ──
+        if (OnStreamEvent is { } streamHandler)
+        {
+            await streamHandler(ConversationStreamEvent.ToolCallStart(
+                context.Function.Name,
+                context.CallContent.CallId,
+                argsJson
+            ));
+        }
+
+        // ── Raise legacy "starting" event ──
         var startingHandler = ToolCallStarting;
         if (startingHandler is not null)
         {
@@ -99,8 +105,26 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
         finally
         {
             stopwatch.Stop();
+            var durationMs = (long)stopwatch.Elapsed.TotalMilliseconds;
+            var resultStr = result?.ToString()?.Truncate(10000);
+            var errorStr = caughtException?.Message;
 
-            // ── Raise "completed" event ──
+            // ── Emit tool_end via unified stream ──
+            if (OnStreamEvent is { } endHandler)
+            {
+                try
+                {
+                    await endHandler(ConversationStreamEvent.ToolCallEnd(
+                        context.CallContent.CallId,
+                        resultStr,
+                        errorStr,
+                        durationMs
+                    ));
+                }
+                catch { /* swallow handler errors in finally */ }
+            }
+
+            // ── Raise legacy "completed" event ──
             var completedHandler = ToolCallCompleted;
             if (completedHandler is not null)
             {
@@ -131,9 +155,7 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
                 {
                     OnCompletedHandlerException(handlerEx, caughtException);
 
-                    // If the function itself did NOT throw, propagate the handler
-                    // exception so it is not silently lost.
-#pragma warning disable S1163, CA2219 // Intentional: re-throw handler exception only when no function exception
+#pragma warning disable S1163, CA2219
                     if (caughtException is null)
                     {
                         throw;

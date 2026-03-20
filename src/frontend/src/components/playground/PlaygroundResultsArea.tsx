@@ -261,8 +261,7 @@ interface PlaygroundResultsAreaProps {
   // Streaming state
   isStreaming: boolean;
   firstTokenReceived: boolean;
-  streamedResponses: Record<number, string>;
-  streamedReasoning: Record<number, string>;
+  segments: import('@/hooks/usePlaygroundStreaming').StreamSegment[];
   error: string | null;
   wasStopped: boolean;
   rateLimitCountdown: number;
@@ -270,7 +269,6 @@ interface PlaygroundResultsAreaProps {
   approxOutputTokens: number;
   lastTokens: { input: number | null; output: number | null } | null;
   hasResponses: boolean;
-  currentPromptIndex: number;
   responseCount: number;
   responseAreaRef: RefObject<HTMLDivElement | null>;
   // Template state
@@ -300,10 +298,6 @@ interface PlaygroundResultsAreaProps {
   isFillingTemplateFields?: boolean;
   // Clear current run from comparison
   onClearCurrentRun?: () => void;
-  // Tool calls (streaming)
-  toolCalls?: Record<string, { toolName: string; arguments: string | null; response: string | null; durationMs: number | null; error: string | null; status: 'calling' | 'complete' | 'error' }>;
-  // Conversation log (completed run)
-  conversationLog?: import('./ConversationView').ConversationMessage[] | null;
 }
 
 export default function PlaygroundResultsArea({
@@ -311,8 +305,7 @@ export default function PlaygroundResultsArea({
   isChain,
   isStreaming,
   firstTokenReceived,
-  streamedResponses,
-  streamedReasoning,
+  segments,
   error,
   wasStopped,
   rateLimitCountdown,
@@ -320,7 +313,6 @@ export default function PlaygroundResultsArea({
   approxOutputTokens,
   lastTokens,
   hasResponses,
-  currentPromptIndex,
   responseCount,
   responseAreaRef,
   templateFields,
@@ -342,8 +334,6 @@ export default function PlaygroundResultsArea({
   onFillTemplateFields,
   isFillingTemplateFields,
   onClearCurrentRun,
-  toolCalls,
-  conversationLog,
 }: PlaygroundResultsAreaProps) {
   const hasPins = pinnedRuns.length > 0;
   const [showPrompts, setShowPrompts] = useState(false);
@@ -588,75 +578,63 @@ export default function PlaygroundResultsArea({
                     </div>
                   ))}
 
-                  {/* ── Row 2: Response content (stretches to tallest) ── */}
+                  {/* ── Row 2: Response content — unified segment timeline ── */}
                   {hasCurrentRun && (
-                    <div className="space-y-3 self-start min-w-0">
-                      {/* Single rendering path for current run — works during and after streaming */}
-                      {prompts.map((_p, i) => {
-                        const renderedContent = renderTemplate(_p.content, fieldValues);
-                        return (
-                          <div key={i}>
-                            {showPrompts && (
-                              <div className="bg-elevated/30 rounded-md p-3 border border-border-subtle mb-3">
-                                {(prompts.length > 1) && (
-                                  <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
-                                    Prompt {i + 1}
-                                  </div>
-                                )}
-                                <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
-                                  {renderedContent}
-                                </div>
-                              </div>
-                            )}
-                            {!showPrompts && prompts.length > 1 && (
-                              <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                            )}
-                            {streamedReasoning[i] && (
+                    <div className="space-y-2 self-start min-w-0">
+                      {segments.map((seg, idx) => {
+                        switch (seg.type) {
+                          case 'reasoning':
+                            return (
                               <ReasoningBlock
-                                reasoning={streamedReasoning[i]}
+                                key={`seg-${idx}`}
+                                reasoning={seg.text}
                                 isStreaming={isStreaming}
                               />
-                            )}
-                            {/* Tool calls — show during streaming AND after completion */}
-                            {i === 0 && toolCalls && Object.keys(toolCalls).length > 0 && (
-                              <div className="bg-elevated/20 border-l-2 border-l-accent rounded-r-md py-2 px-3 space-y-1 my-2">
-                                <div className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider mb-1">
-                                  Tool Activity
-                                </div>
-                                {Object.entries(toolCalls).map(([callId, tc]) => (
-                                  <ToolCallBlock
-                                    key={callId}
-                                    toolName={tc.toolName}
-                                    arguments={tc.arguments}
-                                    response={tc.response}
-                                    durationMs={tc.durationMs}
-                                    error={tc.error}
-                                    status={tc.status}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                              {streamedResponses[i] !== undefined ? (
+                            );
+                          case 'tool_call': {
+                            // Find matching tool_result in segments
+                            const result = segments.find(
+                              (s) => s.type === 'tool_result' && s.callId === seg.callId
+                            );
+                            const toolResult = result?.type === 'tool_result' ? result : undefined;
+                            return (
+                              <ToolCallBlock
+                                key={`seg-${idx}`}
+                                toolName={seg.toolName}
+                                arguments={seg.arguments ?? null}
+                                response={toolResult?.response ?? null}
+                                durationMs={toolResult?.durationMs ?? null}
+                                error={toolResult?.error ?? null}
+                                status={toolResult ? (toolResult.error ? 'error' : 'complete') : 'calling'}
+                              />
+                            );
+                          }
+                          case 'tool_result':
+                            return null; // Rendered as part of tool_call above
+                          case 'response':
+                            return (
+                              <div key={`seg-${idx}`} className="relative group rounded-lg border border-border-subtle bg-surface p-4">
                                 <LLMResponseBlock
-                                  output={streamedResponses[i]}
+                                  output={seg.text}
                                   isStreaming={isStreaming}
                                 />
-                              ) : (
-                                <span className="text-xs text-foreground-muted">—</span>
-                              )}
-                              {streamedResponses[i] && !isStreaming && (
-                                <CopyButton
-                                  text={streamedResponses[i]}
-                                  index={2000 + i}
-                                  copiedIndex={copiedIndex}
-                                  onCopy={handleCopy}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        );
+                                {!isStreaming && seg.text && (
+                                  <CopyButton
+                                    text={seg.text}
+                                    index={2000 + idx}
+                                    copiedIndex={copiedIndex}
+                                    onCopy={handleCopy}
+                                  />
+                                )}
+                              </div>
+                            );
+                          default:
+                            return null;
+                        }
                       })}
+                      {segments.length === 0 && isStreaming && (
+                        <span className="text-xs text-foreground-muted">—</span>
+                      )}
                     </div>
                   )}
 

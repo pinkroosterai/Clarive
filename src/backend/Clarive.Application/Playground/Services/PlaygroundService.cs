@@ -43,8 +43,7 @@ public class PlaygroundService(
         Guid entryId,
         TestEntryRequest request,
         CancellationToken ct,
-        Func<TestStreamChunk, Task>? onChunk = null,
-        Func<ProgressEvent, Task>? onProgress = null
+        Func<ConversationStreamEvent, Task>? onEvent = null
     )
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
@@ -89,7 +88,6 @@ public class PlaygroundService(
 
         var resolved = resolvedResult.Value;
 
-        // ── Conversation log builder ──
         var logBuilder = new ConversationLogBuilder();
         long? totalInputTokens = null;
         long? totalOutputTokens = null;
@@ -100,7 +98,7 @@ public class PlaygroundService(
         {
             using var client = resolved.ChatClient;
 
-            // Fetch MCP tools if servers specified — toolSet keeps connections alive
+            // Fetch MCP tools if servers specified
             IList<AITool>? mcpTools = null;
             IChatClient effectiveClient = client;
 
@@ -110,33 +108,19 @@ public class PlaygroundService(
                     tenantId, request.McpServerIds, request.ExcludedToolNames, ct);
                 mcpTools = mcpToolSet.Tools;
 
-                logger.LogInformation(
-                    "Playground: {ToolCount} MCP tools loaded for run. Names: {ToolNames}",
-                    mcpTools.Count,
-                    string.Join(", ", mcpTools.Select(t => t is AIFunction f ? f.Name : t.GetType().Name))
-                );
-
                 if (mcpTools.Count > 0)
                 {
-                    var reporter = new ToolProgressReporter();
-                    var toolHandler = new McpToolProgressHandler(reporter);
+                    var eefic = new EventEmittingFunctionInvokingChatClient(client, loggerFactory);
 
-                    var wrappedClient = new ChatClientBuilder(client)
-                        .UseLogging(loggerFactory)
-                        .Use(inner =>
-                        {
-                            var eefic = new EventEmittingFunctionInvokingChatClient(inner, loggerFactory);
-                            eefic.ToolCallStarting += toolHandler.OnToolCallStartingAsync;
-                            eefic.ToolCallCompleted += toolHandler.OnToolCallCompletedAsync;
-                            eefic.ToolCallStarting += logBuilder.OnToolCallStartingAsync;
-                            eefic.ToolCallCompleted += logBuilder.OnToolCallCompletedAsync;
-                            return eefic;
-                        })
-                        .Build();
-                    effectiveClient = wrappedClient;
+                    // Wire unified stream — tool events go through OnStreamEvent
+                    // alongside text/reasoning events emitted below in the streaming loop
+                    eefic.OnStreamEvent = onEvent;
 
-                    // Wire tool progress events directly to onProgress
-                    reporter.OnProgress = onProgress;
+                    // Also wire tool events to conversation log builder
+                    eefic.ToolCallStarting += logBuilder.OnToolCallStartingAsync;
+                    eefic.ToolCallCompleted += logBuilder.OnToolCallCompletedAsync;
+
+                    effectiveClient = eefic;
                 }
             }
 
@@ -195,6 +179,10 @@ public class PlaygroundService(
                 var responseText = new StringBuilder();
                 var reasoningText = new StringBuilder();
 
+                // Stream from the effective client (EEFIC wraps if tools enabled)
+                // Text/reasoning events are emitted here via onEvent.
+                // Tool events are emitted by EEFIC.OnStreamEvent during InvokeFunctionAsync.
+                // All flow through the same onEvent callback in chronological order.
                 await foreach (
                     var update in effectiveClient.GetStreamingResponseAsync(
                         conversationMessages,
@@ -210,22 +198,22 @@ public class PlaygroundService(
                             if (isThinking)
                             {
                                 reasoningText.Append(segText);
-                                if (onChunk is not null)
-                                    await onChunk(new TestStreamChunk(i, segText, "reasoning"));
+                                if (onEvent is not null)
+                                    await onEvent(ConversationStreamEvent.ReasoningChunk(i, segText));
                             }
                             else
                             {
                                 responseText.Append(segText);
-                                if (onChunk is not null)
-                                    await onChunk(new TestStreamChunk(i, segText, "text"));
+                                if (onEvent is not null)
+                                    await onEvent(ConversationStreamEvent.TextChunk(i, segText));
                             }
                         }
                     }
                     else if (update.Text is not null)
                     {
                         responseText.Append(update.Text);
-                        if (onChunk is not null)
-                            await onChunk(new TestStreamChunk(i, update.Text, "text"));
+                        if (onEvent is not null)
+                            await onEvent(ConversationStreamEvent.TextChunk(i, update.Text));
                     }
 
                     if (thinkParser is null)
@@ -236,10 +224,8 @@ public class PlaygroundService(
                         if (reasoningContent?.Text is not null)
                         {
                             reasoningText.Append(reasoningContent.Text);
-                            if (onChunk is not null)
-                                await onChunk(
-                                    new TestStreamChunk(i, reasoningContent.Text, "reasoning")
-                                );
+                            if (onEvent is not null)
+                                await onEvent(ConversationStreamEvent.ReasoningChunk(i, reasoningContent.Text));
                         }
                     }
 
@@ -261,14 +247,14 @@ public class PlaygroundService(
                         if (isThinking)
                         {
                             reasoningText.Append(segText);
-                            if (onChunk is not null)
-                                await onChunk(new TestStreamChunk(i, segText, "reasoning"));
+                            if (onEvent is not null)
+                                await onEvent(ConversationStreamEvent.ReasoningChunk(i, segText));
                         }
                         else
                         {
                             responseText.Append(segText);
-                            if (onChunk is not null)
-                                await onChunk(new TestStreamChunk(i, segText, "text"));
+                            if (onEvent is not null)
+                                await onEvent(ConversationStreamEvent.TextChunk(i, segText));
                         }
                     }
                 }
@@ -287,7 +273,6 @@ public class PlaygroundService(
         }
         finally
         {
-            // Dispose MCP connections after the run completes (or fails)
             if (mcpToolSet is not null)
                 await mcpToolSet.DisposeAsync();
         }
@@ -358,7 +343,6 @@ public class PlaygroundService(
         var prompts = version.Prompts.OrderBy(p => p.Order).ToList();
         var promptInputs = prompts.Select(p => new PromptInput(p.Content, p.IsTemplate)).ToList();
 
-        // Extract responses from conversation log for judge
         List<TestRunPromptResponse> responses;
         try
         {

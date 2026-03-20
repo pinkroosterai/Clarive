@@ -1,5 +1,6 @@
 using Clarive.AI.Agents;
 using Clarive.AI.Orchestration;
+using Clarive.AI.Pipeline;
 using Clarive.Api.Helpers;
 using Clarive.Domain.ValueObjects;
 
@@ -107,8 +108,7 @@ public static class PlaygroundEndpoints
                 entryId,
                 request,
                 ct,
-                chunk => sse.WriteChunkAsync(chunk, ct),
-                progress => sse.WriteProgressAsync(progress, ct)
+                evt => sse.WriteChunkAsync(evt, ct)
             );
 
             if (result.IsError)
@@ -122,7 +122,7 @@ public static class PlaygroundEndpoints
             else
             {
                 var testResult = result.Value;
-                await sse.WriteChunkAsync(new TestStreamChunk(-1, "", "judging"), ct);
+                await sse.WriteChunkAsync(ConversationStreamEvent.Judging(), ct);
                 var judgeResult = await playground.JudgePlaygroundRunAsync(
                     tenantId,
                     userId,

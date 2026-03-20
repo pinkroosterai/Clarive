@@ -1,11 +1,16 @@
 import { api } from './apiClient';
 
-import type { ProgressEvent } from '@/types';
-
-export interface TestStreamChunk {
-  promptIndex: number;
-  text: string;
-  type?: 'text' | 'reasoning';
+/** Unified conversation stream event — carries text, reasoning, tool calls, and tool results in one channel */
+export interface ConversationStreamEvent {
+  type: 'text' | 'reasoning' | 'tool_start' | 'tool_end' | 'judging';
+  text?: string;
+  toolName?: string;
+  callId?: string;
+  arguments?: string;
+  result?: string;
+  error?: string;
+  durationMs?: number;
+  promptIndex?: number;
 }
 
 export interface ConversationMessage {
@@ -69,8 +74,7 @@ export interface TestEntryParams {
 export async function testEntry(
   entryId: string,
   params: TestEntryParams,
-  onChunk?: (chunk: TestStreamChunk) => void,
-  onProgress?: (event: ProgressEvent) => void,
+  onEvent?: (event: ConversationStreamEvent) => void,
   signal?: AbortSignal
 ): Promise<TestStreamResult> {
   const body = {
@@ -84,17 +88,12 @@ export async function testEntry(
     excludedToolNames: params.excludedToolNames,
   };
 
-  if (onChunk) {
+  if (onEvent) {
     return api.postSSE<TestStreamResult>(
       `/api/entries/${entryId}/test`,
       body,
       (event) => {
-        // Dispatch by shape: TestStreamChunk has promptIndex, ProgressEvent has id
-        if ('promptIndex' in event) {
-          onChunk(event as unknown as TestStreamChunk);
-        } else if (onProgress) {
-          onProgress(event);
-        }
+        onEvent(event as unknown as ConversationStreamEvent);
       },
       signal
     );
