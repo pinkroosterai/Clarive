@@ -14,6 +14,7 @@ public class McpImportService(
 {
     private const int MaxTools = 100;
     private const int TimeoutSeconds = 15;
+    private const int MaxInputSchemaBytes = 65_536; // 64 KB
 
     public async Task<McpImportResult> ImportToolsAsync(
         string serverUrl,
@@ -76,10 +77,7 @@ public class McpImportService(
                     Name = (mcp.Title ?? mcp.Name.Humanize(LetterCasing.Sentence)).Truncate(100),
                     ToolName = mcp.Name.Truncate(100),
                     Description = (mcp.Description ?? "").Truncate(500),
-                    InputSchema =
-                        mcp.JsonSchema.ValueKind != System.Text.Json.JsonValueKind.Undefined
-                            ? JsonNode.Parse(mcp.JsonSchema.GetRawText())
-                            : null,
+                    InputSchema = ParseAndValidateSchema(mcp.JsonSchema),
                     CreatedAt = DateTime.UtcNow,
                 }
             );
@@ -90,5 +88,17 @@ public class McpImportService(
             await toolRepo.CreateManyAsync(newTools, ct);
 
         return new McpImportResult(newTools, skippedCount);
+    }
+
+    private static JsonNode? ParseAndValidateSchema(System.Text.Json.JsonElement jsonSchema)
+    {
+        if (jsonSchema.ValueKind == System.Text.Json.JsonValueKind.Undefined)
+            return null;
+
+        var raw = jsonSchema.GetRawText();
+        if (raw.Length > MaxInputSchemaBytes)
+            return null; // Skip oversized schemas silently
+
+        return JsonNode.Parse(raw);
     }
 }

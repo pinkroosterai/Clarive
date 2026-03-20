@@ -1,4 +1,6 @@
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Entities;
@@ -84,6 +86,10 @@ public static partial class ToolEndpoints
                 "toolName must contain only letters, numbers, underscores, dots, and hyphens.."
             );
 
+        var schemaError = ValidateInputSchema(request.InputSchema);
+        if (schemaError is not null)
+            return ctx.ErrorResult(422, "VALIDATION_ERROR", schemaError);
+
         var tool = await toolRepo.CreateAsync(
             new ToolDescription
             {
@@ -134,6 +140,10 @@ public static partial class ToolEndpoints
                 "VALIDATION_ERROR",
                 "toolName must be 100 characters or fewer."
             );
+
+        var schemaError = ValidateInputSchema(request.InputSchema);
+        if (schemaError is not null)
+            return ctx.ErrorResult(422, "VALIDATION_ERROR", schemaError);
 
         if (request.Name is not null)
             tool.Name = request.Name.Trim();
@@ -225,6 +235,60 @@ public static partial class ToolEndpoints
                 "The MCP server returned an invalid response."
             );
         }
+    }
+
+    private const int MaxInputSchemaBytes = 65_536; // 64 KB
+    private const int MaxInputSchemaDepth = 10;
+
+    /// <summary>
+    /// Validates that an inputSchema is within size and nesting depth limits.
+    /// Returns an error message if invalid, or null if valid.
+    /// </summary>
+    internal static string? ValidateInputSchema(JsonNode? schema)
+    {
+        if (schema is null)
+            return null;
+
+        var json = schema.ToJsonString();
+        if (json.Length > MaxInputSchemaBytes)
+            return $"inputSchema must be {MaxInputSchemaBytes / 1024} KB or smaller.";
+
+        if (GetJsonDepth(schema) > MaxInputSchemaDepth)
+            return $"inputSchema nesting depth must not exceed {MaxInputSchemaDepth} levels.";
+
+        return null;
+    }
+
+    private static int GetJsonDepth(JsonNode? node)
+    {
+        if (node is null)
+            return 0;
+
+        if (node is JsonObject obj)
+        {
+            var maxChild = 0;
+            foreach (var kvp in obj)
+            {
+                var childDepth = GetJsonDepth(kvp.Value);
+                if (childDepth > maxChild)
+                    maxChild = childDepth;
+            }
+            return 1 + maxChild;
+        }
+
+        if (node is JsonArray arr)
+        {
+            var maxChild = 0;
+            foreach (var item in arr)
+            {
+                var childDepth = GetJsonDepth(item);
+                if (childDepth > maxChild)
+                    maxChild = childDepth;
+            }
+            return 1 + maxChild;
+        }
+
+        return 1; // JsonValue (leaf)
     }
 
     private static bool IsLoopbackHost(string host) =>
