@@ -110,6 +110,12 @@ public class PlaygroundService(
                     tenantId, request.McpServerIds, request.ExcludedToolNames, ct);
                 mcpTools = mcpToolSet.Tools;
 
+                logger.LogInformation(
+                    "Playground: {ToolCount} MCP tools loaded for run. Names: {ToolNames}",
+                    mcpTools.Count,
+                    string.Join(", ", mcpTools.Select(t => t is AIFunction f ? f.Name : t.GetType().Name))
+                );
+
                 if (mcpTools.Count > 0)
                 {
                     var reporter = new ToolProgressReporter();
