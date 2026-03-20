@@ -1,7 +1,9 @@
 using System.Text.Json.Nodes;
+using Clarive.Application.Common;
 using Clarive.Application.McpServers.Contracts;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
+using Clarive.Infrastructure.Data;
 using Clarive.Infrastructure.Security;
 using ErrorOr;
 using Humanizer;
@@ -15,6 +17,7 @@ public class McpServerService(
     IToolRepository toolRepo,
     IEncryptionService encryptionService,
     IHttpClientFactory httpClientFactory,
+    ClariveDbContext db,
     ILogger<McpServerService> logger
 ) : IMcpServerService
 {
@@ -93,7 +96,7 @@ public class McpServerService(
             return Error.NotFound("MCP_SERVER_NOT_FOUND", "MCP server not found.");
 
         // Delete all tools synced from this server first
-        await toolRepo.DeleteByServerIdAsync(serverId, ct);
+        await toolRepo.DeleteByServerIdAsync(tenantId, serverId, ct);
         await serverRepo.DeleteAsync(tenantId, serverId, ct);
         return Result.Deleted;
     }
@@ -116,18 +119,21 @@ public class McpServerService(
 
             var newTools = await FetchAndMapToolsAsync(server.Url, bearerToken, tenantId, serverId, ct);
 
-            // Clean-replace: delete all existing tools for this server, then create fresh
-            await toolRepo.DeleteByServerIdAsync(serverId, ct);
+            // Clean-replace in a transaction so delete+create+update are atomic
+            await db.Database.InTransactionAsync(async () =>
+            {
+                await toolRepo.DeleteByServerIdAsync(tenantId, serverId, ct);
 
-            if (newTools.Count > 0)
-                await toolRepo.CreateManyAsync(newTools, ct);
+                if (newTools.Count > 0)
+                    await toolRepo.CreateManyAsync(newTools, ct);
 
-            server.ToolCount = newTools.Count;
-            server.LastSyncedAt = DateTime.UtcNow;
-            server.NextSyncAt = CalculateNextSync();
-            server.LastSyncError = null;
-            server.UpdatedAt = DateTime.UtcNow;
-            await serverRepo.UpdateAsync(server, ct);
+                server.ToolCount = newTools.Count;
+                server.LastSyncedAt = DateTime.UtcNow;
+                server.NextSyncAt = CalculateNextSync();
+                server.LastSyncError = null;
+                server.UpdatedAt = DateTime.UtcNow;
+                await serverRepo.UpdateAsync(server, ct);
+            }, ct);
 
             logger.LogInformation(
                 "Synced MCP server {ServerName} ({ServerUrl}): {ToolCount} tools",

@@ -101,10 +101,10 @@ public class EfToolRepository(ClariveDbContext db) : IToolRepository
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<int> DeleteByServerIdAsync(Guid mcpServerId, CancellationToken ct = default)
+    public async Task<int> DeleteByServerIdAsync(Guid tenantId, Guid mcpServerId, CancellationToken ct = default)
     {
         return await db
-            .ToolDescriptions.Where(t => t.McpServerId == mcpServerId)
+            .ToolDescriptions.Where(t => t.TenantId == tenantId && t.McpServerId == mcpServerId)
             .ExecuteDeleteAsync(ct);
     }
 }

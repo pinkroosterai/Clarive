@@ -36,5 +36,9 @@ public class McpServerConfiguration : IEntityTypeConfiguration<McpServer>
             .HasDatabaseName("uq_mcp_servers_tenant_url");
 
         builder.HasIndex(s => s.TenantId).HasDatabaseName("ix_mcp_servers_tenant_id");
+
+        builder
+            .HasIndex(s => new { s.IsActive, s.NextSyncAt })
+            .HasDatabaseName("ix_mcp_servers_active_next_sync");
     }
 }
