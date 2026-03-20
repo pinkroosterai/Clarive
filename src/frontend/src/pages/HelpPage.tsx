@@ -184,16 +184,22 @@ const sectionGroups: SectionGroup[] = [
         icon: Wand2,
         title: 'AI Wizard',
         searchText:
-          'ai wizard generate prompts description system message template variables prompt chain web research review quality scores clarity effectiveness completeness faithfulness clarification enhancement save enhance existing entries',
+          'ai wizard generate prompts description polish refine wand system message template variables prompt chain web research review quality scores clarity effectiveness completeness faithfulness clarification enhancement save enhance existing entries',
         content: (
           <div className="space-y-3">
             <p>The AI Wizard generates prompts from a description. It works in three steps:</p>
             <ol className="list-decimal list-inside space-y-2">
               <li>
-                <strong>Describe</strong> — Tell the wizard what you need. The more specific you are
-                about the task, audience, and desired output, the better the result. You can also
-                configure:
+                <strong>Describe</strong> — Tell the wizard what you need. Describe the purpose of
+                the prompt you want to create &mdash; what task it should handle, what inputs it
+                takes, and what kind of output it produces. The more specific you are, the better
+                the result.
                 <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                  <li>
+                    <strong>Polish</strong> (wand icon) — Click the wand button in the text area to
+                    let AI refine your description into a clearer, more detailed purpose statement.
+                    This improves generation quality without changing your intent.
+                  </li>
                   <li>
                     <strong>System message</strong> — sets the AI&apos;s role and behavior before
                     the main prompt.
