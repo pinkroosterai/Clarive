@@ -40,9 +40,9 @@ export function schemaToParams(schema?: Record<string, unknown>): ToolParam[] {
 }
 
 /** Converts ToolParam array back to JSON Schema object. Returns undefined if no params. */
-export function paramsToSchema(params: ToolParam[]): Record<string, unknown> | undefined {
+export function paramsToSchema(params: ToolParam[]): Record<string, unknown> {
   const valid = params.filter((p) => p.name.trim());
-  if (valid.length === 0) return undefined;
+  if (valid.length === 0) return { type: 'object', properties: {} };
 
   const properties: Record<string, Record<string, string>> = {};
   const required: string[] = [];
