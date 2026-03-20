@@ -6,7 +6,6 @@ using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -21,7 +20,6 @@ public class ModelResolutionServiceTests
     private readonly IOptionsMonitor<AiSettings> _aiSettings = Substitute.For<
         IOptionsMonitor<AiSettings>
     >();
-    private readonly IDistributedCache _distributedCache = Substitute.For<IDistributedCache>();
     private readonly TenantCacheService _cache;
     private readonly ILogger<ModelResolutionService> _logger = Substitute.For<
         ILogger<ModelResolutionService>
@@ -31,8 +29,7 @@ public class ModelResolutionServiceTests
     public ModelResolutionServiceTests()
     {
         _cache = new TenantCacheService(
-            _distributedCache,
-            Substitute.For<ILogger<TenantCacheService>>()
+            new ZiggyCreatures.Caching.Fusion.FusionCache(new ZiggyCreatures.Caching.Fusion.FusionCacheOptions())
         );
 
         _aiSettings.CurrentValue.Returns(
@@ -57,10 +54,14 @@ public class ModelResolutionServiceTests
 
     private void PrimeAvailableModelsCache(params string[] models)
     {
-        var json = System.Text.Json.JsonSerializer.Serialize(models.ToList());
-        _distributedCache
-            .GetAsync("global:playground_available_models", Arg.Any<CancellationToken>())
-            .Returns(System.Text.Encoding.UTF8.GetBytes(json));
+        _cache
+            .GetOrCreateGlobalAsync(
+                "playground_available_models",
+                _ => Task.FromResult(models.ToList()),
+                TimeSpan.FromMinutes(5)
+            )
+            .GetAwaiter()
+            .GetResult();
     }
 
     private static AiProvider MakeProvider(
@@ -187,27 +188,7 @@ public class ModelResolutionServiceTests
         var provider = MakeProvider("OpenAI", ("gpt-4o", true));
         _providerRepo.GetAllAsync(Arg.Any<CancellationToken>()).Returns([provider]);
 
-        // Capture what's written to cache so second call gets a hit
-        byte[]? stored = null;
-        _distributedCache
-            .SetAsync(
-                Arg.Is<string>(k => k.Contains("playground_enriched_models")),
-                Arg.Any<byte[]>(),
-                Arg.Any<DistributedCacheEntryOptions>(),
-                Arg.Any<CancellationToken>()
-            )
-            .Returns(ci =>
-            {
-                stored = ci.ArgAt<byte[]>(1);
-                return Task.CompletedTask;
-            });
-        _distributedCache
-            .GetAsync(
-                Arg.Is<string>(k => k.Contains("playground_enriched_models")),
-                Arg.Any<CancellationToken>()
-            )
-            .Returns(ci => stored);
-
+        // FusionCache L1 memory handles caching automatically — first call populates, second hits cache
         await _sut.GetEnrichedModelsAsync(default);
         await _sut.GetEnrichedModelsAsync(default);
 

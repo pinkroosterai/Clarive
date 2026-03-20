@@ -20,6 +20,8 @@
 
     <!-- ── Caching ─────────────────────────────────────────────────── -->
     <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.*" />
+    <PackageVersion Include="ZiggyCreatures.FusionCache" Version="2.*" />
+    <PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" Version="2.*" />
 
     <!-- ── AI / Agents ─────────────────────────────────────────────── -->
     <PackageVersion Include="Microsoft.Extensions.AI"          Version="10.*" />

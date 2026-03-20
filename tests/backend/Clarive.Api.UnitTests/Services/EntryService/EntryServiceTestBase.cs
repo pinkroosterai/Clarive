@@ -36,8 +36,7 @@ public abstract class EntryServiceTestBase : IDisposable
 
         Db = new ClariveDbContext(options);
         Cache = new TenantCacheService(
-            Substitute.For<IDistributedCache>(),
-            Substitute.For<ILogger<TenantCacheService>>()
+            new ZiggyCreatures.Caching.Fusion.FusionCache(new ZiggyCreatures.Caching.Fusion.FusionCacheOptions())
         );
         Sut = new Application.Entries.Services.EntryService(
             EntryRepo,

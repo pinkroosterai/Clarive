@@ -4,7 +4,6 @@ using Clarive.Domain.Entities;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
 using FluentAssertions;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -21,10 +20,8 @@ public class FolderServiceTests
 
     public FolderServiceTests()
     {
-        var distributedCache = Substitute.For<IDistributedCache>();
         _cache = new TenantCacheService(
-            distributedCache,
-            Substitute.For<ILogger<TenantCacheService>>()
+            new ZiggyCreatures.Caching.Fusion.FusionCache(new ZiggyCreatures.Caching.Fusion.FusionCacheOptions())
         );
 
         _folderRepo

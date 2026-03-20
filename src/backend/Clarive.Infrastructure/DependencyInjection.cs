@@ -13,6 +13,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Resend;
+using ZiggyCreatures.Caching.Fusion;
+using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 
 namespace Clarive.Infrastructure;
 
@@ -44,12 +46,24 @@ public static class DependencyInjection
             return NpgsqlDataSource.Create(connStr);
         });
 
-        // ── Caching ──
+        // ── Caching (FusionCache: L1 memory + L2 Valkey) ──
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = configuration.GetConnectionString("Valkey");
             options.InstanceName = "clarive:";
         });
+        services.AddFusionCache()
+            .WithDefaultEntryOptions(new FusionCacheEntryOptions
+            {
+                Duration = TimeSpan.FromMinutes(5),
+                IsFailSafeEnabled = true,
+                FailSafeMaxDuration = TimeSpan.FromHours(1),
+                FailSafeThrottleDuration = TimeSpan.FromSeconds(30),
+                EagerRefreshThreshold = 0.9f,
+            })
+            .WithSerializer(
+                new FusionCacheSystemTextJsonSerializer()
+            );
         services.AddScoped<TenantCacheService>();
 
         // ── Repositories (Scoped — one DbContext per request) ──
