@@ -1,11 +1,8 @@
 using Clarive.Auth.Jwt;
-using Clarive.Core.Helpers;
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Core.Services;
-using Clarive.Core.Services.Interfaces;
 using Clarive.Domain.Interfaces.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;

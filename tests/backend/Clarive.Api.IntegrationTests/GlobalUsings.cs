@@ -1,0 +1,26 @@
+// Feature namespaces from Clarive.Application
+global using Clarive.Application.Account;
+global using Clarive.Application.AiGeneration;
+global using Clarive.Application.AiProviders;
+global using Clarive.Application.AiUsage;
+global using Clarive.Application.ApiKeys;
+global using Clarive.Application.Audit;
+global using Clarive.Application.Auth;
+global using Clarive.Application.Avatar;
+global using Clarive.Application.Background;
+global using Clarive.Application.Common;
+global using Clarive.Application.Config;
+global using Clarive.Application.Dashboard;
+global using Clarive.Application.Entries;
+global using Clarive.Application.Folders;
+global using Clarive.Application.ImportExport;
+global using Clarive.Application.Invitations;
+global using Clarive.Application.Playground;
+global using Clarive.Application.Profile;
+global using Clarive.Application.ShareLinks;
+global using Clarive.Application.SuperAdmin;
+global using Clarive.Application.Tags;
+global using Clarive.Application.Tenants;
+global using Clarive.Application.Tools;
+global using Clarive.Application.Users;
+global using Clarive.Application.Workspaces;

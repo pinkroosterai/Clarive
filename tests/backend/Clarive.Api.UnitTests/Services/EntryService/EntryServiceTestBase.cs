@@ -2,10 +2,8 @@ using Clarive.Infrastructure.Cache;
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
-using Clarive.Core.Models.Requests;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Distributed;
@@ -24,7 +22,7 @@ public abstract class EntryServiceTestBase : IDisposable
     protected readonly IAuditLogRepository AuditRepo = Substitute.For<IAuditLogRepository>();
     protected readonly TenantCacheService Cache;
     protected readonly ClariveDbContext Db;
-    protected readonly Core.Services.EntryService Sut;
+    protected readonly Application.Entries.EntryService Sut;
 
     protected static readonly Guid TenantId = Guid.NewGuid();
     protected static readonly Guid UserId = Guid.NewGuid();
@@ -41,7 +39,7 @@ public abstract class EntryServiceTestBase : IDisposable
             Substitute.For<IDistributedCache>(),
             Substitute.For<ILogger<TenantCacheService>>()
         );
-        Sut = new Core.Services.EntryService(
+        Sut = new Application.Entries.EntryService(
             EntryRepo,
             FolderRepo,
             TagRepo,

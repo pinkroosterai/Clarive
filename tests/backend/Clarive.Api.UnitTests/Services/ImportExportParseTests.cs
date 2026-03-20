@@ -1,6 +1,5 @@
 using System.Reflection;
 using Clarive.Domain.Entities;
-using Clarive.Core.Services;
 using FluentAssertions;
 
 namespace Clarive.Api.UnitTests.Services;

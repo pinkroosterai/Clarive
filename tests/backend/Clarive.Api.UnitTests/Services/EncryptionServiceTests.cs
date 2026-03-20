@@ -1,5 +1,4 @@
 using Clarive.Infrastructure.Security;
-using Clarive.Core.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

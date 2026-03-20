@@ -1,7 +1,6 @@
 using Clarive.Infrastructure.Cache;
 using System.Text;
 using System.Text.Json;
-using Clarive.Core.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;

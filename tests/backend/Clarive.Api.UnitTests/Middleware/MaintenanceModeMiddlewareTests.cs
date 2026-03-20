@@ -1,5 +1,4 @@
 using Clarive.Api.Middleware;
-using Clarive.Core.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;

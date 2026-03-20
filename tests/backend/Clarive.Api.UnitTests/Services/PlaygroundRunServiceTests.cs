@@ -4,9 +4,7 @@ using Clarive.AI.Models;
 using Clarive.AI.Pipeline;
 using System.Text.Json;
 using Clarive.Domain.Entities;
-using Clarive.Core.Models.Responses;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Core.Services;
 using FluentAssertions;
 using NSubstitute;
 

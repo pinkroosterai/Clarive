@@ -11,6 +11,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Clarive.Core\Clarive.Core.csproj" />
+    <ProjectReference Include="..\Clarive.Application\Clarive.Application.csproj" />
   </ItemGroup>
 </Project>

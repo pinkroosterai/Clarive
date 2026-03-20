@@ -1,11 +1,8 @@
 using Clarive.Infrastructure.Cache;
 using Clarive.Domain.QueryResults;
 using Clarive.Domain.Entities;
-using Clarive.Core.Models.Requests;
 using Clarive.Domain.ValueObjects;
-using Clarive.Core.Models.Responses;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Core.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;

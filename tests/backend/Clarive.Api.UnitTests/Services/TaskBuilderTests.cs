@@ -1,7 +1,6 @@
 using Clarive.AI.Models;
 using Clarive.AI.Prompts;
 using Clarive.Domain.ValueObjects;
-using Clarive.Core.Models.Requests;
 using FluentAssertions;
 
 namespace Clarive.Api.UnitTests.Services;

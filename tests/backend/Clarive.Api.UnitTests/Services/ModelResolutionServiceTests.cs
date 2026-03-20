@@ -4,8 +4,6 @@ using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure.Cache;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Core.Services;
-using Clarive.Core.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Distributed;

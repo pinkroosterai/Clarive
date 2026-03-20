@@ -1,6 +1,5 @@
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
-using Clarive.Core.Models.Requests;
 using Clarive.Domain.ValueObjects;
 using ErrorOr;
 using FluentAssertions;

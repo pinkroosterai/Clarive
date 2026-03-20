@@ -1,6 +1,4 @@
 using System.Text;
-using Clarive.Core.Services;
-using Clarive.Core.Services.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;

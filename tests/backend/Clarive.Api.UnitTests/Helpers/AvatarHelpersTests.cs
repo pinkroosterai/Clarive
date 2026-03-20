@@ -1,4 +1,4 @@
-using Clarive.Core.Helpers;
+using Clarive.Api.Helpers;
 using Clarive.Domain.Entities;
 using FluentAssertions;
 

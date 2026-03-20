@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Clarive.Core.Services.Interfaces;
 using Clarive.Domain.Interfaces.Services;
 
 namespace Clarive.Api.IntegrationTests.Helpers;

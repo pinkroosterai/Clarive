@@ -4,7 +4,6 @@ using Clarive.AI.Orchestration;
 using Clarive.AI.Configuration;
 using Clarive.AI.Prompts;
 using Clarive.Domain.ValueObjects;
-using Clarive.Core.Models.Requests;
 
 namespace Clarive.Api.IntegrationTests.Helpers;
 

@@ -1,5 +1,4 @@
 using Clarive.AI.Configuration;
-using Clarive.Core.Services.Interfaces;
 using Microsoft.Extensions.AI;
 
 namespace Clarive.Api.IntegrationTests.Helpers;
