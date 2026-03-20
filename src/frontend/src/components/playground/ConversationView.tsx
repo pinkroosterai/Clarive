@@ -4,18 +4,9 @@ import ReasoningBlock from './ReasoningBlock';
 import { ToolCallBlock } from './ToolCallBlock';
 
 import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
+import type { ConversationMessage } from '@/services/api/playgroundService';
 
-export interface ConversationMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool_call' | 'tool_result';
-  content: string;
-  toolName?: string;
-  callId?: string;
-  arguments?: string;
-  error?: string;
-  durationMs?: number;
-  reasoning?: string;
-  promptIndex?: number;
-}
+export type { ConversationMessage };
 
 interface ConversationViewProps {
   messages: ConversationMessage[];

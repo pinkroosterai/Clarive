@@ -621,7 +621,7 @@ export default function PlaygroundResultsArea({
                                   isStreaming={isStreaming}
                                 />
                               )}
-                              {i === 0 && toolCalls && Object.keys(toolCalls).length > 0 && (
+                              {i === currentPromptIndex && toolCalls && Object.keys(toolCalls).length > 0 && (
                                 <div className="space-y-1 my-2">
                                   {Object.entries(toolCalls).map(([callId, tc]) => (
                                     <ToolCallBlock

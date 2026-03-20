@@ -5,7 +5,7 @@ import type { ProgressEvent } from '@/types';
 export interface TestStreamChunk {
   promptIndex: number;
   text: string;
-  type?: 'text' | 'reasoning' | 'tool_start' | 'tool_end';
+  type?: 'text' | 'reasoning';
 }
 
 export interface ConversationMessage {
