@@ -12,6 +12,7 @@ public sealed class TavilyClientService : ITavilyClientService
     private const string TavilyMcpEndpoint = "https://mcp.tavily.com/mcp/";
 
     private readonly ILogger<TavilyClientService> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IDisposable? _changeSubscription;
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
@@ -24,9 +25,11 @@ public sealed class TavilyClientService : ITavilyClientService
 
     public TavilyClientService(
         IOptionsMonitor<AiSettings> optionsMonitor,
+        IHttpClientFactory httpClientFactory,
         ILoggerFactory loggerFactory
     )
     {
+        _httpClientFactory = httpClientFactory;
         _logger = loggerFactory.CreateLogger<TavilyClientService>();
         _currentApiKey = optionsMonitor.CurrentValue.TavilyApiKey;
 
@@ -52,7 +55,8 @@ public sealed class TavilyClientService : ITavilyClientService
 
             var endpoint = $"{TavilyMcpEndpoint}?tavilyApiKey={_currentApiKey}";
             var transportOptions = new HttpClientTransportOptions { Endpoint = new Uri(endpoint) };
-            _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(TimeoutSeconds) };
+            _httpClient = _httpClientFactory.CreateClient("Tavily");
+            _httpClient.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
             var transport = new HttpClientTransport(transportOptions, _httpClient);
             _client = await McpClient.CreateAsync(transport, cancellationToken: ct);
 

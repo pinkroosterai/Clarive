@@ -6,18 +6,14 @@ using ModelContextProtocol.Client;
 
 namespace Clarive.Application.ImportExport.Services;
 
-public class McpImportService : IMcpImportService
+public class McpImportService(
+    IToolRepository toolRepo,
+    IHttpClientFactory httpClientFactory,
+    ILogger<McpImportService> logger
+) : IMcpImportService
 {
-    private readonly IToolRepository _toolRepo;
-    private readonly ILogger<McpImportService> _logger;
     private const int MaxTools = 100;
     private const int TimeoutSeconds = 15;
-
-    public McpImportService(IToolRepository toolRepo, ILogger<McpImportService> logger)
-    {
-        _toolRepo = toolRepo;
-        _logger = logger;
-    }
 
     public async Task<McpImportResult> ImportToolsAsync(
         string serverUrl,
@@ -37,7 +33,8 @@ public class McpImportService : IMcpImportService
             };
         }
 
-        using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(TimeoutSeconds) };
+        var httpClient = httpClientFactory.CreateClient("Mcp");
+        httpClient.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
 
         // 2. Connect and perform MCP handshake (initialize → initialized → ready)
         await using var transport = new HttpClientTransport(transportOptions, httpClient);
@@ -46,7 +43,7 @@ public class McpImportService : IMcpImportService
         // 3. List tools (SDK handles cursor pagination internally)
         var mcpTools = await client.ListToolsAsync(cancellationToken: ct);
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "MCP server {ServerUrl} returned {ToolCount} tools",
             serverUrl,
             mcpTools.Count
@@ -56,7 +53,7 @@ public class McpImportService : IMcpImportService
         var toolsToProcess = mcpTools.Take(MaxTools).ToList();
 
         // 5. Query existing tool names for this tenant to skip duplicates
-        var existingTools = await _toolRepo.GetByTenantAsync(tenantId, ct);
+        var existingTools = await toolRepo.GetByTenantAsync(tenantId, ct);
         var existingNames = existingTools.Select(t => t.ToolName).ToHashSet(StringComparer.Ordinal);
 
         // 6. Map MCP tools → ToolDescription entities, filter duplicates
@@ -90,7 +87,7 @@ public class McpImportService : IMcpImportService
 
         // 7. Persist
         if (newTools.Count > 0)
-            await _toolRepo.CreateManyAsync(newTools, ct);
+            await toolRepo.CreateManyAsync(newTools, ct);
 
         return new McpImportResult(newTools, skippedCount);
     }
