@@ -1,3 +1,5 @@
+using Clarive.Auth.Jwt;
+using Clarive.Auth;
 using Clarive.AI;
 using Clarive.Domain.Interfaces.Services;
 using Clarive.AI.Agents;
@@ -121,45 +123,8 @@ try
         builder.Configuration["CONFIG_ENCRYPTION_KEY"]
     );
 
-    // ── JWT Settings ──
-    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-    var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
-
-    if (string.IsNullOrWhiteSpace(jwtSettings.Secret))
-        throw new InvalidOperationException(
-            "Jwt:Secret is not configured. "
-                + "Set it in appsettings.Development.json or the JWT__SECRET environment variable."
-        );
-
-    if (System.Text.Encoding.UTF8.GetByteCount(jwtSettings.Secret) < 32)
-        throw new InvalidOperationException(
-            "Jwt:Secret must be at least 32 bytes (256 bits) for HMAC-SHA256. "
-                + "Current key is too short."
-        );
-
-    // ── Authentication ──
-    builder
-        .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = jwtSettings.Issuer,
-                ValidateAudience = true,
-                ValidAudience = jwtSettings.Audience,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtSettings.Secret)
-                ),
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromMinutes(1),
-            };
-        })
-        .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthHandler>(
-            ApiKeyAuthHandler.SchemeName,
-            _ => { }
-        );
+    // ── Authentication (JWT, API key, Google OAuth) ──
+    builder.Services.AddClariveAuth(builder.Configuration);
 
     // ── Authorization ──
     builder
@@ -251,7 +216,7 @@ try
     builder.Services.AddSingleton<IMaintenanceModeService>(sp =>
         sp.GetRequiredService<MaintenanceModeService>()
     );
-    builder.Services.AddSingleton<JwtService>();
+    // (JwtService registered via AddClariveAuth)
     // (PasswordHasher, EncryptionService registered via AddClariveInfrastructure)
     builder.Services.AddScoped<IAuditLogger, AuditLogger>();
     builder.Services.AddScoped<IEntryService, EntryService>();
@@ -279,20 +244,7 @@ try
     builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("App"));
     // (EmailSettings configured via AddClariveInfrastructure)
 
-    // ── Google OAuth ──
-    builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("Google"));
-    var googleSettings =
-        builder.Configuration.GetSection("Google").Get<GoogleAuthSettings>()
-        ?? new GoogleAuthSettings();
-    if (!string.IsNullOrWhiteSpace(googleSettings.ClientId))
-    {
-        builder.Services.AddSingleton<IGoogleAuthService, GoogleAuthService>();
-    }
-    else
-    {
-        builder.Services.AddSingleton<IGoogleAuthService, NullGoogleAuthService>();
-        Log.Warning("Google OAuth disabled: Google:ClientId not configured");
-    }
+    // (Google OAuth registered via AddClariveAuth)
 
     // ── AI Configuration (Agent-based) ──
     builder.Services.AddClariveAI(builder.Configuration);

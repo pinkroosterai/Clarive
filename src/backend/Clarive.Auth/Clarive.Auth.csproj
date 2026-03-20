@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Clarive.Api" />
+    <InternalsVisibleTo Include="Clarive.Api.UnitTests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Auth" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Clarive.Domain\Clarive.Domain.csproj" />
+    <ProjectReference Include="..\Clarive.Infrastructure\Clarive.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

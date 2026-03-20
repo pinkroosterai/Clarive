@@ -1,3 +1,6 @@
+using Clarive.Domain.Interfaces.Services;
+using Clarive.Auth.Google;
+using Clarive.Auth.Jwt;
 using Clarive.Infrastructure.Security;
 using Clarive.Api.Auth;
 using Clarive.Infrastructure.Data;

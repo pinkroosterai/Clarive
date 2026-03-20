@@ -1,11 +1,14 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using Clarive.Api.Endpoints;
+using System.Security.Cryptography;
+using System.Text;
 using Clarive.Domain.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
-namespace Clarive.Api.Auth;
+namespace Clarive.Auth.Jwt;
 
 public class ApiKeyAuthHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -34,7 +37,7 @@ public class ApiKeyAuthHandler(
             return AuthenticateResult.Fail("API key is empty.");
         }
 
-        var hash = ApiKeyEndpoints.HashKey(rawKey);
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawKey))).ToLower();
         var apiKey = await keyRepo.GetByHashAsync(hash, Context.RequestAborted);
         if (apiKey is null)
         {

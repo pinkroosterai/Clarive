@@ -1,8 +1,8 @@
-using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Options;
 
-namespace Clarive.Api.Services;
+namespace Clarive.Auth.Google;
 
 public class GoogleAuthService : IGoogleAuthService
 {

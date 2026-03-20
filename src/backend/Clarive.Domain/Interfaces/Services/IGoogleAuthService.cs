@@ -1,4 +1,4 @@
-namespace Clarive.Api.Services.Interfaces;
+namespace Clarive.Domain.Interfaces.Services;
 
 public record GoogleUserInfo(string GoogleId, string Email, string Name);
 

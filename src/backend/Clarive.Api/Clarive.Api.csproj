@@ -2,9 +2,7 @@
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
     <PackageReference Include="ErrorOr" />
-    <PackageReference Include="Google.Apis.Auth" />
     <PackageReference Include="Humanizer.Core" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="MiniValidation" />
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
@@ -23,5 +21,6 @@
     <ProjectReference Include="..\Clarive.Domain\Clarive.Domain.csproj" />
     <ProjectReference Include="..\Clarive.Infrastructure\Clarive.Infrastructure.csproj" />
     <ProjectReference Include="..\Clarive.AI\Clarive.AI.csproj" />
+    <ProjectReference Include="..\Clarive.Auth\Clarive.Auth.csproj" />
   </ItemGroup>
 </Project>

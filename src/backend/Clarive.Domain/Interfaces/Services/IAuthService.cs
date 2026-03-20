@@ -1,6 +1,6 @@
 using ErrorOr;
 
-namespace Clarive.Api.Services.Interfaces;
+namespace Clarive.Domain.Interfaces.Services;
 
 public interface IAuthService
 {

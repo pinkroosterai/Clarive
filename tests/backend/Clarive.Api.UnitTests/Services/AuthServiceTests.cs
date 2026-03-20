@@ -1,3 +1,4 @@
+using Clarive.Auth.Jwt;
 using Clarive.Infrastructure.Security;
 using Clarive.Api.Auth;
 using Clarive.Domain.Entities;

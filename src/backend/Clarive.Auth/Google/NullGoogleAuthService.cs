@@ -1,6 +1,6 @@
-using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 
-namespace Clarive.Api.Services;
+namespace Clarive.Auth.Google;
 
 public class NullGoogleAuthService : IGoogleAuthService
 {

@@ -1,4 +1,6 @@
-namespace Clarive.Api.Auth;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+namespace Clarive.Auth.Jwt;
 
 public record JwtSettings
 {

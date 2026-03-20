@@ -23,5 +23,6 @@
     <ProjectReference Include="../../../src/backend/Clarive.Domain/Clarive.Domain.csproj" />
     <ProjectReference Include="../../../src/backend/Clarive.Infrastructure/Clarive.Infrastructure.csproj" />
     <ProjectReference Include="../../../src/backend/Clarive.AI/Clarive.AI.csproj" />
+    <ProjectReference Include="../../../src/backend/Clarive.Auth/Clarive.Auth.csproj" />
   </ItemGroup>
 </Project>

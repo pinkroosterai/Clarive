@@ -1,4 +1,4 @@
-namespace Clarive.Api.Services;
+namespace Clarive.Auth.Google;
 
 public record GoogleAuthSettings
 {
