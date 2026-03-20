@@ -1,6 +1,8 @@
 using Clarive.AI.Models;
-using Clarive.AI.Extensions;
-using Clarive.AI.Agents;
+using Clarive.AI.Pipeline;
+using Clarive.AI.Orchestration;
+using Clarive.AI.Configuration;
+using Clarive.AI.Prompts;
 using Clarive.Domain.ValueObjects;
 using Clarive.Core.Models.Requests;
 

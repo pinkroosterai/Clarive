@@ -1,4 +1,4 @@
-using Clarive.AI.Agents;
+using Clarive.AI.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using System.Net;
@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-namespace Clarive.AI.Extensions;
+namespace Clarive.AI.Pipeline;
 
 /// <summary>
 /// A <see cref="DelegatingChatClient"/> that retries transient failures with exponential backoff and jitter,

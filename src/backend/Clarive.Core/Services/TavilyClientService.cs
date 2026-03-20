@@ -1,4 +1,4 @@
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.Core.Services.Interfaces;
 using Clarive.Domain.Interfaces.Services;
 using Microsoft.Extensions.AI;

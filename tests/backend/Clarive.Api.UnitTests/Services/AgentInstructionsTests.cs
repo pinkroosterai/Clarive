@@ -1,4 +1,4 @@
-using Clarive.AI.Agents;
+using Clarive.AI.Prompts;
 using Clarive.Domain.ValueObjects;
 using FluentAssertions;
 

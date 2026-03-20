@@ -1,5 +1,5 @@
 using Clarive.AI.Agents;
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure.Cache;
 using Clarive.Domain.Entities;

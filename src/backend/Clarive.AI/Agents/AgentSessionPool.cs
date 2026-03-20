@@ -1,7 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
+using Clarive.AI.Pipeline;
 using System.Collections.Concurrent;
 using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;

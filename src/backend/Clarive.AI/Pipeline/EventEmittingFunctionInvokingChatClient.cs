@@ -4,7 +4,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-namespace Clarive.AI.Extensions;
+namespace Clarive.AI.Pipeline;
 
 /// <summary>
 /// A <see cref="FunctionInvokingChatClient"/> that emits events before and after each tool invocation.

@@ -1,4 +1,4 @@
-using Clarive.AI.Agents;
+using Clarive.AI.Configuration;
 using System.Text.Json;
 using Clarive.Core.Models.Responses;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
 using System.Text.Json;
 
 namespace Clarive.Core.Helpers;

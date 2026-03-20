@@ -1,6 +1,6 @@
 using Clarive.Domain.Enums;
 
-namespace Clarive.AI.Services;
+namespace Clarive.AI.Configuration;
 
 public record ActionAiConfig
 {

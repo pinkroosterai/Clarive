@@ -1,4 +1,4 @@
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
 using Clarive.Domain.ValueObjects;
 using Clarive.Core.Models.Requests;
 using Clarive.Core.Models.Results;

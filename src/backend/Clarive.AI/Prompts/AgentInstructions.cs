@@ -1,8 +1,8 @@
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 
-namespace Clarive.AI.Agents;
+namespace Clarive.AI.Prompts;
 
 /// <summary>
 /// System instructions for each specialized agent.

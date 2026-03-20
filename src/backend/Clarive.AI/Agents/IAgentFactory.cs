@@ -1,8 +1,8 @@
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Enums;
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 

@@ -1,4 +1,4 @@
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.Domain.Enums;
 using Clarive.Core.Services;
 using FluentAssertions;

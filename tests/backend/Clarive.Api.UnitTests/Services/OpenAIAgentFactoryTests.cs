@@ -1,7 +1,7 @@
 using Clarive.AI.Models;
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
 using Clarive.AI.Agents;
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.Infrastructure.Security;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;

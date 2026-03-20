@@ -1,6 +1,6 @@
 using Microsoft.Extensions.AI;
 
-namespace Clarive.AI.Extensions;
+namespace Clarive.AI.Pipeline;
 
 /// <summary>
 /// Provides data for the <see cref="EventEmittingFunctionInvokingChatClient.ToolCallCompleted"/> event,

@@ -1,7 +1,8 @@
 using Clarive.Domain.Interfaces.Services;
 using Clarive.AI.Models;
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
 using Clarive.AI.Agents;
+using Clarive.AI.Orchestration;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;

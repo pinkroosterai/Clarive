@@ -5,7 +5,7 @@ using Clarive.Auth;
 using Clarive.AI;
 using Clarive.Domain.Interfaces.Services;
 using Clarive.AI.Agents;
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure;
 using System.Text;

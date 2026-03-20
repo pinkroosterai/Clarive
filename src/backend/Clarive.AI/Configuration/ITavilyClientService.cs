@@ -1,6 +1,6 @@
 using Microsoft.Extensions.AI;
 
-namespace Clarive.AI.Services;
+namespace Clarive.AI.Configuration;
 
 public interface ITavilyClientService : IAsyncDisposable
 {

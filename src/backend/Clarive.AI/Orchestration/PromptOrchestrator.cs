@@ -2,17 +2,20 @@ using Clarive.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
+using Clarive.AI.Agents;
 using System.ComponentModel;
 using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
+using Clarive.AI.Prompts;
+using Clarive.AI.Evaluation;
 using Clarive.Domain.Interfaces.Services;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.OpenAI;
 using Microsoft.Extensions.AI;
 
-namespace Clarive.AI.Agents;
+namespace Clarive.AI.Orchestration;
 
 /// <summary>
 /// Orchestrates the multi-agent prompt generation workflow.

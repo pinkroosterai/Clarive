@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.Infrastructure.Security;
 using System.ClientModel;
 using Clarive.AI.Models;
@@ -9,7 +9,8 @@ using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
+using Clarive.AI.Prompts;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.OpenAI;
 using Microsoft.Extensions.AI;

@@ -1,4 +1,4 @@
-using Clarive.AI.Agents;
+using Clarive.AI.Pipeline;
 using Clarive.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.AI;

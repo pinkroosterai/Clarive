@@ -1,10 +1,12 @@
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
+using Clarive.AI.Agents;
+using Clarive.AI.Prompts;
 using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
 using Microsoft.Extensions.AI;
 
-namespace Clarive.AI.Agents;
+namespace Clarive.AI.Orchestration;
 
 /// <summary>
 /// Orchestrates the multi-agent prompt generation workflow.

@@ -1,5 +1,5 @@
-using Clarive.AI.Services;
-namespace Clarive.AI.Agents;
+using Clarive.AI.Configuration;
+namespace Clarive.AI.Configuration;
 
 public enum AiProviderErrorCategory
 {

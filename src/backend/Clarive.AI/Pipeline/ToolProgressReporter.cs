@@ -1,4 +1,4 @@
-namespace Clarive.AI.Extensions;
+namespace Clarive.AI.Pipeline;
 
 /// <summary>
 /// Mutable callback holder for tool progress reporting.

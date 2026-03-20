@@ -1,7 +1,10 @@
 using Clarive.Domain.Interfaces.Services;
 using Clarive.AI.Models;
 using Clarive.AI.Agents;
-using Clarive.AI.Services;
+using Clarive.AI.Pipeline;
+using Clarive.AI.Prompts;
+using Clarive.AI.Evaluation;
+using Clarive.AI.Configuration;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;

@@ -1,7 +1,7 @@
 using Humanizer;
 using Microsoft.Extensions.AI;
 
-namespace Clarive.AI.Extensions;
+namespace Clarive.AI.Pipeline;
 
 /// <summary>
 /// Subscribes to <see cref="EventEmittingFunctionInvokingChatClient"/> events

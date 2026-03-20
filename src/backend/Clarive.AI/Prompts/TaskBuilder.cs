@@ -1,9 +1,9 @@
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using System.Text.RegularExpressions;
 using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 
-namespace Clarive.AI.Agents;
+namespace Clarive.AI.Prompts;
 
 /// <summary>
 /// Builds structured task prompts for each agent role.

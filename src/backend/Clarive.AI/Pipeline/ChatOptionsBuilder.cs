@@ -1,8 +1,8 @@
-using Clarive.AI.Services;
+using Clarive.AI.Configuration;
 using Clarive.Domain.Entities;
 using Microsoft.Extensions.AI;
 
-namespace Clarive.AI.Agents;
+namespace Clarive.AI.Pipeline;
 
 /// <summary>
 /// Pure-function helpers for building and wrapping IChatClient options.

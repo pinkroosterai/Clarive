@@ -1,5 +1,5 @@
 using Clarive.Core.Models.Results;
-using Clarive.AI.Extensions;
+using Clarive.AI.Pipeline;
 using System.Diagnostics;
 using Clarive.Core.Helpers;
 using Clarive.Domain.Errors;
@@ -12,7 +12,10 @@ using Clarive.Core.Models.Responses;
 using Clarive.AI.Models;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.AI.Agents;
-using Clarive.AI.Extensions;
+using Clarive.AI.Evaluation;
+using Clarive.AI.Prompts;
+using Clarive.AI.Orchestration;
+using Clarive.AI.Pipeline;
 using Clarive.Core.Services.Interfaces;
 using Clarive.Domain.Interfaces.Services;
 using ErrorOr;

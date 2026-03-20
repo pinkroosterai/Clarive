@@ -1,5 +1,5 @@
 using Clarive.AI.Models;
-using Clarive.AI.Agents;
+using Clarive.AI.Evaluation;
 using Clarive.Domain.ValueObjects;
 using FluentAssertions;
 

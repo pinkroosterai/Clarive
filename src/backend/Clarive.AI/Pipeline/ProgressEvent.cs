@@ -1,4 +1,4 @@
-namespace Clarive.AI.Extensions;
+namespace Clarive.AI.Pipeline;
 
 /// <summary>
 /// A structured progress event sent to the client via SSE during AI operations.
