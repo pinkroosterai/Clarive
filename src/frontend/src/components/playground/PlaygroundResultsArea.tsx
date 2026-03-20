@@ -591,73 +591,72 @@ export default function PlaygroundResultsArea({
                   {/* ── Row 2: Response content (stretches to tallest) ── */}
                   {hasCurrentRun && (
                     <div className="space-y-3 self-start min-w-0">
-                      {/* Completed run: use ConversationView for correct chronological order */}
-                      {!isStreaming && conversationLog && conversationLog.length > 0 ? (
-                        <ConversationView messages={conversationLog} />
-                      ) : (
-                        /* Streaming: use per-prompt rendering with live chunks */
-                        prompts.map((_p, i) => {
-                          const renderedContent = renderTemplate(_p.content, fieldValues);
-                          return (
-                            <div key={i}>
-                              {showPrompts && (
-                                <div className="bg-elevated/30 rounded-md p-3 border border-border-subtle mb-3">
-                                  {(prompts.length > 1) && (
-                                    <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
-                                      Prompt {i + 1}
-                                    </div>
-                                  )}
-                                  <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
-                                    {renderedContent}
+                      {/* Single rendering path for current run — works during and after streaming */}
+                      {prompts.map((_p, i) => {
+                        const renderedContent = renderTemplate(_p.content, fieldValues);
+                        return (
+                          <div key={i}>
+                            {showPrompts && (
+                              <div className="bg-elevated/30 rounded-md p-3 border border-border-subtle mb-3">
+                                {(prompts.length > 1) && (
+                                  <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
+                                    Prompt {i + 1}
                                   </div>
+                                )}
+                                <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
+                                  {renderedContent}
                                 </div>
-                              )}
-                              {!showPrompts && prompts.length > 1 && (
-                                <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                              )}
-                              {streamedReasoning[i] && (
-                                <ReasoningBlock
-                                  reasoning={streamedReasoning[i]}
+                              </div>
+                            )}
+                            {!showPrompts && prompts.length > 1 && (
+                              <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                            )}
+                            {streamedReasoning[i] && (
+                              <ReasoningBlock
+                                reasoning={streamedReasoning[i]}
+                                isStreaming={isStreaming}
+                              />
+                            )}
+                            {/* Tool calls — show during streaming AND after completion */}
+                            {i === 0 && toolCalls && Object.keys(toolCalls).length > 0 && (
+                              <div className="bg-elevated/20 border-l-2 border-l-accent rounded-r-md py-2 px-3 space-y-1 my-2">
+                                <div className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider mb-1">
+                                  Tool Activity
+                                </div>
+                                {Object.entries(toolCalls).map(([callId, tc]) => (
+                                  <ToolCallBlock
+                                    key={callId}
+                                    toolName={tc.toolName}
+                                    arguments={tc.arguments}
+                                    response={tc.response}
+                                    durationMs={tc.durationMs}
+                                    error={tc.error}
+                                    status={tc.status}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                              {streamedResponses[i] !== undefined ? (
+                                <LLMResponseBlock
+                                  output={streamedResponses[i]}
                                   isStreaming={isStreaming}
                                 />
+                              ) : (
+                                <span className="text-xs text-foreground-muted">—</span>
                               )}
-                              {i === currentPromptIndex && toolCalls && Object.keys(toolCalls).length > 0 && (
-                                <div className="space-y-1 my-2">
-                                  {Object.entries(toolCalls).map(([callId, tc]) => (
-                                    <ToolCallBlock
-                                      key={callId}
-                                      toolName={tc.toolName}
-                                      arguments={tc.arguments}
-                                      response={tc.response}
-                                      durationMs={tc.durationMs}
-                                      error={tc.error}
-                                      status={tc.status}
-                                    />
-                                  ))}
-                                </div>
+                              {streamedResponses[i] && !isStreaming && (
+                                <CopyButton
+                                  text={streamedResponses[i]}
+                                  index={2000 + i}
+                                  copiedIndex={copiedIndex}
+                                  onCopy={handleCopy}
+                                />
                               )}
-                              <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                                {streamedResponses[i] !== undefined ? (
-                                  <LLMResponseBlock
-                                    output={streamedResponses[i]}
-                                    isStreaming={isStreaming}
-                                  />
-                                ) : (
-                                  <span className="text-xs text-foreground-muted">—</span>
-                                )}
-                                {streamedResponses[i] && !isStreaming && (
-                                  <CopyButton
-                                    text={streamedResponses[i]}
-                                    index={2000 + i}
-                                    copiedIndex={copiedIndex}
-                                    onCopy={handleCopy}
-                                  />
-                                )}
-                              </div>
                             </div>
-                          );
-                        })
-                      )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 

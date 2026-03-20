@@ -267,9 +267,28 @@ export function usePlaygroundStreaming({
       setLastVersionLabel(result.versionLabel ?? null);
       setIsJudging(false);
 
-      // Set full conversation log from result
+      // Populate toolCalls from conversationLog with full data (args, response, duration)
       if (result.conversationLog?.length) {
         setConversationLog(result.conversationLog);
+        const resultMap = new Map<string, ConversationMessage>();
+        for (const msg of result.conversationLog) {
+          if (msg.role === 'tool_result' && msg.callId) resultMap.set(msg.callId, msg);
+        }
+        const calls: Record<string, ToolCallState> = {};
+        for (const msg of result.conversationLog) {
+          if (msg.role === 'tool_call' && msg.callId) {
+            const resultMsg = resultMap.get(msg.callId);
+            calls[msg.callId] = {
+              toolName: msg.toolName ?? 'Unknown',
+              arguments: msg.arguments ?? null,
+              response: resultMsg?.content ?? null,
+              durationMs: resultMsg?.durationMs ?? null,
+              error: resultMsg?.error ?? null,
+              status: resultMsg ? (resultMsg.error ? 'error' : 'complete') : 'complete',
+            };
+          }
+        }
+        if (Object.keys(calls).length > 0) setToolCalls(calls);
       }
 
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
