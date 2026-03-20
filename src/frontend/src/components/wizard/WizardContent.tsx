@@ -86,7 +86,7 @@ export function WizardContent({ mode, existingEntry, onClose }: WizardContentPro
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-subtle px-6 py-2.5">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold tracking-tight">AI Wizard</h1>
+            <h1 className="text-lg font-semibold tracking-tight whitespace-nowrap">AI Wizard</h1>
             <StepProgress currentStep={displayStep} totalSteps={totalSteps} labels={stepLabels} />
             <span className="text-xs text-foreground-muted hidden lg:inline">{stepHint}</span>
           </div>
