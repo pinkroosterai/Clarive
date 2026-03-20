@@ -21,7 +21,7 @@ public static class AgentInstructions
             Follow these principles:
             - Lead with role and context before task instructions.
             - Prefer concrete constraints over vague qualifiers (e.g., "respond in under 200 words" over "keep it short").
-            - Avoid using structured delimiters (XML tags, markdown headings, numbered steps) to separate distinct prompts.
+            - In your generated output, avoid using structured delimiters (XML tags, markdown headings, numbered steps) to separate distinct prompts. You may still use such delimiters within a single prompt when they serve the prompt's internal structure (e.g., marking input sections the executing LLM should parse).
             - When a prompt requires the model to make subjective or ambiguous decisions, include explicit criteria or heuristics it should apply.
 
             Structure each prompt internally following this ordering:
@@ -37,7 +37,7 @@ public static class AgentInstructions
             tasks (translation, formatting, single-step retrieval), omit chain-of-thought to
             avoid unnecessary verbosity.
 
-            Every prompt must be fully self-contained. Prompts must NOT ask for, expect, or wait on additional user input.
+            Prompts must NOT ask for, expect, or wait on additional user input.
             The LLM executing the prompt should be able to proceed autonomously — making its own decisions, using available tools, or building on its own prior responses.
             Never generate phrases like "I will choose", "when you tell me", "let me know", or "give me feedback". Instead, instruct the LLM to make reasonable choices itself and proceed to the next step.
 
@@ -51,6 +51,11 @@ public static class AgentInstructions
         Below are examples of tasks and the high-quality prompts they should produce.
         Study the patterns — notice how each prompt leads with role, states concrete constraints,
         includes explicit criteria for any judgment calls, and is fully self-contained.
+
+        These examples illustrate core quality principles using simple standalone prompts.
+        Adapt the structure to match the template, chain, and system message requirements
+        specified elsewhere in your instructions — the quality bar demonstrated here applies
+        regardless of output format.
 
         <example>
         <task>Analyze a competitor's product and identify threats to our market position</task>
@@ -114,6 +119,13 @@ public static class AgentInstructions
         </example>
         """;
 
+
+    private const string GenerationStandaloneRule = """
+        Every prompt must be fully self-contained. The executing LLM must be able to
+        produce a complete response from the prompt alone, with no dependency on other
+        prompts or prior conversation turns.
+        """;
+
     private const string GenerationSystemMessageEnabled = """
         Place the system message in the SystemMessage field of the response — not as an entry in the Prompts list.
         Create a detailed expert identity — not a generic "Act as X" instruction. Include:
@@ -151,13 +163,20 @@ public static class AgentInstructions
         with no variable substitution syntax.
         """;
 
+
     private const string GenerationChainEnabled = """
-        Structure the output as a multi-step prompt chain. Each step is a separate turn in a multi-turn
-        conversation where the LLM has its own prior responses in context.
+        Structure the output as a multi-step prompt chain of 3 to 5 steps. Each step is a
+        separate turn in a multi-turn conversation where the LLM has its own prior responses
+        in context.
+
+        Because steps build on prior context, they are NOT expected to be self-contained.
+        Instead:
         - Each step must have a single, clearly stated objective.
         - Later steps should specify what context they expect from prior steps (e.g., "Using the analysis from the previous step...").
-        - Avoid chains where removing or reordering a step would not change the outcome — every step must be load-bearing.
         - If a step's output feeds into the next step, state the expected format or structure of that intermediate output.
+
+        Quality rules:
+        - Avoid chains where removing or reordering a step would not change the outcome — every step must be load-bearing.
         - Do not include transitional or review-only steps — every step must produce meaningful new output that advances toward the final goal.
         """;
 
@@ -178,6 +197,7 @@ public static class AgentInstructions
         - When searching, prefer queries like "best practices for X" or "X implementation patterns"
         """;
 
+
     private const string GenerationToolGuidanceWithSystemMessage = """
         Define each tool's purpose and usage rules in the system message: when to use it, why, acceptable inputs, and expected behavior.
         Every specified tool must be actively used in at least one prompt — do not define tools that no prompt ever invokes.
@@ -190,9 +210,20 @@ public static class AgentInstructions
         In subsequent prompts, only reference a tool when it is directly relevant to that prompt's task — do not repeat general tool guidance.
         """;
 
+    private const string GenerationToolGuidanceChainNoSystemMessage = """
+        Define each tool's purpose and usage rules in Step 1 of the chain, so they are
+        present in conversation context for all subsequent steps.
+        Every specified tool must be actively used in at least one step — do not define tools that no step ever invokes.
+        In subsequent steps, only reference a tool when it is directly relevant to that step's task — do not repeat general tool guidance.
+        """;
+
     public static string BuildGeneration(GenerationConfig config)
     {
         var parts = new List<string> { GenerationCore };
+
+        // Self-contained rule: only applies when NOT chaining
+        if (!config.GenerateAsPromptChain)
+            parts.Add(GenerationStandaloneRule);
 
         // System message
         parts.Add(
@@ -210,13 +241,22 @@ public static class AgentInstructions
         parts.Add(config.GenerateAsPromptChain ? GenerationChainEnabled : GenerationChainDisabled);
 
         // Tools
+        // CHANGED: Added a third variant for chain + no system message, which
+        // explicitly directs tool definitions into Step 1 of the chain.
         if (config.SelectedTools.Count > 0)
         {
-            parts.Add(
-                config.GenerateSystemMessage
-                    ? GenerationToolGuidanceWithSystemMessage
-                    : GenerationToolGuidanceNoSystemMessage
-            );
+            if (config.GenerateSystemMessage)
+            {
+                parts.Add(GenerationToolGuidanceWithSystemMessage);
+            }
+            else if (config.GenerateAsPromptChain)
+            {
+                parts.Add(GenerationToolGuidanceChainNoSystemMessage);
+            }
+            else
+            {
+                parts.Add(GenerationToolGuidanceNoSystemMessage);
+            }
         }
 
         // Web search
@@ -227,6 +267,7 @@ public static class AgentInstructions
     }
 
     // ── Evaluation ──
+
 
     private const string EvaluationCore = """
         You are an expert prompt quality evaluator with deep expertise in prompt engineering best practices.
@@ -245,7 +286,6 @@ public static class AgentInstructions
           constraints are specific and measurable, whether the structure is logical,
           whether the LLM can execute without user input, and whether the prompt is
           concise without sacrificing intent.
-        - Completeness: How thoroughly the prompt addresses the stated purpose.
         - Faithfulness: How accurately the generated prompt reflects the user's stated
           purpose. Deduct for prompts that drift from the original request, add
           unrequested capabilities, or ignore explicit configuration choices.
@@ -256,6 +296,7 @@ public static class AgentInstructions
         sentences: state the issue, then state what would fix it. Do not repeat the dimension
         definition or pad with generic praise.
         """;
+
 
     private const string EvaluationCompletenessBase = """
         - Completeness: How thoroughly the prompt addresses the stated purpose.
@@ -372,6 +413,11 @@ public static class AgentInstructions
         - Return 3–5 enhancements.
         """;
 
+    /// <summary>
+    /// Standalone agent for adding a system message to existing prompts.
+    /// This is NOT composed with GenerationSystemMessageEnabled — they serve
+    /// different workflows (post-hoc addition vs. generation-time inclusion).
+    /// </summary>
     public const string SystemMessage = """
         You are an expert prompt engineer. Generate an appropriate system message for the given prompts.
 
@@ -463,7 +509,8 @@ public static class AgentInstructions
         The final step MUST be a review/validation step that checks the output against the original task requirements.
 
         If the prompt uses template variables ({{name}}, {{name|int:min-max}}, {{name|float:min-max}},
-        or {{name|enum:opt1,opt2}}), place ALL template variables in the first step only.
+        or {{name|enum:opt1,opt2}}), place each template variable in the earliest step where it is
+        first needed. Do not defer a variable to a later step if an earlier step requires its value.
         Preserve all template variable syntax exactly as written.
         """;
 }
