@@ -23,26 +23,12 @@ public class PlaygroundRunConfiguration : IEntityTypeConfiguration<PlaygroundRun
             .HasColumnName("template_field_values")
             .HasColumnType("jsonb");
         builder
-            .Property(r => r.Responses)
-            .HasColumnName("responses")
-            .HasColumnType("jsonb")
-            .IsRequired();
-        builder.Property(r => r.Reasoning).HasColumnName("reasoning").HasColumnType("jsonb");
-        builder
-            .Property(r => r.RenderedSystemMessage)
-            .HasColumnName("rendered_system_message")
-            .HasColumnType("text");
-        builder
-            .Property(r => r.RenderedPrompts)
-            .HasColumnName("rendered_prompts")
+            .Property(r => r.ConversationLog)
+            .HasColumnName("conversation_log")
             .HasColumnType("jsonb");
         builder
-            .Property(r => r.ToolInvocations)
-            .HasColumnName("tool_invocations")
-            .HasColumnType("jsonb");
-        builder
-            .Property(r => r.McpServerIds)
-            .HasColumnName("mcp_server_ids")
+            .Property(r => r.JudgeScores)
+            .HasColumnName("judge_scores")
             .HasColumnType("jsonb");
         builder.Property(r => r.CreatedAt).HasColumnName("created_at").IsRequired();
 

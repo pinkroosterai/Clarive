@@ -77,7 +77,7 @@ public class PlaygroundService(
                 );
         }
 
-        // Resolve model — fall back to Generation model if none specified
+        // Resolve model
         var settings = aiSettings.CurrentValue;
         var model = !string.IsNullOrWhiteSpace(request.Model)
             ? request.Model
@@ -89,15 +89,10 @@ public class PlaygroundService(
 
         var resolved = resolvedResult.Value;
 
-        var responses = new List<TestRunPromptResponse>();
-        var reasoningText = new StringBuilder();
-        var reasoningPerPrompt = new List<TestRunPromptResponse>();
+        // ── Conversation log builder ──
+        var logBuilder = new ConversationLogBuilder();
         long? totalInputTokens = null;
         long? totalOutputTokens = null;
-
-        var renderedPromptTexts = new List<TestRunPromptResponse>();
-        string? renderedSystemMessage = null;
-        McpToolProgressHandler? toolHandler = null;
 
         var sw = Stopwatch.StartNew();
         try
@@ -116,7 +111,7 @@ public class PlaygroundService(
                 if (mcpTools.Count > 0)
                 {
                     var reporter = new ToolProgressReporter();
-                    toolHandler = new McpToolProgressHandler(reporter);
+                    var toolHandler = new McpToolProgressHandler(reporter);
 
                     var wrappedClient = new ChatClientBuilder(client)
                         .Use(inner =>
@@ -124,12 +119,15 @@ public class PlaygroundService(
                             var eefic = new EventEmittingFunctionInvokingChatClient(inner, loggerFactory);
                             eefic.ToolCallStarting += toolHandler.OnToolCallStartingAsync;
                             eefic.ToolCallCompleted += toolHandler.OnToolCallCompletedAsync;
+                            // Also wire to conversation log builder
+                            eefic.ToolCallStarting += logBuilder.OnToolCallStartingAsync;
+                            eefic.ToolCallCompleted += logBuilder.OnToolCallCompletedAsync;
                             return eefic;
                         })
                         .Build();
                     effectiveClient = wrappedClient;
 
-                    // Wire tool progress events directly to onProgress (no wrapping)
+                    // Wire tool progress events directly to onProgress
                     reporter.OnProgress = onProgress;
                 }
             }
@@ -163,16 +161,18 @@ public class PlaygroundService(
 
             var conversationMessages = new List<ChatMessage>();
 
+            // System message
             var systemMessage = version.SystemMessage;
             if (!string.IsNullOrEmpty(systemMessage))
             {
-                renderedSystemMessage =
-                    allFields.Count > 0
-                        ? TemplateParser.Render(systemMessage, fields)
-                        : systemMessage;
-                conversationMessages.Add(new ChatMessage(ChatRole.System, renderedSystemMessage));
+                var rendered = allFields.Count > 0
+                    ? TemplateParser.Render(systemMessage, fields)
+                    : systemMessage;
+                conversationMessages.Add(new ChatMessage(ChatRole.System, rendered));
+                logBuilder.AddSystemMessage(rendered);
             }
 
+            // Prompt chain loop
             for (var i = 0; i < prompts.Count; i++)
             {
                 var prompt = prompts[i];
@@ -181,10 +181,12 @@ public class PlaygroundService(
                         ? TemplateParser.Render(prompt.Content, fields)
                         : prompt.Content;
 
-                renderedPromptTexts.Add(new TestRunPromptResponse(i, content));
                 conversationMessages.Add(new ChatMessage(ChatRole.User, content));
+                logBuilder.AddUserMessage(content, i);
 
                 var responseText = new StringBuilder();
+                var reasoningText = new StringBuilder();
+
                 await foreach (
                     var update in effectiveClient.GetStreamingResponseAsync(
                         conversationMessages,
@@ -195,7 +197,6 @@ public class PlaygroundService(
                 {
                     if (thinkParser is not null && update.Text is not null)
                     {
-                        // Chat Completions mode: parse <think> tags from text
                         foreach (var (segText, isThinking) in thinkParser.ProcessChunk(update.Text))
                         {
                             if (isThinking)
@@ -214,13 +215,11 @@ public class PlaygroundService(
                     }
                     else if (update.Text is not null)
                     {
-                        // Responses API mode: text is always regular content
                         responseText.Append(update.Text);
                         if (onChunk is not null)
                             await onChunk(new TestStreamChunk(i, update.Text, "text"));
                     }
 
-                    // Responses API reasoning content (not available in Chat Completions)
                     if (thinkParser is null)
                     {
                         var reasoningContent = update
@@ -246,7 +245,7 @@ public class PlaygroundService(
                     }
                 }
 
-                // Flush any remaining buffered content from think tag parser
+                // Flush think tag parser
                 if (thinkParser is not null)
                 {
                     foreach (var (segText, isThinking) in thinkParser.Flush())
@@ -267,10 +266,9 @@ public class PlaygroundService(
                 }
 
                 var fullResponse = responseText.ToString();
-                responses.Add(new TestRunPromptResponse(i, fullResponse));
-                if (reasoningText.Length > 0)
-                    reasoningPerPrompt.Add(new TestRunPromptResponse(i, reasoningText.ToString()));
-                reasoningText.Clear();
+                var fullReasoning = reasoningText.Length > 0 ? reasoningText.ToString() : null;
+
+                logBuilder.AddAssistantMessage(fullResponse, fullReasoning, i);
                 conversationMessages.Add(new ChatMessage(ChatRole.Assistant, fullResponse));
             }
         }
@@ -295,21 +293,7 @@ public class PlaygroundService(
             MaxTokens = request.MaxTokens,
             TemplateFieldValues =
                 fields.Count > 0 ? JsonSerializer.Serialize(fields, JsonOptions) : null,
-            Responses = JsonSerializer.Serialize(responses, JsonOptions),
-            Reasoning =
-                reasoningPerPrompt.Count > 0
-                    ? JsonSerializer.Serialize(reasoningPerPrompt, JsonOptions)
-                    : null,
-            RenderedSystemMessage = renderedSystemMessage,
-            RenderedPrompts = JsonSerializer.Serialize(renderedPromptTexts, JsonOptions),
-            ToolInvocations =
-                toolHandler?.Invocations.Count > 0
-                    ? JsonSerializer.Serialize(toolHandler.Invocations, JsonOptions)
-                    : null,
-            McpServerIds =
-                request.McpServerIds is { Count: > 0 }
-                    ? JsonSerializer.Serialize(request.McpServerIds, JsonOptions)
-                    : null,
+            ConversationLog = JsonSerializer.Serialize(logBuilder.Messages, JsonOptions),
             VersionNumber = version.Version,
             VersionLabel = versionLabel,
             CreatedAt = DateTime.UtcNow,
@@ -331,21 +315,13 @@ public class PlaygroundService(
             ct
         );
 
-        var fullReasoning =
-            reasoningPerPrompt.Count > 0
-                ? string.Join("\n\n", reasoningPerPrompt.Select(r => r.Content))
-                : null;
         return new TestStreamResult(
             run.Id,
-            responses,
+            logBuilder.Messages.ToList(),
             totalInputTokens,
             totalOutputTokens,
-            fullReasoning,
             VersionNumber: version.Version,
-            VersionLabel: versionLabel,
-            ToolInvocations: toolHandler?.Invocations.Count > 0
-                ? toolHandler.Invocations.ToList()
-                : null
+            VersionLabel: versionLabel
         );
     }
 
@@ -368,16 +344,21 @@ public class PlaygroundService(
         var prompts = version.Prompts.OrderBy(p => p.Order).ToList();
         var promptInputs = prompts.Select(p => new PromptInput(p.Content, p.IsTemplate)).ToList();
 
+        // Extract responses from conversation log for judge
         List<TestRunPromptResponse> responses;
         try
         {
-            responses =
-                JsonSerializer.Deserialize<List<TestRunPromptResponse>>(run.Responses, JsonOptions)
-                ?? [];
+            var messages = !string.IsNullOrEmpty(run.ConversationLog)
+                ? JsonSerializer.Deserialize<List<ConversationMessage>>(run.ConversationLog, JsonOptions) ?? []
+                : [];
+            responses = messages
+                .Where(m => m.Role == "assistant")
+                .Select(m => new TestRunPromptResponse(m.PromptIndex ?? 0, m.Content))
+                .ToList();
         }
         catch (JsonException ex)
         {
-            logger.LogWarning(ex, "Failed to deserialize responses for run {RunId}", runId);
+            logger.LogWarning(ex, "Failed to deserialize conversation log for run {RunId}", runId);
             return Error.Failure(
                 "INVALID_RUN_DATA",
                 "Run data is corrupted. Please re-run the test."
@@ -400,11 +381,9 @@ public class PlaygroundService(
             var evaluation = OutputEvaluationNormalizer.Normalize(response.Result);
             sw.Stop();
 
-            // Persist scores on the run
             run.JudgeScores = JsonSerializer.Serialize(evaluation, JsonOptions);
             await runService.UpdateRunAsync(run, ct);
 
-            // Log usage
             var inputTokens = response.Usage?.InputTokenCount ?? 0;
             var outputTokens = response.Usage?.OutputTokenCount ?? 0;
             var (modelId, providerName) = agentFactory.GetModelInfo(AiActionType.PlaygroundJudge);

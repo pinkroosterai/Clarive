@@ -3,7 +3,12 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
-import { testEntry, type TestStreamChunk, type Evaluation } from '@/services/api/playgroundService';
+import {
+  testEntry,
+  type TestStreamChunk,
+  type Evaluation,
+  type ConversationMessage,
+} from '@/services/api/playgroundService';
 import type { ProgressEvent, TemplateField } from '@/types';
 
 // ── Streaming status thresholds ──
@@ -91,6 +96,7 @@ export function usePlaygroundStreaming({
   const [lastVersionLabel, setLastVersionLabel] = useState<string | null>(null);
   const [isJudging, setIsJudging] = useState(false);
   const [toolCalls, setToolCalls] = useState<Record<string, ToolCallState>>({});
+  const [conversationLog, setConversationLog] = useState<ConversationMessage[] | null>(null);
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
@@ -175,6 +181,7 @@ export function usePlaygroundStreaming({
     setLastVersionLabel(null);
     setIsJudging(false);
     setToolCalls({});
+    setConversationLog(null);
     setElapsedSeconds(0);
     setApproxOutputTokens(0);
     streamedTextLengthRef.current = 0;
@@ -260,22 +267,9 @@ export function usePlaygroundStreaming({
       setLastVersionLabel(result.versionLabel ?? null);
       setIsJudging(false);
 
-      // Populate tool calls with full invocation data from result
-      if (result.toolInvocations && result.toolInvocations.length > 0) {
-        setToolCalls((prev) => {
-          const updated = { ...prev };
-          for (const inv of result.toolInvocations!) {
-            updated[inv.callId] = {
-              toolName: inv.toolName,
-              arguments: inv.arguments,
-              response: inv.response,
-              durationMs: inv.durationMs,
-              error: inv.error,
-              status: inv.error ? 'error' : 'complete',
-            };
-          }
-          return updated;
-        });
+      // Set full conversation log from result
+      if (result.conversationLog?.length) {
+        setConversationLog(result.conversationLog);
       }
 
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
@@ -360,6 +354,7 @@ export function usePlaygroundStreaming({
     currentPromptIndex,
     responseCount,
     toolCalls,
+    conversationLog,
     handleRun,
     handleAbort,
     clearCurrentRun,

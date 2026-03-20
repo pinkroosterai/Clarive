@@ -41,7 +41,10 @@ public class PlaygroundRunServiceTests
             Model = model,
             Temperature = 0.7f,
             MaxTokens = 1000,
-            Responses = JsonSerializer.Serialize(responses, JsonOptions),
+            ConversationLog = JsonSerializer.Serialize(
+                responses.Select(r => new { role = "assistant", content = r.Content, promptIndex = r.PromptIndex }),
+                JsonOptions
+            ),
             CreatedAt = DateTime.UtcNow,
         };
     }
@@ -75,8 +78,8 @@ public class PlaygroundRunServiceTests
 
         result.Should().HaveCount(1);
         result[0].Model.Should().Be("gpt-4o");
-        result[0].Responses.Should().HaveCount(1);
-        result[0].Responses[0].Content.Should().Be("Test response");
+        result[0].ConversationLog.Should().HaveCount(1);
+        result[0].ConversationLog[0].Content.Should().Be("Test response");
     }
 
     [Fact]

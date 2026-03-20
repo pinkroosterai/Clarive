@@ -149,6 +149,7 @@ const PlaygroundPage = () => {
     currentPromptIndex,
     responseCount,
     toolCalls,
+    conversationLog,
     handleRun,
     handleAbort,
     clearCurrentRun,
@@ -588,6 +589,7 @@ const PlaygroundPage = () => {
           isFillingTemplateFields={isFillingTemplateFields}
           onClearCurrentRun={clearCurrentRun}
           toolCalls={toolCalls}
+          conversationLog={conversationLog}
         />
 
         {/* ── History sidebar — overlay on small screens, inline on md+ ── */}

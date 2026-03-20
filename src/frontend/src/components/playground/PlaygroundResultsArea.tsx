@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback, type RefObject } from 'react';
 
+import { ConversationView } from './ConversationView';
 import CopyButton from './CopyButton';
 import { ToolCallBlock } from './ToolCallBlock';
 import ReasoningBlock from './ReasoningBlock';
@@ -299,8 +300,10 @@ interface PlaygroundResultsAreaProps {
   isFillingTemplateFields?: boolean;
   // Clear current run from comparison
   onClearCurrentRun?: () => void;
-  // Tool calls
+  // Tool calls (streaming)
   toolCalls?: Record<string, { toolName: string; arguments: string | null; response: string | null; durationMs: number | null; error: string | null; status: 'calling' | 'complete' | 'error' }>;
+  // Conversation log (completed run)
+  conversationLog?: import('./ConversationView').ConversationMessage[] | null;
 }
 
 export default function PlaygroundResultsArea({
@@ -340,6 +343,7 @@ export default function PlaygroundResultsArea({
   isFillingTemplateFields,
   onClearCurrentRun,
   toolCalls,
+  conversationLog,
 }: PlaygroundResultsAreaProps) {
   const hasPins = pinnedRuns.length > 0;
   const [showPrompts, setShowPrompts] = useState(false);
@@ -587,143 +591,85 @@ export default function PlaygroundResultsArea({
                   {/* ── Row 2: Response content (stretches to tallest) ── */}
                   {hasCurrentRun && (
                     <div className="space-y-3 self-start min-w-0">
-                      {prompts.map((_p, i) => {
-                        const renderedContent = renderTemplate(_p.content, fieldValues);
-                        return (
-                          <div key={i}>
-                            {showPrompts && (
-                              <div className="bg-elevated/30 rounded-md p-3 border border-border-subtle mb-3">
-                                {(prompts.length > 1) && (
-                                  <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
-                                    Prompt {i + 1}
+                      {/* Completed run: use ConversationView for correct chronological order */}
+                      {!isStreaming && conversationLog && conversationLog.length > 0 ? (
+                        <ConversationView messages={conversationLog} />
+                      ) : (
+                        /* Streaming: use per-prompt rendering with live chunks */
+                        prompts.map((_p, i) => {
+                          const renderedContent = renderTemplate(_p.content, fieldValues);
+                          return (
+                            <div key={i}>
+                              {showPrompts && (
+                                <div className="bg-elevated/30 rounded-md p-3 border border-border-subtle mb-3">
+                                  {(prompts.length > 1) && (
+                                    <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
+                                      Prompt {i + 1}
+                                    </div>
+                                  )}
+                                  <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
+                                    {renderedContent}
                                   </div>
-                                )}
-                                <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
-                                  {renderedContent}
                                 </div>
-                              </div>
-                            )}
-                            {!showPrompts && prompts.length > 1 && (
-                              <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
-                            )}
-                            {streamedReasoning[i] && (
-                              <ReasoningBlock
-                                reasoning={streamedReasoning[i]}
-                                isStreaming={isStreaming}
-                              />
-                            )}
-                            {/* Tool calls between reasoning and response (chronological order) */}
-                            {i === 0 && toolCalls && Object.keys(toolCalls).length > 0 && (
-                              <div className="space-y-1 my-2">
-                                {Object.entries(toolCalls).map(([callId, tc]) => (
-                                  <ToolCallBlock
-                                    key={callId}
-                                    toolName={tc.toolName}
-                                    arguments={tc.arguments}
-                                    response={tc.response}
-                                    durationMs={tc.durationMs}
-                                    error={tc.error}
-                                    status={tc.status}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                              {streamedResponses[i] !== undefined ? (
-                                <LLMResponseBlock
-                                  output={streamedResponses[i]}
+                              )}
+                              {!showPrompts && prompts.length > 1 && (
+                                <div className="text-xs text-foreground-muted mb-2">Prompt {i + 1}</div>
+                              )}
+                              {streamedReasoning[i] && (
+                                <ReasoningBlock
+                                  reasoning={streamedReasoning[i]}
                                   isStreaming={isStreaming}
                                 />
-                              ) : (
-                                <span className="text-xs text-foreground-muted">—</span>
                               )}
-                              {streamedResponses[i] && !isStreaming && (
-                                <CopyButton
-                                  text={streamedResponses[i]}
-                                  index={2000 + i}
-                                  copiedIndex={copiedIndex}
-                                  onCopy={handleCopy}
-                                />
+                              {i === 0 && toolCalls && Object.keys(toolCalls).length > 0 && (
+                                <div className="space-y-1 my-2">
+                                  {Object.entries(toolCalls).map(([callId, tc]) => (
+                                    <ToolCallBlock
+                                      key={callId}
+                                      toolName={tc.toolName}
+                                      arguments={tc.arguments}
+                                      response={tc.response}
+                                      durationMs={tc.durationMs}
+                                      error={tc.error}
+                                      status={tc.status}
+                                    />
+                                  ))}
+                                </div>
                               )}
+                              <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+                                {streamedResponses[i] !== undefined ? (
+                                  <LLMResponseBlock
+                                    output={streamedResponses[i]}
+                                    isStreaming={isStreaming}
+                                  />
+                                ) : (
+                                  <span className="text-xs text-foreground-muted">—</span>
+                                )}
+                                {streamedResponses[i] && !isStreaming && (
+                                  <CopyButton
+                                    text={streamedResponses[i]}
+                                    index={2000 + i}
+                                    copiedIndex={copiedIndex}
+                                    onCopy={handleCopy}
+                                  />
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
                   )}
 
                   {pinnedRuns.map((run, pinIndex) => (
                     <div key={`content-${run.id}`} className="space-y-3 self-start">
-                      {showPrompts && run.renderedSystemMessage && (
-                        <div className="bg-elevated/50 border-l-2 border-l-primary rounded-r-md p-3">
-                          <div className="text-[10px] font-semibold text-primary mb-1 uppercase tracking-wider">
-                            System
-                          </div>
-                          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
-                            {run.renderedSystemMessage}
-                          </div>
+                      {run.conversationLog?.length ? (
+                        <ConversationView messages={run.conversationLog} />
+                      ) : (
+                        <div className="text-xs text-foreground-muted p-4">
+                          No conversation data available for this run.
                         </div>
                       )}
-                      {prompts.map((_p, i) => {
-                        const response = run.responses.find(
-                          (r: TestRunPromptResponse) => r.promptIndex === i
-                        );
-                        const reasoning = run.reasoning?.find((r) => r.promptIndex === i)?.content;
-                        const renderedPrompt = run.renderedPrompts?.find((r) => r.promptIndex === i);
-                        return (
-                          <div key={i}>
-                            {showPrompts && renderedPrompt && (
-                              <div className="bg-elevated/30 rounded-md p-3 border border-border-subtle mb-3">
-                                {(prompts.length > 1 || run.renderedSystemMessage) && (
-                                  <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
-                                    Prompt {i + 1}
-                                  </div>
-                                )}
-                                <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto scrollbar-themed">
-                                  {renderedPrompt.content}
-                                </div>
-                              </div>
-                            )}
-                            {!showPrompts && prompts.length > 1 && (
-                              <div className="text-xs text-foreground-muted mb-2">
-                                Prompt {i + 1}
-                              </div>
-                            )}
-                            {reasoning && <ReasoningBlock reasoning={reasoning} />}
-                            {/* Tool calls between reasoning and response (chronological order) */}
-                            {i === 0 && run.toolInvocations && run.toolInvocations.length > 0 && (
-                              <div className="space-y-1 my-2">
-                                {run.toolInvocations.map((inv) => (
-                                  <ToolCallBlock
-                                    key={inv.callId}
-                                    toolName={inv.toolName}
-                                    arguments={inv.arguments}
-                                    response={inv.response}
-                                    durationMs={inv.durationMs}
-                                    error={inv.error}
-                                    status={inv.error ? 'error' : 'complete'}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                              {response ? (
-                                <LLMResponseBlock output={response.content} isStreaming={false} />
-                              ) : (
-                                <span className="text-xs text-foreground-muted">—</span>
-                              )}
-                              {response && (
-                                <CopyButton
-                                  text={response.content}
-                                  index={3000 + pinIndex * 100 + i}
-                                  copiedIndex={copiedIndex}
-                                  onCopy={handleCopy}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
                     </div>
                   ))}
 

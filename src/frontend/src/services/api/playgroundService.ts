@@ -8,30 +8,26 @@ export interface TestStreamChunk {
   type?: 'text' | 'reasoning' | 'tool_start' | 'tool_end';
 }
 
-export interface ToolInvocation {
-  toolName: string;
-  callId: string;
-  arguments: string | null;
-  response: string | null;
-  durationMs: number;
-  error: string | null;
-}
-
-export interface TestRunPromptResponse {
-  promptIndex: number;
+export interface ConversationMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool_call' | 'tool_result';
   content: string;
+  toolName?: string;
+  callId?: string;
+  arguments?: string;
+  error?: string;
+  durationMs?: number;
+  reasoning?: string;
+  promptIndex?: number;
 }
 
 export interface TestStreamResult {
   runId: string;
-  responses: TestRunPromptResponse[];
+  conversationLog: ConversationMessage[];
   inputTokens: number | null;
   outputTokens: number | null;
-  reasoning: string | null;
   judgeScores: Evaluation | null;
   versionNumber: number | null;
   versionLabel: string | null;
-  toolInvocations: ToolInvocation[] | null;
 }
 
 export interface TestRunResponse {
@@ -40,17 +36,13 @@ export interface TestRunResponse {
   temperature: number;
   maxTokens: number;
   templateFieldValues: Record<string, string> | null;
-  responses: TestRunPromptResponse[];
+  conversationLog: ConversationMessage[];
   inputTokens: number | null;
   outputTokens: number | null;
   createdAt: string;
   judgeScores?: Evaluation | null;
-  reasoning?: TestRunPromptResponse[] | null;
-  renderedSystemMessage?: string | null;
-  renderedPrompts?: TestRunPromptResponse[] | null;
   versionNumber?: number | null;
   versionLabel?: string | null;
-  toolInvocations?: ToolInvocation[] | null;
 }
 
 export interface Evaluation {
@@ -113,11 +105,6 @@ export async function testEntry(
 
 export async function getTestRuns(entryId: string): Promise<TestRunResponse[]> {
   return api.get<TestRunResponse[]>(`/api/entries/${entryId}/test-runs`);
-}
-
-export async function getAvailableModels(): Promise<string[]> {
-  const res = await api.get<{ models: string[] }>('/api/ai/models');
-  return res.models;
 }
 
 export interface EnrichedModel {

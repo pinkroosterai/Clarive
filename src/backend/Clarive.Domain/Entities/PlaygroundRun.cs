@@ -16,24 +16,10 @@ public class PlaygroundRun : ITenantScoped
     public string? TemplateFieldValues { get; set; }
 
     [Column(TypeName = "jsonb")]
-    public string Responses { get; set; } = "[]";
+    public string? ConversationLog { get; set; }
 
     [Column(TypeName = "jsonb")]
     public string? JudgeScores { get; set; }
-
-    [Column(TypeName = "jsonb")]
-    public string? Reasoning { get; set; }
-
-    public string? RenderedSystemMessage { get; set; }
-
-    [Column(TypeName = "jsonb")]
-    public string? RenderedPrompts { get; set; }
-
-    [Column(TypeName = "jsonb")]
-    public string? ToolInvocations { get; set; }
-
-    [Column(TypeName = "jsonb")]
-    public string? McpServerIds { get; set; }
 
     public int? VersionNumber { get; set; }
     public string? VersionLabel { get; set; }

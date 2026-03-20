@@ -48,35 +48,20 @@ public class PlaygroundRunService(IPlaygroundRunRepository runRepo) : IPlaygroun
                         JsonOptions
                     )
                     : null,
-                JsonSerializer.Deserialize<List<TestRunPromptResponse>>(r.Responses, JsonOptions)
-                    ?? [],
+                !string.IsNullOrEmpty(r.ConversationLog)
+                    ? JsonSerializer.Deserialize<List<ConversationMessage>>(
+                        r.ConversationLog,
+                        JsonOptions
+                    ) ?? []
+                    : [],
                 null,
-                null, // Token counts not stored in historical runs
+                null,
                 r.CreatedAt,
                 !string.IsNullOrEmpty(r.JudgeScores)
                     ? JsonSerializer.Deserialize<OutputEvaluation>(r.JudgeScores, JsonOptions)
                     : null,
-                !string.IsNullOrEmpty(r.Reasoning)
-                    ? JsonSerializer.Deserialize<List<TestRunPromptResponse>>(
-                        r.Reasoning,
-                        JsonOptions
-                    )
-                    : null,
-                r.RenderedSystemMessage,
-                !string.IsNullOrEmpty(r.RenderedPrompts)
-                    ? JsonSerializer.Deserialize<List<TestRunPromptResponse>>(
-                        r.RenderedPrompts,
-                        JsonOptions
-                    )
-                    : null,
                 r.VersionNumber,
-                r.VersionLabel,
-                !string.IsNullOrEmpty(r.ToolInvocations)
-                    ? JsonSerializer.Deserialize<List<ToolInvocation>>(
-                        r.ToolInvocations,
-                        JsonOptions
-                    )
-                    : null
+                r.VersionLabel
             ))
             .ToList();
     }
