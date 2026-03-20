@@ -4,6 +4,7 @@ namespace Clarive.Domain.ValueObjects;
 
 /// <summary>
 /// A single dimension's evaluation score and feedback.
+/// Persisted in IterationScore.Scores (jsonb) via AiSession.ScoreHistory.
 /// </summary>
 public class PromptEvaluationEntry
 {

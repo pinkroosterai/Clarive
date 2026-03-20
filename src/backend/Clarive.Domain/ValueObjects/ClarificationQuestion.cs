@@ -4,6 +4,7 @@ namespace Clarive.Domain.ValueObjects;
 
 /// <summary>
 /// A single clarification question with suggested answers.
+/// Persisted in AiSession.Questions (jsonb).
 /// </summary>
 public class ClarificationQuestion
 {
