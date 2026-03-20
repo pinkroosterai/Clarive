@@ -151,6 +151,7 @@ export default function McpServersPanel() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   className="font-mono text-sm"
+                  autoComplete="off"
                 />
               </div>
               <div className="space-y-2">
@@ -161,6 +162,7 @@ export default function McpServersPanel() {
                   placeholder="Token for authenticated servers"
                   value={bearerToken}
                   onChange={(e) => setBearerToken(e.target.value)}
+                  autoComplete="new-password"
                 />
               </div>
             </div>
