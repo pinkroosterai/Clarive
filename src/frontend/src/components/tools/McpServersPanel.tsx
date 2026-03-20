@@ -59,10 +59,11 @@ export default function McpServersPanel() {
   const createMutation = useMutation({
     mutationFn: (data: { name: string; url: string; bearerToken?: string }) =>
       mcpServerService.create(data),
-    onSuccess: () => {
+    onSuccess: (server) => {
       queryClient.invalidateQueries({ queryKey: ['mcp-servers'] });
-      toast.success('MCP server added');
+      toast.success('MCP server added — syncing tools…');
       resetAndClose();
+      handleSync(server.id);
     },
     onError: (err: unknown) => handleApiError(err, { fallback: 'Failed to add MCP server' }),
   });
