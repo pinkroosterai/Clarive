@@ -400,6 +400,59 @@ public static class ConfigRegistry
             InputType: ConfigInputType.Select,
             SelectOptions: ["", "low", "medium", "high", "extra-high"]
         ),
+        // ── AI › Polish Description ──
+        new ConfigDefinition(
+            "Ai:PolishDescription:Model",
+            "Polish Description Model",
+            "Model for rewriting rough descriptions into clear, structured text for AI prompt generation.",
+            ConfigSection.Ai,
+            false,
+            false,
+            "e.g., gpt-4o-mini",
+            SubGroup: "Polish Description"
+        ),
+        new ConfigDefinition(
+            "Ai:PolishDescription:ProviderId",
+            "Polish Description Provider",
+            "Provider ID for the polish description model. Set automatically when selecting a model.",
+            ConfigSection.Ai,
+            false,
+            false,
+            SubGroup: "Polish Description"
+        ),
+        new ConfigDefinition(
+            "Ai:PolishDescription:Temperature",
+            "Polish Description Temperature",
+            "Override temperature for description polishing. Leave empty to use the model's default.",
+            ConfigSection.Ai,
+            false,
+            false,
+            "e.g., 0.7",
+            ConfigInputType.Number,
+            SubGroup: "Polish Description Overrides"
+        ),
+        new ConfigDefinition(
+            "Ai:PolishDescription:MaxTokens",
+            "Polish Description Max Tokens",
+            "Override max output tokens for description polishing. Leave empty to use the model's default.",
+            ConfigSection.Ai,
+            false,
+            false,
+            "e.g., 2048",
+            ConfigInputType.Number,
+            SubGroup: "Polish Description Overrides"
+        ),
+        new ConfigDefinition(
+            "Ai:PolishDescription:ReasoningEffort",
+            "Polish Description Reasoning Effort",
+            "Override reasoning effort for description polishing (only applies to reasoning models).",
+            ConfigSection.Ai,
+            false,
+            false,
+            SubGroup: "Polish Description Overrides",
+            InputType: ConfigInputType.Select,
+            SelectOptions: ["", "low", "medium", "high", "extra-high"]
+        ),
         // ── AI › Playground Judge ──
         new ConfigDefinition(
             "Ai:PlaygroundJudge:Model",
