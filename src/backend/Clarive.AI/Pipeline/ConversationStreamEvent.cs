@@ -23,12 +23,12 @@ public record ConversationStreamEvent
         new() { Type = "reasoning", Text = text, PromptIndex = promptIndex };
 
     public static ConversationStreamEvent ToolCallStart(
-        string toolName, string callId, string? arguments) =>
-        new() { Type = "tool_start", ToolName = toolName, CallId = callId, Arguments = arguments };
+        string toolName, string callId, string? arguments, int promptIndex = 0) =>
+        new() { Type = "tool_start", ToolName = toolName, CallId = callId, Arguments = arguments, PromptIndex = promptIndex };
 
     public static ConversationStreamEvent ToolCallEnd(
-        string callId, string? result, string? error, long durationMs) =>
-        new() { Type = "tool_end", CallId = callId, Result = result, Error = error, DurationMs = durationMs };
+        string callId, string? result, string? error, long durationMs, int promptIndex = 0) =>
+        new() { Type = "tool_end", CallId = callId, Result = result, Error = error, DurationMs = durationMs, PromptIndex = promptIndex };
 
     public static ConversationStreamEvent Judging() =>
         new() { Type = "judging" };

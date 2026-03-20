@@ -1,7 +1,5 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
-using Humanizer;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
@@ -9,13 +7,24 @@ namespace Clarive.AI.Pipeline;
 
 /// <summary>
 /// A <see cref="FunctionInvokingChatClient"/> that emits a unified stream of conversation events
-/// covering text chunks, reasoning chunks, tool call starts, and tool call completions.
-/// All events flow through <see cref="OnStreamEvent"/> in chronological order.
+/// covering tool call starts and tool call completions.
+/// Tool events flow through <see cref="OnStreamEvent"/> in chronological order.
+/// Text and reasoning events are NOT emitted by this class — they are emitted by the caller
+/// (PlaygroundService) as it processes streaming updates from GetStreamingResponseAsync.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <strong>Important:</strong> Do not set <see cref="FunctionInvokingChatClient.FunctionInvoker"/>
+/// on this class. The base class may route invocations through that delegate, bypassing
+/// <see cref="InvokeFunctionAsync"/> and the event emission logic.
+/// </para>
+/// </remarks>
 public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClient
 {
+    private readonly ILogger? _logger;
+
     /// <summary>
-    /// Single callback for all conversation stream events (text, reasoning, tool calls).
+    /// Single callback for conversation stream events (tool calls).
     /// Set this before calling GetStreamingResponseAsync.
     /// </summary>
     public Func<ConversationStreamEvent, Task>? OnStreamEvent { get; set; }
@@ -35,14 +44,25 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
         ILoggerFactory? loggerFactory = null,
         IServiceProvider? functionInvocationServices = null
     )
-        : base(innerClient, loggerFactory, functionInvocationServices) { }
+        : base(innerClient, loggerFactory, functionInvocationServices)
+    {
+        _logger = loggerFactory?.CreateLogger<EventEmittingFunctionInvokingChatClient>();
+    }
 
+    /// <summary>
+    /// Called when a <see cref="ToolCallCompleted"/> handler throws inside the <c>finally</c> block.
+    /// Logs the failure by default. Subclasses can override.
+    /// </summary>
     protected virtual void OnCompletedHandlerException(
         Exception handlerException,
         Exception? functionException
     )
     {
-        // Default: swallow. Subclasses can override to log or rethrow.
+        _logger?.LogWarning(
+            handlerException,
+            "ToolCallCompleted handler threw (function exception: {FunctionError})",
+            functionException?.Message ?? "none"
+        );
     }
 
     /// <inheritdoc/>
@@ -51,18 +71,39 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
         CancellationToken cancellationToken
     )
     {
-        var argsJson = context.Arguments is { Count: > 0 }
-            ? JsonSerializer.Serialize(context.Arguments)
-            : null;
+        // ── Defensive: ensure CallId is never null ──
+        var callId = context.CallContent.CallId ?? $"synthetic-{Guid.NewGuid():N}";
+
+        // ── Serialize arguments safely ──
+        string? argsJson = null;
+        try
+        {
+            if (context.Arguments is { Count: > 0 })
+                argsJson = JsonSerializer.Serialize(context.Arguments);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to serialize arguments for {FunctionName}", context.Function.Name);
+            argsJson = $"{{\"_serializationError\": \"{ex.Message}\"}}";
+        }
 
         // ── Emit tool_start via unified stream ──
-        if (OnStreamEvent is { } streamHandler)
+        var toolStartEmitted = false;
+        try
         {
-            await streamHandler(ConversationStreamEvent.ToolCallStart(
-                context.Function.Name,
-                context.CallContent.CallId,
-                argsJson
-            ));
+            if (OnStreamEvent is { } streamHandler)
+            {
+                await streamHandler(ConversationStreamEvent.ToolCallStart(
+                    context.Function.Name,
+                    callId,
+                    argsJson
+                ));
+                toolStartEmitted = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "OnStreamEvent handler threw on tool_start for {FunctionName}", context.Function.Name);
         }
 
         // ── Raise legacy "starting" event ──
@@ -72,7 +113,7 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
             var startingArgs = new ToolCallStartingEventArgs
             {
                 FunctionName = context.Function.Name,
-                CallId = context.CallContent.CallId,
+                CallId = callId,
                 Arguments = context.Arguments,
                 Iteration = context.Iteration,
                 FunctionCallIndex = context.FunctionCallIndex,
@@ -81,13 +122,21 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
                 Context = context,
             };
 
-            foreach (var d in startingHandler.GetInvocationList())
+            try
             {
-                await ((Func<object, ToolCallStartingEventArgs, Task>)d)(this, startingArgs);
+                foreach (var d in startingHandler.GetInvocationList())
+                {
+                    await ((Func<object, ToolCallStartingEventArgs, Task>)d)(this, startingArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "ToolCallStarting handler threw for {FunctionName}", context.Function.Name);
             }
         }
 
         // ── Invoke the function ──
+        // Wrapped in try/finally that guarantees tool_end emission whenever tool_start was sent
         var stopwatch = Stopwatch.StartNew();
         object? result = null;
         Exception? caughtException = null;
@@ -106,22 +155,25 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
         {
             stopwatch.Stop();
             var durationMs = (long)stopwatch.Elapsed.TotalMilliseconds;
-            var resultStr = result?.ToString()?.Truncate(10000);
+            var resultStr = SerializeResult(result);
             var errorStr = caughtException?.Message;
 
-            // ── Emit tool_end via unified stream ──
-            if (OnStreamEvent is { } endHandler)
+            // ── Emit tool_end — guaranteed if tool_start was emitted ──
+            if (toolStartEmitted && OnStreamEvent is { } endHandler)
             {
                 try
                 {
                     await endHandler(ConversationStreamEvent.ToolCallEnd(
-                        context.CallContent.CallId,
+                        callId,
                         resultStr,
                         errorStr,
                         durationMs
                     ));
                 }
-                catch { /* swallow handler errors in finally */ }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "OnStreamEvent handler threw on tool_end for {FunctionName}", context.Function.Name);
+                }
             }
 
             // ── Raise legacy "completed" event ──
@@ -131,7 +183,7 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
                 var completedArgs = new ToolCallCompletedEventArgs
                 {
                     FunctionName = context.Function.Name,
-                    CallId = context.CallContent.CallId,
+                    CallId = callId,
                     Result = result,
                     Exception = caughtException,
                     Duration = stopwatch.Elapsed,
@@ -163,6 +215,25 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
 #pragma warning restore S1163, CA2219
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Serializes a function result to a meaningful string.
+    /// Tries JSON serialization first, falls back to ToString().
+    /// </summary>
+    private static string? SerializeResult(object? result)
+    {
+        if (result is null) return null;
+        if (result is string s) return s;
+
+        try
+        {
+            return JsonSerializer.Serialize(result);
+        }
+        catch
+        {
+            return result.ToString();
         }
     }
 }
