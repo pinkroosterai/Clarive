@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Cache;
 using Clarive.Domain.QueryResults;
 using Clarive.Domain.Entities;
 using Clarive.Api.Models.Requests;

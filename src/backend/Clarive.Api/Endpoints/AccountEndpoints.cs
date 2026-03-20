@@ -4,6 +4,7 @@ using Clarive.Api.Models.Requests;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 
 namespace Clarive.Api.Endpoints;
 

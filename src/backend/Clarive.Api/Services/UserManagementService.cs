@@ -1,4 +1,4 @@
-using Clarive.Api.Data;
+using Clarive.Infrastructure.Data;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Errors;
 using Clarive.Domain.Entities;

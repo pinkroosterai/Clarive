@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Security;
 using System.ClientModel;
 using Clarive.Api.Models.Agents;
 using Clarive.Domain.ValueObjects;

@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Security;
 using Clarive.Api.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;

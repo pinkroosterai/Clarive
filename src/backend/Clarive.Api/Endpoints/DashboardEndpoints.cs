@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Cache;
 using Clarive.Domain.QueryResults;
 using System.Text.Json;
 using Clarive.Api.Auth;

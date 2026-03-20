@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Cache;
 using Clarive.Domain.QueryResults;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Errors;

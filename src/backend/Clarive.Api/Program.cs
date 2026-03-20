@@ -1,3 +1,5 @@
+using Clarive.Infrastructure.Security;
+using Clarive.Infrastructure;
 using System.Text;
 using Clarive.Domain.Interfaces;
 using System.Text.Json;
@@ -5,11 +7,11 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Clarive.Api.Auth;
 using Clarive.Api.Configuration;
-using Clarive.Api.Data;
+using Clarive.Infrastructure.Data;
 using Clarive.Api.Endpoints;
 using Clarive.Api.HealthChecks;
 using Clarive.Api.Middleware;
-using Clarive.Api.Repositories.EfCore;
+using Clarive.Infrastructure.Repositories;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Seed;
 using Clarive.Api.Services;
@@ -107,13 +109,8 @@ try
                 + "Set it in appsettings.Development.json or the CONNECTIONSTRINGS__DEFAULTCONNECTION environment variable."
         );
 
-    // ── NpgsqlDataSource (for raw SQL queries against Serilog logs table) ──
-    builder.Services.AddSingleton(sp =>
-    {
-        var config = sp.GetRequiredService<IConfiguration>();
-        var connStr = config.GetConnectionString("DefaultConnection")!;
-        return NpgsqlDataSource.Create(connStr);
-    });
+    // ── Infrastructure (DbContext, repos, email, cache, security, bg jobs) ──
+    builder.Services.AddClariveInfrastructure(builder.Configuration);
 
     // ── Database Configuration Override (highest priority, overrides env vars) ──
     builder.Configuration.AddDatabaseConfiguration(
@@ -244,65 +241,7 @@ try
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
 
-    // ── Database ──
-    builder.Services.AddDbContext<ClariveDbContext>(options =>
-    {
-        options.UseNpgsql(connectionString);
-        // Suppress during multi-phase development; remove after generating the migration
-        options.ConfigureWarnings(w =>
-            w.Ignore(
-                    Microsoft
-                        .EntityFrameworkCore
-                        .Diagnostics
-                        .RelationalEventId
-                        .PendingModelChangesWarning
-                )
-                .Ignore(
-                    Microsoft
-                        .EntityFrameworkCore
-                        .Diagnostics
-                        .CoreEventId
-                        .FirstWithoutOrderByAndFilterWarning
-                )
-                .Ignore(
-                    Microsoft
-                        .EntityFrameworkCore
-                        .Diagnostics
-                        .RelationalEventId
-                        .MultipleCollectionIncludeWarning
-                )
-        );
-    });
-
-    // ── Caching ──
-    builder.Services.AddStackExchangeRedisCache(options =>
-    {
-        options.Configuration = builder.Configuration.GetConnectionString("Valkey");
-        options.InstanceName = "clarive:";
-    });
-    builder.Services.AddScoped<TenantCacheService>();
-
-    // ── Repositories (Scoped — one DbContext per request) ──
-    builder.Services.AddScoped<ITenantRepository, EfTenantRepository>();
-    builder.Services.AddScoped<IUserRepository, EfUserRepository>();
-    builder.Services.AddScoped<IFolderRepository, EfFolderRepository>();
-    builder.Services.AddScoped<IEntryRepository, EfEntryRepository>();
-    builder.Services.AddScoped<IToolRepository, EfToolRepository>();
-    builder.Services.AddScoped<IApiKeyRepository, EfApiKeyRepository>();
-    builder.Services.AddScoped<IAuditLogRepository, EfAuditLogRepository>();
-    builder.Services.AddScoped<IAiSessionRepository, EfAiSessionRepository>();
-    builder.Services.AddScoped<IRefreshTokenRepository, EfRefreshTokenRepository>();
-    builder.Services.AddScoped<ITokenRepository, EfTokenRepository>();
-    builder.Services.AddScoped<ILoginSessionRepository, EfLoginSessionRepository>();
-    builder.Services.AddScoped<IInvitationRepository, EfInvitationRepository>();
-    builder.Services.AddScoped<ITenantMembershipRepository, EfTenantMembershipRepository>();
-    builder.Services.AddScoped<ITagRepository, EfTagRepository>();
-    builder.Services.AddScoped<IFavoriteRepository, EfFavoriteRepository>();
-    builder.Services.AddScoped<IPlaygroundRunRepository, EfPlaygroundRunRepository>();
-    builder.Services.AddScoped<IAiProviderRepository, EfAiProviderRepository>();
-    builder.Services.AddScoped<IServiceConfigRepository, EfServiceConfigRepository>();
-    builder.Services.AddScoped<IAiUsageLogRepository, EfAiUsageLogRepository>();
-    builder.Services.AddScoped<IShareLinkRepository, EfShareLinkRepository>();
+    // (Database, Caching, Repositories registered via AddClariveInfrastructure above)
 
     // ── Services ──
     builder.Services.AddSingleton<MaintenanceModeService>();
@@ -310,8 +249,7 @@ try
         sp.GetRequiredService<MaintenanceModeService>()
     );
     builder.Services.AddSingleton<JwtService>();
-    builder.Services.AddSingleton<PasswordHasher>();
-    builder.Services.AddSingleton<IEncryptionService, EncryptionService>();
+    // (PasswordHasher, EncryptionService registered via AddClariveInfrastructure)
     builder.Services.AddScoped<IAuditLogger, AuditLogger>();
     builder.Services.AddScoped<IEntryService, EntryService>();
     builder.Services.AddScoped<IAccountService, AccountService>();
@@ -331,35 +269,12 @@ try
     builder.Services.AddScoped<IShareLinkService, ShareLinkService>();
     builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));
     builder.Services.AddScoped<IAvatarService, AvatarService>();
-    // ── Email (all providers registered, resolved dynamically per-request) ──
-    builder.Services.AddHttpClient<ResendClient>();
-    builder.Services.AddSingleton<IConfigureOptions<ResendClientOptions>>(sp =>
-    {
-        var config = sp.GetRequiredService<IConfiguration>();
-        return new ConfigureOptions<ResendClientOptions>(o =>
-            o.ApiToken = config["Email:ApiKey"] ?? ""
-        );
-    });
-    builder.Services.AddTransient<IResend, ResendClient>();
-    builder.Services.AddScoped<ResendEmailService>();
-    builder.Services.AddScoped<SmtpEmailService>();
-    builder.Services.AddScoped<ConsoleEmailService>();
-    builder.Services.AddScoped<IEmailService>(sp =>
-    {
-        var config = sp.GetRequiredService<IConfiguration>();
-        var provider = config["Email:Provider"] ?? "none";
-        return provider.ToLowerInvariant() switch
-        {
-            "resend" => sp.GetRequiredService<ResendEmailService>(),
-            "smtp" => sp.GetRequiredService<SmtpEmailService>(),
-            _ => sp.GetRequiredService<ConsoleEmailService>(),
-        };
-    });
+    // (Email registered via AddClariveInfrastructure)
     builder.Services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();
 
     // ── Settings ──
     builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("App"));
-    builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+    // (EmailSettings configured via AddClariveInfrastructure)
 
     // ── Google OAuth ──
     builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("Google"));
@@ -385,14 +300,11 @@ try
     builder.Services.AddSingleton<ITavilyClientService, TavilyClientService>();
     builder.Services.AddSingleton<ILiteLlmRegistryCache, LiteLlmRegistryCache>();
 
-    // ── Background Services ──
+    // ── Background Services (remaining in Api due to app-layer dependencies) ──
     builder.Services.AddHostedService<Clarive.Api.Services.Background.AccountPurgeBackgroundService>();
-    builder.Services.AddHostedService<Clarive.Api.Services.Background.TokenCleanupBackgroundService>();
-    builder.Services.AddHostedService<Clarive.Api.Services.Background.AiSessionCleanupService>();
     builder.Services.AddHostedService<Clarive.Api.Services.Background.MaintenanceModeSyncService>();
-    builder.Services.AddHostedService<Clarive.Api.Services.Background.AiUsageCleanupService>();
     builder.Services.AddHostedService<Clarive.Api.Services.Background.LiteLlmSyncService>();
-    builder.Services.AddHostedService<Clarive.Api.Services.Background.LogCleanupService>();
+    // (TokenCleanup, AiSessionCleanup, AiUsageCleanup, LogCleanup registered via AddClariveInfrastructure)
 
     // ── Rate Limiting ──
     builder.Services.AddRateLimiter(options =>

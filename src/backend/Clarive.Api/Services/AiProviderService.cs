@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Security;
 using Clarive.Domain.Enums;
 using System.ClientModel;
 using Clarive.Api.Helpers;

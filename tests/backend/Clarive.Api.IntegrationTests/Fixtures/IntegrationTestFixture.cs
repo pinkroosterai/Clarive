@@ -1,7 +1,8 @@
-using Clarive.Api.Data;
+using Clarive.Infrastructure.Data;
 using Clarive.Api.IntegrationTests.Helpers;
 using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;

@@ -6,6 +6,7 @@ using Clarive.Api.Models.Responses;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using Microsoft.Extensions.Options;
 using static Clarive.Api.Helpers.ResponseMappers;
 

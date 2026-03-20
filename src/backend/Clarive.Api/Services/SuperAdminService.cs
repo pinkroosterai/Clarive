@@ -1,6 +1,7 @@
+using Clarive.Infrastructure.Security;
 using System.Security.Cryptography;
 using Clarive.Api.Auth;
-using Clarive.Api.Data;
+using Clarive.Infrastructure.Data;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Errors;
 using Clarive.Domain.Enums;

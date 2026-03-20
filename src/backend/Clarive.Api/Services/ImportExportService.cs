@@ -1,4 +1,5 @@
-using Clarive.Api.Data;
+using Clarive.Infrastructure.Cache;
+using Clarive.Infrastructure.Data;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;

@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Security;
 using System.Security.Cryptography;
 using System.Text;
 using Clarive.Api.Auth;

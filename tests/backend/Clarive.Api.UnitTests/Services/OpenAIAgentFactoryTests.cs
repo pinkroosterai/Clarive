@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Security;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;

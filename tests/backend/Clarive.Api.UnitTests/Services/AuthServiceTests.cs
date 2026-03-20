@@ -1,8 +1,10 @@
+using Clarive.Infrastructure.Security;
 using Clarive.Api.Auth;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using NSubstitute;

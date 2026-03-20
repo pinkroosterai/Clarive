@@ -1,4 +1,4 @@
-using Clarive.Api.Data;
+using Clarive.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Services;

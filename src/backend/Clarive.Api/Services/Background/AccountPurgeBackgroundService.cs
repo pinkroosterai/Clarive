@@ -1,5 +1,6 @@
-using Clarive.Api.Data;
+using Clarive.Infrastructure.Data;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Services.Background;

@@ -1,4 +1,7 @@
-using Clarive.Api.Data;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
+using Clarive.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Services.Background;

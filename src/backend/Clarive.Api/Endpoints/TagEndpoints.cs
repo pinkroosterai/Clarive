@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Cache;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;

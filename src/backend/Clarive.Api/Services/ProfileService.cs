@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Security;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Errors;

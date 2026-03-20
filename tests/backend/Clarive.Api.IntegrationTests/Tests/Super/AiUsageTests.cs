@@ -1,5 +1,5 @@
 using System.Net;
-using Clarive.Api.Data;
+using Clarive.Infrastructure.Data;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
 using Clarive.Domain.Entities;
