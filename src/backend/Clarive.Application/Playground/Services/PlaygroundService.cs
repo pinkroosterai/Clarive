@@ -93,20 +93,22 @@ public class PlaygroundService(
         var logBuilder = new ConversationLogBuilder();
         long? totalInputTokens = null;
         long? totalOutputTokens = null;
+        McpToolSet? mcpToolSet = null;
 
         var sw = Stopwatch.StartNew();
         try
         {
             using var client = resolved.ChatClient;
 
-            // Fetch MCP tools if servers specified
+            // Fetch MCP tools if servers specified — toolSet keeps connections alive
             IList<AITool>? mcpTools = null;
             IChatClient effectiveClient = client;
 
             if (request.McpServerIds is { Count: > 0 })
             {
-                mcpTools = await mcpToolProvider.GetToolsAsync(
+                mcpToolSet = await mcpToolProvider.GetToolsAsync(
                     tenantId, request.McpServerIds, request.ExcludedToolNames, ct);
+                mcpTools = mcpToolSet.Tools;
 
                 if (mcpTools.Count > 0)
                 {
@@ -276,6 +278,12 @@ public class PlaygroundService(
         {
             logger.LogError(ex, "Playground test failed for entry {EntryId}", entryId);
             return Error.Failure("TEST_FAILED", $"LLM request failed: {ex.Message}");
+        }
+        finally
+        {
+            // Dispose MCP connections after the run completes (or fails)
+            if (mcpToolSet is not null)
+                await mcpToolSet.DisposeAsync();
         }
 
         // Persist the run
