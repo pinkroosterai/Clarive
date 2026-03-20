@@ -1,9 +1,0 @@
-namespace Clarive.Api.Models.Requests;
-
-public record UpdateProfileRequest(
-    string? Name = null,
-    string? Email = null,
-    string? CurrentPassword = null,
-    string? NewPassword = null,
-    string? ThemePreference = null
-);

@@ -1,4 +1,4 @@
-using Clarive.Api.Helpers;
+using Clarive.Core.Helpers;
 
 namespace Clarive.Api.UnitTests.Helpers;
 

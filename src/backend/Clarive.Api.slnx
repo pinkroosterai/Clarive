@@ -6,4 +6,5 @@
   <Project Path="Clarive.Infrastructure\Clarive.Infrastructure.csproj" />
   <Project Path="Clarive.AI\Clarive.AI.csproj" />
   <Project Path="Clarive.Auth\Clarive.Auth.csproj" />
+  <Project Path="Clarive.Core\Clarive.Core.csproj" />
 </Solution>

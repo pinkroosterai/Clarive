@@ -1,6 +1,6 @@
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Enums;
-using Clarive.Api.Services;
+using Clarive.Core.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;

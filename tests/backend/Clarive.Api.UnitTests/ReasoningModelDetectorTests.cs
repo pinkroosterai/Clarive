@@ -1,4 +1,4 @@
-using Clarive.Api.Services;
+using Clarive.Core.Services;
 using FluentAssertions;
 using Xunit;
 

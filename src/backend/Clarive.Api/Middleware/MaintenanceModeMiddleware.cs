@@ -1,5 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
-using Clarive.Api.Services;
+using Clarive.Core.Services;
 
 namespace Clarive.Api.Middleware;
 

@@ -1,6 +1,6 @@
 using Clarive.AI.Agents;
 using System.Text.Json;
-using Clarive.Api.Models.Responses;
+using Clarive.Core.Models.Responses;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Middleware;

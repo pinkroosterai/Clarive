@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Api.Services.Interfaces;
+using Clarive.Core.Services.Interfaces;
 
 namespace Clarive.Api.IntegrationTests.Helpers;
 

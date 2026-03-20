@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Clarive.Api" />
+    <InternalsVisibleTo Include="Clarive.Api.UnitTests" />
+    <InternalsVisibleTo Include="Clarive.Api.IntegrationTests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ErrorOr" />
+    <PackageReference Include="Humanizer.Core" />
+    <PackageReference Include="MiniValidation" />
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Clarive.Domain\Clarive.Domain.csproj" />
+    <ProjectReference Include="..\Clarive.Infrastructure\Clarive.Infrastructure.csproj" />
+    <ProjectReference Include="..\Clarive.AI\Clarive.AI.csproj" />
+    <ProjectReference Include="..\Clarive.Auth\Clarive.Auth.csproj" />
+  </ItemGroup>
+</Project>

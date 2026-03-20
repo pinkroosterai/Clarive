@@ -2,7 +2,7 @@ using Clarive.AI.Models;
 using Clarive.AI.Extensions;
 using Clarive.AI.Agents;
 using Clarive.Domain.ValueObjects;
-using Clarive.Api.Models.Requests;
+using Clarive.Core.Models.Requests;
 
 namespace Clarive.Api.IntegrationTests.Helpers;
 

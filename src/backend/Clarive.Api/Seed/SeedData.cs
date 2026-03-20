@@ -1,12 +1,12 @@
 using Clarive.Infrastructure.Security;
 using System.Security.Cryptography;
 using System.Text;
-using Clarive.Api.Auth;
-using Clarive.Api.Endpoints;
+using Clarive.Core.Helpers;
+using Clarive.Core.Endpoints;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Api.Services;
+using Clarive.Core.Services;
 
 namespace Clarive.Api.Seed;
 

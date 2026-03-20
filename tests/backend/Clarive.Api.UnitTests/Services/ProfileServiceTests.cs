@@ -1,10 +1,10 @@
 using Clarive.Infrastructure.Security;
-using Clarive.Api.Auth;
+using Clarive.Core.Helpers;
 using Clarive.Domain.Entities;
-using Clarive.Api.Models.Requests;
+using Clarive.Core.Models.Requests;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Api.Services;
+using Clarive.Core.Services;
 using FluentAssertions;
 using NSubstitute;
 

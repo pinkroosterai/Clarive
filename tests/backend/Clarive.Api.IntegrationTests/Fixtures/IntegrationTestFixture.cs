@@ -2,7 +2,7 @@ using Clarive.AI.Agents;
 using Clarive.AI.Services;
 using Clarive.Infrastructure.Data;
 using Clarive.Api.IntegrationTests.Helpers;
-using Clarive.Api.Services.Interfaces;
+using Clarive.Core.Services.Interfaces;
 using Clarive.Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

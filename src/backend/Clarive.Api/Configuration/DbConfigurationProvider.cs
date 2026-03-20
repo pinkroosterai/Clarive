@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using Clarive.Api.Services;
+using Clarive.Core.Services;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 using Serilog;

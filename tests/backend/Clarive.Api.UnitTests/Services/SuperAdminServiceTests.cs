@@ -1,9 +1,9 @@
 using Clarive.Infrastructure.Security;
-using Clarive.Api.Auth;
+using Clarive.Core.Helpers;
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Api.Services;
+using Clarive.Core.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;

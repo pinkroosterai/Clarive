@@ -1,3 +1,5 @@
+using Clarive.Api.Auth;
+using Clarive.Core;
 using Clarive.Auth.Jwt;
 using Clarive.Auth;
 using Clarive.AI;
@@ -11,17 +13,17 @@ using Clarive.Domain.Interfaces;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-using Clarive.Api.Auth;
+using Clarive.Core.Helpers;
 using Clarive.Api.Configuration;
 using Clarive.Infrastructure.Data;
-using Clarive.Api.Endpoints;
+using Clarive.Core.Endpoints;
 using Clarive.Api.HealthChecks;
 using Clarive.Api.Middleware;
 using Clarive.Infrastructure.Repositories;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Seed;
-using Clarive.Api.Services;
-using Clarive.Api.Services.Interfaces;
+using Clarive.Core.Services;
+using Clarive.Core.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -211,52 +213,11 @@ try
 
     // (Database, Caching, Repositories registered via AddClariveInfrastructure above)
 
-    // ── Services ──
-    builder.Services.AddSingleton<MaintenanceModeService>();
-    builder.Services.AddSingleton<IMaintenanceModeService>(sp =>
-        sp.GetRequiredService<MaintenanceModeService>()
-    );
-    // (JwtService registered via AddClariveAuth)
-    // (PasswordHasher, EncryptionService registered via AddClariveInfrastructure)
-    builder.Services.AddScoped<IAuditLogger, AuditLogger>();
-    builder.Services.AddScoped<IEntryService, EntryService>();
-    builder.Services.AddScoped<IAccountService, AccountService>();
-    builder.Services.AddScoped<IInvitationService, InvitationService>();
-    builder.Services.AddScoped<IAiGenerationService, AiGenerationService>();
-    builder.Services.AddScoped<IUserManagementService, UserManagementService>();
-    builder.Services.AddScoped<IAuthService, AuthService>();
-    builder.Services.AddScoped<IProfileService, ProfileService>();
-    builder.Services.AddScoped<IImportExportService, ImportExportService>();
-    builder.Services.AddScoped<IFolderService, FolderService>();
-    builder.Services.AddScoped<IModelResolutionService, ModelResolutionService>();
-    builder.Services.AddScoped<IPlaygroundRunService, PlaygroundRunService>();
-    builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
-    builder.Services.AddScoped<IPlaygroundService, PlaygroundService>();
-    builder.Services.AddScoped<IAiProviderService, AiProviderService>();
-    builder.Services.AddScoped<IAiUsageLogger, AiUsageLogger>();
-    builder.Services.AddScoped<IShareLinkService, ShareLinkService>();
-    builder.Services.Configure<AvatarSettings>(builder.Configuration.GetSection("Avatar"));
-    builder.Services.AddScoped<IAvatarService, AvatarService>();
-    // (Email registered via AddClariveInfrastructure)
-    builder.Services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();
+    // ── Core (services, settings, background jobs) ──
+    builder.Services.AddClariveCore(builder.Configuration);
 
-    // ── Settings ──
-    builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("App"));
-    // (EmailSettings configured via AddClariveInfrastructure)
-
-    // (Google OAuth registered via AddClariveAuth)
-
-    // ── AI Configuration (Agent-based) ──
+    // ── AI (agents, orchestration) ──
     builder.Services.AddClariveAI(builder.Configuration);
-    builder.Services.AddScoped<IMcpImportService, McpImportService>();
-    builder.Services.AddSingleton<ITavilyClientService, TavilyClientService>();
-    builder.Services.AddSingleton<ILiteLlmRegistryCache, LiteLlmRegistryCache>();
-
-    // ── Background Services (remaining in Api due to app-layer dependencies) ──
-    builder.Services.AddHostedService<Clarive.Api.Services.Background.AccountPurgeBackgroundService>();
-    builder.Services.AddHostedService<Clarive.Api.Services.Background.MaintenanceModeSyncService>();
-    builder.Services.AddHostedService<Clarive.Api.Services.Background.LiteLlmSyncService>();
-    // (TokenCleanup, AiSessionCleanup, AiUsageCleanup, LogCleanup registered via AddClariveInfrastructure)
 
     // ── Rate Limiting ──
     builder.Services.AddRateLimiter(options =>
@@ -456,31 +417,7 @@ try
         .ExcludeFromDescription();
 
     // ── Endpoints ──
-    app.MapAuthEndpoints();
-    app.MapFolderEndpoints();
-    app.MapEntryEndpoints();
-    app.MapToolEndpoints();
-    app.MapApiKeyEndpoints();
-    app.MapUserEndpoints();
-    app.MapInvitationEndpoints();
-    app.MapTenantEndpoints();
-    app.MapWorkspaceEndpoints();
-    app.MapAuditLogEndpoints();
-    app.MapPublicApiEndpoints();
-    app.MapImportExportEndpoints();
-    app.MapAiGenerationEndpoints();
-    app.MapAccountEndpoints();
-    app.MapProfileEndpoints();
-    app.MapDashboardEndpoints();
-    app.MapTagEndpoints();
-    app.MapSuperEndpoints();
-    app.MapConfigEndpoints();
-    app.MapPlaygroundEndpoints();
-    app.MapAiProviderEndpoints();
-    app.MapAiUsageEndpoints();
-    app.MapShareLinkEndpoints();
-    app.MapPublicShareEndpoints();
-    app.MapSystemLogEndpoints();
+    app.MapClariveEndpoints();
 
     app.MapGet(
             "/api/status",

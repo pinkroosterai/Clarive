@@ -1,5 +1,5 @@
 using Clarive.Domain.Enums;
-using Clarive.Api.Services;
+using Clarive.Core.Services;
 using FluentAssertions;
 
 namespace Clarive.Api.UnitTests.Services;

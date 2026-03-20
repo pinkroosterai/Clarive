@@ -1,4 +1,4 @@
-using Clarive.Api.Models.Requests;
+using Clarive.Core.Models.Requests;
 using Clarive.Domain.ValueObjects;
 using FluentAssertions;
 using MiniValidation;
