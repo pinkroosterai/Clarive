@@ -76,7 +76,7 @@ public class McpImportService(
                     TenantId = tenantId,
                     Name = (mcp.Title ?? mcp.Name.Humanize(LetterCasing.Sentence)).Truncate(100),
                     ToolName = mcp.Name.Truncate(100),
-                    Description = (mcp.Description ?? "").Truncate(500),
+                    Description = (mcp.Description ?? "").Truncate(4000),
                     InputSchema = ParseAndValidateSchema(mcp.JsonSchema),
                     CreatedAt = DateTime.UtcNow,
                 }

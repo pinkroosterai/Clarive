@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { handleApiError } from '@/lib/handleApiError';
 import { toolService } from '@/services';
@@ -139,43 +140,45 @@ export default function ToolsPanel() {
             <DialogHeader>
               <DialogTitle>Add Tool</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="add-name">Name</Label>
-                <Input
-                  id="add-name"
-                  placeholder="e.g. Image Generator"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-4 pr-3">
+                <div className="space-y-2">
+                  <Label htmlFor="add-name">Name</Label>
+                  <Input
+                    id="add-name"
+                    placeholder="e.g. Image Generator"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="add-toolName">Tool Name</Label>
+                  <Input
+                    id="add-toolName"
+                    placeholder="e.g. generate_image"
+                    value={toolName}
+                    onChange={(e) => setToolName(e.target.value)}
+                    className="font-mono"
+                  />
+                  {!toolNameValid && (
+                    <p className="text-[0.8rem] font-medium text-error-text">
+                      Only letters, numbers, underscores, dots, and hyphens
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="add-desc">Description</Label>
+                  <Textarea
+                    id="add-desc"
+                    placeholder="What does this tool do?"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <ToolParameterEditor params={params} onChange={setParams} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="add-toolName">Tool Name</Label>
-                <Input
-                  id="add-toolName"
-                  placeholder="e.g. generate_image"
-                  value={toolName}
-                  onChange={(e) => setToolName(e.target.value)}
-                  className="font-mono"
-                />
-                {!toolNameValid && (
-                  <p className="text-[0.8rem] font-medium text-error-text">
-                    Only letters, numbers, underscores, dots, and hyphens
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="add-desc">Description</Label>
-                <Textarea
-                  id="add-desc"
-                  placeholder="What does this tool do?"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <ToolParameterEditor params={params} onChange={setParams} />
-            </div>
+            </ScrollArea>
             <DialogFooter>
               <Button variant="outline" onClick={resetAndClose}>
                 Cancel

@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import type { ToolDescription } from '@/types';
 
@@ -124,36 +125,38 @@ export const ToolCard = memo(function ToolCard({ tool, onUpdate, onDelete }: Too
           <DialogHeader>
             <DialogTitle>Edit Tool</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Name</Label>
-              <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-4 pr-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Name</Label>
+                <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-toolName">Tool Name</Label>
+                <Input
+                  id="edit-toolName"
+                  value={toolName}
+                  onChange={(e) => setToolName(e.target.value)}
+                  className="font-mono"
+                />
+                {toolName && !toolNameValid && (
+                  <p className="text-[0.8rem] font-medium text-error-text">
+                    Only letters, numbers, underscores, dots, and hyphens
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-desc">Description</Label>
+                <Textarea
+                  id="edit-desc"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <ToolParameterEditor params={params} onChange={setParams} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-toolName">Tool Name</Label>
-              <Input
-                id="edit-toolName"
-                value={toolName}
-                onChange={(e) => setToolName(e.target.value)}
-                className="font-mono"
-              />
-              {toolName && !toolNameValid && (
-                <p className="text-[0.8rem] font-medium text-error-text">
-                  Only letters, numbers, underscores, dots, and hyphens
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-desc">Description</Label>
-              <Textarea
-                id="edit-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <ToolParameterEditor params={params} onChange={setParams} />
-          </div>
+          </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
