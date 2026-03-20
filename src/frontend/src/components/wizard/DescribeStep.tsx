@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Globe, Loader2, Sparkles, Mail, Wand2 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -36,18 +36,27 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
   const [enableWebSearch, setEnableWebSearch] = useState(false);
   const [isPolishing, setIsPolishing] = useState(false);
+  const [isPolished, setIsPolished] = useState(false);
+
+  const resizeTextarea = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 320)}px`;
+  }, []);
+
+  // Auto-resize when description changes programmatically (e.g., after polish)
+  useEffect(() => {
+    resizeTextarea();
+  }, [description, resizeTextarea]);
 
   const handlePolish = async () => {
-    if (!description.trim() || isPolishing) return;
+    if (!description.trim() || isPolishing || isPolished) return;
     setIsPolishing(true);
     try {
       const polished = await wizardService.polishDescription(description.trim());
       setDescription(polished);
-      // Trigger auto-resize on the textarea
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 320)}px`;
-      }
+      setIsPolished(true);
     } catch {
       toast.error('Failed to polish description. Please try again.');
     } finally {
@@ -68,9 +77,7 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDescription(e.target.value);
-    const el = e.target;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 320)}px`;
+    setIsPolished(false);
   };
 
   const handleGenerate = () => {
@@ -119,8 +126,8 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
           size="icon"
           className="absolute top-2 right-2 size-8 text-foreground-muted hover:text-primary"
           onClick={handlePolish}
-          disabled={!description.trim() || isGenerating || isPolishing}
-          title="Polish description with AI"
+          disabled={!description.trim() || isGenerating || isPolishing || isPolished}
+          title={isPolished ? 'Description already polished' : 'Polish description with AI'}
           aria-label="Polish description with AI"
         >
           {isPolishing ? (
