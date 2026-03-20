@@ -1,6 +1,7 @@
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.QueryResults;
+using Clarive.Domain.Enums;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 
 namespace Clarive.Api.Endpoints;
 

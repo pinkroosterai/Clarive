@@ -1,3 +1,5 @@
+using Clarive.Domain.QueryResults;
+
 namespace Clarive.Api.Models.Responses;
 
 public record DashboardStatsResponse(
@@ -9,8 +11,6 @@ public record DashboardStatsResponse(
     List<RecentActivityDto> RecentActivity,
     List<FavoriteEntryDto> FavoriteEntries
 );
-
-public record RecentEntryDto(Guid Id, string Title, string VersionState, DateTime UpdatedAt);
 
 public record FavoriteEntryDto(Guid Id, string Title, string VersionState, DateTime FavoritedAt);
 

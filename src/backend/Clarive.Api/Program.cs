@@ -1,4 +1,5 @@
 using System.Text;
+using Clarive.Domain.Interfaces;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
@@ -9,7 +10,7 @@ using Clarive.Api.Endpoints;
 using Clarive.Api.HealthChecks;
 using Clarive.Api.Middleware;
 using Clarive.Api.Repositories.EfCore;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Seed;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Agents;

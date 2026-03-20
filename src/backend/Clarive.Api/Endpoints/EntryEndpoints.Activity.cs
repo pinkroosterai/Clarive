@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Enums;
 using Clarive.Api.Services.Interfaces;
 using Serilog;
 

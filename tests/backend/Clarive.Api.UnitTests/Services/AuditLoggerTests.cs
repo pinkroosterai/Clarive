@@ -1,6 +1,6 @@
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
 using FluentAssertions;
 using NSubstitute;

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Clarive.Api.Models.Agents;
+using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Clarive.Api.Services.Interfaces;

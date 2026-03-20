@@ -1,4 +1,4 @@
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Enums;
 
 namespace Clarive.Api.Services;
 

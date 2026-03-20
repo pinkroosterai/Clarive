@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Clarive.Api.Models.Agents;
+using Clarive.Domain.ValueObjects;
 
 namespace Clarive.Api.Services.Agents;
 
@@ -180,7 +181,7 @@ public static class TaskBuilder
             """;
     }
 
-    public static string BuildSystemMessageTask(List<Models.Requests.PromptInput> prompts)
+    public static string BuildSystemMessageTask(List<PromptInput> prompts)
     {
         var content = string.Join("\n", prompts.Select(p => p.Content));
         return $"Generate a system message for these prompts:\n\n{content}";
@@ -210,7 +211,7 @@ public static class TaskBuilder
 
     public static string BuildEnhanceBootstrapTask(
         string? systemMessage,
-        List<Models.Requests.PromptInput> prompts
+        List<PromptInput> prompts
     )
     {
         var parts = new List<string>();
@@ -230,7 +231,7 @@ public static class TaskBuilder
 
     public static string BuildPlaygroundJudgeTask(
         string? systemMessage,
-        List<Models.Requests.PromptInput> prompts,
+        List<PromptInput> prompts,
         List<Models.Responses.TestRunPromptResponse> responses,
         string modelName
     )
@@ -286,7 +287,7 @@ public static class TaskBuilder
     }
 
     public static string BuildFillTemplateFieldsTask(
-        List<Models.Requests.PromptInput> prompts,
+        List<PromptInput> prompts,
         string? systemMessage,
         List<TemplateFieldInfo> fields
     )

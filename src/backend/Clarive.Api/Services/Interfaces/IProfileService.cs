@@ -1,5 +1,6 @@
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Entities;
 using Clarive.Api.Models.Requests;
+using Clarive.Domain.ValueObjects;
 using ErrorOr;
 
 namespace Clarive.Api.Services.Interfaces;

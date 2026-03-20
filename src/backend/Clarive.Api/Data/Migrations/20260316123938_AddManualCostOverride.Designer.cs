@@ -26,7 +26,7 @@ namespace Clarive.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AiProvider", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AiProvider", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -74,7 +74,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("ai_providers", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AiProviderModel", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AiProviderModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -152,7 +152,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("ai_provider_models", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AiSession", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AiSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -204,7 +204,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("ai_sessions", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AiUsageLog", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AiUsageLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -283,7 +283,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("ai_usage_logs", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.ApiKey", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.ApiKey", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -327,7 +327,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("api_keys", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AuditLogEntry", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AuditLogEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -398,7 +398,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("audit_log_entries", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.EmailVerificationToken", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.EmailVerificationToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -439,7 +439,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("email_verification_tokens", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.EntryFavorite", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.EntryFavorite", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -478,7 +478,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("entry_favorites", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.EntryTag", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.EntryTag", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -520,7 +520,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("entry_tags", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Folder", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Folder", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -558,7 +558,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("folders", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Invitation", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -621,7 +621,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("invitations", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.LoginSession", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.LoginSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -685,7 +685,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("login_sessions", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PasswordResetToken", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PasswordResetToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -726,7 +726,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("password_reset_tokens", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PlaygroundRun", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PlaygroundRun", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -785,7 +785,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("playground_runs", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Prompt", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Prompt", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -817,7 +817,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("prompts", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PromptEntry", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PromptEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -884,7 +884,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("prompt_entries", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PromptEntryVersion", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PromptEntryVersion", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -944,7 +944,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("prompt_entry_versions", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.RefreshToken", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -993,7 +993,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.ServiceConfig", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.ServiceConfig", b =>
                 {
                     b.Property<string>("Key")
                         .HasMaxLength(128)
@@ -1024,7 +1024,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("service_config", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.SystemConfig", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.SystemConfig", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1060,7 +1060,7 @@ namespace Clarive.Api.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.TemplateField", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.TemplateField", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1107,7 +1107,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("template_fields", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Tenant", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1148,7 +1148,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("tenants", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.TenantMembership", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.TenantMembership", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1194,7 +1194,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("tenant_memberships", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.ToolDescription", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.ToolDescription", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1238,7 +1238,7 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("tool_descriptions", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.User", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1337,9 +1337,9 @@ namespace Clarive.Api.Data.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AiProviderModel", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AiProviderModel", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.AiProvider", "Provider")
+                    b.HasOne("Clarive.Domain.Entities.AiProvider", "Provider")
                         .WithMany("Models")
                         .HasForeignKey("ProviderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1348,23 +1348,23 @@ namespace Clarive.Api.Data.Migrations
                     b.Navigation("Provider");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AiSession", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AiSession", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AiUsageLog", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AiUsageLog", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", "Entry")
+                    b.HasOne("Clarive.Domain.Entities.PromptEntry", "Entry")
                         .WithMany()
                         .HasForeignKey("EntryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1373,77 +1373,77 @@ namespace Clarive.Api.Data.Migrations
                     b.Navigation("Entry");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.ApiKey", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.ApiKey", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AuditLogEntry", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AuditLogEntry", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.EmailVerificationToken", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.EmailVerificationToken", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.EntryFavorite", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.EntryFavorite", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", null)
+                    b.HasOne("Clarive.Domain.Entities.PromptEntry", null)
                         .WithMany()
                         .HasForeignKey("EntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.EntryTag", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.EntryTag", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", null)
+                    b.HasOne("Clarive.Domain.Entities.PromptEntry", null)
                         .WithMany()
                         .HasForeignKey("EntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Folder", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Folder", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.Folder", "Parent")
+                    b.HasOne("Clarive.Domain.Entities.Folder", "Parent")
                         .WithMany("Children")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany("Folders")
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1452,59 +1452,59 @@ namespace Clarive.Api.Data.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Invitation", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Invitation", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("InvitedById")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("TargetUserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.LoginSession", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.LoginSession", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.RefreshToken", null)
+                    b.HasOne("Clarive.Domain.Entities.RefreshToken", null)
                         .WithOne()
-                        .HasForeignKey("Clarive.Api.Models.Entities.LoginSession", "RefreshTokenId")
+                        .HasForeignKey("Clarive.Domain.Entities.LoginSession", "RefreshTokenId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PasswordResetToken", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PasswordResetToken", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PlaygroundRun", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PlaygroundRun", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", "Entry")
+                    b.HasOne("Clarive.Domain.Entities.PromptEntry", "Entry")
                         .WithMany()
                         .HasForeignKey("EntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1513,9 +1513,9 @@ namespace Clarive.Api.Data.Migrations
                     b.Navigation("Entry");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Prompt", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Prompt", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.PromptEntryVersion", "Version")
+                    b.HasOne("Clarive.Domain.Entities.PromptEntryVersion", "Version")
                         .WithMany("Prompts")
                         .HasForeignKey("VersionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1524,20 +1524,20 @@ namespace Clarive.Api.Data.Migrations
                     b.Navigation("Version");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PromptEntry", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PromptEntry", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.Folder", "Folder")
+                    b.HasOne("Clarive.Domain.Entities.Folder", "Folder")
                         .WithMany()
                         .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany("Entries")
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1546,15 +1546,15 @@ namespace Clarive.Api.Data.Migrations
                     b.Navigation("Folder");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PromptEntryVersion", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PromptEntryVersion", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.PromptEntry", "Entry")
+                    b.HasOne("Clarive.Domain.Entities.PromptEntry", "Entry")
                         .WithMany("Versions")
                         .HasForeignKey("EntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("PublishedBy")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1562,91 +1562,91 @@ namespace Clarive.Api.Data.Migrations
                     b.Navigation("Entry");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.RefreshToken", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.RefreshToken", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.TemplateField", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.TemplateField", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.Prompt", null)
+                    b.HasOne("Clarive.Domain.Entities.Prompt", null)
                         .WithMany("TemplateFields")
                         .HasForeignKey("PromptId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Tenant", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Tenant", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.TenantMembership", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.TenantMembership", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Clarive.Api.Models.Entities.User", null)
+                    b.HasOne("Clarive.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.ToolDescription", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.ToolDescription", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.User", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.User", b =>
                 {
-                    b.HasOne("Clarive.Api.Models.Entities.Tenant", null)
+                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
                         .WithMany("Users")
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.AiProvider", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.AiProvider", b =>
                 {
                     b.Navigation("Models");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Folder", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Folder", b =>
                 {
                     b.Navigation("Children");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Prompt", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Prompt", b =>
                 {
                     b.Navigation("TemplateFields");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PromptEntry", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PromptEntry", b =>
                 {
                     b.Navigation("Versions");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.PromptEntryVersion", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.PromptEntryVersion", b =>
                 {
                     b.Navigation("Prompts");
                 });
 
-            modelBuilder.Entity("Clarive.Api.Models.Entities.Tenant", b =>
+            modelBuilder.Entity("Clarive.Domain.Entities.Tenant", b =>
                 {
                     b.Navigation("Entries");
 

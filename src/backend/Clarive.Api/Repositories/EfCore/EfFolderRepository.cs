@@ -1,7 +1,8 @@
+using Clarive.Domain.QueryResults;
 using Clarive.Api.Data;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Entities;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Repositories.EfCore;

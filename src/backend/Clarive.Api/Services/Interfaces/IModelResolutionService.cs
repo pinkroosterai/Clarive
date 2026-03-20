@@ -1,4 +1,4 @@
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Enums;
 using Clarive.Api.Models.Responses;
 using ErrorOr;
 using Microsoft.Extensions.AI;

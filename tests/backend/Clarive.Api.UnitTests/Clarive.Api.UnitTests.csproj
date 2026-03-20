@@ -20,5 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../src/backend/Clarive.Api/Clarive.Api.csproj" />
+    <ProjectReference Include="../../../src/backend/Clarive.Domain/Clarive.Domain.csproj" />
   </ItemGroup>
 </Project>

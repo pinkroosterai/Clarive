@@ -1,5 +1,5 @@
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 using ErrorOr;
 using FluentAssertions;
 using NSubstitute;

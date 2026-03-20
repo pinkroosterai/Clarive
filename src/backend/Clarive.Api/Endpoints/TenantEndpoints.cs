@@ -1,7 +1,9 @@
+using Clarive.Domain.Entities;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.ValueObjects;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 
@@ -157,6 +159,6 @@ public static class TenantEndpoints
         return Results.File(absolutePath, "image/webp");
     }
 
-    internal static string? TenantAvatarUrl(Models.Entities.Tenant tenant) =>
+    internal static string? TenantAvatarUrl(Tenant tenant) =>
         AvatarHelpers.TenantAvatarUrl(tenant);
 }

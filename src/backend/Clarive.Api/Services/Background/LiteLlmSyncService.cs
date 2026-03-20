@@ -1,4 +1,4 @@
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Services.Background;

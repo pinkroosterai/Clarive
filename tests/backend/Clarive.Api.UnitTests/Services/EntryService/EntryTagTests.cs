@@ -1,3 +1,4 @@
+using Clarive.Domain.Entities;
 using FluentAssertions;
 using NSubstitute;
 
@@ -10,7 +11,7 @@ public class EntryTagTests : EntryServiceTestBase
     {
         EntryRepo
             .GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns((Api.Models.Entities.PromptEntry?)null);
+            .Returns((PromptEntry?)null);
 
         var result = await Sut.AddEntryTagsAsync(
             TenantId,
@@ -105,7 +106,7 @@ public class EntryTagTests : EntryServiceTestBase
     {
         EntryRepo
             .GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns((Api.Models.Entities.PromptEntry?)null);
+            .Returns((PromptEntry?)null);
 
         var result = await Sut.GetEntryTagsAsync(TenantId, Guid.NewGuid(), CancellationToken.None);
 
@@ -118,7 +119,7 @@ public class EntryTagTests : EntryServiceTestBase
     {
         EntryRepo
             .GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns((Api.Models.Entities.PromptEntry?)null);
+            .Returns((PromptEntry?)null);
 
         var result = await Sut.RemoveEntryTagAsync(
             TenantId,

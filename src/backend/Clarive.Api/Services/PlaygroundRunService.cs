@@ -1,8 +1,9 @@
 using System.Text.Json;
 using Clarive.Api.Models.Agents;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.ValueObjects;
+using Clarive.Domain.Entities;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Services;

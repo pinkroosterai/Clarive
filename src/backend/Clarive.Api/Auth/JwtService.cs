@@ -2,8 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 

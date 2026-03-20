@@ -1,9 +1,11 @@
+using Clarive.Domain.Entities;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Enums;
 using Clarive.Api.Models.Requests;
+using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
 using Serilog;
 using static Clarive.Api.Helpers.ResponseMappers;
@@ -58,7 +60,7 @@ public static class WorkspaceEndpoints
         // cannot regenerate a JWT with stale tenant claims.
         var (rawRefresh, refreshHash) = jwtService.GenerateRefreshToken();
         await refreshTokenRepo.CreateAsync(
-            new Models.Entities.RefreshToken
+            new RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,

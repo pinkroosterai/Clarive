@@ -1,4 +1,4 @@
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Entities;
 using Microsoft.Extensions.AI;
 
 namespace Clarive.Api.Services.Agents;

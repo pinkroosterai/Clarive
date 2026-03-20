@@ -1,8 +1,9 @@
 using Clarive.Api.Data;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 using Clarive.Api.Models.Requests;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.ValueObjects;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;

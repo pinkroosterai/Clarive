@@ -1,9 +1,12 @@
+using Clarive.Domain.Enums;
 using System.ClientModel;
 using Clarive.Api.Helpers;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Errors;
+using Clarive.Domain.Entities;
 using Clarive.Api.Models.Requests;
+using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
@@ -69,8 +72,8 @@ public class AiProviderService(
                 ?? (
                     request.Name.Contains("openai", StringComparison.OrdinalIgnoreCase)
                     || request.Name.Contains("azure", StringComparison.OrdinalIgnoreCase)
-                        ? Models.Enums.AiApiMode.ResponsesApi
-                        : Models.Enums.AiApiMode.ChatCompletions
+                        ? AiApiMode.ResponsesApi
+                        : AiApiMode.ChatCompletions
                 ),
             SortOrder = 0,
             CreatedAt = now,
@@ -318,9 +321,9 @@ public class AiProviderService(
         return Result.Success;
     }
 
-    private static Models.Enums.AiApiMode? ParseApiMode(string? value) =>
+    private static AiApiMode? ParseApiMode(string? value) =>
         value is not null
-        && Enum.TryParse<Models.Enums.AiApiMode>(value, ignoreCase: true, out var mode)
+        && Enum.TryParse<AiApiMode>(value, ignoreCase: true, out var mode)
             ? mode
             : null;
 

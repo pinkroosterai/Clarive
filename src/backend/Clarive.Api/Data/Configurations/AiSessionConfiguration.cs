@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Clarive.Api.Models.Agents;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.ValueObjects;
+using Clarive.Domain.Entities;
 using Clarive.Api.Models.Requests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

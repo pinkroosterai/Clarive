@@ -1,5 +1,5 @@
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 
 namespace Clarive.Api.Models.Responses;
 
@@ -36,7 +36,7 @@ public record PromptEntrySummary(
             entry.Id,
             entry.Title,
             version?.Version ?? 0,
-            (version?.VersionState ?? Enums.VersionState.Draft).ToString().ToLower(),
+            (version?.VersionState ?? Clarive.Domain.Enums.VersionState.Draft).ToString().ToLower(),
             entry.IsTrashed,
             entry.FolderId,
             HasSystemMessage: !string.IsNullOrEmpty(version?.SystemMessage),

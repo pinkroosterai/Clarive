@@ -1,4 +1,5 @@
 using Clarive.Api.Models.Agents;
+using Clarive.Domain.ValueObjects;
 using Clarive.Api.Services.Agents;
 using FluentAssertions;
 

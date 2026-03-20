@@ -2,9 +2,10 @@ using System.Security.Cryptography;
 using System.Text;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Errors;
+using Clarive.Domain.Entities;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
 

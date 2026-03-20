@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
+using Clarive.Domain.Interfaces;
 using Clarive.Api.Auth;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Data;

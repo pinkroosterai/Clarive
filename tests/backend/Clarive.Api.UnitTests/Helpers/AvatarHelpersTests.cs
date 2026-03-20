@@ -1,5 +1,5 @@
 using Clarive.Api.Helpers;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Entities;
 using FluentAssertions;
 
 namespace Clarive.Api.UnitTests.Helpers;

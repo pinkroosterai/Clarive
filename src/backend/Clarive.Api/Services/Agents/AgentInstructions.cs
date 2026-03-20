@@ -1,4 +1,5 @@
 using Clarive.Api.Models.Agents;
+using Clarive.Domain.ValueObjects;
 
 namespace Clarive.Api.Services.Agents;
 

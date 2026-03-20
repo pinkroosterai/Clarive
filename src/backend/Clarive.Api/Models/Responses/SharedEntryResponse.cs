@@ -1,4 +1,4 @@
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Entities;
 
 namespace Clarive.Api.Models.Responses;
 

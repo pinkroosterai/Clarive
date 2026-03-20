@@ -2,4 +2,5 @@
   <Project Path="..\..\tests\backend\Clarive.Api.IntegrationTests\Clarive.Api.IntegrationTests.csproj" />
   <Project Path="..\..\tests\backend\Clarive.Api.UnitTests\Clarive.Api.UnitTests.csproj" />
   <Project Path="Clarive.Api\Clarive.Api.csproj" />
+  <Project Path="Clarive.Domain\Clarive.Domain.csproj" />
 </Solution>

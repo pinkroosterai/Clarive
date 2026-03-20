@@ -1,5 +1,7 @@
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
@@ -53,7 +55,7 @@ public class ModelResolutionService(
 
         IChatClient chatClient;
         var isTemperatureConfigurable = !(providerMatch?.Model.IsReasoning ?? false);
-        var apiMode = providerMatch?.Provider.ApiMode ?? Models.Enums.AiApiMode.ResponsesApi;
+        var apiMode = providerMatch?.Provider.ApiMode ?? AiApiMode.ResponsesApi;
 
         if (providerMatch is not null && encryption.IsAvailable)
         {

@@ -1,4 +1,5 @@
 using Clarive.Api.Models.Agents;
+using Clarive.Domain.ValueObjects;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;

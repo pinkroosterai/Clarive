@@ -17,6 +17,7 @@ WORKDIR /repo
 # Copy build infrastructure files needed for restore (CPM, SDK pin, props)
 COPY global.json Directory.Build.props Directory.Packages.props ./
 COPY src/backend/Directory.Build.props src/backend/
+COPY src/backend/Clarive.Domain/Clarive.Domain.csproj src/backend/Clarive.Domain/
 COPY src/backend/Clarive.Api/Clarive.Api.csproj src/backend/Clarive.Api/
 RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet restore src/backend/Clarive.Api/Clarive.Api.csproj

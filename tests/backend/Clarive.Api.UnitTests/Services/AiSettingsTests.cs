@@ -1,4 +1,4 @@
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Enums;
 using Clarive.Api.Services;
 using FluentAssertions;
 

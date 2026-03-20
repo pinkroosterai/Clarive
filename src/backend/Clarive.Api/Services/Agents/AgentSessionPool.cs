@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Clarive.Api.Models.Agents;
+using Clarive.Domain.ValueObjects;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 

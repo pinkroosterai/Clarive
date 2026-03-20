@@ -1,7 +1,9 @@
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.QueryResults;
+using Clarive.Domain.Entities;
 using Clarive.Api.Models.Requests;
+using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Distributed;

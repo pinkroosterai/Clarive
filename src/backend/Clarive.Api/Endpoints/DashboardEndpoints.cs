@@ -1,9 +1,10 @@
+using Clarive.Domain.QueryResults;
 using System.Text.Json;
 using Clarive.Api.Auth;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
 
 namespace Clarive.Api.Endpoints;
@@ -93,7 +94,7 @@ public static class DashboardEndpoints
                     continue;
 
                 favoriteVersions.TryGetValue(entryId, out var version);
-                var versionState = (version?.VersionState ?? Models.Enums.VersionState.Draft)
+                var versionState = (version?.VersionState ?? VersionState.Draft)
                     .ToString()
                     .ToLower();
                 favoriteEntries.Add(

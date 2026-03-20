@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
 using Humanizer;
 using ModelContextProtocol.Client;

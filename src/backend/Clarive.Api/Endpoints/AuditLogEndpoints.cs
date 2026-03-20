@@ -1,6 +1,6 @@
 using Clarive.Api.Auth;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 
 namespace Clarive.Api.Endpoints;
 

@@ -29,4 +29,7 @@
     <PackageReference Include="YamlDotNet" />
     <PackageReference Include="ModelContextProtocol" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Clarive.Domain\Clarive.Domain.csproj" />
+  </ItemGroup>
 </Project>

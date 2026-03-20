@@ -1,8 +1,9 @@
 using System.ClientModel;
 using Clarive.Api.Models.Agents;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.ValueObjects;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Agents.AiExtensions;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.OpenAI;

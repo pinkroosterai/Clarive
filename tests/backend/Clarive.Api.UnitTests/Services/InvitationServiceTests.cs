@@ -1,8 +1,8 @@
 using Clarive.Api.Auth;
 using Clarive.Api.Data;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
 using Clarive.Api.Services.Interfaces;
 using FluentAssertions;

@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Clarive.Api.Endpoints;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 

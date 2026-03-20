@@ -1,8 +1,10 @@
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Errors;
+using Clarive.Domain.Entities;
 using Clarive.Api.Models.Requests;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.ValueObjects;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
 

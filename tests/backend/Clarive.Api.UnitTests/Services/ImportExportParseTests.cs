@@ -1,5 +1,5 @@
 using System.Reflection;
-using Clarive.Api.Models.Entities;
+using Clarive.Domain.Entities;
 using Clarive.Api.Services;
 using FluentAssertions;
 

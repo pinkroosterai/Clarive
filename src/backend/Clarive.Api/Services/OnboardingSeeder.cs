@@ -1,6 +1,6 @@
 using Clarive.Api.Data;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 
 namespace Clarive.Api.Services;
 

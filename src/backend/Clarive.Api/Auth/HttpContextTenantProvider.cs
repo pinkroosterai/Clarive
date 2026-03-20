@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Clarive.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 
 namespace Clarive.Api.Auth;

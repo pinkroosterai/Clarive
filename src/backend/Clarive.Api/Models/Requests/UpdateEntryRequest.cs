@@ -1,3 +1,4 @@
+using Clarive.Domain.ValueObjects;
 using System.ComponentModel.DataAnnotations;
 
 namespace Clarive.Api.Models.Requests;

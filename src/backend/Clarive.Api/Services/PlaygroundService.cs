@@ -2,12 +2,14 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Clarive.Api.Helpers;
+using Clarive.Domain.Errors;
 using Clarive.Api.Models.Agents;
-using Clarive.Api.Models.Entities;
-using Clarive.Api.Models.Enums;
+using Clarive.Domain.ValueObjects;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Repositories.Interfaces;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
 using ErrorOr;
@@ -105,7 +107,7 @@ public class PlaygroundService(
 
             if (
                 request.ShowReasoning == true
-                && resolved.ApiMode == Models.Enums.AiApiMode.ResponsesApi
+                && resolved.ApiMode == AiApiMode.ResponsesApi
             )
             {
                 options.Reasoning = new ReasoningOptions
@@ -118,7 +120,7 @@ public class PlaygroundService(
             }
 
             var thinkParser =
-                resolved.ApiMode == Models.Enums.AiApiMode.ChatCompletions
+                resolved.ApiMode == AiApiMode.ChatCompletions
                     ? new Helpers.ThinkTagStreamParser()
                     : null;
 
