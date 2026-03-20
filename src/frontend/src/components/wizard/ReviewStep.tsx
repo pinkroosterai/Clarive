@@ -38,7 +38,7 @@ export function ReviewStep({
   const noop = () => {};
 
   return (
-    <div className="flex h-full flex-col gap-6 min-h-0 overflow-y-auto">
+    <div className="flex flex-col gap-6">
       {/* Top: prompt preview */}
       <div className="bg-surface rounded-xl border border-border-subtle elevation-1 overflow-hidden p-4">
         <PromptEditor entry={draft} onChange={noop} isReadOnly />

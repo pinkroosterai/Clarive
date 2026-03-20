@@ -171,7 +171,7 @@ export function WizardContent({ mode, existingEntry, onClose }: WizardContentPro
                 animate="center"
                 exit="exit"
                 transition={stepTransition}
-                className="h-full p-6"
+                className="p-6"
               >
                 <ReviewStep
                   draft={draft}
