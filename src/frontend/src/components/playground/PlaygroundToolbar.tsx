@@ -1,4 +1,6 @@
-import { ArrowLeft, ListPlus, Play, Square, History, SlidersHorizontal } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, ChevronDown, ChevronRight, ListPlus, Play, Server, Square, History, SlidersHorizontal } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -14,9 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { PLAYGROUND_DEFAULTS } from '@/lib/constants';
+import { mcpServerService, toolService } from '@/services';
 import type { EnrichedModel } from '@/services/api/playgroundService';
 
 interface PlaygroundToolbarProps {
@@ -48,6 +53,10 @@ interface PlaygroundToolbarProps {
   isBatchRunning?: boolean;
   batchCurrent?: number;
   batchTotal?: number;
+  enabledServerIds: string[];
+  setEnabledServerIds: (v: string[]) => void;
+  excludedToolNames: string[];
+  setExcludedToolNames: (v: string[]) => void;
 }
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -82,8 +91,43 @@ export default function PlaygroundToolbar({
   isBatchRunning,
   batchCurrent,
   batchTotal,
+  enabledServerIds,
+  setEnabledServerIds,
+  excludedToolNames,
+  setExcludedToolNames,
 }: PlaygroundToolbarProps) {
   const navigate = useNavigate();
+
+  // ── MCP servers + tools for toolbar ──
+  const { data: mcpServers = [] } = useQuery({
+    queryKey: ['mcp-servers'],
+    queryFn: mcpServerService.list,
+  });
+  const { data: allTools = [] } = useQuery({
+    queryKey: ['tools'],
+    queryFn: toolService.getToolsList,
+  });
+  const [expandedServerId, setExpandedServerId] = useState<string | null>(null);
+
+  const toggleServer = (serverId: string) => {
+    if (enabledServerIds.includes(serverId)) {
+      setEnabledServerIds(enabledServerIds.filter((id) => id !== serverId));
+      // Remove excluded tools for this server
+      const serverTools = allTools.filter((t) => t.mcpServerName === mcpServers.find((s) => s.id === serverId)?.name);
+      const serverToolNames = new Set(serverTools.map((t) => t.toolName));
+      setExcludedToolNames(excludedToolNames.filter((n) => !serverToolNames.has(n)));
+    } else {
+      setEnabledServerIds([...enabledServerIds, serverId]);
+    }
+  };
+
+  const toggleToolExclusion = (toolName: string) => {
+    if (excludedToolNames.includes(toolName)) {
+      setExcludedToolNames(excludedToolNames.filter((n) => n !== toolName));
+    } else {
+      setExcludedToolNames([...excludedToolNames, toolName]);
+    }
+  };
 
   // Model selector — shared between desktop inline and mobile popover
   const modelSelector = (
@@ -252,9 +296,63 @@ export default function PlaygroundToolbar({
                 <SlidersHorizontal className="size-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-64">
+            <PopoverContent align="end" className="w-72">
               <div className="text-xs font-medium text-foreground-muted mb-3">Settings</div>
               {parameterControls(true)}
+
+              {mcpServers.length > 0 && (
+                <>
+                  <Separator className="my-3" />
+                  <div className="text-xs font-medium text-foreground-muted mb-2 flex items-center gap-1.5">
+                    <Server className="size-3" />
+                    Tools
+                  </div>
+                  <div className={`space-y-2 ${isStreaming ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {mcpServers.map((server) => {
+                      const enabled = enabledServerIds.includes(server.id);
+                      const expanded = expandedServerId === server.id;
+                      const serverTools = allTools.filter((t) => t.mcpServerName === server.name);
+
+                      return (
+                        <div key={server.id}>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={enabled}
+                              onCheckedChange={() => toggleServer(server.id)}
+                              className="scale-75"
+                            />
+                            <span className="text-xs flex-1 truncate">{server.name}</span>
+                            <span className="text-[10px] text-foreground-muted">{server.toolCount}</span>
+                            {enabled && serverTools.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedServerId(expanded ? null : server.id)}
+                                className="p-0.5 text-foreground-muted hover:text-foreground"
+                              >
+                                {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+                              </button>
+                            )}
+                          </div>
+                          {enabled && expanded && serverTools.length > 0 && (
+                            <div className="ml-7 mt-1 space-y-1">
+                              {serverTools.map((tool) => (
+                                <label key={tool.id} className="flex items-center gap-1.5 cursor-pointer">
+                                  <Checkbox
+                                    checked={!excludedToolNames.includes(tool.toolName)}
+                                    onCheckedChange={() => toggleToolExclusion(tool.toolName)}
+                                    className="scale-75"
+                                  />
+                                  <span className="text-[11px] truncate">{tool.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </PopoverContent>
           </Popover>
 

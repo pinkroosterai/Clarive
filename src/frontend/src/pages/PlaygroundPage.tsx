@@ -125,6 +125,10 @@ const PlaygroundPage = () => {
     }
   }, [templateFields]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── MCP tool state ──
+  const [enabledServerIds, setEnabledServerIds] = useState<string[]>([]);
+  const [excludedToolNames, setExcludedToolNames] = useState<string[]>([]);
+
   // ── Streaming (delegated to hook) ──
   const {
     isStreaming,
@@ -159,6 +163,8 @@ const PlaygroundPage = () => {
     reasoningEffort,
     showReasoning,
     isReasoning: selectedModel?.isReasoning ?? false,
+    mcpServerIds: enabledServerIds.length > 0 ? enabledServerIds : undefined,
+    excludedToolNames: excludedToolNames.length > 0 ? excludedToolNames : undefined,
   });
 
   // ── Response display ──
@@ -522,6 +528,10 @@ const PlaygroundPage = () => {
         isBatchRunning={isBatchRunning}
         batchCurrent={batchCurrent}
         batchTotal={batchTotal}
+        enabledServerIds={enabledServerIds}
+        setEnabledServerIds={setEnabledServerIds}
+        excludedToolNames={excludedToolNames}
+        setExcludedToolNames={setExcludedToolNames}
       />
 
       {/* ── Queue strip ── */}
