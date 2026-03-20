@@ -340,7 +340,8 @@ public class PlaygroundService(
         var sw = Stopwatch.StartNew();
         try
         {
-            var agent = agentFactory.CreatePlaygroundJudgeAgent();
+            var agent = agentFactory.CreateAgent(
+                AiActionType.PlaygroundJudge, AgentInstructions.PlaygroundJudge, "PlaygroundJudge");
             var task = TaskBuilder.BuildPlaygroundJudgeTask(
                 version.SystemMessage,
                 promptInputs,

@@ -27,16 +27,9 @@ namespace Clarive.AI.Agents;
 public class OpenAIAgentFactory : IAgentFactory, IDisposable
 {
     internal static readonly AiActionType[] ConfigurableActions =
-    [
-        AiActionType.Generation,
-        AiActionType.Evaluation,
-        AiActionType.Clarification,
-        AiActionType.SystemMessage,
-        AiActionType.Decomposition,
-        AiActionType.FillTemplateFields,
-        AiActionType.PlaygroundJudge,
-        AiActionType.PolishDescription,
-    ];
+        Enum.GetValues<AiActionType>()
+            .Where(a => a != AiActionType.PlaygroundTest)
+            .ToArray();
 
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<OpenAIAgentFactory> _logger;
@@ -166,48 +159,6 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         }
     }
 
-    public AIAgent CreateEvaluationAgent(GenerationConfig config) =>
-        CreateActionAgent(
-            AiActionType.Evaluation,
-            AgentInstructions.BuildEvaluation(config),
-            "PromptEvaluator"
-        );
-
-    public AIAgent CreateClarificationAgent() =>
-        CreateActionAgent(
-            AiActionType.Clarification,
-            AgentInstructions.Clarification,
-            "PromptClarifier"
-        );
-
-    public AIAgent CreateSystemMessageAgent() =>
-        CreateActionAgent(
-            AiActionType.SystemMessage,
-            AgentInstructions.SystemMessage,
-            "SystemMessageGenerator"
-        );
-
-    public AIAgent CreateDecomposeAgent() =>
-        CreateActionAgent(
-            AiActionType.Decomposition,
-            AgentInstructions.Decompose,
-            "PromptDecomposer"
-        );
-
-    public AIAgent CreateFillTemplateFieldsAgent() =>
-        CreateActionAgent(
-            AiActionType.FillTemplateFields,
-            AgentInstructions.FillTemplateFields,
-            "TemplateFieldFiller"
-        );
-
-    public AIAgent CreatePlaygroundJudgeAgent() =>
-        CreateActionAgent(
-            AiActionType.PlaygroundJudge,
-            AgentInstructions.PlaygroundJudge,
-            "PlaygroundJudge"
-        );
-
     public IChatClient GetActionChatClient(AiActionType actionType)
     {
         _lock.EnterReadLock();
@@ -222,7 +173,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         }
     }
 
-    private ChatClientAgent CreateActionAgent(
+    public AIAgent CreateAgent(
         AiActionType actionType,
         string instructions,
         string name

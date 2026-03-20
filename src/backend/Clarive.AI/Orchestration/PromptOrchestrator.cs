@@ -275,7 +275,8 @@ public class PromptOrchestrator : IPromptOrchestrator
         CancellationToken ct = default
     )
     {
-        var agent = _factory.CreateSystemMessageAgent();
+        var agent = _factory.CreateAgent(
+            AiActionType.SystemMessage, AgentInstructions.SystemMessage, "SystemMessageGenerator");
         var task = TaskBuilder.BuildSystemMessageTask(prompts);
 
         var response = await agent.RunAsync<GeneratedSystemMessageOutput>(
@@ -293,7 +294,8 @@ public class PromptOrchestrator : IPromptOrchestrator
         CancellationToken ct = default
     )
     {
-        var agent = _factory.CreateFillTemplateFieldsAgent();
+        var agent = _factory.CreateAgent(
+            AiActionType.FillTemplateFields, AgentInstructions.FillTemplateFields, "TemplateFieldFiller");
         var task = TaskBuilder.BuildFillTemplateFieldsTask(prompts, systemMessage, fields);
 
         var response = await agent.RunAsync<TemplateFieldValuesOutput>(task, cancellationToken: ct);
@@ -308,7 +310,8 @@ public class PromptOrchestrator : IPromptOrchestrator
         CancellationToken ct = default
     )
     {
-        var agent = _factory.CreateDecomposeAgent();
+        var agent = _factory.CreateAgent(
+            AiActionType.Decomposition, AgentInstructions.Decompose, "PromptDecomposer");
         var task = TaskBuilder.BuildDecompositionTask(promptContent, isTemplate, systemMessage);
 
         var response = await agent.RunAsync<DecomposedChainOutput>(task, cancellationToken: ct);
@@ -357,7 +360,8 @@ public class PromptOrchestrator : IPromptOrchestrator
     {
         try
         {
-            var agent = _factory.CreateEvaluationAgent(config);
+            var agent = _factory.CreateAgent(
+                AiActionType.Evaluation, AgentInstructions.BuildEvaluation(config), "PromptEvaluator");
             var task = TaskBuilder.BuildEvaluationTask(config, prompts);
             var response = await agent.RunAsync<PromptEvaluation>(task, cancellationToken: ct);
             return (EvaluationNormalizer.Normalize(response.Result), response.Usage);
@@ -381,7 +385,8 @@ public class PromptOrchestrator : IPromptOrchestrator
             if (onProgress is not null)
                 await onProgress(ProgressEvent.Clarifying());
 
-            var agent = _factory.CreateClarificationAgent();
+            var agent = _factory.CreateAgent(
+                AiActionType.Clarification, AgentInstructions.Clarification, "PromptClarifier");
             var task = TaskBuilder.BuildClarificationTask(config, prompts);
             var response = await agent.RunAsync<ClarificationResult>(task, cancellationToken: ct);
             return (response.Result, response.Usage);

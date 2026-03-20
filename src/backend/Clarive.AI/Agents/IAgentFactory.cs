@@ -1,5 +1,3 @@
-using Clarive.AI.Configuration;
-using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Enums;
 using Clarive.AI.Pipeline;
@@ -17,12 +15,7 @@ public interface IAgentFactory
         GenerationConfig config,
         IList<AITool>? tools = null
     );
-    AIAgent CreateEvaluationAgent(GenerationConfig config);
-    AIAgent CreateClarificationAgent();
-    AIAgent CreateSystemMessageAgent();
-    AIAgent CreateDecomposeAgent();
-    AIAgent CreateFillTemplateFieldsAgent();
-    AIAgent CreatePlaygroundJudgeAgent();
+    AIAgent CreateAgent(AiActionType actionType, string instructions, string name);
     IChatClient GetActionChatClient(AiActionType actionType);
     IChatClient CreateChatClient(string model);
     IChatClient CreateChatClientForProvider(

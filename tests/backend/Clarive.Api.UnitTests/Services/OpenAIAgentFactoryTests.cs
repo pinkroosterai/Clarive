@@ -133,28 +133,20 @@ public class OpenAIAgentFactoryTests
     // ── Issue 121: Sync guard — if this test fails, update CONFIGURABLE_ACTIONS in ActionModelTable.tsx ──
 
     [Fact]
-    public void ConfigurableActions_MatchesExpectedActionList()
+    public void ConfigurableActions_IncludesAllActionTypesExceptPlaygroundTest()
     {
-        // This test ensures the backend ConfigurableActions array stays in sync
-        // with the frontend CONFIGURABLE_ACTIONS in ActionModelTable.tsx.
-        // If you add/remove an action here, update the frontend array too.
-        var expected = new[]
-        {
-            AiActionType.Generation,
-            AiActionType.Evaluation,
-            AiActionType.Clarification,
-            AiActionType.SystemMessage,
-            AiActionType.Decomposition,
-            AiActionType.FillTemplateFields,
-            AiActionType.PlaygroundJudge,
-            AiActionType.PolishDescription,
-        };
+        // ConfigurableActions is derived from the AiActionType enum, excluding PlaygroundTest.
+        // If this test fails after adding a new AiActionType, update CONFIGURABLE_ACTIONS
+        // in ActionModelTable.tsx and add a matching ActionAiConfig property to AiSettings.
+        var expected = Enum.GetValues<AiActionType>()
+            .Where(a => a != AiActionType.PlaygroundTest)
+            .ToArray();
 
         OpenAIAgentFactory
             .ConfigurableActions.Should()
             .BeEquivalentTo(
                 expected,
-                "ConfigurableActions changed — update CONFIGURABLE_ACTIONS in ActionModelTable.tsx"
+                "ConfigurableActions should include all AiActionType values except PlaygroundTest — update CONFIGURABLE_ACTIONS in ActionModelTable.tsx"
             );
     }
 
