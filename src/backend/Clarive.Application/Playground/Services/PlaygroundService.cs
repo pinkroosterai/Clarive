@@ -122,12 +122,12 @@ public class PlaygroundService(
                     var toolHandler = new McpToolProgressHandler(reporter);
 
                     var wrappedClient = new ChatClientBuilder(client)
+                        .UseLogging(loggerFactory)
                         .Use(inner =>
                         {
                             var eefic = new EventEmittingFunctionInvokingChatClient(inner, loggerFactory);
                             eefic.ToolCallStarting += toolHandler.OnToolCallStartingAsync;
                             eefic.ToolCallCompleted += toolHandler.OnToolCallCompletedAsync;
-                            // Also wire to conversation log builder
                             eefic.ToolCallStarting += logBuilder.OnToolCallStartingAsync;
                             eefic.ToolCallCompleted += logBuilder.OnToolCallCompletedAsync;
                             return eefic;
