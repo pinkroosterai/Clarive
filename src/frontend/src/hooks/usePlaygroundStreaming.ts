@@ -267,6 +267,24 @@ export function usePlaygroundStreaming({
       setLastVersionLabel(result.versionLabel ?? null);
       setIsJudging(false);
 
+      // Populate tool calls with full invocation data from result
+      if (result.toolInvocations && result.toolInvocations.length > 0) {
+        setToolCalls((prev) => {
+          const updated = { ...prev };
+          for (const inv of result.toolInvocations!) {
+            updated[inv.callId] = {
+              toolName: inv.toolName,
+              arguments: inv.arguments,
+              response: inv.response,
+              durationMs: inv.durationMs,
+              error: inv.error,
+              status: inv.error ? 'error' : 'complete',
+            };
+          }
+          return updated;
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ['playground', 'runs', entryId] });
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {

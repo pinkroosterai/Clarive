@@ -712,6 +712,24 @@ export default function PlaygroundResultsArea({
                           </div>
                         );
                       })}
+                      {run.toolInvocations && run.toolInvocations.length > 0 && (
+                        <div className="space-y-1 mt-2">
+                          <p className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider">
+                            Tool Calls
+                          </p>
+                          {run.toolInvocations.map((inv) => (
+                            <ToolCallBlock
+                              key={inv.callId}
+                              toolName={inv.toolName}
+                              arguments={inv.arguments}
+                              response={inv.response}
+                              durationMs={inv.durationMs}
+                              error={inv.error}
+                              status={inv.error ? 'error' : 'complete'}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
 
