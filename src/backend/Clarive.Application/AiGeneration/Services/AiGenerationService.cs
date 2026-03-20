@@ -237,12 +237,18 @@ public class AiGenerationService(
             .Select(p => new PromptInput(p.Content, p.IsTemplate))
             .ToList();
 
+        var tenantTools = await toolRepo.GetByTenantAsync(tenantId, ct);
+        var toolInfos = tenantTools
+            .Select(t => new ToolInfo(t.Name, t.Description))
+            .ToList();
+
         var config = new GenerationConfig
         {
             Description = $"Enhance existing entry: {entry.Title}",
             GenerateSystemMessage = working.SystemMessage is not null,
             GenerateAsPromptTemplate = prompts.Any(p => p.IsTemplate),
             GenerateAsPromptChain = prompts.Count > 1,
+            SelectedTools = toolInfos,
         };
 
         var sw = Stopwatch.StartNew();

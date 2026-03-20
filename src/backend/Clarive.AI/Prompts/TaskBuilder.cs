@@ -164,11 +164,26 @@ public static class TaskBuilder
                 """;
         }
 
+        var toolSection = "";
+        if (config.SelectedTools.Count > 0)
+        {
+            var toolLines = string.Join(
+                "\n",
+                config.SelectedTools.Select(t => $"  - {t.Name}: {t.Description}")
+            );
+            toolSection = $"""
+
+                Available tools (ensure the revised prompts still integrate these):
+                {toolLines}
+
+                """;
+        }
+
         return $"""
             Revise the prompts you generated based on the following feedback.
 
             Original purpose: {config.Description}
-            {historySection}
+            {toolSection}{historySection}
             Evaluation scores and feedback:
             {scoresSummary}
 
