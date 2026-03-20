@@ -1,4 +1,5 @@
 using Clarive.AI.Models;
+using Clarive.AI.Pipeline;
 using Clarive.Domain.ValueObjects;
 using ErrorOr;
 
@@ -12,7 +13,8 @@ public interface IPlaygroundService
         Guid entryId,
         TestEntryRequest request,
         CancellationToken ct,
-        Func<TestStreamChunk, Task>? onChunk = null
+        Func<TestStreamChunk, Task>? onChunk = null,
+        Func<ProgressEvent, Task>? onProgress = null
     );
 
     Task<ErrorOr<OutputEvaluation>> JudgePlaygroundRunAsync(

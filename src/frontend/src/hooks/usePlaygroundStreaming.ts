@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { testEntry, type TestStreamChunk, type Evaluation } from '@/services/api/playgroundService';
-import type { TemplateField } from '@/types';
+import type { ProgressEvent, TemplateField } from '@/types';
 
 // ── Streaming status thresholds ──
 
@@ -211,37 +211,6 @@ export function usePlaygroundStreaming({
             setIsJudging(true);
             return;
           }
-          if (chunk.type === 'tool_start') {
-            try {
-              const evt = JSON.parse(chunk.text);
-              setToolCalls((prev) => ({
-                ...prev,
-                [evt.id]: {
-                  toolName: evt.message?.replace('Calling ', '').replace('\u2026', '') || 'Unknown',
-                  arguments: evt.detail || null,
-                  response: null,
-                  durationMs: null,
-                  error: null,
-                  status: 'calling',
-                },
-              }));
-            } catch { /* ignore parse errors */ }
-            return;
-          }
-          if (chunk.type === 'tool_end') {
-            try {
-              const evt = JSON.parse(chunk.text);
-              setToolCalls((prev) => {
-                const existing = prev[evt.id];
-                if (!existing) return prev;
-                return {
-                  ...prev,
-                  [evt.id]: { ...existing, status: 'complete' },
-                };
-              });
-            } catch { /* ignore parse errors */ }
-            return;
-          }
           if (!chunk.text) return;
           if (chunk.type === 'reasoning') {
             setStreamedReasoning((prev) => ({
@@ -254,6 +223,30 @@ export function usePlaygroundStreaming({
               ...prev,
               [chunk.promptIndex]: (prev[chunk.promptIndex] || '') + chunk.text,
             }));
+          }
+        },
+        (evt: ProgressEvent) => {
+          if (evt.type === 'tool_start') {
+            setToolCalls((prev) => ({
+              ...prev,
+              [evt.id]: {
+                toolName: evt.message?.replace('Calling ', '').replace('\u2026', '') || 'Unknown',
+                arguments: evt.detail || null,
+                response: null,
+                durationMs: null,
+                error: null,
+                status: 'calling',
+              },
+            }));
+          } else if (evt.type === 'tool_end') {
+            setToolCalls((prev) => {
+              const existing = prev[evt.id];
+              if (!existing) return prev;
+              return {
+                ...prev,
+                [evt.id]: { ...existing, status: 'complete' },
+              };
+            });
           }
         },
         controller.signal

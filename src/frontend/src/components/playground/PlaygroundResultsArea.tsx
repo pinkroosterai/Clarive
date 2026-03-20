@@ -633,26 +633,26 @@ export default function PlaygroundResultsArea({
                           </div>
                         );
                       })}
-                    </div>
-                  )}
 
-                  {/* Tool calls section */}
-                  {toolCalls && Object.keys(toolCalls).length > 0 && (
-                    <div className="space-y-1 mt-2">
-                      <p className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider">
-                        Tool Calls
-                      </p>
-                      {Object.entries(toolCalls).map(([callId, tc]) => (
-                        <ToolCallBlock
-                          key={callId}
-                          toolName={tc.toolName}
-                          arguments={tc.arguments}
-                          response={tc.response}
-                          durationMs={tc.durationMs}
-                          error={tc.error}
-                          status={tc.status}
-                        />
-                      ))}
+                      {/* Tool calls for current run */}
+                      {toolCalls && Object.keys(toolCalls).length > 0 && (
+                        <div className="space-y-1 mt-2">
+                          <p className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider">
+                            Tool Calls
+                          </p>
+                          {Object.entries(toolCalls).map(([callId, tc]) => (
+                            <ToolCallBlock
+                              key={callId}
+                              toolName={tc.toolName}
+                              arguments={tc.arguments}
+                              response={tc.response}
+                              durationMs={tc.durationMs}
+                              error={tc.error}
+                              status={tc.status}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 

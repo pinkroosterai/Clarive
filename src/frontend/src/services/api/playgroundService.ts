@@ -1,5 +1,7 @@
 import { api } from './apiClient';
 
+import type { ProgressEvent } from '@/types';
+
 export interface TestStreamChunk {
   promptIndex: number;
   text: string;
@@ -76,6 +78,7 @@ export async function testEntry(
   entryId: string,
   params: TestEntryParams,
   onChunk?: (chunk: TestStreamChunk) => void,
+  onProgress?: (event: ProgressEvent) => void,
   signal?: AbortSignal
 ): Promise<TestStreamResult> {
   const body = {
@@ -94,10 +97,11 @@ export async function testEntry(
       `/api/entries/${entryId}/test`,
       body,
       (event) => {
-        // SSE chunk events have the TestStreamChunk shape
-        const chunk = event as unknown as TestStreamChunk;
-        if (chunk.text !== undefined) {
-          onChunk(chunk);
+        // Dispatch by shape: TestStreamChunk has promptIndex, ProgressEvent has id
+        if ('promptIndex' in event) {
+          onChunk(event as unknown as TestStreamChunk);
+        } else if (onProgress) {
+          onProgress(event);
         }
       },
       signal

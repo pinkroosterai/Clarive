@@ -107,7 +107,8 @@ public static class PlaygroundEndpoints
                 entryId,
                 request,
                 ct,
-                chunk => sse.WriteChunkAsync(chunk, ct)
+                chunk => sse.WriteChunkAsync(chunk, ct),
+                progress => sse.WriteProgressAsync(progress, ct)
             );
 
             if (result.IsError)

@@ -43,7 +43,8 @@ public class PlaygroundService(
         Guid entryId,
         TestEntryRequest request,
         CancellationToken ct,
-        Func<TestStreamChunk, Task>? onChunk = null
+        Func<TestStreamChunk, Task>? onChunk = null,
+        Func<ProgressEvent, Task>? onProgress = null
     )
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
@@ -128,15 +129,8 @@ public class PlaygroundService(
                         .Build();
                     effectiveClient = wrappedClient;
 
-                    // Wire progress events to SSE callback
-                    reporter.OnProgress = async (evt) =>
-                    {
-                        if (onChunk is not null)
-                        {
-                            var payload = JsonSerializer.Serialize(evt, JsonOptions);
-                            await onChunk(new TestStreamChunk(0, payload, evt.Type));
-                        }
-                    };
+                    // Wire tool progress events directly to onProgress (no wrapping)
+                    reporter.OnProgress = onProgress;
                 }
             }
 
