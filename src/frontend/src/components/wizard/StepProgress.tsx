@@ -16,10 +16,10 @@ export function StepProgress({ currentStep, totalSteps, labels }: StepProgressPr
 
         return (
           <div key={stepNum} className="flex items-center flex-1 last:flex-none">
-            {/* Node + label */}
-            <div className="flex flex-col items-center gap-1.5">
+            {/* Node + inline label */}
+            <div className="flex items-center gap-1.5">
               <div
-                className={`size-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ${
+                className={`size-6 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 shrink-0 ${
                   isCompleted
                     ? 'bg-primary text-primary-foreground'
                     : isActive
@@ -27,7 +27,7 @@ export function StepProgress({ currentStep, totalSteps, labels }: StepProgressPr
                       : 'bg-elevated text-foreground-muted border border-border'
                 }`}
               >
-                {isCompleted ? <Check className="size-3.5" /> : stepNum}
+                {isCompleted ? <Check className="size-3" /> : stepNum}
               </div>
               <span
                 className={`text-xs whitespace-nowrap transition-colors duration-200 ${

@@ -84,11 +84,11 @@ export function WizardContent({ mode, existingEntry, onClose }: WizardContentPro
     <>
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-2.5">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold tracking-tight">AI Wizard</h1>
+            <h1 className="text-lg font-semibold tracking-tight">AI Wizard</h1>
             <StepProgress currentStep={displayStep} totalSteps={totalSteps} labels={stepLabels} />
-            <span className="text-sm text-foreground-muted hidden lg:inline">{stepHint}</span>
+            <span className="text-xs text-foreground-muted hidden lg:inline">{stepHint}</span>
           </div>
           <Button variant="ghost" size="icon" onClick={requestClose}>
             <X className="size-4" />
