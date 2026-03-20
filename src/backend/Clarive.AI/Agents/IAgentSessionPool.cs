@@ -20,7 +20,8 @@ public interface IAgentSessionPool
     Task<string> CreateSessionAsync(
         GenerationConfig config,
         CancellationToken ct = default,
-        IList<AITool>? tools = null
+        IList<AITool>? tools = null,
+        EnhanceContext? enhanceContext = null
     );
 
     /// <summary>
@@ -39,6 +40,12 @@ public interface IAgentSessionPool
     void InvalidateAll();
 }
 
+/// <summary>
+/// Existing prompt content stored for enhance-mode sessions.
+/// Injected into the first refinement task instead of making a wasteful bootstrap LLM call.
+/// </summary>
+public record EnhanceContext(string? SystemMessage, List<PromptInput> Prompts);
+
 public record AgentSessionEntry(
     AIAgent Agent,
     AgentSession Session,
@@ -50,4 +57,10 @@ public record AgentSessionEntry(
     /// Serializes concurrent access to the agent session (e.g., two /refine requests).
     /// </summary>
     public SemaphoreSlim Lock { get; } = new(1, 1);
+
+    /// <summary>
+    /// Existing prompt content for enhance-mode sessions. Consumed (set to null)
+    /// on the first refinement to provide context without a wasteful bootstrap LLM call.
+    /// </summary>
+    public EnhanceContext? PendingEnhanceContext { get; set; }
 }

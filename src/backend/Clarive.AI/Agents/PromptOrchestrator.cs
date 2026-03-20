@@ -156,6 +156,18 @@ public class PromptOrchestrator : IPromptOrchestrator
                 selectedEnhancements,
                 scoreHistory
             );
+
+            // For enhance-mode sessions, prepend existing prompt context on the first
+            // refinement (replaces the old wasteful bootstrap LLM echo call)
+            if (entry.PendingEnhanceContext is { } ctx)
+            {
+                var enhancePrefix = TaskBuilder.BuildEnhanceBootstrapTask(
+                    ctx.SystemMessage, ctx.Prompts);
+                revisionTask =
+                    $"Here is the existing prompt entry being enhanced:\n\n{enhancePrefix}\n\n{revisionTask}";
+                entry.PendingEnhanceContext = null; // Consume — only inject once
+            }
+
             var revResponse = await entry.Agent.RunAsync<PromptSet>(
                 revisionTask,
                 session: entry.Session,
@@ -205,21 +217,16 @@ public class PromptOrchestrator : IPromptOrchestrator
         Func<ProgressEvent, Task>? onProgress = null
     )
     {
-        if (onProgress is not null)
-            await onProgress(ProgressEvent.Bootstrapping());
-
-        // Create a dedicated agent session for the enhance workflow
-        var agentSessionId = await _pool.CreateSessionAsync(config, ct);
+        // Create a dedicated agent session with enhance context stored as metadata.
+        // The existing prompt content will be injected into the first refinement task
+        // instead of making a wasteful bootstrap LLM call that just echoes it back.
+        var enhanceContext = new EnhanceContext(systemMessage, prompts);
+        var agentSessionId = await _pool.CreateSessionAsync(
+            config, ct, enhanceContext: enhanceContext);
 
         try
         {
-            var entry =
-                _pool.Get(agentSessionId)
-                ?? throw new InvalidOperationException("Agent session expired or not found.");
-
-            // Bootstrap: feed existing prompts to the generation agent so it has context
-            var bootstrapTask = TaskBuilder.BuildEnhanceBootstrapTask(systemMessage, prompts);
-            var bootstrapPromptSet = new PromptSet
+            var promptSet = new PromptSet
             {
                 Title = "Existing Entry",
                 SystemMessage = systemMessage,
@@ -232,25 +239,6 @@ public class PromptOrchestrator : IPromptOrchestrator
                     .ToList(),
             };
 
-            // Seed the generation agent with the existing entry content
-            // (This gives it context for future revisions in the same session)
-            UsageDetails? bootstrapUsage;
-            await entry.Lock.WaitAsync(ct);
-            try
-            {
-                var bootstrapResponse = await entry.Agent.RunAsync<PromptSet>(
-                    $"Here is an existing prompt entry that the user wants to enhance. "
-                        + $"Analyze it and return it as-is for now:\n\n{bootstrapTask}",
-                    session: entry.Session,
-                    cancellationToken: ct
-                );
-                bootstrapUsage = bootstrapResponse.Usage;
-            }
-            finally
-            {
-                entry.Lock.Release();
-            }
-
             if (onProgress is not null)
                 await onProgress(ProgressEvent.Evaluating());
 
@@ -260,14 +248,14 @@ public class PromptOrchestrator : IPromptOrchestrator
                 ClarificationResult? clarification,
                 UsageDetails? evalUsage,
                 UsageDetails? clarifyUsage
-            ) = await RunParallelFeedback(config, bootstrapPromptSet, ct, onProgress);
+            ) = await RunParallelFeedback(config, promptSet, ct, onProgress);
 
             return new EnhanceOrchestratorResult(
                 agentSessionId,
-                bootstrapPromptSet,
+                promptSet,
                 evaluation,
                 clarification,
-                bootstrapUsage,
+                Usage: null, // No bootstrap call — zero wasted tokens
                 evalUsage,
                 clarifyUsage
             );

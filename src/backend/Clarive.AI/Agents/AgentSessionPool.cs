@@ -42,7 +42,8 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
     public async Task<string> CreateSessionAsync(
         GenerationConfig config,
         CancellationToken ct = default,
-        IList<AITool>? tools = null
+        IList<AITool>? tools = null,
+        EnhanceContext? enhanceContext = null
     )
     {
         if (_sessions.Count >= _maxPoolSize)
@@ -60,7 +61,10 @@ public class AgentSessionPool : IAgentSessionPool, IDisposable
         var session = await agent.CreateSessionAsync(ct);
         var id = Guid.NewGuid().ToString("N");
 
-        var entry = new AgentSessionEntry(agent, session, DateTime.UtcNow, toolProgress);
+        var entry = new AgentSessionEntry(agent, session, DateTime.UtcNow, toolProgress)
+        {
+            PendingEnhanceContext = enhanceContext
+        };
         _sessions[id] = entry;
 
         _logger.LogDebug(
