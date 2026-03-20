@@ -315,6 +315,8 @@ export function usePlaygroundStreaming({
     showReasoning,
     reasoningEffort,
     isReasoning,
+    mcpServerIds,
+    excludedToolNames,
   ]);
 
   const handleAbort = useCallback(() => {

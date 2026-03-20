@@ -1,4 +1,3 @@
-using Clarive.AI.Pipeline;
 using Clarive.Application.McpServers.Contracts;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Infrastructure.Security;
@@ -53,8 +52,9 @@ public class McpToolProvider(
                 {
                     if (excluded is not null && excluded.Contains(tool.Name))
                         continue;
-                    // Wrap with schema fixer to ensure OpenAI compatibility
-                    allTools.Add(tool is AIFunction fn ? new SchemaFixedAIFunction(fn) : tool);
+                    // Pass McpClientTool directly — no wrapping.
+                    // McpClientTool.InvokeAsync needs the original object intact.
+                    allTools.Add(tool);
                 }
 
                 logger.LogInformation(
