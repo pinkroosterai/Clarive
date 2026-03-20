@@ -131,8 +131,9 @@ public class TenantCacheService(IDistributedCache cache, ILogger<TenantCacheServ
             {
                 throw;
             }
-            catch
-            { /* fall through to factory */
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Valkey read failed for key {CacheKey}, falling through to factory", fullKey);
             }
 
             var value = await factory(ct);

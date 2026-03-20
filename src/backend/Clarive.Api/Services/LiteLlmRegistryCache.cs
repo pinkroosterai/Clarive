@@ -27,8 +27,9 @@ public class LiteLlmRegistryCache(IDistributedCache cache, ILogger<LiteLlmRegist
         {
             throw;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "Failed to check LiteLLM registry cache availability");
             return false;
         }
     }

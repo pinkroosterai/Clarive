@@ -7,23 +7,16 @@ import type {
   Workspace,
   PendingWorkspaceInvitation,
   InvitationRespondResult,
-  TemplateField,
-  ClarificationQuestion,
   EvaluationEntry,
   Evaluation,
   ApiKey,
   AuditLogEntry,
   VersionInfo,
-  PaginatedResponse,
 } from '@/types';
 
 let counter = 0;
 function uid(): string {
   return `test-${++counter}`;
-}
-
-export function resetFactoryCounter(): void {
-  counter = 0;
 }
 
 // ── Users ──
@@ -43,10 +36,6 @@ export function createUser(overrides?: Partial<User>): User {
     createdAt: '2026-01-01T00:00:00Z',
     ...overrides,
   };
-}
-
-export function createAdmin(overrides?: Partial<User>): User {
-  return createUser({ name: 'Admin User', role: 'admin', ...overrides });
 }
 
 // ── Folders ──
@@ -107,20 +96,6 @@ export function createDraftEntry(overrides?: Partial<PromptEntry>): PromptEntry 
 
 export function createPublishedEntry(overrides?: Partial<PromptEntry>): PromptEntry {
   return createEntry({ versionState: 'published', version: 2, ...overrides });
-}
-
-// ── Template Fields ──
-
-export function createTemplateField(overrides?: Partial<TemplateField>): TemplateField {
-  return {
-    name: 'fieldName',
-    type: 'string',
-    enumValues: [],
-    defaultValue: null,
-    min: null,
-    max: null,
-    ...overrides,
-  };
 }
 
 // ── Workspaces ──
@@ -220,17 +195,7 @@ export function createVersionInfo(overrides?: Partial<VersionInfo>): VersionInfo
 
 // ── AI / Wizard ──
 
-export function createClarificationQuestion(
-  overrides?: Partial<ClarificationQuestion>
-): ClarificationQuestion {
-  return {
-    text: 'What tone should the prompt use?',
-    suggestions: ['Professional', 'Casual', 'Technical'],
-    ...overrides,
-  };
-}
-
-export function createEvaluationEntry(overrides?: Partial<EvaluationEntry>): EvaluationEntry {
+function createEvaluationEntry(overrides?: Partial<EvaluationEntry>): EvaluationEntry {
   return {
     score: 8,
     feedback: 'Well structured prompt.',
@@ -253,17 +218,3 @@ export function createEvaluation(overrides?: Partial<Evaluation>): Evaluation {
   };
 }
 
-// ── Pagination ──
-
-export function createPaginatedResponse<T>(
-  items: T[],
-  overrides?: Partial<PaginatedResponse<T>>
-): PaginatedResponse<T> {
-  return {
-    items,
-    totalCount: items.length,
-    page: 1,
-    pageSize: 50,
-    ...overrides,
-  };
-}

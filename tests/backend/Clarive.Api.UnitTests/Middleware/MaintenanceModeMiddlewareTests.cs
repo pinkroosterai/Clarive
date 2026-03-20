@@ -2,6 +2,7 @@ using Clarive.Api.Middleware;
 using Clarive.Api.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Middleware;
@@ -13,7 +14,11 @@ public class MaintenanceModeMiddlewareTests
         RequestDelegate? next = null
     )
     {
-        return new MaintenanceModeMiddleware(next ?? (_ => Task.CompletedTask), maintenanceMode);
+        return new MaintenanceModeMiddleware(
+            next ?? (_ => Task.CompletedTask),
+            maintenanceMode,
+            NullLogger<MaintenanceModeMiddleware>.Instance
+        );
     }
 
     private static IMaintenanceModeService MockMaintenance(bool enabled)

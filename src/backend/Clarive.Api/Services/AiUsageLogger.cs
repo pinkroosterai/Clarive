@@ -92,9 +92,10 @@ public class AiUsageLogger(
                 ct
             );
         }
-        catch
+        catch (Exception ex)
         {
-            return null; // Don't fail logging if cost lookup fails
+            logger.LogWarning(ex, "Failed to resolve model cost rates for usage logging");
+            return null;
         }
     }
 

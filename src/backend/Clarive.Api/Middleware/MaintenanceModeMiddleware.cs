@@ -5,7 +5,8 @@ namespace Clarive.Api.Middleware;
 
 public class MaintenanceModeMiddleware(
     RequestDelegate next,
-    IMaintenanceModeService maintenanceMode
+    IMaintenanceModeService maintenanceMode,
+    ILogger<MaintenanceModeMiddleware> logger
 )
 {
     // Exact paths that are exempt from maintenance mode
@@ -81,7 +82,7 @@ public class MaintenanceModeMiddleware(
         return false;
     }
 
-    private static bool IsSuperUserToken(HttpContext context)
+    private bool IsSuperUserToken(HttpContext context)
     {
         var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
         if (
@@ -97,8 +98,9 @@ public class MaintenanceModeMiddleware(
             var jwt = handler.ReadJwtToken(token);
             return jwt.Claims.Any(c => c.Type == "superUser" && c.Value == "true");
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogDebug(ex, "Failed to read JWT for super user check during maintenance mode");
             return false;
         }
     }
