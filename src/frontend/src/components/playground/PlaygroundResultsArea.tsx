@@ -10,7 +10,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback, type RefObject } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 
 import { ConversationView } from './ConversationView';
 import CopyButton from './CopyButton';
@@ -340,6 +340,22 @@ export default function PlaygroundResultsArea({
 
   const hasCurrentRun = hasResponses || isStreaming;
   const clampedPinIndex = Math.min(activeCarouselIndex, Math.max(pinnedRuns.length - 1, 0));
+
+  // Derive legacy views from segments for chain/single-response rendering paths
+  const streamedResponses = useMemo(() => {
+    const map: Record<number, string> = {};
+    // For non-segment views, concatenate all response text as prompt index 0
+    const texts = segments.filter((s) => s.type === 'response').map((s) => s.text);
+    if (texts.length > 0) map[0] = texts.join('');
+    return map;
+  }, [segments]);
+  const streamedReasoning = useMemo(() => {
+    const map: Record<number, string> = {};
+    const texts = segments.filter((s) => s.type === 'reasoning').map((s) => s.text);
+    if (texts.length > 0) map[0] = texts.join('');
+    return map;
+  }, [segments]);
+  const currentPromptIndex = isStreaming ? 0 : -1;
 
   // ── Keyboard navigation for pinned runs ──
   const comparisonRef = useRef<HTMLDivElement>(null);

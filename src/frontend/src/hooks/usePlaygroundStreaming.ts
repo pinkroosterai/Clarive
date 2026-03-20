@@ -107,10 +107,10 @@ export function usePlaygroundStreaming({
     };
   }, []);
 
-  // ── Clear stale reasoning when switching to non-reasoning model ──
+  // ── Clear stale reasoning segments when switching to non-reasoning model ──
   useEffect(() => {
     if (!isReasoning && !isStreaming) {
-      setStreamedReasoning({});
+      setSegments((prev) => prev.filter((s) => s.type !== 'reasoning'));
     }
   }, [isReasoning]); // eslint-disable-line react-hooks/exhaustive-deps
 
