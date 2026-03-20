@@ -1,3 +1,4 @@
+using Clarive.Infrastructure.Utilities;
 using FluentAssertions;
 
 namespace Clarive.Api.UnitTests.Services;

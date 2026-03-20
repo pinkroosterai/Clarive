@@ -22,7 +22,7 @@ public abstract class EntryServiceTestBase : IDisposable
     protected readonly IAuditLogRepository AuditRepo = Substitute.For<IAuditLogRepository>();
     protected readonly TenantCacheService Cache;
     protected readonly ClariveDbContext Db;
-    protected readonly Application.Entries.EntryService Sut;
+    protected readonly Application.Entries.Services.EntryService Sut;
 
     protected static readonly Guid TenantId = Guid.NewGuid();
     protected static readonly Guid UserId = Guid.NewGuid();
@@ -39,7 +39,7 @@ public abstract class EntryServiceTestBase : IDisposable
             Substitute.For<IDistributedCache>(),
             Substitute.For<ILogger<TenantCacheService>>()
         );
-        Sut = new Application.Entries.EntryService(
+        Sut = new Application.Entries.Services.EntryService(
             EntryRepo,
             FolderRepo,
             TagRepo,

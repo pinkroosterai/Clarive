@@ -32,6 +32,8 @@ public class AccountServiceTests : IDisposable
     private readonly PasswordHasher _passwordHasher = new();
     private readonly IConfiguration _configuration;
     private readonly ClariveDbContext _db;
+    private readonly TokenIssuanceService _tokenIssuance;
+    private readonly UserWorkspaceCreationService _workspaceCreation;
     private readonly AccountService _sut;
 
     public AccountServiceTests()
@@ -70,6 +72,14 @@ public class AccountServiceTests : IDisposable
             .CreateAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<RefreshToken>());
 
+        _tokenIssuance = new TokenIssuanceService(_jwtService, _refreshTokenRepo);
+        _workspaceCreation = new UserWorkspaceCreationService(
+            _tenantRepo,
+            _userRepo,
+            _membershipRepo,
+            _onboardingSeeder
+        );
+
         _sut = new AccountService(
             _userRepo,
             _tenantRepo,
@@ -77,12 +87,13 @@ public class AccountServiceTests : IDisposable
             _refreshTokenRepo,
             _tokenRepo,
             _invitationRepo,
-            _onboardingSeeder,
             _googleAuth,
             _jwtService,
             _passwordHasher,
             _configuration,
-            _db
+            _db,
+            _tokenIssuance,
+            _workspaceCreation
         );
     }
 
@@ -162,12 +173,13 @@ public class AccountServiceTests : IDisposable
             _refreshTokenRepo,
             _tokenRepo,
             _invitationRepo,
-            _onboardingSeeder,
             _googleAuth,
             _jwtService,
             _passwordHasher,
             config,
-            _db
+            _db,
+            _tokenIssuance,
+            _workspaceCreation
         );
 
         _userRepo

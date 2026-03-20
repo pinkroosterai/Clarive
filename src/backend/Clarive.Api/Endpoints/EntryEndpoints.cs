@@ -110,7 +110,7 @@ public static partial class EntryEndpoints
             return result.Errors.ToHttpResult(ctx);
 
         var (summaries, totalCount) = result.Value;
-        return Results.Ok(new PaginatedResponse<PromptEntrySummary>(summaries, totalCount, p, ps));
+        return Results.Ok(new PaginatedResponse<PromptEntryDto>(summaries, totalCount, p, ps));
     }
 
     // ── List trashed ──
@@ -130,7 +130,7 @@ public static partial class EntryEndpoints
             return result.Errors.ToHttpResult(ctx);
 
         var (summaries, totalCount) = result.Value;
-        return Results.Ok(new PaginatedResponse<PromptEntrySummary>(summaries, totalCount, p, ps));
+        return Results.Ok(new PaginatedResponse<PromptEntryDto>(summaries, totalCount, p, ps));
     }
 
     // ── Get single entry (working version) ──

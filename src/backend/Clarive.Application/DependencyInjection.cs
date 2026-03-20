@@ -16,6 +16,8 @@ public static class DependencyInjection
         );
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IEntryService, EntryService>();
+        services.AddScoped<ITokenIssuanceService, TokenIssuanceService>();
+        services.AddScoped<IUserWorkspaceCreationService, UserWorkspaceCreationService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<IAiGenerationService, AiGenerationService>();
