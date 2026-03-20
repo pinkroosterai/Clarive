@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Globe, Loader2, Sparkles, Mail, Wand2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronDown, ChevronRight, Globe, Loader2, Server, Sparkles, Mail, Wand2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { ToolParamSummary } from '@/components/tools/ToolParamSummary';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { toolService, wizardService } from '@/services';
+import { mcpServerService, toolService, wizardService } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 
 export interface GenerateOptions {
@@ -71,10 +71,40 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
     queryFn: toolService.getToolsList,
   });
 
+  const { data: mcpServers = [] } = useQuery({
+    queryKey: ['mcp-servers'],
+    queryFn: mcpServerService.list,
+  });
+
+  const [expandedServer, setExpandedServer] = useState<string | null>(null);
+
+  // Group tools by origin
+  const { manualTools, serverGroups } = useMemo(() => {
+    const manual = tools.filter((t) => !t.mcpServerName);
+    const groups = new Map<string, typeof tools>();
+    for (const server of mcpServers) {
+      const serverTools = tools.filter((t) => t.mcpServerName === server.name);
+      if (serverTools.length > 0) {
+        groups.set(server.name, serverTools);
+      }
+    }
+    return { manualTools: manual, serverGroups: groups };
+  }, [tools, mcpServers]);
+
   const toggleTool = (id: string) => {
     setSelectedToolIds((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
     );
+  };
+
+  const toggleServerTools = (serverName: string) => {
+    const serverToolIds = (serverGroups.get(serverName) ?? []).map((t) => t.id);
+    const allSelected = serverToolIds.every((id) => selectedToolIds.includes(id));
+    if (allSelected) {
+      setSelectedToolIds((prev) => prev.filter((id) => !serverToolIds.includes(id)));
+    } else {
+      setSelectedToolIds((prev) => [...new Set([...prev, ...serverToolIds])]);
+    }
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -208,9 +238,90 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
       {tools.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">Available Tools</h3>
-          <ScrollArea className="max-h-64">
-            <div className="grid grid-cols-1 gap-2 pr-3">
-              {tools.map((tool) => (
+          <ScrollArea className="max-h-72">
+            <div className="space-y-3 pr-3">
+              {/* MCP Server groups */}
+              {[...serverGroups.entries()].map(([serverName, serverTools]) => {
+                const serverToolIds = serverTools.map((t) => t.id);
+                const allSelected = serverToolIds.every((id) => selectedToolIds.includes(id));
+                const someSelected = serverToolIds.some((id) => selectedToolIds.includes(id));
+                const expanded = expandedServer === serverName;
+
+                return (
+                  <div key={serverName} className="space-y-1.5">
+                    <div
+                      className={`flex items-center gap-2 bg-surface border rounded-lg px-3 py-2 transition-colors ${
+                        someSelected
+                          ? 'border-primary/50 bg-primary/8'
+                          : 'border-border-subtle hover:border-primary/30'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                        onCheckedChange={() => toggleServerTools(serverName)}
+                        disabled={isGenerating}
+                      />
+                      <Server className="size-3.5 text-foreground-muted shrink-0" />
+                      <span className="text-sm font-medium flex-1">{serverName}</span>
+                      <span className="text-[10px] text-foreground-muted">
+                        {serverToolIds.filter((id) => selectedToolIds.includes(id)).length}/{serverTools.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedServer(expanded ? null : serverName)}
+                        className="p-0.5 text-foreground-muted hover:text-foreground"
+                      >
+                        {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                      </button>
+                    </div>
+
+                    {expanded && (
+                      <div className="ml-4 space-y-1.5">
+                        {serverTools.map((tool) => (
+                          <label
+                            key={tool.id}
+                            htmlFor={`tool-${tool.id}`}
+                            className={`flex items-start gap-2.5 cursor-pointer bg-surface border rounded-lg px-3 py-2 transition-colors ${
+                              selectedToolIds.includes(tool.id)
+                                ? 'border-primary/50 bg-primary/8'
+                                : 'border-border-subtle hover:border-primary/30'
+                            }`}
+                          >
+                            <Checkbox
+                              id={`tool-${tool.id}`}
+                              checked={selectedToolIds.includes(tool.id)}
+                              onCheckedChange={() => toggleTool(tool.id)}
+                              disabled={isGenerating}
+                              className="mt-0.5"
+                            />
+                            <div className="min-w-0 space-y-0.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm">{tool.name}</span>
+                                <code className="text-[10px] font-mono text-foreground-muted bg-elevated px-1 py-0.5 rounded">
+                                  {tool.toolName}
+                                </code>
+                              </div>
+                              {tool.description && (
+                                <p className="text-xs text-foreground-muted line-clamp-1">
+                                  {tool.description}
+                                </p>
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Manual tools */}
+              {manualTools.length > 0 && serverGroups.size > 0 && (
+                <div className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider pt-1">
+                  Manual Tools
+                </div>
+              )}
+              {manualTools.map((tool) => (
                 <label
                   key={tool.id}
                   htmlFor={`tool-${tool.id}`}
@@ -233,11 +344,6 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
                       <code className="text-xs font-mono text-foreground-muted bg-elevated px-1.5 py-0.5 rounded">
                         {tool.toolName}
                       </code>
-                      {tool.mcpServerName && (
-                        <span className="text-[10px] bg-accent/20 text-accent-foreground border border-accent/30 px-1.5 py-0.5 rounded">
-                          {tool.mcpServerName}
-                        </span>
-                      )}
                     </div>
                     {tool.description && (
                       <p className="text-xs text-foreground-muted line-clamp-2">
