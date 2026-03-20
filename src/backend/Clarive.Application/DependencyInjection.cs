@@ -1,4 +1,6 @@
 using Clarive.AI.Configuration;
+using Clarive.Application.McpServers.Contracts;
+using Clarive.Application.McpServers.Services;
 using Clarive.Domain.Interfaces.Services;
 
 namespace Clarive.Application;
@@ -37,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IAvatarService, AvatarService>();
         services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();
         services.AddScoped<IMcpImportService, McpImportService>();
+        services.AddScoped<IMcpServerService, McpServerService>();
         services.AddSingleton<ITavilyClientService, TavilyClientService>();
         services.AddSingleton<ILiteLlmRegistryCache, LiteLlmRegistryCache>();
 
@@ -47,6 +50,7 @@ public static class DependencyInjection
         services.AddHostedService<AccountPurgeBackgroundService>();
         services.AddHostedService<MaintenanceModeSyncService>();
         services.AddHostedService<LiteLlmSyncService>();
+        services.AddHostedService<McpSyncBackgroundService>();
 
         return services;
     }

@@ -30,6 +30,7 @@ public class ClariveDbContext : DbContext
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
     public DbSet<AiSession> AiSessions => Set<AiSession>();
     public DbSet<ToolDescription> ToolDescriptions => Set<ToolDescription>();
+    public DbSet<McpServer> McpServers => Set<McpServer>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();

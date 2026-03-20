@@ -110,9 +110,20 @@ export const ToolCard = memo(function ToolCard({ tool, onUpdate, onDelete }: Too
               </AlertDialog>
             </div>
           </div>
-          <span className="font-mono text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md w-fit">
-            {tool.toolName}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md">
+              {tool.toolName}
+            </span>
+            {tool.mcpServerName ? (
+              <span className="text-[10px] bg-accent/20 text-accent-foreground border border-accent/30 px-1.5 py-0.5 rounded">
+                {tool.mcpServerName}
+              </span>
+            ) : (
+              <span className="text-[10px] bg-muted text-foreground-muted px-1.5 py-0.5 rounded">
+                Manual
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-1">
           <p className="text-sm text-foreground-muted line-clamp-2">{tool.description}</p>

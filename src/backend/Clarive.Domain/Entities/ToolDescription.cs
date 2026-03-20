@@ -10,5 +10,6 @@ public class ToolDescription : ITenantScoped
     public string ToolName { get; set; } = "";
     public string Description { get; set; } = "";
     public JsonNode? InputSchema { get; set; }
+    public Guid? McpServerId { get; set; }
     public DateTime CreatedAt { get; set; }
 }

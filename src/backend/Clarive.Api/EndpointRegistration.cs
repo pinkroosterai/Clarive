@@ -10,6 +10,7 @@ public static class EndpointRegistration
         app.MapFolderEndpoints();
         app.MapEntryEndpoints();
         app.MapToolEndpoints();
+        app.MapMcpServerEndpoints();
         app.MapApiKeyEndpoints();
         app.MapUserEndpoints();
         app.MapInvitationEndpoints();

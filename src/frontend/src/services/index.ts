@@ -4,6 +4,7 @@ export * as authService from './api/authService';
 export * as folderService from './api/folderService';
 export * as entryService from './api/entryService';
 export * as toolService from './api/toolService';
+export * as mcpServerService from './api/mcpServerService';
 export * as apiKeyService from './api/apiKeyService';
 export * as userService from './api/userService';
 export * as auditService from './api/auditService';

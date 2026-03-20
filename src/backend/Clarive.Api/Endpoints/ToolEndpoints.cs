@@ -34,6 +34,7 @@ public static partial class ToolEndpoints
     private static async Task<IResult> HandleList(
         HttpContext ctx,
         IToolRepository toolRepo,
+        IMcpServerRepository serverRepo,
         CancellationToken ct,
         int page = 1,
         int pageSize = 50
@@ -45,7 +46,35 @@ public static partial class ToolEndpoints
         if (pageSize is < 1 or > 100)
             pageSize = 50;
 
-        var (items, total) = await toolRepo.GetByTenantPagedAsync(tenantId, page, pageSize, ct);
+        var (tools, total) = await toolRepo.GetByTenantPagedAsync(tenantId, page, pageSize, ct);
+
+        // Build a lookup of server names for tools that came from MCP servers
+        var serverIds = tools
+            .Where(t => t.McpServerId.HasValue)
+            .Select(t => t.McpServerId!.Value)
+            .Distinct()
+            .ToList();
+
+        var serverNameMap = new Dictionary<Guid, string>();
+        if (serverIds.Count > 0)
+        {
+            var servers = await serverRepo.GetByTenantAsync(tenantId, ct);
+            foreach (var s in servers)
+                serverNameMap[s.Id] = s.Name;
+        }
+
+        var items = tools.Select(t => new
+        {
+            t.Id,
+            t.Name,
+            t.ToolName,
+            t.Description,
+            t.InputSchema,
+            t.McpServerId,
+            McpServerName = t.McpServerId.HasValue && serverNameMap.TryGetValue(t.McpServerId.Value, out var sn) ? sn : null,
+            t.CreatedAt,
+        });
+
         return Results.Ok(
             new
             {

@@ -233,6 +233,11 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
                       <code className="text-xs font-mono text-foreground-muted bg-elevated px-1.5 py-0.5 rounded">
                         {tool.toolName}
                       </code>
+                      {tool.mcpServerName && (
+                        <span className="text-[10px] bg-accent/20 text-accent-foreground border border-accent/30 px-1.5 py-0.5 rounded">
+                          {tool.mcpServerName}
+                        </span>
+                      )}
                     </div>
                     {tool.description && (
                       <p className="text-xs text-foreground-muted line-clamp-2">

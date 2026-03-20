@@ -100,4 +100,11 @@ public class EfToolRepository(ClariveDbContext db) : IToolRepository
         db.ToolDescriptions.AddRange(tools);
         await db.SaveChangesAsync(ct);
     }
+
+    public async Task<int> DeleteByServerIdAsync(Guid mcpServerId, CancellationToken ct = default)
+    {
+        return await db
+            .ToolDescriptions.Where(t => t.McpServerId == mcpServerId)
+            .ExecuteDeleteAsync(ct);
+    }
 }

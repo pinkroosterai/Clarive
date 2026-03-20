@@ -21,4 +21,5 @@ public interface IToolRepository
     Task<ToolDescription> UpdateAsync(ToolDescription tool, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid tenantId, Guid toolId, CancellationToken ct = default);
     Task CreateManyAsync(List<ToolDescription> tools, CancellationToken ct = default);
+    Task<int> DeleteByServerIdAsync(Guid mcpServerId, CancellationToken ct = default);
 }

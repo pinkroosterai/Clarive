@@ -26,6 +26,7 @@ public class ToolDescriptionConfiguration : IEntityTypeConfiguration<ToolDescrip
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
                 v => JsonSerializer.Deserialize<JsonNode>(v, (JsonSerializerOptions?)null)
             );
+        builder.Property(t => t.McpServerId).HasColumnName("mcp_server_id");
         builder.Property(t => t.CreatedAt).HasColumnName("created_at").IsRequired();
 
         builder
@@ -34,6 +35,13 @@ public class ToolDescriptionConfiguration : IEntityTypeConfiguration<ToolDescrip
             .HasForeignKey(t => t.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder
+            .HasOne<McpServer>()
+            .WithMany()
+            .HasForeignKey(t => t.McpServerId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(t => t.TenantId).HasDatabaseName("ix_tool_descriptions_tenant_id");
+        builder.HasIndex(t => t.McpServerId).HasDatabaseName("ix_tool_descriptions_mcp_server_id");
     }
 }

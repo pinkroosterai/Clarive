@@ -72,6 +72,7 @@ public static class DependencyInjection
         services.AddScoped<IFolderRepository, EfFolderRepository>();
         services.AddScoped<IEntryRepository, EfEntryRepository>();
         services.AddScoped<IToolRepository, EfToolRepository>();
+        services.AddScoped<IMcpServerRepository, EfMcpServerRepository>();
         services.AddScoped<IApiKeyRepository, EfApiKeyRepository>();
         services.AddScoped<IAuditLogRepository, EfAuditLogRepository>();
         services.AddScoped<IAiSessionRepository, EfAiSessionRepository>();

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
-import { McpImportSection } from '@/components/tools/McpImportSection';
+import McpServersPanel from '@/components/tools/McpServersPanel';
 import { ToolCard } from '@/components/tools/ToolCard';
 import {
   ToolParameterEditor,
@@ -222,7 +222,7 @@ export default function ToolsPanel() {
         />
       )}
 
-      <McpImportSection />
+      <McpServersPanel />
     </div>
   );
 }

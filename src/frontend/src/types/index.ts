@@ -82,11 +82,26 @@ export interface ToolDescription {
   toolName: string;
   description: string;
   inputSchema?: Record<string, unknown>;
+  mcpServerName?: string;
 }
 
 export interface McpImportResponse {
   imported: ToolDescription[];
   skippedCount: number;
+}
+
+export interface McpServer {
+  id: string;
+  name: string;
+  url: string;
+  hasBearerToken: boolean;
+  isActive: boolean;
+  lastSyncedAt?: string;
+  nextSyncAt?: string;
+  lastSyncError?: string;
+  toolCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApiKey {
