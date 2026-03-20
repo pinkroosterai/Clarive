@@ -1,6 +1,12 @@
 import { Pencil, Trash2 } from 'lucide-react';
 import { memo, useState } from 'react';
 
+import {
+  ToolParameterEditor,
+  schemaToParams,
+  paramsToSchema,
+  type ToolParam,
+} from '@/components/tools/ToolParameterEditor';
 import { ToolParamSummary } from '@/components/tools/ToolParamSummary';
 import {
   AlertDialog,
@@ -40,6 +46,7 @@ export const ToolCard = memo(function ToolCard({ tool, onUpdate, onDelete }: Too
   const [name, setName] = useState(tool.name);
   const [toolName, setToolName] = useState(tool.toolName);
   const [description, setDescription] = useState(tool.description);
+  const [params, setParams] = useState<ToolParam[]>(() => schemaToParams(tool.inputSchema));
   const [saving, setSaving] = useState(false);
 
   const toolNameValid = TOOL_NAME_RE.test(toolName);
@@ -53,6 +60,7 @@ export const ToolCard = memo(function ToolCard({ tool, onUpdate, onDelete }: Too
       name: name.trim(),
       toolName: toolName.trim(),
       description: description.trim(),
+      inputSchema: paramsToSchema(params),
     });
     setSaving(false);
     setEditOpen(false);
@@ -62,6 +70,7 @@ export const ToolCard = memo(function ToolCard({ tool, onUpdate, onDelete }: Too
     setName(tool.name);
     setToolName(tool.toolName);
     setDescription(tool.description);
+    setParams(schemaToParams(tool.inputSchema));
     setEditOpen(true);
   };
 
@@ -143,6 +152,7 @@ export const ToolCard = memo(function ToolCard({ tool, onUpdate, onDelete }: Too
                 rows={3}
               />
             </div>
+            <ToolParameterEditor params={params} onChange={setParams} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>

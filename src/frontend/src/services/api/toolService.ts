@@ -7,15 +7,13 @@ export async function getToolsList(): Promise<ToolDescription[]> {
   return res.items;
 }
 
-export async function createTool(
-  data: Omit<ToolDescription, 'id' | 'inputSchema'>
-): Promise<ToolDescription> {
+export async function createTool(data: Omit<ToolDescription, 'id'>): Promise<ToolDescription> {
   return api.post<ToolDescription>('/api/tools', data);
 }
 
 export async function updateTool(
   id: string,
-  data: Partial<Omit<ToolDescription, 'id' | 'inputSchema'>>
+  data: Partial<Omit<ToolDescription, 'id'>>
 ): Promise<ToolDescription> {
   return api.patch<ToolDescription>(`/api/tools/${id}`, data);
 }

@@ -7,6 +7,11 @@ import { toast } from 'sonner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { McpImportSection } from '@/components/tools/McpImportSection';
 import { ToolCard } from '@/components/tools/ToolCard';
+import {
+  ToolParameterEditor,
+  paramsToSchema,
+  type ToolParam,
+} from '@/components/tools/ToolParameterEditor';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -36,6 +41,7 @@ export default function ToolsPanel() {
   const [name, setName] = useState('');
   const [toolName, setToolName] = useState('');
   const [description, setDescription] = useState('');
+  const [params, setParams] = useState<ToolParam[]>([]);
 
   const toolNameValid = toolName === '' || TOOL_NAME_RE.test(toolName);
   const formValid =
@@ -77,6 +83,7 @@ export default function ToolsPanel() {
     setName('');
     setToolName('');
     setDescription('');
+    setParams([]);
     setAddOpen(false);
   };
 
@@ -86,6 +93,7 @@ export default function ToolsPanel() {
       name: name.trim(),
       toolName: toolName.trim(),
       description: description.trim(),
+      inputSchema: paramsToSchema(params),
     });
   };
 
@@ -166,6 +174,7 @@ export default function ToolsPanel() {
                   rows={3}
                 />
               </div>
+              <ToolParameterEditor params={params} onChange={setParams} />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={resetAndClose}>

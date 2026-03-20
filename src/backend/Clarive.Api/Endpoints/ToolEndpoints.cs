@@ -92,6 +92,7 @@ public static partial class ToolEndpoints
                 Name = request.Name.Trim(),
                 ToolName = request.ToolName.Trim(),
                 Description = request.Description?.Trim() ?? "",
+                InputSchema = request.InputSchema,
                 CreatedAt = DateTime.UtcNow,
             },
             ct
@@ -140,6 +141,8 @@ public static partial class ToolEndpoints
             tool.ToolName = request.ToolName.Trim();
         if (request.Description is not null)
             tool.Description = request.Description.Trim();
+        if (request.InputSchema is not null)
+            tool.InputSchema = request.InputSchema;
         await toolRepo.UpdateAsync(tool, ct);
 
         return Results.Ok(tool);
