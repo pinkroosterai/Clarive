@@ -612,6 +612,22 @@ export default function PlaygroundResultsArea({
                                 isStreaming={isStreaming}
                               />
                             )}
+                            {/* Tool calls between reasoning and response (chronological order) */}
+                            {i === 0 && toolCalls && Object.keys(toolCalls).length > 0 && (
+                              <div className="space-y-1 my-2">
+                                {Object.entries(toolCalls).map(([callId, tc]) => (
+                                  <ToolCallBlock
+                                    key={callId}
+                                    toolName={tc.toolName}
+                                    arguments={tc.arguments}
+                                    response={tc.response}
+                                    durationMs={tc.durationMs}
+                                    error={tc.error}
+                                    status={tc.status}
+                                  />
+                                ))}
+                              </div>
+                            )}
                             <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
                               {streamedResponses[i] !== undefined ? (
                                 <LLMResponseBlock
@@ -633,26 +649,6 @@ export default function PlaygroundResultsArea({
                           </div>
                         );
                       })}
-
-                      {/* Tool calls for current run */}
-                      {toolCalls && Object.keys(toolCalls).length > 0 && (
-                        <div className="space-y-1 mt-2">
-                          <p className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider">
-                            Tool Calls
-                          </p>
-                          {Object.entries(toolCalls).map(([callId, tc]) => (
-                            <ToolCallBlock
-                              key={callId}
-                              toolName={tc.toolName}
-                              arguments={tc.arguments}
-                              response={tc.response}
-                              durationMs={tc.durationMs}
-                              error={tc.error}
-                              status={tc.status}
-                            />
-                          ))}
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -694,6 +690,22 @@ export default function PlaygroundResultsArea({
                               </div>
                             )}
                             {reasoning && <ReasoningBlock reasoning={reasoning} />}
+                            {/* Tool calls between reasoning and response (chronological order) */}
+                            {i === 0 && run.toolInvocations && run.toolInvocations.length > 0 && (
+                              <div className="space-y-1 my-2">
+                                {run.toolInvocations.map((inv) => (
+                                  <ToolCallBlock
+                                    key={inv.callId}
+                                    toolName={inv.toolName}
+                                    arguments={inv.arguments}
+                                    response={inv.response}
+                                    durationMs={inv.durationMs}
+                                    error={inv.error}
+                                    status={inv.error ? 'error' : 'complete'}
+                                  />
+                                ))}
+                              </div>
+                            )}
                             <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
                               {response ? (
                                 <LLMResponseBlock output={response.content} isStreaming={false} />
@@ -712,24 +724,6 @@ export default function PlaygroundResultsArea({
                           </div>
                         );
                       })}
-                      {run.toolInvocations && run.toolInvocations.length > 0 && (
-                        <div className="space-y-1 mt-2">
-                          <p className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider">
-                            Tool Calls
-                          </p>
-                          {run.toolInvocations.map((inv) => (
-                            <ToolCallBlock
-                              key={inv.callId}
-                              toolName={inv.toolName}
-                              arguments={inv.arguments}
-                              response={inv.response}
-                              durationMs={inv.durationMs}
-                              error={inv.error}
-                              status={inv.error ? 'error' : 'complete'}
-                            />
-                          ))}
-                        </div>
-                      )}
                     </div>
                   ))}
 
