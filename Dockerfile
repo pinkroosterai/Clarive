@@ -21,7 +21,7 @@ COPY src/backend/Clarive.Domain/Clarive.Domain.csproj src/backend/Clarive.Domain
 COPY src/backend/Clarive.Infrastructure/Clarive.Infrastructure.csproj src/backend/Clarive.Infrastructure/
 COPY src/backend/Clarive.AI/Clarive.AI.csproj src/backend/Clarive.AI/
 COPY src/backend/Clarive.Auth/Clarive.Auth.csproj src/backend/Clarive.Auth/
-COPY src/backend/Clarive.Core/Clarive.Core.csproj src/backend/Clarive.Core/
+COPY src/backend/Clarive.Application/Clarive.Application.csproj src/backend/Clarive.Application/
 COPY src/backend/Clarive.Api/Clarive.Api.csproj src/backend/Clarive.Api/
 RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet restore src/backend/Clarive.Api/Clarive.Api.csproj
