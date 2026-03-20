@@ -148,6 +148,7 @@ public class OpenAIAgentFactoryTests
             AiActionType.Decomposition,
             AiActionType.FillTemplateFields,
             AiActionType.PlaygroundJudge,
+            AiActionType.PolishDescription,
         };
 
         OpenAIAgentFactory
@@ -291,5 +292,6 @@ public class OpenAIAgentFactoryTests
             Decomposition = new ActionAiConfig { Model = "gpt-4o" },
             FillTemplateFields = new ActionAiConfig { Model = "gpt-4o" },
             PlaygroundJudge = new ActionAiConfig { Model = "gpt-4o" },
+            PolishDescription = new ActionAiConfig { Model = "gpt-4o" },
         };
 }

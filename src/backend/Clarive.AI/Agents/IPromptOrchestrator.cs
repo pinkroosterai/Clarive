@@ -74,6 +74,14 @@ public interface IPromptOrchestrator
         CancellationToken ct = default
     );
 
+    /// <summary>
+    /// Single-turn: rewrites a rough description into a clear, structured description.
+    /// </summary>
+    Task<AgentResult<string>> PolishDescriptionAsync(
+        string description,
+        CancellationToken ct = default
+    );
+
     bool IsConfigured { get; }
 }
 

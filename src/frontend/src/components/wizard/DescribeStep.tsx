@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { Globe, Loader2, Sparkles, Mail } from 'lucide-react';
+import { Globe, Loader2, Sparkles, Mail, Wand2 } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { toolService } from '@/services';
+import { toolService, wizardService } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 
 export interface GenerateOptions {
@@ -34,6 +35,25 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
   const [generateAsChain, setGenerateAsChain] = useState(false);
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
   const [enableWebSearch, setEnableWebSearch] = useState(false);
+  const [isPolishing, setIsPolishing] = useState(false);
+
+  const handlePolish = async () => {
+    if (!description.trim() || isPolishing) return;
+    setIsPolishing(true);
+    try {
+      const polished = await wizardService.polishDescription(description.trim());
+      setDescription(polished);
+      // Trigger auto-resize on the textarea
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 320)}px`;
+      }
+    } catch {
+      toast.error('Failed to polish description. Please try again.');
+    } finally {
+      setIsPolishing(false);
+    }
+  };
 
   const { data: tools = [] } = useQuery({
     queryKey: ['tools'],
@@ -82,16 +102,34 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
         </div>
       </div>
 
-      <Textarea
-        ref={textareaRef}
-        id="wizard-desc"
-        placeholder="e.g. A prompt that helps users write professional emails given a topic and tone..."
-        value={description}
-        onChange={handleTextareaChange}
-        disabled={isGenerating}
-        style={{ minHeight: '160px' }}
-        className="bg-elevated border-border focus:ring-2 focus:ring-primary/30 resize-none overflow-hidden transition-shadow"
-      />
+      <div className="relative">
+        <Textarea
+          ref={textareaRef}
+          id="wizard-desc"
+          placeholder="e.g. A prompt that helps users write professional emails given a topic and tone..."
+          value={description}
+          onChange={handleTextareaChange}
+          disabled={isGenerating || isPolishing}
+          style={{ minHeight: '160px' }}
+          className="bg-elevated border-border focus:ring-2 focus:ring-primary/30 resize-none overflow-hidden transition-shadow pr-12"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 size-8 text-foreground-muted hover:text-primary"
+          onClick={handlePolish}
+          disabled={!description.trim() || isGenerating || isPolishing}
+          title="Polish description with AI"
+          aria-label="Polish description with AI"
+        >
+          {isPolishing ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Wand2 className="size-4" />
+          )}
+        </Button>
+      </div>
 
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-foreground">Configuration</h3>

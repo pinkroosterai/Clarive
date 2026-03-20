@@ -162,3 +162,10 @@ export async function decomposeToChain(
     order: i,
   }));
 }
+
+export async function polishDescription(description: string): Promise<string> {
+  const res = await api.post<{ polished: string }>('/api/ai/polish-description', {
+    description,
+  });
+  return res.polished;
+}

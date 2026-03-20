@@ -29,6 +29,11 @@ const CONFIGURABLE_ACTIONS = [
     label: 'Playground Judge',
     description: 'Score playground run outputs',
   },
+  {
+    key: 'PolishDescription',
+    label: 'Polish Description',
+    description: 'Rewrite rough wizard descriptions into clear input',
+  },
 ] as const;
 
 interface ActionModelTableProps {

@@ -1,3 +1,4 @@
+using Clarive.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -430,5 +431,32 @@ public class PromptOrchestrator : IPromptOrchestrator
     {
         [Description("Mapping of template field names to generated example values")]
         public Dictionary<string, string> Values { get; set; } = new();
+    }
+
+    public async Task<AgentResult<string>> PolishDescriptionAsync(
+        string description,
+        CancellationToken ct = default
+    )
+    {
+        var chatClient = _factory.GetActionChatClient(AiActionType.PolishDescription);
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.System,
+                "You are a prompt engineering assistant. Rewrite the user's rough description " +
+                "into a clear, detailed, and well-structured description suitable for AI prompt " +
+                "generation. Keep the user's original intent but make it specific, unambiguous, " +
+                "and actionable. Return only the rewritten text — no explanations, no markdown " +
+                "formatting, no preamble."),
+            new(ChatRole.User, description),
+        };
+
+        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+
+        var polished = response.Text?.Trim();
+
+        return new AgentResult<string>(
+            string.IsNullOrEmpty(polished) ? description : polished,
+            response.Usage);
     }
 }

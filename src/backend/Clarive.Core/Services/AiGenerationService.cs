@@ -453,6 +453,35 @@ public class AiGenerationService(
         return agentResult.Value;
     }
 
+    public async Task<ErrorOr<string>> PolishDescriptionAsync(
+        Guid tenantId,
+        Guid userId,
+        string description,
+        CancellationToken ct
+    )
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return Error.Validation("VALIDATION_ERROR", "Description is required.");
+
+        if (description.Length > 2000)
+            return Error.Validation("VALIDATION_ERROR", "Description must be 2000 characters or fewer.");
+
+        var sw = Stopwatch.StartNew();
+        var result = await orchestrator.PolishDescriptionAsync(description, ct);
+        sw.Stop();
+
+        await LogUsageAsync(
+            tenantId,
+            userId,
+            AiActionType.PolishDescription,
+            sw.ElapsedMilliseconds,
+            result.Usage,
+            ct
+        );
+
+        return result.Value;
+    }
+
     // ── Private helpers ──
 
     private Task LogUsageAsync(

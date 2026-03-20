@@ -1,6 +1,5 @@
 using Clarive.AI.Agents;
 using Clarive.Core.Helpers;
-using Clarive.Core.Helpers;
 using Clarive.Core.Models.Requests;
 using Clarive.Domain.ValueObjects;
 using Clarive.Core.Models.Responses;
@@ -39,6 +38,7 @@ public static class AiGenerationEndpoints
         group.MapPost("/generate-system-message", HandleGenerateSystemMessage);
         group.MapPost("/decompose", HandleDecompose);
         group.MapPost("/fill-template-fields", HandleFillTemplateFields);
+        group.MapPost("/polish-description", HandlePolishDescription);
 
         return group;
     }
@@ -322,4 +322,27 @@ public static class AiGenerationEndpoints
             result.Evaluation,
             result.ScoreHistory
         );
+
+    private record PolishDescriptionRequest(string Description);
+
+    private static async Task<IResult> HandlePolishDescription(
+        HttpContext ctx,
+        PolishDescriptionRequest request,
+        IAiGenerationService aiService
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var result = await aiService.PolishDescriptionAsync(
+            tenantId,
+            userId,
+            request.Description,
+            ctx.RequestAborted
+        );
+
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.Ok(new { polished = result.Value });
+    }
 }

@@ -77,4 +77,15 @@ public interface IAiGenerationService
         Guid entryId,
         CancellationToken ct = default
     );
+
+    /// <summary>
+    /// Rewrites a rough user description into a clear, structured description
+    /// suitable for AI prompt generation. Returns the polished text.
+    /// </summary>
+    Task<ErrorOr<string>> PolishDescriptionAsync(
+        Guid tenantId,
+        Guid userId,
+        string description,
+        CancellationToken ct = default
+    );
 }

@@ -34,6 +34,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         AiActionType.Decomposition,
         AiActionType.FillTemplateFields,
         AiActionType.PlaygroundJudge,
+        AiActionType.PolishDescription,
     ];
 
     private readonly ILoggerFactory _loggerFactory;
@@ -205,6 +206,20 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             AgentInstructions.PlaygroundJudge,
             "PlaygroundJudge"
         );
+
+    public IChatClient GetActionChatClient(AiActionType actionType)
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            EnsureConfigured();
+            return _actionClients[actionType];
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
 
     private ChatClientAgent CreateActionAgent(
         AiActionType actionType,

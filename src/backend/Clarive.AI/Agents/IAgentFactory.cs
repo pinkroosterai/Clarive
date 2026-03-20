@@ -23,6 +23,7 @@ public interface IAgentFactory
     AIAgent CreateDecomposeAgent();
     AIAgent CreateFillTemplateFieldsAgent();
     AIAgent CreatePlaygroundJudgeAgent();
+    IChatClient GetActionChatClient(AiActionType actionType);
     IChatClient CreateChatClient(string model);
     IChatClient CreateChatClientForProvider(
         string apiKey,

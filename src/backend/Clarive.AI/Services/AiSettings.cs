@@ -21,6 +21,7 @@ public record AiSettings
     public ActionAiConfig Decomposition { get; init; } = new();
     public ActionAiConfig FillTemplateFields { get; init; } = new();
     public ActionAiConfig PlaygroundJudge { get; init; } = new();
+    public ActionAiConfig PolishDescription { get; init; } = new();
 
     // Playground & tools
     public string AllowedModels { get; init; } = "";
@@ -36,6 +37,7 @@ public record AiSettings
             AiActionType.Decomposition => Decomposition,
             AiActionType.FillTemplateFields => FillTemplateFields,
             AiActionType.PlaygroundJudge => PlaygroundJudge,
+            AiActionType.PolishDescription => PolishDescription,
             _ => null,
         };
 }

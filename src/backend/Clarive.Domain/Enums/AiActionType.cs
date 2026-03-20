@@ -10,4 +10,5 @@ public enum AiActionType
     Decomposition,
     PlaygroundJudge,
     FillTemplateFields,
+    PolishDescription,
 }
