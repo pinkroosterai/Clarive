@@ -1,4 +1,4 @@
-using Clarive.Api.Services.Agents;
+using Clarive.AI.Agents;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Clarive.Api.HealthChecks;

@@ -1,8 +1,8 @@
-using Clarive.Api.Models.Agents;
+using Clarive.AI.Models;
+using Clarive.AI.Extensions;
+using Clarive.AI.Agents;
 using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Requests;
-using Clarive.Api.Services.Agents;
-using Clarive.Api.Services.Agents.AiExtensions;
 
 namespace Clarive.Api.IntegrationTests.Helpers;
 

@@ -1,3 +1,7 @@
+using Clarive.AI;
+using Clarive.Domain.Interfaces.Services;
+using Clarive.AI.Agents;
+using Clarive.AI.Services;
 using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure;
 using System.Text;
@@ -15,7 +19,6 @@ using Clarive.Infrastructure.Repositories;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Seed;
 using Clarive.Api.Services;
-using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -292,10 +295,7 @@ try
     }
 
     // ── AI Configuration (Agent-based) ──
-    builder.Services.Configure<AiSettings>(builder.Configuration.GetSection("Ai"));
-    builder.Services.AddSingleton<IAgentFactory, OpenAIAgentFactory>();
-    builder.Services.AddSingleton<IAgentSessionPool, AgentSessionPool>();
-    builder.Services.AddScoped<IPromptOrchestrator, PromptOrchestrator>();
+    builder.Services.AddClariveAI(builder.Configuration);
     builder.Services.AddScoped<IMcpImportService, McpImportService>();
     builder.Services.AddSingleton<ITavilyClientService, TavilyClientService>();
     builder.Services.AddSingleton<ILiteLlmRegistryCache, LiteLlmRegistryCache>();

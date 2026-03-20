@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
 

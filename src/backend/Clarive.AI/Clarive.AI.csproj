@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Clarive.Api.UnitTests" />
+    <InternalsVisibleTo Include="Clarive.Api" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ErrorOr" />
+    <PackageReference Include="Humanizer.Core" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Clarive.Domain\Clarive.Domain.csproj" />
+    <ProjectReference Include="..\Clarive.Infrastructure\Clarive.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

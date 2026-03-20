@@ -1,11 +1,13 @@
+using Clarive.AI.Services;
 using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure.Cache;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Api.Models.Responses;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Api.Services.Agents;
+using Clarive.AI.Agents;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using ErrorOr;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;

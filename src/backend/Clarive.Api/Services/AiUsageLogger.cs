@@ -3,6 +3,7 @@ using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 
 namespace Clarive.Api.Services;
 

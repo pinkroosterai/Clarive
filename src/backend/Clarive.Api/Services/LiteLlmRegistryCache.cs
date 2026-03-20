@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace Clarive.Api.Services;

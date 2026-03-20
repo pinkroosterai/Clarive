@@ -1,5 +1,5 @@
+using Clarive.AI.Agents;
 using Clarive.Api.HealthChecks;
-using Clarive.Api.Services.Agents;
 using FluentAssertions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NSubstitute;

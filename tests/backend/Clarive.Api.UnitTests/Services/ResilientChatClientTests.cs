@@ -1,6 +1,8 @@
+using Clarive.AI.Services;
+using Clarive.AI.Models;
+using Clarive.AI.Extensions;
+using Clarive.AI.Agents;
 using System.Net;
-using Clarive.Api.Services.Agents;
-using Clarive.Api.Services.Agents.AiExtensions;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;

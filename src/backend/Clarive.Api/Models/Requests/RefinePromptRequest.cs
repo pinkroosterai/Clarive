@@ -1,3 +1,4 @@
+using Clarive.AI.Models;
 namespace Clarive.Api.Models.Requests;
 
 public record RefinePromptRequest(

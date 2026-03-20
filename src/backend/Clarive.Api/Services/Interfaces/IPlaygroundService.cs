@@ -1,4 +1,4 @@
-using Clarive.Api.Models.Agents;
+using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;

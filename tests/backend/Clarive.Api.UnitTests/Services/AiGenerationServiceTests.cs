@@ -1,4 +1,7 @@
-using Clarive.Api.Models.Agents;
+using Clarive.Domain.Interfaces.Services;
+using Clarive.AI.Models;
+using Clarive.AI.Extensions;
+using Clarive.AI.Agents;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
@@ -6,8 +9,6 @@ using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Results;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Api.Services;
-using Clarive.Api.Services.Agents;
-using Clarive.Api.Services.Agents.AiExtensions;
 using Clarive.Api.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.Extensions.AI;

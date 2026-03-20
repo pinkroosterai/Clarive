@@ -4,4 +4,5 @@
   <Project Path="Clarive.Api\Clarive.Api.csproj" />
   <Project Path="Clarive.Domain\Clarive.Domain.csproj" />
   <Project Path="Clarive.Infrastructure\Clarive.Infrastructure.csproj" />
+  <Project Path="Clarive.AI\Clarive.AI.csproj" />
 </Solution>

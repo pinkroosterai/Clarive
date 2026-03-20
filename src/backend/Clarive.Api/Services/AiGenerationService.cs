@@ -1,17 +1,20 @@
+using Clarive.Api.Models.Results;
+using Clarive.AI.Extensions;
 using System.Diagnostics;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Errors;
-using Clarive.Api.Models.Agents;
+using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Responses;
-using Clarive.Api.Models.Results;
+using Clarive.AI.Models;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Api.Services.Agents;
-using Clarive.Api.Services.Agents.AiExtensions;
+using Clarive.AI.Agents;
+using Clarive.AI.Extensions;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using ErrorOr;
 using Microsoft.Extensions.AI;
 

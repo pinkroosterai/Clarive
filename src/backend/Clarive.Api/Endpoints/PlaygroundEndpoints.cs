@@ -1,10 +1,10 @@
+using Clarive.AI.Agents;
 using Clarive.Api.Auth;
 using Clarive.Api.Helpers;
 using Clarive.Api.Models.Requests;
 using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Responses;
 using Clarive.Api.Services;
-using Clarive.Api.Services.Agents;
 using Clarive.Api.Services.Interfaces;
 
 namespace Clarive.Api.Endpoints;

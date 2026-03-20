@@ -1,3 +1,7 @@
+using Clarive.AI.Services;
+using Clarive.AI.Agents;
+using Clarive.AI.Models;
+using Clarive.AI.Extensions;
 using System.Text.Json;
 using Clarive.Domain.Entities;
 using Clarive.Api.Models.Responses;

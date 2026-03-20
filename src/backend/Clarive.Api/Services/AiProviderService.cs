@@ -8,8 +8,9 @@ using Clarive.Api.Models.Requests;
 using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Responses;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Api.Services.Agents;
+using Clarive.AI.Agents;
 using Clarive.Api.Services.Interfaces;
+using Clarive.Domain.Interfaces.Services;
 using ErrorOr;
 using OpenAI;
 

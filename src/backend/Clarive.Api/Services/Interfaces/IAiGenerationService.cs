@@ -1,8 +1,7 @@
-using Clarive.Api.Models.Agents;
+using Clarive.AI.Extensions;
 using Clarive.Domain.ValueObjects;
 using Clarive.Api.Models.Requests;
 using Clarive.Api.Models.Results;
-using Clarive.Api.Services.Agents.AiExtensions;
 using ErrorOr;
 
 namespace Clarive.Api.Services.Interfaces;

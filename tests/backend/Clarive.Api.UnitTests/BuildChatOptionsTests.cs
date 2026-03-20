@@ -1,5 +1,5 @@
+using Clarive.AI.Agents;
 using Clarive.Domain.Entities;
-using Clarive.Api.Services.Agents;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
 using Xunit;

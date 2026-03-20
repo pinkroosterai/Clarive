@@ -1,3 +1,4 @@
+using Clarive.AI.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace Clarive.Api.Models.Requests;

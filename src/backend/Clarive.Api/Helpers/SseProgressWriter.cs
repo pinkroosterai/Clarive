@@ -1,3 +1,4 @@
+using Clarive.AI.Extensions;
 using System.Text.Json;
 
 namespace Clarive.Api.Helpers;
@@ -29,7 +30,7 @@ public sealed class SseProgressWriter
     }
 
     public async Task WriteProgressAsync(
-        Clarive.Api.Services.Agents.AiExtensions.ProgressEvent progress,
+        ProgressEvent progress,
         CancellationToken ct = default
     )
     {

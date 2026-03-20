@@ -1,9 +1,9 @@
+using Clarive.AI.Agents;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Clarive.Api.IntegrationTests.Fixtures;
 using Clarive.Api.IntegrationTests.Helpers;
-using Clarive.Api.Services.Agents;
 using FluentAssertions;
 using Xunit;
 
