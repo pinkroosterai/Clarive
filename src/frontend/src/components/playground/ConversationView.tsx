@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 
 import ReasoningBlock from './ReasoningBlock';
 import { ToolCallBlock } from './ToolCallBlock';
@@ -34,78 +34,123 @@ export const ConversationView = memo(function ConversationView({
     }
   }
 
+  // Check if there are tool calls in this conversation
+  const hasToolCalls = messages.some((m) => m.role === 'tool_call');
+
+  // Group consecutive tool_call + tool_result messages
+  const elements: React.ReactNode[] = [];
+  let toolGroup: React.ReactNode[] = [];
+  let inToolGroup = false;
+
+  const flushToolGroup = () => {
+    if (toolGroup.length > 0) {
+      elements.push(
+        <div
+          key={`tool-group-${elements.length}`}
+          className="bg-elevated/20 border-l-2 border-l-accent rounded-r-md py-2 px-3 space-y-1"
+        >
+          <div className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider mb-1">
+            Tool Activity
+          </div>
+          {toolGroup}
+        </div>
+      );
+      toolGroup = [];
+    }
+    inToolGroup = false;
+  };
+
+  for (let idx = 0; idx < messages.length; idx++) {
+    const msg = messages[idx];
+
+    if (msg.role === 'tool_call' || msg.role === 'tool_result') {
+      inToolGroup = true;
+      if (msg.role === 'tool_call') {
+        const result = msg.callId ? toolResults.get(msg.callId) : undefined;
+        toolGroup.push(
+          <ToolCallBlock
+            key={`tool-${msg.callId ?? idx}`}
+            toolName={msg.toolName ?? 'Unknown'}
+            arguments={msg.arguments ?? null}
+            response={result?.response ?? null}
+            durationMs={result?.durationMs ?? null}
+            error={result?.error ?? null}
+            status={result ? (result.error ? 'error' : 'complete') : 'calling'}
+          />
+        );
+      }
+      // tool_result is rendered as part of tool_call above
+      continue;
+    }
+
+    // Flush any pending tool group before rendering a non-tool message
+    if (inToolGroup) flushToolGroup();
+
+    switch (msg.role) {
+      case 'system':
+        // Skip system messages — they're part of the prompt visible in the template section
+        break;
+
+      case 'user':
+        elements.push(<CollapsedPrompt key={idx} msg={msg} />);
+        break;
+
+      case 'assistant':
+        elements.push(
+          <div key={idx}>
+            {msg.reasoning && (
+              <ReasoningBlock reasoning={msg.reasoning} isStreaming={isStreaming} />
+            )}
+            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
+              {msg.content ? (
+                <LLMResponseBlock output={msg.content} isStreaming={isStreaming} />
+              ) : (
+                <span className="text-xs text-foreground-muted">—</span>
+              )}
+            </div>
+          </div>
+        );
+        break;
+    }
+  }
+
+  // Flush any remaining tool group
+  if (inToolGroup) flushToolGroup();
+
+  return <div className="space-y-3">{elements}</div>;
+});
+
+function CollapsedPrompt({ msg }: { msg: ConversationMessage }) {
+  const [expanded, setExpanded] = useState(false);
+  const preview = msg.content.slice(0, 100).replace(/\n/g, ' ');
+  const isLong = msg.content.length > 120;
+
   return (
-    <div className="space-y-3">
-      {messages.map((msg, idx) => {
-        switch (msg.role) {
-          case 'system':
-            return (
-              <div
-                key={idx}
-                className="bg-elevated/50 border-l-2 border-l-primary rounded-r-md p-3"
-              >
-                <div className="text-[10px] font-semibold text-primary mb-1 uppercase tracking-wider">
-                  System
-                </div>
-                <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto">
-                  {msg.content}
-                </div>
-              </div>
-            );
-
-          case 'user':
-            return (
-              <div key={idx} className="bg-elevated/30 rounded-md p-3 border border-border-subtle">
-                {msg.promptIndex !== undefined && msg.promptIndex !== null && (
-                  <div className="text-[10px] font-semibold text-foreground-muted mb-1 uppercase tracking-wider">
-                    Prompt {msg.promptIndex + 1}
-                  </div>
-                )}
-                <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-32 overflow-y-auto">
-                  {msg.content}
-                </div>
-              </div>
-            );
-
-          case 'tool_call': {
-            const result = msg.callId ? toolResults.get(msg.callId) : undefined;
-            return (
-              <ToolCallBlock
-                key={`tool-${msg.callId ?? idx}`}
-                toolName={msg.toolName ?? 'Unknown'}
-                arguments={msg.arguments ?? null}
-                response={result?.response ?? null}
-                durationMs={result?.durationMs ?? null}
-                error={result?.error ?? null}
-                status={result ? (result.error ? 'error' : 'complete') : 'calling'}
-              />
-            );
-          }
-
-          case 'tool_result':
-            // Rendered as part of tool_call above
-            return null;
-
-          case 'assistant':
-            return (
-              <div key={idx}>
-                {msg.reasoning && (
-                  <ReasoningBlock reasoning={msg.reasoning} isStreaming={isStreaming} />
-                )}
-                <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-                  {msg.content ? (
-                    <LLMResponseBlock output={msg.content} isStreaming={isStreaming} />
-                  ) : (
-                    <span className="text-xs text-foreground-muted">—</span>
-                  )}
-                </div>
-              </div>
-            );
-
-          default:
-            return null;
-        }
-      })}
+    <div className="bg-elevated/30 rounded-md border border-border-subtle">
+      <button
+        type="button"
+        onClick={() => isLong && setExpanded(!expanded)}
+        className="flex items-start gap-2 w-full px-3 py-2 text-left"
+      >
+        <span className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider shrink-0 mt-0.5">
+          Prompt {(msg.promptIndex ?? 0) + 1}
+        </span>
+        <span className="text-xs text-foreground-muted truncate flex-1">
+          {expanded ? '' : `${preview}${isLong ? '…' : ''}`}
+        </span>
+        {isLong && (
+          <span className="text-[10px] text-primary shrink-0">
+            {expanded ? 'Collapse' : 'Show full'}
+          </span>
+        )}
+      </button>
+      {expanded && (
+        <div className="px-3 pb-2">
+          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-48 overflow-y-auto">
+            {msg.content}
+          </div>
+        </div>
+      )}
     </div>
   );
-});
+}

@@ -10,6 +10,25 @@ interface ToolCallBlockProps {
   status: 'calling' | 'complete' | 'error';
 }
 
+/** Extract a human-readable preview from tool arguments JSON */
+function getArgPreview(toolName: string, args: string | null): string | null {
+  if (!args) return null;
+  try {
+    const parsed = JSON.parse(args);
+    // Known tool patterns
+    if (parsed.libraryName) return parsed.libraryName;
+    if (parsed.query) return parsed.query.length > 60 ? parsed.query.slice(0, 57) + '...' : parsed.query;
+    if (parsed.url) return parsed.url.length > 60 ? parsed.url.slice(0, 57) + '...' : parsed.url;
+    // Fallback: first string value
+    for (const val of Object.values(parsed)) {
+      if (typeof val === 'string' && val.length > 0) {
+        return val.length > 60 ? val.slice(0, 57) + '...' : val;
+      }
+    }
+  } catch { /* ignore parse errors */ }
+  return null;
+}
+
 export function ToolCallBlock({
   toolName,
   arguments: args,
@@ -19,10 +38,11 @@ export function ToolCallBlock({
   status,
 }: ToolCallBlockProps) {
   const [expanded, setExpanded] = useState(false);
+  const preview = getArgPreview(toolName, args);
 
   return (
     <div
-      className={`my-2 rounded-lg border text-sm ${
+      className={`rounded-lg border text-sm ${
         status === 'error'
           ? 'border-destructive/30 bg-destructive/5'
           : 'border-border-subtle bg-elevated/50'
@@ -35,21 +55,29 @@ export function ToolCallBlock({
         disabled={status === 'calling'}
       >
         <Wrench className="size-3.5 text-foreground-muted shrink-0" />
-        <span className="font-medium text-xs">{toolName}</span>
-        {status === 'calling' && <Loader2 className="size-3.5 animate-spin text-primary" />}
+        <span className="font-medium text-xs shrink-0">{toolName}</span>
+        {preview && (
+          <>
+            <span className="text-foreground-muted/50 text-xs shrink-0">&rarr;</span>
+            <span className="text-xs text-foreground-muted truncate min-w-0">
+              {preview}
+            </span>
+          </>
+        )}
+        {status === 'calling' && <Loader2 className="size-3.5 animate-spin text-primary shrink-0" />}
         {status === 'complete' && (
           <>
-            <CheckCircle2 className="size-3.5 text-success-text" />
+            <CheckCircle2 className="size-3.5 text-success-text shrink-0" />
             {durationMs != null && (
-              <span className="text-[10px] text-foreground-muted">
+              <span className="text-[10px] text-foreground-muted shrink-0">
                 {durationMs < 1000 ? `${durationMs}ms` : `${(durationMs / 1000).toFixed(1)}s`}
               </span>
             )}
           </>
         )}
-        {status === 'error' && <AlertCircle className="size-3.5 text-destructive" />}
+        {status === 'error' && <AlertCircle className="size-3.5 text-destructive shrink-0" />}
         {status !== 'calling' && (
-          <span className="ml-auto">
+          <span className="ml-auto shrink-0">
             {expanded ? (
               <ChevronDown className="size-3.5 text-foreground-muted" />
             ) : (
