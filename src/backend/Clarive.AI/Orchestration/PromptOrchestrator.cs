@@ -429,27 +429,26 @@ public class PromptOrchestrator : IPromptOrchestrator
         public Dictionary<string, string> Values { get; set; } = new();
     }
 
+    internal class GeneratedPolishOutput
+    {
+        [Description("The rewritten description, clear and suitable for AI prompt generation")]
+        public string Description { get; set; } = "";
+    }
+
     public async Task<AgentResult<string>> PolishDescriptionAsync(
         string description,
         CancellationToken ct = default
     )
     {
-        var chatClient = _factory.GetActionChatClient(AiActionType.PolishDescription);
+        var agent = _factory.CreateAgent(
+            AiActionType.PolishDescription, AgentInstructions.PolishDescription, "DescriptionPolisher");
 
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.System,
-                "You are a prompt engineering assistant. Rewrite the user's rough description " +
-                "into a clear, detailed, and well-structured description suitable for AI prompt " +
-                "generation. Keep the user's original intent but make it specific, unambiguous, " +
-                "and actionable. Return only the rewritten text — no explanations, no markdown " +
-                "formatting, no preamble."),
-            new(ChatRole.User, description),
-        };
+        var response = await agent.RunAsync<GeneratedPolishOutput>(
+            description,
+            cancellationToken: ct
+        );
 
-        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
-
-        var polished = response.Text?.Trim();
+        var polished = response.Result.Description?.Trim();
 
         return new AgentResult<string>(
             string.IsNullOrEmpty(polished) ? description : polished,
