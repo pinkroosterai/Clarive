@@ -3,9 +3,11 @@ import { Globe, Loader2, Sparkles, Mail, Wand2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { ToolParamSummary } from '@/components/tools/ToolParamSummary';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { toolService, wizardService } from '@/services';
@@ -206,32 +208,46 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
       {tools.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">Available Tools</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-            {tools.map((tool) => (
-              <label
-                key={tool.id}
-                htmlFor={`tool-${tool.id}`}
-                className={`flex items-center gap-3 cursor-pointer bg-surface border rounded-lg px-3 py-2 transition-colors ${
-                  selectedToolIds.includes(tool.id)
-                    ? 'border-primary/50 bg-primary/8'
-                    : 'border-border-subtle hover:border-primary/30'
-                }`}
-              >
-                <Checkbox
-                  id={`tool-${tool.id}`}
-                  checked={selectedToolIds.includes(tool.id)}
-                  onCheckedChange={() => toggleTool(tool.id)}
-                  disabled={isGenerating}
-                />
-                <div className="min-w-0">
-                  <span className="text-sm block truncate">{tool.name}</span>
-                  <code className="text-xs font-mono text-foreground-muted bg-elevated px-1.5 py-0.5 rounded">
-                    {tool.toolName}
-                  </code>
-                </div>
-              </label>
-            ))}
-          </div>
+          <ScrollArea className="max-h-64">
+            <div className="grid grid-cols-1 gap-2 pr-3">
+              {tools.map((tool) => (
+                <label
+                  key={tool.id}
+                  htmlFor={`tool-${tool.id}`}
+                  className={`flex items-start gap-3 cursor-pointer bg-surface border rounded-lg px-3 py-2.5 transition-colors ${
+                    selectedToolIds.includes(tool.id)
+                      ? 'border-primary/50 bg-primary/8'
+                      : 'border-border-subtle hover:border-primary/30'
+                  }`}
+                >
+                  <Checkbox
+                    id={`tool-${tool.id}`}
+                    checked={selectedToolIds.includes(tool.id)}
+                    onCheckedChange={() => toggleTool(tool.id)}
+                    disabled={isGenerating}
+                    className="mt-0.5"
+                  />
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium">{tool.name}</span>
+                      <code className="text-xs font-mono text-foreground-muted bg-elevated px-1.5 py-0.5 rounded">
+                        {tool.toolName}
+                      </code>
+                    </div>
+                    {tool.description && (
+                      <p className="text-xs text-foreground-muted line-clamp-2">
+                        {tool.description}
+                      </p>
+                    )}
+                    <ToolParamSummary
+                      schema={tool.inputSchema}
+                      className="text-xs text-foreground-muted/70 line-clamp-1"
+                    />
+                  </div>
+                </label>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       )}
 
