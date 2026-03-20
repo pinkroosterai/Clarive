@@ -252,13 +252,14 @@ public class ImportExportService(
         if (depth >= MaxFolderDepth)
             return;
 
-        foreach (var parentId in parentIds)
-        {
-            var children = await folderRepo.GetChildrenAsync(tenantId, parentId, ct);
-            var childIds = children.Select(c => c.Id).Where(collected.Add).ToList();
-            if (childIds.Count > 0)
-                await ExpandFolderSubtreeAsync(tenantId, childIds, collected, depth + 1, ct);
-        }
+        var tasks = parentIds.Select(pid => folderRepo.GetChildrenAsync(tenantId, pid, ct));
+        var childrenLists = await Task.WhenAll(tasks);
+        var allChildIds = childrenLists
+            .SelectMany(c => c.Select(f => f.Id))
+            .Where(collected.Add)
+            .ToList();
+        if (allChildIds.Count > 0)
+            await ExpandFolderSubtreeAsync(tenantId, allChildIds, collected, depth + 1, ct);
     }
 
     private async Task<Guid?> ResolveImportFolderAsync(
