@@ -61,8 +61,12 @@ export function MarkdownEditor({
     () =>
       debounce((...args: unknown[]) => {
         const ed = args[0] as Editor;
+        const md = ed.getMarkdown();
+        // Skip if content hasn't actually changed (prevents false isDirty from
+        // Tiptap v3 markdown normalization or focus reconciliation)
+        if (md === lastExternalContent.current) return;
         isLocalUpdate.current = true;
-        onContentChangeRef.current(ed.getMarkdown());
+        onContentChangeRef.current(md);
       }, 150),
     []
   );
