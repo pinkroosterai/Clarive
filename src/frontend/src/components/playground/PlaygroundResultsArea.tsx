@@ -698,73 +698,75 @@ export default function PlaygroundResultsArea({
                       )}
 
                       {/* Render segments chronologically for this prompt */}
-                      {segments
-                        .filter((s) => s.promptIndex === i)
-                        .map((seg, idx) => {
-                          switch (seg.type) {
-                            case 'reasoning':
-                              return (
-                                <ReasoningBlock
-                                  key={`chain-${i}-seg-${idx}`}
-                                  reasoning={seg.text}
-                                  isStreaming={isActive}
-                                />
-                              );
-                            case 'tool_call': {
-                              const result = segments.find(
-                                (s) => s.type === 'tool_result' && s.callId === seg.callId
-                              );
-                              const toolResult =
-                                result?.type === 'tool_result' ? result : undefined;
-                              return (
-                                <ToolCallBlock
-                                  key={`chain-${i}-tool-${seg.callId}`}
-                                  toolName={seg.toolName}
-                                  arguments={seg.arguments ?? null}
-                                  response={toolResult?.response ?? null}
-                                  durationMs={toolResult?.durationMs ?? null}
-                                  error={toolResult?.error ?? null}
-                                  status={
-                                    toolResult
-                                      ? toolResult.error
-                                        ? 'error'
-                                        : 'complete'
-                                      : 'calling'
-                                  }
-                                />
-                              );
-                            }
-                            case 'tool_result':
-                              return null; // Rendered as part of tool_call above
-                            case 'response':
-                              return (
-                                <div key={`chain-${i}-seg-${idx}`} className="relative group">
-                                  <div
-                                    className={`rounded-lg border p-4 ${
-                                      isActive
-                                        ? 'border-primary/30 bg-primary/5'
-                                        : 'border-border-subtle bg-surface'
-                                    }`}
-                                  >
-                                    <LLMResponseBlock
-                                      output={seg.text || ''}
-                                      isStreaming={isActive}
-                                    />
+                      <div className="space-y-2">
+                        {segments
+                          .filter((s) => s.promptIndex === i)
+                          .map((seg, idx) => {
+                            switch (seg.type) {
+                              case 'reasoning':
+                                return (
+                                  <ReasoningBlock
+                                    key={`chain-${i}-seg-${idx}`}
+                                    reasoning={seg.text}
+                                    isStreaming={isActive}
+                                  />
+                                );
+                              case 'tool_call': {
+                                const result = segments.find(
+                                  (s) => s.type === 'tool_result' && s.callId === seg.callId
+                                );
+                                const toolResult =
+                                  result?.type === 'tool_result' ? result : undefined;
+                                return (
+                                  <ToolCallBlock
+                                    key={`chain-${i}-tool-${seg.callId}`}
+                                    toolName={seg.toolName}
+                                    arguments={seg.arguments ?? null}
+                                    response={toolResult?.response ?? null}
+                                    durationMs={toolResult?.durationMs ?? null}
+                                    error={toolResult?.error ?? null}
+                                    status={
+                                      toolResult
+                                        ? toolResult.error
+                                          ? 'error'
+                                          : 'complete'
+                                        : 'calling'
+                                    }
+                                  />
+                                );
+                              }
+                              case 'tool_result':
+                                return null; // Rendered as part of tool_call above
+                              case 'response':
+                                return (
+                                  <div key={`chain-${i}-seg-${idx}`} className="relative group">
+                                    <div
+                                      className={`rounded-lg border p-4 ${
+                                        isActive
+                                          ? 'border-primary/30 bg-primary/5'
+                                          : 'border-border-subtle bg-surface'
+                                      }`}
+                                    >
+                                      <LLMResponseBlock
+                                        output={seg.text || ''}
+                                        isStreaming={isActive}
+                                      />
+                                    </div>
+                                    {!isStreaming && seg.text && (
+                                      <CopyButton
+                                        text={seg.text}
+                                        index={i}
+                                        copiedIndex={copiedIndex}
+                                        onCopy={handleCopy}
+                                      />
+                                    )}
                                   </div>
-                                  {!isStreaming && seg.text && (
-                                    <CopyButton
-                                      text={seg.text}
-                                      index={i}
-                                      copiedIndex={copiedIndex}
-                                      onCopy={handleCopy}
-                                    />
-                                  )}
-                                </div>
-                              );
-                            default:
-                              return null;
-                          }
-                        })}
+                                );
+                              default:
+                                return null;
+                            }
+                          })}
+                      </div>
                       {isStreaming && i === responseCount && !response && (
                         <div className="rounded-lg border border-border-subtle bg-surface/50 p-4">
                           <div className="h-6 w-2/3 rounded bg-foreground-muted/10 animate-pulse" />
