@@ -40,7 +40,7 @@ const serverEntry: PromptEntry = {
   ],
 };
 
-function renderDialog(onResolve = vi.fn(), onOpenChange = vi.fn()) {
+function renderOverlay(onResolve = vi.fn(), onOpenChange = vi.fn()) {
   return {
     onResolve,
     onOpenChange,
@@ -56,39 +56,40 @@ function renderDialog(onResolve = vi.fn(), onOpenChange = vi.fn()) {
   };
 }
 
-describe('ConflictResolutionDialog', () => {
-  it('renders diff sections for changed fields', () => {
-    renderDialog();
-    expect(screen.getByText('Conflict detected — resolve changes')).toBeInTheDocument();
-    expect(screen.getByText('Title')).toBeInTheDocument();
-    expect(screen.getByText('Prompt 1')).toBeInTheDocument();
+describe('ConflictResolutionDialog (full-page overlay)', () => {
+  it('renders the overlay with heading', () => {
+    renderOverlay();
+    expect(screen.getByText('Resolve conflict')).toBeInTheDocument();
+  });
+
+  it('renders side-by-side column headers', () => {
+    renderOverlay();
+    const yourChanges = screen.getAllByText('Your changes');
+    const serverVersion = screen.getAllByText('Server version');
+    expect(yourChanges.length).toBeGreaterThanOrEqual(1);
+    expect(serverVersion.length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows No changes badge for identical fields', () => {
-    renderDialog();
-    // Prompt 2 is identical in both entries
+    renderOverlay();
     const noChanges = screen.getAllByText('No changes');
     expect(noChanges.length).toBeGreaterThanOrEqual(1);
   });
 
+  it('renders diff sections for changed fields', () => {
+    renderOverlay();
+    expect(screen.getByText('Title')).toBeInTheDocument();
+    expect(screen.getByText('Prompt 1')).toBeInTheDocument();
+  });
+
   it('defaults to Keep mine for all changed fields', () => {
-    renderDialog();
-    // All "Keep mine" buttons should be the active variant
+    renderOverlay();
     const keepMineButtons = screen.getAllByRole('button', { name: /keep mine/i });
-    expect(keepMineButtons.length).toBeGreaterThanOrEqual(2); // Title + Prompt 1
+    expect(keepMineButtons.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('switches selection when Keep theirs is clicked', () => {
-    renderDialog();
-    const keepTheirsButtons = screen.getAllByRole('button', { name: /keep theirs/i });
-    fireEvent.click(keepTheirsButtons[0]); // Switch Title to theirs
-    // After clicking, the button should now have the active style (Check icon appears)
-    expect(keepTheirsButtons[0]).toBeInTheDocument();
-  });
-
-  it('calls onResolve with merged entry when Save resolved is clicked', () => {
-    const { onResolve } = renderDialog();
-    // Default is "keep mine" for all — click Save resolved
+  it('calls onResolve with local values when Save resolved clicked (default keep mine)', () => {
+    const { onResolve } = renderOverlay();
     fireEvent.click(screen.getByRole('button', { name: /save resolved/i }));
     expect(onResolve).toHaveBeenCalledOnce();
     const resolved = onResolve.mock.calls[0][0];
@@ -97,8 +98,7 @@ describe('ConflictResolutionDialog', () => {
   });
 
   it('calls onResolve with server values when Keep theirs selected', () => {
-    const { onResolve } = renderDialog();
-    // Switch all to theirs
+    const { onResolve } = renderOverlay();
     const keepTheirsButtons = screen.getAllByRole('button', { name: /keep theirs/i });
     keepTheirsButtons.forEach((btn) => fireEvent.click(btn));
     fireEvent.click(screen.getByRole('button', { name: /save resolved/i }));
@@ -108,10 +108,49 @@ describe('ConflictResolutionDialog', () => {
     expect(resolved.prompts[0].content).toBe('Their updated prompt one');
   });
 
+  it('shows Edit merged button for each conflicting field', () => {
+    renderOverlay();
+    const editMergedButtons = screen.getAllByRole('button', { name: /edit merged/i });
+    expect(editMergedButtons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('opens textarea when Edit merged is clicked', () => {
+    renderOverlay();
+    const editMergedButtons = screen.getAllByRole('button', { name: /edit merged/i });
+    fireEvent.click(editMergedButtons[0]); // Click Edit merged for Title
+    expect(screen.getByText('Merged result')).toBeInTheDocument();
+    const textarea = screen.getByRole('textbox');
+    expect(textarea).toBeInTheDocument();
+  });
+
+  it('sends custom merged text when Edit merged is used', () => {
+    const { onResolve } = renderOverlay();
+    const editMergedButtons = screen.getAllByRole('button', { name: /edit merged/i });
+    fireEvent.click(editMergedButtons[0]); // Edit merged for Title
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'Custom Merged Title' } });
+    fireEvent.click(screen.getByRole('button', { name: /save resolved/i }));
+    const resolved = onResolve.mock.calls[0][0];
+    expect(resolved.title).toBe('Custom Merged Title');
+  });
+
   it('calls onOpenChange(false) when Cancel is clicked', () => {
-    const { onResolve, onOpenChange } = renderDialog();
+    const { onResolve, onOpenChange } = renderOverlay();
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(onResolve).not.toHaveBeenCalled();
+  });
+
+  it('renders nothing when open is false', () => {
+    const { container } = render(
+      <ConflictResolutionDialog
+        open={false}
+        onOpenChange={vi.fn()}
+        localEntry={localEntry}
+        serverEntry={serverEntry}
+        onResolve={vi.fn()}
+      />
+    );
+    expect(container.innerHTML).toBe('');
   });
 });

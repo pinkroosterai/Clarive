@@ -1,20 +1,12 @@
 import { diffLines } from 'diff';
-import { Check } from 'lucide-react';
+import { Check, Pencil } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { PromptEntry } from '@/types';
 
-type Choice = 'mine' | 'theirs';
+type Choice = 'mine' | 'theirs' | 'merged';
 
 interface FieldDiff {
   label: string;
@@ -32,46 +24,116 @@ interface ConflictResolutionDialogProps {
   onResolve: (resolved: Partial<PromptEntry>) => void;
 }
 
-function DiffDisplay({ mine, theirs }: { mine: string; theirs: string }) {
-  const changes = useMemo(() => diffLines(theirs, mine), [mine, theirs]);
+function HighlightedColumn({
+  text,
+  otherText,
+  side,
+}: {
+  text: string;
+  otherText: string;
+  side: 'mine' | 'theirs';
+}) {
+  const changes = useMemo(() => diffLines(otherText, text), [otherText, text]);
   return (
-    <div className="rounded-md border border-border-subtle bg-elevated p-3 font-mono text-xs whitespace-pre-wrap overflow-x-auto max-h-48">
+    <div className="rounded-md border border-border-subtle bg-elevated p-3 font-mono text-xs whitespace-pre-wrap min-h-[80px] max-h-[400px] overflow-y-auto">
       {changes.map((part, i) => {
-        if (part.added) {
-          return (
-            <div key={i} className="bg-success-bg text-success-text">
-              {part.value
-                .split('\n')
-                .filter((line, j, arr) => j < arr.length - 1 || line !== '')
-                .map((line, j) => (
-                  <div key={j}>+ {line}</div>
-                ))}
-            </div>
-          );
-        }
-        if (part.removed) {
-          return (
-            <div key={i} className="bg-error-bg text-error-text">
-              {part.value
-                .split('\n')
-                .filter((line, j, arr) => j < arr.length - 1 || line !== '')
-                .map((line, j) => (
-                  <div key={j}>- {line}</div>
-                ))}
-            </div>
-          );
-        }
+        // For "mine" column: added = lines unique to mine (green)
+        // For "theirs" column: removed from diff(theirs, mine) means unique to theirs (green)
+        const isHighlighted = side === 'mine' ? part.added : part.removed;
+        const isOtherSide = side === 'mine' ? part.removed : part.added;
+
+        if (isOtherSide) return null; // Don't show lines from the other side
+
         return (
-          <div key={i} className="text-foreground-muted">
+          <div key={i} className={isHighlighted ? 'bg-success-bg text-success-text' : ''}>
             {part.value
               .split('\n')
               .filter((line, j, arr) => j < arr.length - 1 || line !== '')
               .map((line, j) => (
-                <div key={j}>&nbsp; {line}</div>
+                <div key={j}>{line || '\u00A0'}</div>
               ))}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function FieldConflict({
+  field,
+  choice,
+  onChoiceChange,
+  mergedText,
+  onMergedTextChange,
+}: {
+  field: FieldDiff;
+  choice: Choice;
+  onChoiceChange: (choice: Choice) => void;
+  mergedText: string;
+  onMergedTextChange: (text: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">{field.label}</h3>
+        <div className="flex gap-1">
+          <Button
+            variant={choice === 'mine' ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => onChoiceChange('mine')}
+          >
+            {choice === 'mine' && <Check className="h-3 w-3" />}
+            Keep mine
+          </Button>
+          <Button
+            variant={choice === 'theirs' ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => onChoiceChange('theirs')}
+          >
+            {choice === 'theirs' && <Check className="h-3 w-3" />}
+            Keep theirs
+          </Button>
+          <Button
+            variant={choice === 'merged' ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => {
+              if (choice !== 'merged') {
+                // Pre-fill with currently selected version
+                onMergedTextChange(choice === 'theirs' ? field.theirs : field.mine);
+              }
+              onChoiceChange('merged');
+            }}
+          >
+            {choice === 'merged' && <Pencil className="h-3 w-3" />}
+            Edit merged
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <div className="text-xs font-medium text-muted-foreground mb-1.5">Your changes</div>
+          <HighlightedColumn text={field.mine} otherText={field.theirs} side="mine" />
+        </div>
+        <div>
+          <div className="text-xs font-medium text-muted-foreground mb-1.5">Server version</div>
+          <HighlightedColumn text={field.theirs} otherText={field.mine} side="theirs" />
+        </div>
+      </div>
+
+      {choice === 'merged' && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground mb-1.5">Merged result</div>
+          <textarea
+            className="w-full rounded-md border border-border-subtle p-3 font-mono text-xs min-h-[120px] bg-background resize-y focus:outline-none focus:ring-1 focus:ring-primary"
+            value={mergedText}
+            onChange={(e) => onMergedTextChange(e.target.value)}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -128,12 +190,25 @@ export function ConflictResolutionDialog({
     return initial;
   });
 
+  const [mergedTexts, setMergedTexts] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const f of diffFields) {
+      initial[f.key] = f.mine;
+    }
+    return initial;
+  });
+
   const handleResolve = () => {
     const resolved: Partial<PromptEntry> = {};
 
     for (const field of fields) {
       const choice = choices[field.key] ?? 'mine';
-      const value = choice === 'mine' ? field.mine : field.theirs;
+      let value: string;
+      if (choice === 'merged') {
+        value = mergedTexts[field.key] ?? field.mine;
+      } else {
+        value = choice === 'mine' ? field.mine : field.theirs;
+      }
 
       if (field.key === 'title') {
         resolved.title = value;
@@ -142,15 +217,20 @@ export function ConflictResolutionDialog({
       }
     }
 
-    // Build prompts array from choices
     const maxPrompts = Math.max(localEntry.prompts?.length ?? 0, serverEntry.prompts?.length ?? 0);
     const prompts = [];
     for (let i = 0; i < maxPrompts; i++) {
       const choice = choices[`prompt-${i}`] ?? 'mine';
-      const source = choice === 'mine' ? localEntry : serverEntry;
-      const prompt = source.prompts?.[i];
-      if (prompt) {
-        prompts.push({ ...prompt, order: i });
+      let content: string;
+      if (choice === 'merged') {
+        content = mergedTexts[`prompt-${i}`] ?? localEntry.prompts?.[i]?.content ?? '';
+      } else {
+        const source = choice === 'mine' ? localEntry : serverEntry;
+        content = source.prompts?.[i]?.content ?? '';
+      }
+      const basePrompt = localEntry.prompts?.[i] ?? serverEntry.prompts?.[i];
+      if (basePrompt) {
+        prompts.push({ ...basePrompt, content, order: i });
       }
     }
     resolved.prompts = prompts;
@@ -158,66 +238,51 @@ export function ConflictResolutionDialog({
     onResolve(resolved);
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Conflict detected — resolve changes</DialogTitle>
-          <DialogDescription>
+    <div className="fixed inset-0 z-50 bg-background">
+      <div className="border-b border-border-subtle px-6 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Resolve conflict</h1>
+          <p className="text-sm text-muted-foreground">
             Someone else saved changes while you were editing. Choose which version to keep for each
-            field.
-          </DialogDescription>
-        </DialogHeader>
-
-        <ScrollArea className="flex-1 min-h-0 pr-3">
-          <div className="space-y-5">
-            {fields.map((field) =>
-              field.hasDiff ? (
-                <div key={field.key} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold">{field.label}</h4>
-                    <div className="flex gap-1">
-                      <Button
-                        variant={choices[field.key] === 'mine' ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => setChoices((prev) => ({ ...prev, [field.key]: 'mine' }))}
-                      >
-                        {choices[field.key] === 'mine' && <Check className="h-3 w-3" />}
-                        Keep mine
-                      </Button>
-                      <Button
-                        variant={choices[field.key] === 'theirs' ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => setChoices((prev) => ({ ...prev, [field.key]: 'theirs' }))}
-                      >
-                        {choices[field.key] === 'theirs' && <Check className="h-3 w-3" />}
-                        Keep theirs
-                      </Button>
-                    </div>
-                  </div>
-                  <DiffDisplay mine={field.mine} theirs={field.theirs} />
-                </div>
-              ) : (
-                <div key={field.key} className="flex items-center gap-2">
-                  <h4 className="text-sm font-semibold text-muted-foreground">{field.label}</h4>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                    No changes
-                  </span>
-                </div>
-              )
-            )}
-          </div>
-        </ScrollArea>
-
-        <DialogFooter>
+            field, or edit the merged result.
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0 ml-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button onClick={handleResolve}>Save resolved</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+
+      <ScrollArea className="h-[calc(100vh-73px)]">
+        <div className="max-w-6xl mx-auto p-6 space-y-8">
+          {fields.map((field) =>
+            field.hasDiff ? (
+              <FieldConflict
+                key={field.key}
+                field={field}
+                choice={choices[field.key] ?? 'mine'}
+                onChoiceChange={(c) => setChoices((prev) => ({ ...prev, [field.key]: c }))}
+                mergedText={mergedTexts[field.key] ?? field.mine}
+                onMergedTextChange={(t) =>
+                  setMergedTexts((prev) => ({ ...prev, [field.key]: t }))
+                }
+              />
+            ) : (
+              <div key={field.key} className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-muted-foreground">{field.label}</h3>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                  No changes
+                </span>
+              </div>
+            )
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   );
 }
