@@ -55,7 +55,7 @@ public sealed class McpToolProgressHandler
                 pending.ToolName,
                 e.CallId,
                 pending.Arguments,
-                response?.Truncate(10000),
+                response,
                 durationMs,
                 error
             ));

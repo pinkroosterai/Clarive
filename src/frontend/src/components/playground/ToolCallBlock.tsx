@@ -112,8 +112,8 @@ export function ToolCallBlock({
               <p className="text-[10px] font-medium text-foreground-muted uppercase tracking-wider mb-1">
                 Response
               </p>
-              <pre className="text-xs font-mono bg-background rounded p-2 overflow-x-auto whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
-                {response.length > 2000 ? response.slice(0, 2000) + '\n...(truncated)' : response}
+              <pre className="text-xs font-mono bg-background rounded p-2 overflow-x-auto whitespace-pre-wrap break-all max-h-96 overflow-y-auto scrollbar-themed">
+                {response}
               </pre>
             </div>
           )}

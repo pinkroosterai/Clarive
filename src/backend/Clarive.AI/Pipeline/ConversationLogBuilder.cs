@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
-using Humanizer;
 using Microsoft.Extensions.AI;
 
 namespace Clarive.AI.Pipeline;
@@ -49,7 +48,7 @@ public sealed class ConversationLogBuilder
         lock (_lock)
             _messages.Add(new ConversationMessage(
                 "tool_result",
-                result?.Truncate(10000) ?? "",
+                result ?? "",
                 CallId: callId,
                 Error: error,
                 DurationMs: durationMs
