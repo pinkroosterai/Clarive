@@ -47,6 +47,7 @@ function makeOptions(overrides?: Partial<Parameters<typeof useEditorMutations>[0
   return {
     entryId: entry.id,
     localEntryRef: { current: entry },
+    pendingEvaluationRef: { current: null },
     onSaveSuccess: vi.fn(),
     onPublishSuccess: vi.fn(),
     handleChange: vi.fn(),
@@ -73,7 +74,8 @@ describe('useEditorMutations', () => {
 
     expect(mockUpdateEntry).toHaveBeenCalledWith(
       opts.localEntryRef.current!.id,
-      opts.localEntryRef.current
+      opts.localEntryRef.current,
+      undefined
     );
     expect(opts.onSaveSuccess).toHaveBeenCalled();
   });

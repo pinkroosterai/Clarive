@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
+using Clarive.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,6 +27,17 @@ public class PromptEntryVersionConfiguration : IEntityTypeConfiguration<PromptEn
         builder.Property(v => v.PublishedAt).HasColumnName("published_at");
         builder.Property(v => v.PublishedBy).HasColumnName("published_by");
         builder.Property(v => v.CreatedAt).HasColumnName("created_at").IsRequired();
+
+        builder
+            .Property(v => v.Evaluation)
+            .HasColumnName("evaluation")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<Dictionary<string, PromptEvaluationEntry>>(v, (JsonSerializerOptions?)null)
+            );
+        builder.Property(v => v.EvaluationAverageScore).HasColumnName("evaluation_average_score");
+        builder.Property(v => v.EvaluatedAt).HasColumnName("evaluated_at");
 
         builder
             .HasMany(v => v.Prompts)

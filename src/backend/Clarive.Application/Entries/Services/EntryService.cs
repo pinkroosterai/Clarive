@@ -125,6 +125,8 @@ public partial class EntryService(
                             BuildPrompts(request.Prompts),
                             ct
                         );
+                    if (request.Evaluation is not null)
+                        MapEvaluationToVersion(working, request.Evaluation);
 
                     entry.UpdatedAt = now;
                     await entryRepo.UpdateAsync(entry, ct);
@@ -142,21 +144,22 @@ public partial class EntryService(
                     entry.UpdatedAt = now;
                     await entryRepo.UpdateAsync(entry, ct);
 
-                    working = await entryRepo.CreateVersionAsync(
-                        new PromptEntryVersion
-                        {
-                            Id = Guid.NewGuid(),
-                            EntryId = entryId,
-                            Version = maxVersion + 1,
-                            VersionState = VersionState.Draft,
-                            SystemMessage = request.SystemMessage ?? working.SystemMessage,
-                            Prompts = request.Prompts is not null
-                                ? BuildPrompts(request.Prompts)
-                                : working.Prompts,
-                            CreatedAt = now,
-                        },
-                        ct
-                    );
+                    var newVersion = new PromptEntryVersion
+                    {
+                        Id = Guid.NewGuid(),
+                        EntryId = entryId,
+                        Version = maxVersion + 1,
+                        VersionState = VersionState.Draft,
+                        SystemMessage = request.SystemMessage ?? working.SystemMessage,
+                        Prompts = request.Prompts is not null
+                            ? BuildPrompts(request.Prompts)
+                            : working.Prompts,
+                        CreatedAt = now,
+                    };
+                    if (request.Evaluation is not null)
+                        MapEvaluationToVersion(newVersion, request.Evaluation);
+
+                    working = await entryRepo.CreateVersionAsync(newVersion, ct);
                 }
 
                 return (entry, working);
@@ -566,7 +569,10 @@ public partial class EntryService(
                 v.PublishedAt,
                 v.PublishedBy.HasValue && publisherMap.TryGetValue(v.PublishedBy.Value, out var pub)
                     ? pub.Name
-                    : null
+                    : null,
+                v.Evaluation != null ? new VersionEvaluationInfo(v.Evaluation) : null,
+                v.EvaluationAverageScore,
+                v.EvaluatedAt
             ))
             .ToList();
 
@@ -700,6 +706,11 @@ public partial class EntryService(
             version.PublishedAt,
             PublishedBy = publisherName,
             IsFavorited = isFavorited,
+            Evaluation = version.Evaluation != null
+                ? new { Dimensions = version.Evaluation }
+                : null,
+            version.EvaluationAverageScore,
+            version.EvaluatedAt,
         };
     }
 
@@ -764,6 +775,24 @@ public partial class EntryService(
                 );
         }
         return null;
+    }
+
+    private static void MapEvaluationToVersion(
+        PromptEntryVersion version,
+        Dictionary<string, PromptEvaluationEntry> evaluation)
+    {
+        version.Evaluation = evaluation.ToDictionary(
+            kvp => kvp.Key,
+            kvp => new PromptEvaluationEntry
+            {
+                Score = Math.Clamp(kvp.Value.Score, 0, 10),
+                Feedback = kvp.Value.Feedback,
+            }
+        );
+        version.EvaluationAverageScore = evaluation.Count > 0
+            ? evaluation.Values.Average(e => e.Score)
+            : null;
+        version.EvaluatedAt = DateTime.UtcNow;
     }
 
     private static List<Prompt> BuildPrompts(List<PromptInput> inputs)

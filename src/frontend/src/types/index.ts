@@ -34,6 +34,9 @@ export interface PromptEntry {
   firstPromptPreview?: string | null;
   tags?: string[];
   isFavorited?: boolean;
+  evaluation?: Evaluation | null;
+  evaluationAverageScore?: number | null;
+  evaluatedAt?: string | null;
 }
 
 export interface Folder {
@@ -134,6 +137,9 @@ export interface VersionInfo {
   versionState: 'draft' | 'published' | 'historical';
   publishedAt: string | null;
   publishedBy: string | null;
+  evaluation?: Evaluation | null;
+  evaluationAverageScore?: number | null;
+  evaluatedAt?: string | null;
 }
 
 export interface PaginatedResponse<T> {

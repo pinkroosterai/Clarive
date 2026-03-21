@@ -84,6 +84,15 @@ public interface IPromptOrchestrator
         CancellationToken ct = default
     );
 
+    /// <summary>
+    /// Standalone evaluation: scores existing prompts without generation or refinement.
+    /// </summary>
+    Task<(PromptEvaluation?, UsageDetails?)> EvaluateAsync(
+        GenerationConfig config,
+        PromptSet prompts,
+        CancellationToken ct = default
+    );
+
     bool IsConfigured { get; }
 }
 

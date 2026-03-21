@@ -391,6 +391,12 @@ public class PromptOrchestrator : IPromptOrchestrator
         return (evaluation, clarification, evalUsage, clarifyUsage);
     }
 
+    public Task<(PromptEvaluation?, UsageDetails?)> EvaluateAsync(
+        GenerationConfig config,
+        PromptSet prompts,
+        CancellationToken ct = default
+    ) => RunEvaluation(config, prompts, ct);
+
     private async Task<(PromptEvaluation?, UsageDetails?)> RunEvaluation(
         GenerationConfig config,
         PromptSet prompts,

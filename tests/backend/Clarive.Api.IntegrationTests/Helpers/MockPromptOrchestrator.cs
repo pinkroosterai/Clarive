@@ -310,4 +310,25 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
             new AgentResult<string>($"Polished: {description}")
         );
     }
+
+    public Task<(PromptEvaluation?, Microsoft.Extensions.AI.UsageDetails?)> EvaluateAsync(
+        GenerationConfig config,
+        PromptSet prompts,
+        CancellationToken ct = default
+    )
+    {
+        var evaluation = new PromptEvaluation
+        {
+            PromptEvaluations = new Dictionary<string, PromptEvaluationEntry>
+            {
+                ["Clarity"] = new() { Score = 8, Feedback = "Clear and well-structured." },
+                ["Effectiveness"] = new() { Score = 7, Feedback = "Effective with minor gaps." },
+                ["Completeness"] = new() { Score = 7, Feedback = "Covers main areas." },
+                ["Faithfulness"] = new() { Score = 9, Feedback = "Closely matches intent." },
+            },
+        };
+        return Task.FromResult<(PromptEvaluation?, Microsoft.Extensions.AI.UsageDetails?)>(
+            (evaluation, null)
+        );
+    }
 }

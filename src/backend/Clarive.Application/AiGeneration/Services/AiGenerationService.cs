@@ -348,6 +348,47 @@ public class AiGenerationService(
         return result.Value;
     }
 
+    public async Task<ErrorOr<EvaluationDto>> EvaluateAsync(
+        Guid tenantId,
+        Guid userId,
+        EvaluateEntryRequest request,
+        CancellationToken ct
+    )
+    {
+        var config = new GenerationConfig
+        {
+            Description = request.Description ?? "Evaluate prompt quality",
+        };
+
+        var prompts = new PromptSet
+        {
+            SystemMessage = request.SystemMessage,
+            Prompts = request.Prompts
+                .OrderBy(p => p.SortOrder)
+                .Select(p => new PromptMessage { Content = p.Content })
+                .ToList(),
+        };
+
+        var sw = Stopwatch.StartNew();
+        var (evaluation, usage) = await orchestrator.EvaluateAsync(config, prompts, ct);
+        sw.Stop();
+
+        await LogUsageAsync(
+            tenantId,
+            userId,
+            AiActionType.Evaluation,
+            sw.ElapsedMilliseconds,
+            usage,
+            ct
+        );
+
+        var mapped = MapEvaluation(evaluation);
+        if (mapped is null)
+            return Error.Failure("EVALUATION_FAILED", "Evaluation could not be completed. Please try again.");
+
+        return mapped;
+    }
+
     // ── Private helpers ──
 
     private Task<AiGenerationResult> CreateSessionAndBuildResultAsync(

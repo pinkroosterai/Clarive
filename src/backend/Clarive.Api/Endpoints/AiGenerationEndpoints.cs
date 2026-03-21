@@ -35,6 +35,7 @@ public static class AiGenerationEndpoints
         group.MapPost("/decompose", HandleDecompose);
         group.MapPost("/fill-template-fields", HandleFillTemplateFields);
         group.MapPost("/polish-description", HandlePolishDescription);
+        group.MapPost("/evaluate", HandleEvaluate);
 
         return group;
     }
@@ -318,6 +319,30 @@ public static class AiGenerationEndpoints
             result.Evaluation,
             result.ScoreHistory
         );
+
+    // ── Evaluate (no SSE — single-turn) ──
+
+    private static async Task<IResult> HandleEvaluate(
+        HttpContext ctx,
+        EvaluateEntryRequest request,
+        IAiGenerationService aiService,
+        CancellationToken ct
+    )
+    {
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
+
+        var result = await aiService.EvaluateAsync(
+            ctx.GetTenantId(),
+            ctx.GetUserId(),
+            request,
+            ct
+        );
+
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.Ok(result.Value);
+    }
 
     private record PolishDescriptionRequest(string Description);
 

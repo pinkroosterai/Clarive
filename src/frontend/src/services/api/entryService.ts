@@ -1,6 +1,6 @@
 import { api } from './apiClient';
 
-import type { PromptEntry, PaginatedResponse, VersionInfo } from '@/types';
+import type { PromptEntry, PaginatedResponse, VersionInfo, EvaluationEntry } from '@/types';
 
 interface EntrySummary {
   id: string;
@@ -89,7 +89,11 @@ export async function createEntry(
   return api.post<PromptEntry>('/api/entries', body);
 }
 
-export async function updateEntry(id: string, data: Partial<PromptEntry>): Promise<PromptEntry> {
+export async function updateEntry(
+  id: string,
+  data: Partial<PromptEntry>,
+  options?: { evaluation?: Record<string, EvaluationEntry> | null }
+): Promise<PromptEntry> {
   const body: Record<string, unknown> = {};
   if (data.title !== undefined) body.title = data.title;
   if (data.systemMessage !== undefined) body.systemMessage = data.systemMessage;
@@ -97,6 +101,7 @@ export async function updateEntry(id: string, data: Partial<PromptEntry>): Promi
     body.prompts = data.prompts.map((p) => ({
       content: p.content,
     }));
+  if (options?.evaluation !== undefined) body.evaluation = options.evaluation;
   return api.put<PromptEntry>(`/api/entries/${id}`, body);
 }
 

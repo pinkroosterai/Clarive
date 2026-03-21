@@ -4,11 +4,12 @@ import { toast } from 'sonner';
 
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, wizardService } from '@/services';
-import type { PromptEntry } from '@/types';
+import type { Evaluation, PromptEntry } from '@/types';
 
 interface UseEditorMutationsOptions {
   entryId: string | undefined;
   localEntryRef: RefObject<PromptEntry | null>;
+  pendingEvaluationRef: RefObject<Evaluation | null>;
   onSaveSuccess: () => void;
   onPublishSuccess: () => void;
   handleChange: (updated: Partial<PromptEntry>, options?: { force?: boolean }) => void;
@@ -17,6 +18,7 @@ interface UseEditorMutationsOptions {
 export function useEditorMutations({
   entryId,
   localEntryRef,
+  pendingEvaluationRef,
   onSaveSuccess,
   onPublishSuccess,
   handleChange,
@@ -24,7 +26,14 @@ export function useEditorMutations({
   const queryClient = useQueryClient();
 
   const saveMutation = useMutation({
-    mutationFn: (data: PromptEntry) => entryService.updateEntry(data.id, data),
+    mutationFn: (data: PromptEntry) => {
+      const evaluation = pendingEvaluationRef.current;
+      return entryService.updateEntry(
+        data.id,
+        data,
+        evaluation ? { evaluation: evaluation.dimensions } : undefined
+      );
+    },
     onSuccess: () => {
       onSaveSuccess();
       queryClient.invalidateQueries({ queryKey: ['entry', entryId] });

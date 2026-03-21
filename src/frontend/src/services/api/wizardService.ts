@@ -169,3 +169,15 @@ export async function polishDescription(description: string): Promise<string> {
   });
   return res.polished;
 }
+
+export async function evaluateEntry(
+  systemMessage: string | null,
+  prompts: Array<{ content: string; sortOrder: number }>,
+  description?: string
+): Promise<Evaluation> {
+  return api.post<Evaluation>('/api/ai/evaluate', {
+    systemMessage,
+    prompts,
+    description,
+  });
+}

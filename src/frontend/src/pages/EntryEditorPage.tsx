@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -36,11 +36,13 @@ import { useEditorKeyboardShortcuts } from '@/hooks/useEditorKeyboardShortcuts';
 import { useEditorMutations } from '@/hooks/useEditorMutations';
 import { useEditorState } from '@/hooks/useEditorState';
 import { findFolderName } from '@/lib/folderUtils';
-import { entryService, folderService } from '@/services';
+import { handleApiError } from '@/lib/handleApiError';
+import { entryService, folderService, wizardService } from '@/services';
 import { ApiError } from '@/services/api/apiClient';
 import * as favoriteService from '@/services/api/favoriteService';
 import { getShareLink } from '@/services/api/shareLinkService';
 import { useAuthStore } from '@/store/authStore';
+import type { Evaluation } from '@/types';
 
 const EntryEditorPage = () => {
   const { entryId, version } = useParams<{ entryId: string; version?: string }>();
@@ -75,11 +77,16 @@ const EntryEditorPage = () => {
 
   // ── Hooks ──
   const editor = useEditorState(entryData);
+  const [pendingEvaluation, setPendingEvaluation] = useState<Evaluation | null>(null);
+  const pendingEvaluationRef = useRef<Evaluation | null>(null);
+  pendingEvaluationRef.current = pendingEvaluation;
 
   const mutations = useEditorMutations({
     entryId,
     localEntryRef: editor.localEntryRef,
+    pendingEvaluationRef,
     onSaveSuccess: () => {
+      setPendingEvaluation(null);
       editor.setIsDirty(false);
       editor.clearHistory();
     },
@@ -187,6 +194,27 @@ const EntryEditorPage = () => {
   const handleToggleFavorite = useCallback(() => {
     favoriteMutation.mutate(isFavorited);
   }, [favoriteMutation, isFavorited]);
+
+  // ── Evaluation ──
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const handleEvaluate = useCallback(async () => {
+    const entry = editor.localEntryRef.current;
+    if (!entry || entry.prompts.length === 0) return;
+    setIsEvaluating(true);
+    try {
+      const result = await wizardService.evaluateEntry(
+        entry.systemMessage,
+        entry.prompts.map((p, i) => ({ content: p.content, sortOrder: i })),
+        entry.title || undefined
+      );
+      setPendingEvaluation(result);
+      toast.success('Evaluation complete');
+    } catch (err) {
+      handleApiError(err, { title: 'Evaluation failed' });
+    } finally {
+      setIsEvaluating(false);
+    }
+  }, [editor.localEntryRef]);
 
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);
@@ -388,7 +416,13 @@ const EntryEditorPage = () => {
           remains active until you publish the draft.
         </div>
       )}
-      <PromptEditor key={editor.discardVersion} entry={localEntry} onChange={editor.handleChange} isReadOnly={isReadOnly} hideTitleInput />
+      <PromptEditor
+        key={editor.discardVersion}
+        entry={localEntry}
+        onChange={editor.handleChange}
+        isReadOnly={isReadOnly}
+        hideTitleInput
+      />
     </div>
   );
 
@@ -427,12 +461,18 @@ const EntryEditorPage = () => {
         : undefined,
     hasShareLink: !!shareLinkQuery.data && !shareLinkQuery.error,
     hasEmptyTitle: !localEntry.title?.trim(),
+    localEvaluation: pendingEvaluation,
+    isEvaluating,
+    onEvaluate: handleEvaluate,
   } as const;
 
-  const isAiRunning = mutations.isGeneratingSystemMessage || mutations.isDecomposing;
+  const isAiRunning =
+    mutations.isGeneratingSystemMessage || mutations.isDecomposing || isEvaluating;
   const aiLabel = mutations.isGeneratingSystemMessage
     ? 'Generating system message…'
-    : 'Decomposing prompt…';
+    : mutations.isDecomposing
+      ? 'Decomposing prompt…'
+      : 'Evaluating prompt…';
 
   const dialogs = (
     <>

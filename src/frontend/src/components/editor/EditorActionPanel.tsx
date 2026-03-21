@@ -4,10 +4,11 @@ import { useState } from 'react';
 
 import { ActionsTabContent } from '@/components/editor/ActionsTabContent';
 import { DetailsTabContent } from '@/components/editor/DetailsTabContent';
+import { QualityTabContent } from '@/components/editor/QualityTabContent';
 import { VersionsTabContent } from '@/components/editor/VersionsTabContent';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { PromptEntry, VersionInfo } from '@/types';
+import type { Evaluation, PromptEntry, VersionInfo } from '@/types';
 
 export interface EditorActionPanelProps {
   entry: PromptEntry;
@@ -39,6 +40,9 @@ export interface EditorActionPanelProps {
   onShare?: () => void;
   hasShareLink?: boolean;
   hasEmptyTitle?: boolean;
+  localEvaluation?: Evaluation | null;
+  isEvaluating?: boolean;
+  onEvaluate?: () => void;
 }
 
 export function EditorActionPanel({
@@ -71,6 +75,9 @@ export function EditorActionPanel({
   onShare,
   hasShareLink,
   hasEmptyTitle,
+  localEvaluation,
+  isEvaluating,
+  onEvaluate,
 }: EditorActionPanelProps) {
   const [activeTab, setActiveTab] = useState('actions');
 
@@ -107,61 +114,89 @@ export function EditorActionPanel({
             Versions
             <span className="text-[10px] font-medium text-muted-foreground">v{entry.version}</span>
           </TabsTrigger>
+          <TabsTrigger value="quality" className="flex-1 gap-1.5 text-xs">
+            Quality
+            {(localEvaluation || entry.evaluation) && (
+              <span className="inline-flex items-center justify-center size-4 rounded-full bg-muted-foreground/20 text-[10px] font-medium text-muted-foreground">
+                {Math.round(
+                  localEvaluation
+                    ? Object.values(localEvaluation.dimensions).reduce(
+                        (s, e) => s + e.score,
+                        0
+                      ) / Object.keys(localEvaluation.dimensions).length
+                    : (entry.evaluationAverageScore ?? 0)
+                )}
+              </span>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="actions" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
-          <ActionsTabContent
-            isDirty={isDirty}
-            isReadOnly={isReadOnly}
-            onSave={onSave}
-            onDiscard={onDiscard}
-            onUndo={onUndo}
-            onRedo={onRedo}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onPublish={onPublish}
-            onEnhance={onEnhance}
-            isSaving={isSaving}
-            isPublishing={isPublishing}
-            onGenerateSystemMessage={onGenerateSystemMessage}
-            onDecomposeToChain={onDecomposeToChain}
-            isGeneratingSystemMessage={isGeneratingSystemMessage}
-            isDecomposing={isDecomposing}
-            showGenerateSystemMessage={showGenerateSystemMessage}
-            showDecomposeToChain={showDecomposeToChain}
-            onTest={onTest}
-            versions={versions}
-            entryVersion={entry.version}
-            onDeleteDraft={onDeleteDraft}
-            isDeletingDraft={isDeletingDraft}
-            onShare={onShare}
-            hasShareLink={hasShareLink}
-            hasEmptyTitle={hasEmptyTitle}
-          />
+            <ActionsTabContent
+              isDirty={isDirty}
+              isReadOnly={isReadOnly}
+              onSave={onSave}
+              onDiscard={onDiscard}
+              onUndo={onUndo}
+              onRedo={onRedo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onPublish={onPublish}
+              onEnhance={onEnhance}
+              isSaving={isSaving}
+              isPublishing={isPublishing}
+              onGenerateSystemMessage={onGenerateSystemMessage}
+              onDecomposeToChain={onDecomposeToChain}
+              isGeneratingSystemMessage={isGeneratingSystemMessage}
+              isDecomposing={isDecomposing}
+              showGenerateSystemMessage={showGenerateSystemMessage}
+              showDecomposeToChain={showDecomposeToChain}
+              onTest={onTest}
+              versions={versions}
+              entryVersion={entry.version}
+              onDeleteDraft={onDeleteDraft}
+              isDeletingDraft={isDeletingDraft}
+              onShare={onShare}
+              hasShareLink={hasShareLink}
+              hasEmptyTitle={hasEmptyTitle}
+            />
           </ScrollArea>
         </TabsContent>
 
         <TabsContent value="details" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
-          <DetailsTabContent
-            entry={entry}
-            folderName={folderName}
-            onMoveFolder={onMoveFolder}
-            isReadOnly={isReadOnly}
-          />
+            <DetailsTabContent
+              entry={entry}
+              folderName={folderName}
+              onMoveFolder={onMoveFolder}
+              isReadOnly={isReadOnly}
+            />
           </ScrollArea>
         </TabsContent>
 
         <TabsContent value="versions" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
-          {versionPanel ? (
-            <VersionsTabContent versionPanel={versionPanel} />
-          ) : (
-            <div className="py-4 text-center text-sm text-foreground-muted">
-              No version data available.
-            </div>
-          )}
+            {versionPanel ? (
+              <VersionsTabContent versionPanel={versionPanel} />
+            ) : (
+              <div className="py-4 text-center text-sm text-foreground-muted">
+                No version data available.
+              </div>
+            )}
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="quality" className="flex-1 overflow-hidden pt-4">
+          <ScrollArea className="h-full">
+            <QualityTabContent
+              evaluation={entry.evaluation}
+              localEvaluation={localEvaluation}
+              isDirty={isDirty}
+              isEvaluating={isEvaluating ?? false}
+              onEvaluate={onEvaluate ?? (() => {})}
+              versions={versions}
+            />
           </ScrollArea>
         </TabsContent>
       </Tabs>

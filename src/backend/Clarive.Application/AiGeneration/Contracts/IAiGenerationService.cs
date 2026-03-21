@@ -86,4 +86,15 @@ public interface IAiGenerationService
         string description,
         CancellationToken ct = default
     );
+
+    /// <summary>
+    /// Evaluates prompt content against quality dimensions (Clarity, Effectiveness, Completeness, Faithfulness).
+    /// Standalone evaluation — decoupled from the generate/refine/enhance workflows.
+    /// </summary>
+    Task<ErrorOr<EvaluationDto>> EvaluateAsync(
+        Guid tenantId,
+        Guid userId,
+        EvaluateEntryRequest request,
+        CancellationToken ct = default
+    );
 }
