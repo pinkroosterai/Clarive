@@ -148,13 +148,16 @@ export default function LibraryPage() {
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (source: PromptEntry) =>
-      entryService.createEntry({
-        title: `${source.title} (copy)`,
-        systemMessage: source.systemMessage,
-        prompts: structuredClone(source.prompts),
-        folderId: source.folderId,
-      }),
+    mutationFn: async (source: PromptEntry) => {
+      // List view entries don't include full prompt data — fetch the complete entry first
+      const full = await entryService.getEntry(source.id);
+      return entryService.createEntry({
+        title: `${full.title} (copy)`,
+        systemMessage: full.systemMessage,
+        prompts: full.prompts,
+        folderId: full.folderId,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       toast.success('Entry duplicated');
