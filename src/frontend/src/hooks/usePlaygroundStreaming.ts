@@ -32,6 +32,91 @@ function estimateTokens(charCount: number): number {
   return Math.round(charCount / CHARS_PER_TOKEN_ESTIMATE);
 }
 
+// ── Sub-hook: Streaming timer ──
+
+function useStreamingTimer() {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [approxOutputTokens, setApproxOutputTokens] = useState(0);
+  const streamedTextLengthRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startTimer = useCallback(() => {
+    setElapsedSeconds(0);
+    setApproxOutputTokens(0);
+    streamedTextLengthRef.current = 0;
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+      setApproxOutputTokens(estimateTokens(streamedTextLengthRef.current));
+    }, 1000);
+    return startTime;
+  }, []);
+
+  const stopTimer = useCallback((startTime: number) => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+  }, []);
+
+  const addStreamedChars = useCallback((count: number) => {
+    streamedTextLengthRef.current += count;
+  }, []);
+
+  const resetTimer = useCallback(() => {
+    setElapsedSeconds(0);
+    setApproxOutputTokens(0);
+    streamedTextLengthRef.current = 0;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  return { elapsedSeconds, approxOutputTokens, startTimer, stopTimer, addStreamedChars, resetTimer };
+}
+
+// ── Sub-hook: Rate limit countdown ──
+
+function useRateLimitCountdown() {
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  const rateLimitTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startCountdown = useCallback((seconds: number) => {
+    setRateLimitCountdown(seconds);
+    if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+    rateLimitTimerRef.current = setInterval(() => {
+      setRateLimitCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(rateLimitTimerRef.current!);
+          rateLimitTimerRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const resetCountdown = useCallback(() => {
+    setRateLimitCountdown(0);
+    if (rateLimitTimerRef.current) {
+      clearInterval(rateLimitTimerRef.current);
+      rateLimitTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+    };
+  }, []);
+
+  return { rateLimitCountdown, startCountdown, resetCountdown };
+}
+
 // ── Hook interface ──
 
 export type StreamSegment =
@@ -76,15 +161,16 @@ export function usePlaygroundStreaming({
   const [segments, setSegments] = useState<StreamSegment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [wasStopped, setWasStopped] = useState(false);
-  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
-  const rateLimitTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // ── Elapsed time + tokens ──
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [approxOutputTokens, setApproxOutputTokens] = useState(0);
-  const streamedTextLengthRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ── Composed sub-hooks ──
+  const {
+    elapsedSeconds, approxOutputTokens,
+    startTimer, stopTimer, addStreamedChars, resetTimer,
+  } = useStreamingTimer();
+  const { rateLimitCountdown, startCountdown, resetCountdown } = useRateLimitCountdown();
+
+  // ── Run result state ──
   const [lastTokens, setLastTokens] = useState<{
     input: number | null;
     output: number | null;
@@ -100,14 +186,6 @@ export function usePlaygroundStreaming({
 
   // ── Auto-follow scrolling (extracted hook) ──
   const { resetAutoFollow } = usePlaygroundAutoScroll(isStreaming, segments);
-
-  // ── Cleanup timers on unmount ──
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
-    };
-  }, []);
 
   // ── Clear stale reasoning segments when switching to non-reasoning model ──
   useEffect(() => {
@@ -136,27 +214,15 @@ export function usePlaygroundStreaming({
     setError(null);
     setWasStopped(false);
     resetAutoFollow();
-    setRateLimitCountdown(0);
-    if (rateLimitTimerRef.current) {
-      clearInterval(rateLimitTimerRef.current);
-      rateLimitTimerRef.current = null;
-    }
+    resetCountdown();
     setLastTokens(null);
     setLastRunId(null);
     setLastJudgeScores(null);
     setLastVersionLabel(null);
     setIsJudging(false);
     setConversationLog(null);
-    setElapsedSeconds(0);
-    setApproxOutputTokens(0);
-    streamedTextLengthRef.current = 0;
 
-    const startTime = Date.now();
-    timerRef.current = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-      setApproxOutputTokens(estimateTokens(streamedTextLengthRef.current));
-    }, 1000);
-
+    const startTime = startTimer();
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -174,7 +240,6 @@ export function usePlaygroundStreaming({
           excludedToolNames: excludedToolNames?.length ? excludedToolNames : undefined,
         },
         (evt: ConversationStreamEvent) => {
-          // Trigger spinner on first event
           if (!firstTokenRef.current) {
             firstTokenRef.current = true;
             setFirstTokenReceived(true);
@@ -191,17 +256,15 @@ export function usePlaygroundStreaming({
             setSegments((prev) => {
               const last = prev[prev.length - 1];
               if (last?.type === 'reasoning' && last.promptIndex === pi) {
-                // Extend existing reasoning segment for same prompt
                 return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
               }
               return [...prev, { type: 'reasoning', text: evt.text!, promptIndex: pi }];
             });
           } else if (evt.type === 'text' && evt.text) {
-            streamedTextLengthRef.current += evt.text.length;
+            addStreamedChars(evt.text.length);
             setSegments((prev) => {
               const last = prev[prev.length - 1];
               if (last?.type === 'response' && last.promptIndex === pi) {
-                // Extend existing response segment for same prompt
                 return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
               }
               return [...prev, { type: 'response', text: evt.text!, promptIndex: pi }];
@@ -242,7 +305,6 @@ export function usePlaygroundStreaming({
       setLastVersionLabel(result.versionLabel ?? null);
       setIsJudging(false);
 
-      // Store conversation log for pinned run rendering
       if (result.conversationLog?.length) {
         setConversationLog(result.conversationLog);
       }
@@ -256,28 +318,13 @@ export function usePlaygroundStreaming({
         const rawMessage = err instanceof Error ? err.message : 'Test failed';
         setError(rawMessage);
         if (isRateLimitError(rawMessage)) {
-          setRateLimitCountdown(60);
-          if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
-          rateLimitTimerRef.current = setInterval(() => {
-            setRateLimitCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(rateLimitTimerRef.current!);
-                rateLimitTimerRef.current = null;
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
+          startCountdown(60);
         }
       }
     } finally {
       setIsStreaming(false);
       abortRef.current = null;
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+      stopTimer(startTime);
     }
   }, [
     entryId,
@@ -292,6 +339,11 @@ export function usePlaygroundStreaming({
     isReasoning,
     mcpServerIds,
     excludedToolNames,
+    startTimer,
+    stopTimer,
+    addStreamedChars,
+    resetCountdown,
+    startCountdown,
   ]);
 
   const handleAbort = useCallback(() => {
@@ -306,10 +358,8 @@ export function usePlaygroundStreaming({
     setLastRunId(null);
     setLastJudgeScores(null);
     setLastVersionLabel(null);
-    setElapsedSeconds(0);
-    setApproxOutputTokens(0);
-    streamedTextLengthRef.current = 0;
-  }, []);
+    resetTimer();
+  }, [resetTimer]);
 
   return {
     isStreaming,
