@@ -16,7 +16,7 @@ export function JudgeScorePanel({ scores }: { scores: Evaluation }) {
   });
 
   return (
-    <div className="mt-4 pt-3 border-t border-border-subtle space-y-2">
+    <div className="mt-4 pt-3 border-t border-border-subtle space-y-2 min-w-0">
       <div className="flex items-center gap-2">
         <div className="flex items-center justify-center size-8 rounded-full border-2 border-primary">
           <span className="text-xs font-bold text-primary">{scores.averageScore.toFixed(1)}</span>
@@ -39,7 +39,7 @@ export function JudgeScorePanel({ scores }: { scores: Evaluation }) {
                 <span className={`text-xs font-medium w-4 text-right ${text}`}>{entry.score}</span>
               </div>
               {entry.feedback && (
-                <p className="text-[11px] text-foreground-muted pl-[calc(5rem+0.5rem)] leading-snug">
+                <p className="text-[11px] text-foreground-muted pl-[calc(5rem+0.5rem)] leading-snug break-words">
                   {entry.feedback}
                 </p>
               )}

@@ -506,14 +506,14 @@ export default function PlaygroundResultsArea({
 
                         {/* ── Row 3: Judge scores (aligned across columns) ── */}
                         {hasCurrentRun && (
-                          <div className="self-start">
+                          <div className="self-start min-w-0">
                             {!isStreaming && currentJudgeScores && (
                               <JudgeScorePanel scores={currentJudgeScores} />
                             )}
                           </div>
                         )}
                         {pinnedRuns.map((run) => (
-                          <div key={`scores-${run.id}`} className="self-start">
+                          <div key={`scores-${run.id}`} className="self-start min-w-0">
                             {run.judgeScores && <JudgeScorePanel scores={run.judgeScores} />}
                           </div>
                         ))}
