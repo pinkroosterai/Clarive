@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
 
+import CopyButton from './CopyButton';
 import ReasoningBlock from './ReasoningBlock';
 import { ToolCallBlock } from './ToolCallBlock';
 
@@ -11,11 +12,15 @@ export type { ConversationMessage };
 interface ConversationViewProps {
   messages: ConversationMessage[];
   isStreaming?: boolean;
+  copiedIndex?: number | null;
+  onCopy?: (text: string, index: number) => Promise<void>;
 }
 
 export const ConversationView = memo(function ConversationView({
   messages,
   isStreaming = false,
+  copiedIndex = null,
+  onCopy,
 }: ConversationViewProps) {
   if (messages.length === 0) return null;
 
@@ -78,6 +83,14 @@ export const ConversationView = memo(function ConversationView({
             {msg.content ? (
               <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
                 <LLMResponseBlock output={msg.content} isStreaming={isStreaming} />
+                {!isStreaming && onCopy && (
+                  <CopyButton
+                    text={msg.content}
+                    index={3000 + idx}
+                    copiedIndex={copiedIndex}
+                    onCopy={onCopy}
+                  />
+                )}
               </div>
             ) : null}
           </div>

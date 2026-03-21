@@ -491,7 +491,11 @@ export default function PlaygroundResultsArea({
                         {pinnedRuns.map((run, pinIndex) => (
                           <div key={`content-${run.id}`} className="space-y-2 self-start">
                             {run.conversationLog?.length ? (
-                              <ConversationView messages={run.conversationLog} />
+                              <ConversationView
+                                messages={run.conversationLog}
+                                copiedIndex={copiedIndex}
+                                onCopy={handleCopy}
+                              />
                             ) : (
                               <div className="text-xs text-foreground-muted p-4">
                                 No conversation data available for this run.
