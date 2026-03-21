@@ -199,7 +199,7 @@ const EntryEditorPage = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const handleEvaluate = useCallback(async () => {
     const entry = editor.localEntryRef.current;
-    if (!entry || entry.prompts.length === 0) return;
+    if (!entry || !entryId || entry.prompts.length === 0) return;
     setIsEvaluating(true);
     try {
       const result = await wizardService.evaluateEntry(
@@ -208,13 +208,20 @@ const EntryEditorPage = () => {
         entry.title || undefined
       );
       setPendingEvaluation(result);
+
+      // Persist evaluation immediately (don't wait for content save)
+      await entryService.updateEntry(entryId, {}, { evaluation: result.dimensions });
+      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
+      setPendingEvaluation(null);
+
       toast.success('Evaluation complete');
     } catch (err) {
       handleApiError(err, { title: 'Evaluation failed' });
     } finally {
       setIsEvaluating(false);
     }
-  }, [editor.localEntryRef]);
+  }, [editor.localEntryRef, entryId, queryClient]);
 
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);
