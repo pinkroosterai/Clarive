@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 
 import type { StreamSegment } from '@/hooks/usePlaygroundStreaming';
 import type { Evaluation, TestRunResponse, EnrichedModel } from '@/services/api/playgroundService';
-import type { TemplateField } from '@/types';
+import type { McpServer, TemplateField, ToolDescription } from '@/types';
 
 // ── Grouped prop interfaces for PlaygroundToolbar ──
 
@@ -39,6 +39,8 @@ export interface PlaygroundToolState {
   setEnabledServerIds: (v: string[]) => void;
   excludedToolNames: string[];
   setExcludedToolNames: (v: string[]) => void;
+  mcpServers: McpServer[];
+  allTools: ToolDescription[];
 }
 
 // ── Grouped prop interfaces for PlaygroundResultsArea ──

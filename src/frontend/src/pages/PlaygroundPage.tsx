@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -38,7 +38,7 @@ import { usePlaygroundQueueManager } from '@/hooks/usePlaygroundQueueManager';
 import { usePlaygroundStreaming } from '@/hooks/usePlaygroundStreaming';
 import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
 import { parseTemplateTags } from '@/lib/templateParser';
-import { entryService } from '@/services';
+import { entryService, mcpServerService, toolService } from '@/services';
 import {
   getTestRuns,
   getEnrichedModels,
@@ -126,6 +126,24 @@ const PlaygroundPage = () => {
   // ── MCP tool state ──
   const [enabledServerIds, setEnabledServerIds] = useState<string[]>([]);
   const [excludedToolNames, setExcludedToolNames] = useState<string[]>([]);
+
+  const { data: mcpServers = [] } = useQuery({
+    queryKey: ['mcp-servers'],
+    queryFn: mcpServerService.list,
+  });
+  const { data: allTools = [] } = useQuery({
+    queryKey: ['tools'],
+    queryFn: toolService.getToolsList,
+  });
+
+  // Enable all active MCP servers by default on first load
+  const didInitServers = useRef(false);
+  useEffect(() => {
+    if (!didInitServers.current && mcpServers.length > 0) {
+      didInitServers.current = true;
+      setEnabledServerIds(mcpServers.filter((s) => s.isActive).map((s) => s.id));
+    }
+  }, [mcpServers]);
 
   // ── Streaming (delegated to hook) ──
   const {
@@ -365,8 +383,17 @@ const PlaygroundPage = () => {
       setEnabledServerIds,
       excludedToolNames,
       setExcludedToolNames,
+      mcpServers,
+      allTools,
     }),
-    [enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames]
+    [
+      enabledServerIds,
+      setEnabledServerIds,
+      excludedToolNames,
+      setExcludedToolNames,
+      mcpServers,
+      allTools,
+    ]
   );
 
   const streamingState = useMemo<PlaygroundStreamingState>(
