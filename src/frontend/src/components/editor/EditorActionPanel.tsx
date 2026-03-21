@@ -120,10 +120,8 @@ export function EditorActionPanel({
               <span className="inline-flex items-center justify-center size-4 rounded-full bg-muted-foreground/20 text-[10px] font-medium text-muted-foreground">
                 {Math.round(
                   localEvaluation
-                    ? Object.values(localEvaluation.dimensions).reduce(
-                        (s, e) => s + e.score,
-                        0
-                      ) / Object.keys(localEvaluation.dimensions).length
+                    ? Object.values(localEvaluation.dimensions).reduce((s, e) => s + e.score, 0) /
+                        Object.keys(localEvaluation.dimensions).length
                     : (entry.evaluationAverageScore ?? 0)
                 )}
               </span>
@@ -133,70 +131,78 @@ export function EditorActionPanel({
 
         <TabsContent value="actions" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
-            <ActionsTabContent
-              isDirty={isDirty}
-              isReadOnly={isReadOnly}
-              onSave={onSave}
-              onDiscard={onDiscard}
-              onUndo={onUndo}
-              onRedo={onRedo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              onPublish={onPublish}
-              onEnhance={onEnhance}
-              isSaving={isSaving}
-              isPublishing={isPublishing}
-              onGenerateSystemMessage={onGenerateSystemMessage}
-              onDecomposeToChain={onDecomposeToChain}
-              isGeneratingSystemMessage={isGeneratingSystemMessage}
-              isDecomposing={isDecomposing}
-              showGenerateSystemMessage={showGenerateSystemMessage}
-              showDecomposeToChain={showDecomposeToChain}
-              onTest={onTest}
-              versions={versions}
-              entryVersion={entry.version}
-              onDeleteDraft={onDeleteDraft}
-              isDeletingDraft={isDeletingDraft}
-              onShare={onShare}
-              hasShareLink={hasShareLink}
-              hasEmptyTitle={hasEmptyTitle}
-            />
+            <div className="pr-3">
+              <ActionsTabContent
+                isDirty={isDirty}
+                isReadOnly={isReadOnly}
+                onSave={onSave}
+                onDiscard={onDiscard}
+                onUndo={onUndo}
+                onRedo={onRedo}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                onPublish={onPublish}
+                onEnhance={onEnhance}
+                isSaving={isSaving}
+                isPublishing={isPublishing}
+                onGenerateSystemMessage={onGenerateSystemMessage}
+                onDecomposeToChain={onDecomposeToChain}
+                isGeneratingSystemMessage={isGeneratingSystemMessage}
+                isDecomposing={isDecomposing}
+                showGenerateSystemMessage={showGenerateSystemMessage}
+                showDecomposeToChain={showDecomposeToChain}
+                onTest={onTest}
+                versions={versions}
+                entryVersion={entry.version}
+                onDeleteDraft={onDeleteDraft}
+                isDeletingDraft={isDeletingDraft}
+                onShare={onShare}
+                hasShareLink={hasShareLink}
+                hasEmptyTitle={hasEmptyTitle}
+              />
+            </div>
           </ScrollArea>
         </TabsContent>
 
         <TabsContent value="details" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
-            <DetailsTabContent
-              entry={entry}
-              folderName={folderName}
-              onMoveFolder={onMoveFolder}
-              isReadOnly={isReadOnly}
-            />
+            <div className="pr-3">
+              <DetailsTabContent
+                entry={entry}
+                folderName={folderName}
+                onMoveFolder={onMoveFolder}
+                isReadOnly={isReadOnly}
+              />
+            </div>
           </ScrollArea>
         </TabsContent>
 
         <TabsContent value="versions" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
-            {versionPanel ? (
-              <VersionsTabContent versionPanel={versionPanel} />
-            ) : (
-              <div className="py-4 text-center text-sm text-foreground-muted">
-                No version data available.
-              </div>
-            )}
+            <div className="pr-3">
+              {versionPanel ? (
+                <VersionsTabContent versionPanel={versionPanel} />
+              ) : (
+                <div className="py-4 text-center text-sm text-foreground-muted">
+                  No version data available.
+                </div>
+              )}
+            </div>
           </ScrollArea>
         </TabsContent>
 
         <TabsContent value="quality" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
-            <QualityTabContent
-              evaluation={entry.evaluation}
-              localEvaluation={localEvaluation}
-              isDirty={isDirty}
-              isEvaluating={isEvaluating ?? false}
-              onEvaluate={onEvaluate ?? (() => {})}
-              versions={versions}
-            />
+            <div className="pr-3">
+              <QualityTabContent
+                evaluation={entry.evaluation}
+                localEvaluation={localEvaluation}
+                isDirty={isDirty}
+                isEvaluating={isEvaluating ?? false}
+                onEvaluate={onEvaluate ?? (() => {})}
+                versions={versions}
+              />
+            </div>
           </ScrollArea>
         </TabsContent>
       </Tabs>
