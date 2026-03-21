@@ -8,14 +8,15 @@ import {
   Pin,
   PinOff,
   Sparkles,
-  X,
 } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 
 import { ConversationView } from './ConversationView';
 import CopyButton from './CopyButton';
-import { ToolCallBlock } from './ToolCallBlock';
+import { JudgeScorePanel } from './JudgeScorePanel';
 import ReasoningBlock from './ReasoningBlock';
+import { ScoreBadgeBar } from './ScoreBadgeBar';
+import { ToolCallBlock } from './ToolCallBlock';
 
 import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
 import { Button } from '@/components/ui/button';
@@ -42,177 +43,6 @@ import type {
 } from '@/services/api/playgroundService';
 import type { TemplateField } from '@/types';
 
-interface Prompt {
-  content: string;
-}
-
-// Fixed order so score rows align across comparison columns
-const DIMENSION_ORDER = ['Accuracy', 'Helpfulness', 'Relevance', 'Coherence', 'Safety'];
-
-function JudgeScorePanel({ scores }: { scores: Evaluation }) {
-  const sortedDimensions = Object.entries(scores.dimensions).sort(([a], [b]) => {
-    const ai = DIMENSION_ORDER.indexOf(a);
-    const bi = DIMENSION_ORDER.indexOf(b);
-    // Known dimensions in canonical order, unknown ones at the end alphabetically
-    if (ai !== -1 && bi !== -1) return ai - bi;
-    if (ai !== -1) return -1;
-    if (bi !== -1) return 1;
-    return a.localeCompare(b);
-  });
-
-  return (
-    <div className="mt-4 pt-3 border-t border-border-subtle space-y-2">
-      <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center size-8 rounded-full border-2 border-primary">
-          <span className="text-xs font-bold text-primary">{scores.averageScore.toFixed(1)}</span>
-        </div>
-        <span className="text-xs text-foreground-muted">Output Quality</span>
-      </div>
-      <div className="space-y-1.5">
-        {sortedDimensions.map(([dim, entry]) => {
-          const { bar, text } = scoreColor(entry.score);
-          return (
-            <div key={dim} className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-foreground-muted w-20 shrink-0">{dim}</span>
-                <div className="flex-1 h-1.5 rounded-full bg-elevated">
-                  <div
-                    className={`h-1.5 rounded-full ${bar}`}
-                    style={{ width: `${(entry.score / 10) * 100}%` }}
-                  />
-                </div>
-                <span className={`text-xs font-medium w-4 text-right ${text}`}>{entry.score}</span>
-              </div>
-              {entry.feedback && (
-                <p className="text-[11px] text-foreground-muted pl-[calc(5rem+0.5rem)] leading-snug">
-                  {entry.feedback}
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ── Score badge bar for carousel navigation ──
-
-function ScoreBadgeBar({
-  pinnedRuns,
-  activePinIndex,
-  onSelectIndex,
-  currentRunScore,
-  currentRunVersionLabel,
-  onClearAll,
-  onScrollToCurrent,
-  onUnpin,
-  onClearCurrentRun,
-}: {
-  pinnedRuns: TestRunResponse[];
-  activePinIndex: number;
-  onSelectIndex: (index: number) => void;
-  currentRunScore?: number | null;
-  currentRunVersionLabel?: string | null;
-  onClearAll?: () => void;
-  onScrollToCurrent?: () => void;
-  onUnpin?: (runId: string) => void;
-  onClearCurrentRun?: () => void;
-}) {
-  const showCurrentPill = currentRunScore !== undefined;
-  const currentColor = currentRunScore != null ? scoreColor(currentRunScore) : null;
-  return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {showCurrentPill && (
-        <div
-          className={`inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-xs transition-all duration-150 ${
-            activePinIndex === -1
-              ? 'bg-primary/10 border border-primary/30 ring-2 ring-primary'
-              : 'bg-primary/10 border border-primary/30 hover:bg-primary/20'
-          }`}
-        >
-          <button onClick={onScrollToCurrent} className="inline-flex items-center gap-1.5 cursor-pointer" title="Scroll to current run">
-            <span className="font-medium">Current Run</span>
-            {currentRunVersionLabel && (
-              <span className="text-[10px] font-medium text-foreground-muted">
-                {currentRunVersionLabel}
-              </span>
-            )}
-            {currentRunScore != null && (
-              <span className={`font-bold tabular-nums ${currentColor?.text ?? ''}`}>
-                {currentRunScore.toFixed(1)}
-              </span>
-            )}
-          </button>
-          {onClearCurrentRun && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onClearCurrentRun(); }}
-              className="p-0.5 rounded-full text-foreground-muted hover:text-foreground hover:bg-primary/20 transition-colors cursor-pointer"
-              aria-label="Remove current run from comparison"
-              title="Remove from comparison"
-            >
-              <X className="size-3" />
-            </button>
-          )}
-        </div>
-      )}
-      {pinnedRuns.map((run, i) => {
-        const isActive = activePinIndex >= 0 && i === activePinIndex;
-        const score = run.judgeScores?.averageScore;
-        const color = score !== undefined ? scoreColor(score) : null;
-        return (
-          <div
-            key={run.id}
-            className={`inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-xs transition-all duration-150 ${
-              isActive
-                ? 'bg-elevated ring-2 ring-primary'
-                : 'bg-elevated hover:bg-elevated/80'
-            }`}
-          >
-            <button
-              onClick={() => onSelectIndex(i)}
-              className="inline-flex items-center gap-1.5 cursor-pointer"
-              title={`View: ${run.model}`}
-              aria-label={`View ${run.model}${score !== undefined ? `, score ${score.toFixed(1)}` : ''}`}
-            >
-              <span className="truncate max-w-[100px] font-medium" title={run.model}>{run.model}</span>
-              {run.versionLabel && (
-                <span className="text-[10px] font-medium text-foreground-muted">
-                  {run.versionLabel}
-                </span>
-              )}
-              {score !== undefined && (
-                <span className={`font-bold tabular-nums ${color?.text ?? ''}`}>
-                  {score.toFixed(1)}
-                </span>
-              )}
-            </button>
-            {onUnpin && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onUnpin(run.id); }}
-                className="p-0.5 rounded-full text-foreground-muted hover:text-foreground hover:bg-elevated/60 transition-colors cursor-pointer"
-                aria-label={`Unpin ${run.model}`}
-                title="Remove from comparison"
-              >
-                <X className="size-3" />
-              </button>
-            )}
-          </div>
-        );
-      })}
-      {onClearAll && pinnedRuns.length > 1 && (
-        <button
-          onClick={onClearAll}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] text-foreground-muted hover:text-foreground hover:bg-elevated/80 transition-colors"
-          aria-label="Clear all pinned runs"
-        >
-          <X className="size-3" />
-          Clear
-        </button>
-      )}
-    </div>
-  );
-}
 
 // ── Collapsible prompt/system message display ──
 
@@ -256,7 +86,7 @@ function PromptSection({
 }
 
 interface PlaygroundResultsAreaProps {
-  prompts: Prompt[];
+  prompts: { content: string }[];
   isChain: boolean;
   // Streaming state
   isStreaming: boolean;
@@ -341,21 +171,34 @@ export default function PlaygroundResultsArea({
   const hasCurrentRun = hasResponses || isStreaming;
   const clampedPinIndex = Math.min(activeCarouselIndex, Math.max(pinnedRuns.length - 1, 0));
 
-  // Derive legacy views from segments for chain/single-response rendering paths
+  // Derive per-prompt views from segments using promptIndex
   const streamedResponses = useMemo(() => {
     const map: Record<number, string> = {};
-    // For non-segment views, concatenate all response text as prompt index 0
-    const texts = segments.filter((s) => s.type === 'response').map((s) => s.text);
-    if (texts.length > 0) map[0] = texts.join('');
+    for (const s of segments) {
+      if (s.type === 'response') {
+        map[s.promptIndex] = (map[s.promptIndex] ?? '') + s.text;
+      }
+    }
     return map;
   }, [segments]);
   const streamedReasoning = useMemo(() => {
     const map: Record<number, string> = {};
-    const texts = segments.filter((s) => s.type === 'reasoning').map((s) => s.text);
-    if (texts.length > 0) map[0] = texts.join('');
+    for (const s of segments) {
+      if (s.type === 'reasoning') {
+        map[s.promptIndex] = (map[s.promptIndex] ?? '') + s.text;
+      }
+    }
     return map;
   }, [segments]);
-  const currentPromptIndex = isStreaming ? 0 : -1;
+  // Track which prompt is currently streaming (highest promptIndex seen in segments)
+  const currentPromptIndex = useMemo(() => {
+    if (!isStreaming) return -1;
+    let maxIdx = 0;
+    for (const s of segments) {
+      if (s.promptIndex > maxIdx) maxIdx = s.promptIndex;
+    }
+    return maxIdx;
+  }, [isStreaming, segments]);
 
   // ── Keyboard navigation for pinned runs ──
   const comparisonRef = useRef<HTMLDivElement>(null);
@@ -861,6 +704,28 @@ export default function PlaygroundResultsArea({
                     <ReasoningBlock reasoning={streamedReasoning[i]} isStreaming={isActive} />
                   )}
 
+                  {/* Tool calls for this prompt */}
+                  {segments
+                    .filter((s) => s.type === 'tool_call' && s.promptIndex === i)
+                    .map((seg) => {
+                      if (seg.type !== 'tool_call') return null;
+                      const result = segments.find(
+                        (s) => s.type === 'tool_result' && s.callId === seg.callId
+                      );
+                      const toolResult = result?.type === 'tool_result' ? result : undefined;
+                      return (
+                        <ToolCallBlock
+                          key={`chain-tool-${seg.callId}`}
+                          toolName={seg.toolName}
+                          arguments={seg.arguments ?? null}
+                          response={toolResult?.response ?? null}
+                          durationMs={toolResult?.durationMs ?? null}
+                          error={toolResult?.error ?? null}
+                          status={toolResult ? (toolResult.error ? 'error' : 'complete') : 'calling'}
+                        />
+                      );
+                    })}
+
                   {/* Response */}
                   {response !== undefined ? (
                     <div className="relative group">
@@ -921,37 +786,61 @@ export default function PlaygroundResultsArea({
       {/* ── Single prompt view — hidden when comparing ── */}
       {!hasPins && !isChain && (hasResponses || isStreaming) && (
         <div className="space-y-3">
-          {prompts.map((_prompt, i) => {
-            const response = streamedResponses[i];
-            if (response === undefined && !isStreaming) return null;
-
-            return (
-              <div key={i}>
-                {streamedReasoning[i] && (
-                  <ReasoningBlock reasoning={streamedReasoning[i]} isStreaming={isStreaming} />
-                )}
-
-                <div className="relative group">
-                  <div className="rounded-lg border border-border-subtle bg-surface p-4">
-                    {response !== undefined ? (
-                      <LLMResponseBlock output={response || ''} isStreaming={isStreaming} />
-                    ) : (
-                      <div className="h-6 w-2/3 rounded bg-foreground-muted/10 animate-pulse" />
+          {/* Render segments in chronological order for single-prompt view */}
+          {segments.map((seg, idx) => {
+            switch (seg.type) {
+              case 'reasoning':
+                return (
+                  <ReasoningBlock
+                    key={`seg-${idx}`}
+                    reasoning={seg.text}
+                    isStreaming={isStreaming}
+                  />
+                );
+              case 'tool_call': {
+                const result = segments.find(
+                  (s) => s.type === 'tool_result' && s.callId === seg.callId
+                );
+                const toolResult = result?.type === 'tool_result' ? result : undefined;
+                return (
+                  <ToolCallBlock
+                    key={`seg-${idx}`}
+                    toolName={seg.toolName}
+                    arguments={seg.arguments ?? null}
+                    response={toolResult?.response ?? null}
+                    durationMs={toolResult?.durationMs ?? null}
+                    error={toolResult?.error ?? null}
+                    status={toolResult ? (toolResult.error ? 'error' : 'complete') : 'calling'}
+                  />
+                );
+              }
+              case 'tool_result':
+                return null; // Rendered as part of tool_call above
+              case 'response':
+                return (
+                  <div key={`seg-${idx}`} className="relative group">
+                    <div className="rounded-lg border border-border-subtle bg-surface p-4">
+                      <LLMResponseBlock output={seg.text} isStreaming={isStreaming} />
+                    </div>
+                    {!isStreaming && seg.text && (
+                      <CopyButton
+                        text={seg.text}
+                        index={idx}
+                        copiedIndex={copiedIndex}
+                        onCopy={handleCopy}
+                      />
                     )}
                   </div>
-
-                  {response && !isStreaming && (
-                    <CopyButton
-                      text={response}
-                      index={i}
-                      copiedIndex={copiedIndex}
-                      onCopy={handleCopy}
-                    />
-                  )}
-                </div>
-              </div>
-            );
+                );
+              default:
+                return null;
+            }
           })}
+          {segments.length === 0 && isStreaming && (
+            <div className="rounded-lg border border-border-subtle bg-surface/50 p-4">
+              <div className="h-6 w-2/3 rounded bg-foreground-muted/10 animate-pulse" />
+            </div>
+          )}
         </div>
       )}
 
