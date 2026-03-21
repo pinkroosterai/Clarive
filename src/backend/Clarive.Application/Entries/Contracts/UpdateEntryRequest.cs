@@ -8,5 +8,6 @@ public record UpdateEntryRequest(
         string? Title,
     string? SystemMessage,
     List<PromptInput>? Prompts,
-    Dictionary<string, PromptEvaluationEntry>? Evaluation = null
+    Dictionary<string, PromptEvaluationEntry>? Evaluation = null,
+    uint? RowVersion = null
 );

@@ -103,6 +103,7 @@ export async function updateEntry(
       content: p.content,
     }));
   if (options?.evaluation !== undefined) body.evaluation = options.evaluation;
+  if (data.rowVersion !== undefined) body.rowVersion = data.rowVersion;
   return api.put<PromptEntry>(`/api/entries/${id}`, body);
 }
 

@@ -37,6 +37,7 @@ export interface PromptEntry {
   evaluation?: Evaluation | null;
   evaluationAverageScore?: number | null;
   evaluatedAt?: string | null;
+  rowVersion?: number;
 }
 
 export interface Folder {

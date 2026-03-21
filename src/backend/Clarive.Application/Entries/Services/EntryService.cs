@@ -97,6 +97,11 @@ public partial class EntryService(
         if (working is null)
             return DomainErrors.VersionNotFound;
 
+        // If the client sent a rowVersion, override the tracked original so EF Core
+        // detects conflicts even for sequential saves (not just overlapping transactions).
+        if (request.RowVersion.HasValue)
+            db.Entry(entry).Property(e => e.RowVersion).OriginalValue = request.RowVersion.Value;
+
         return await db.Database.InTransactionAsync(
             async () =>
             {
@@ -700,6 +705,7 @@ public partial class EntryService(
                 : null,
             version.EvaluationAverageScore,
             version.EvaluatedAt,
+            RowVersion = entry.RowVersion,
         };
     }
 
