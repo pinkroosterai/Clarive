@@ -1,4 +1,5 @@
 using Clarive.Infrastructure.Cache;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Clarive.Infrastructure.Data;
@@ -97,10 +98,12 @@ public partial class EntryService(
         if (working is null)
             return DomainErrors.VersionNotFound;
 
-        // If the client sent a rowVersion, override the tracked original so EF Core
-        // detects conflicts even for sequential saves (not just overlapping transactions).
-        if (request.RowVersion.HasValue)
-            db.Entry(entry).Property(e => e.RowVersion).OriginalValue = request.RowVersion.Value;
+        // Detect concurrency conflicts for sequential saves: if the client sent
+        // the rowVersion (xmin) it had when it loaded the entry, compare it against
+        // the current DB value. If they differ, another user saved in between.
+        if (request.RowVersion.HasValue && entry.RowVersion != request.RowVersion.Value)
+            throw new DbUpdateConcurrencyException(
+                "The entry was modified by another user since you loaded it.");
 
         return await db.Database.InTransactionAsync(
             async () =>
