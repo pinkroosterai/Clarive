@@ -10,7 +10,7 @@ public static class FolderEndpoints
     {
         var group = app.MapGroup("/api/folders").WithTags("Folders").RequireAuthorization();
 
-        group.MapGet("/", HandleGetTree).AddEndpointFilter(new CacheControlFilter(60));
+        group.MapGet("/", HandleGetTree);
 
         group.MapPost("/", HandleCreate).RequireAuthorization("EditorOrAdmin");
 
