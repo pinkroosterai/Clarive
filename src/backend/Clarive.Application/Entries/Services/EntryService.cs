@@ -24,8 +24,6 @@ public partial class EntryService(
     ILogger<EntryService> logger
 ) : IEntryService
 {
-    private const int MaxPromptContentLength = 100_000;
-
     public async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion Version)>> CreateEntryAsync(
         Guid tenantId,
         Guid userId,
@@ -33,9 +31,6 @@ public partial class EntryService(
         CancellationToken ct
     )
     {
-        if (ValidatePromptContentLength(request.Prompts) is { } contentErr)
-            return contentErr;
-
         if (
             request.FolderId is not null
             && await folderRepo.GetByIdAsync(tenantId, request.FolderId.Value, ct) is null
@@ -94,12 +89,6 @@ public partial class EntryService(
         CancellationToken ct
     )
     {
-        if (
-            request.Prompts is not null
-            && ValidatePromptContentLength(request.Prompts) is { } contentErr
-        )
-            return contentErr;
-
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
             return DomainErrors.EntryNotFound;
@@ -764,18 +753,6 @@ public partial class EntryService(
         return new EntryActivityResponse(items, total, page, pageSize);
     }
 
-    private static Error? ValidatePromptContentLength(List<PromptInput> prompts)
-    {
-        for (var i = 0; i < prompts.Count; i++)
-        {
-            if (prompts[i].Content.Length > MaxPromptContentLength)
-                return Error.Validation(
-                    "VALIDATION_ERROR",
-                    $"Prompt #{i + 1} content exceeds maximum length of {MaxPromptContentLength:N0} characters."
-                );
-        }
-        return null;
-    }
 
     private static void MapEvaluationToVersion(
         PromptEntryVersion version,

@@ -12,7 +12,6 @@ public record EvaluateEntryRequest(
 
 public record PromptContentItem(
     [property: Required(ErrorMessage = "Prompt content is required.")]
-    [property: StringLength(100000, ErrorMessage = "Prompt content must not exceed 100,000 characters.")]
         string Content,
     int SortOrder = 0
 );
