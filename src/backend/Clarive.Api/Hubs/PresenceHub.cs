@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Clarive.Api.Helpers;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,10 @@ using Microsoft.AspNetCore.SignalR;
 namespace Clarive.Api.Hubs;
 
 [Authorize]
-public class PresenceHub(IPresenceTracker presenceTracker, IEntryRepository entryRepository) : Hub<IPresenceClient>
+public class PresenceHub(
+    IPresenceTracker presenceTracker,
+    IEntryRepository entryRepository,
+    IUserRepository userRepository) : Hub<IPresenceClient>
 {
     private static readonly HashSet<string> ValidStates = ["viewing", "editing"];
     private const int MaxEntriesPerConnection = 20;
@@ -27,7 +31,11 @@ public class PresenceHub(IPresenceTracker presenceTracker, IEntryRepository entr
             throw new HubException("Too many entries joined.");
 
         var groupName = GroupName(tenantId, entryId);
-        var user = new PresenceUserInfo(userId, name, null, "viewing");
+
+        // Fetch avatar URL from the database
+        var dbUser = await userRepository.GetByIdAsync(tenantId, Guid.Parse(userId));
+        var avatarUrl = dbUser != null ? AvatarHelpers.UserAvatarUrl(dbUser) : null;
+        var user = new PresenceUserInfo(userId, name, avatarUrl, "viewing");
 
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         var isNew = await presenceTracker.AddUserAsync(tenantId, entryId, Context.ConnectionId, user);
