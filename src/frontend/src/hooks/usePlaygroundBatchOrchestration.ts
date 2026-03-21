@@ -108,11 +108,14 @@ export function usePlaygroundBatchOrchestration({
     applyModelParameters,
   ]);
 
-  // ── Rate limit recovery: resume batch when countdown reaches 0 ──
-  // Intentionally limited deps — only fires when rateLimitCountdown transitions
-  // to 0, reading other values from their current state at that moment.
+  // ── Rate limit recovery: resume batch when countdown transitions to 0 ──
+  const prevRateLimitRef = useRef(rateLimitCountdown);
   useEffect(() => {
+    const wasCountingDown = prevRateLimitRef.current > 0;
+    prevRateLimitRef.current = rateLimitCountdown;
+
     if (
+      wasCountingDown &&
       rateLimitCountdown === 0 &&
       executionQueue.length > 0 &&
       !isStreaming &&
@@ -123,21 +126,21 @@ export function usePlaygroundBatchOrchestration({
       applyModelParameters(nextItem);
       setExecutionQueue((prev) => prev.slice(1));
     }
-  }, [rateLimitCountdown]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rateLimitCountdown, executionQueue, isStreaming, batchTotal, applyModelParameters]);
 
   // ── Trigger handleRun when model changes during batch execution ──
-  // Intentionally limited deps — watches selectedModel changes during active
-  // batch and fires handleRun via setTimeout to allow React state to settle.
   const prevModelRef = useRef<string | null>(null);
+  const handleRunRef = useRef(handleRun);
+  handleRunRef.current = handleRun;
   useEffect(() => {
     const modelId = selectedModel?.modelId ?? null;
     if (modelId && modelId !== prevModelRef.current && batchTotal > 0 && !isStreaming) {
       prevModelRef.current = modelId;
-      const timer = setTimeout(() => handleRun(), 50);
+      const timer = setTimeout(() => handleRunRef.current(), 50);
       return () => clearTimeout(timer);
     }
     if (!modelId) prevModelRef.current = null;
-  }, [selectedModel, batchTotal]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedModel, batchTotal, isStreaming]);
 
   // ── Start batch from queued models ──
   const handleRunQueue = useCallback(
