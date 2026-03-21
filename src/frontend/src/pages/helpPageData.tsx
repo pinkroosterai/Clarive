@@ -7,10 +7,12 @@ import {
   Globe,
   Key,
   Keyboard,
+  PanelLeft,
   Rocket,
   Search,
   Settings,
   Share2,
+  ShieldCheck,
   Star,
   Users,
   Wand2,
@@ -90,6 +92,34 @@ export const sectionGroups: SectionGroup[] = [
               New accounts see an interactive guided tour on first login that walks through the
               dashboard, sidebar navigation, entry editor, and key features. The tour highlights
               each area with step-by-step explanations so you can get oriented quickly.
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: 'sidebar',
+        icon: PanelLeft,
+        title: 'Sidebar & Navigation',
+        searchText:
+          'sidebar resize drag width collapse expand toggle keyboard shortcut ctrl b workspace switcher folder tree new entry trash notifications',
+        content: (
+          <div className="space-y-3">
+            <p>
+              The sidebar is your main navigation hub — it holds the workspace switcher, folder
+              tree, and quick-access links to create entries, view trash, and check notifications.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Resizing</h4>
+            <p>
+              Drag the right edge of the sidebar to adjust its width. The sidebar can be resized
+              between a compact and a wide layout. Your preferred width is saved automatically and
+              restored on your next visit.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Collapsing</h4>
+            <p>
+              Collapse the sidebar to icon-only mode using the toggle at the top, or press{' '}
+              <Kbd>Ctrl</Kbd> + <Kbd>B</Kbd> (<Kbd>Cmd</Kbd> + <Kbd>B</Kbd> on macOS). The collapsed
+              state is remembered across sessions. On mobile, the sidebar opens as a slide-over
+              sheet instead.
             </p>
           </div>
         ),
@@ -227,7 +257,7 @@ export const sectionGroups: SectionGroup[] = [
         icon: FlaskConical,
         title: 'Playground',
         searchText:
-          'playground test prompt model temperature max tokens reasoning effort show thinking run stop streaming token count history comparison pin rerun copy response chain step ctrl enter escape',
+          'playground test prompt model temperature max tokens reasoning effort show thinking run stop streaming token count history comparison pin rerun copy response chain step ctrl enter escape batch queue compare models judge evaluation scoring accuracy helpfulness relevance coherence safety tool calls',
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Testing Your Prompts</h4>
@@ -270,9 +300,32 @@ export const sectionGroups: SectionGroup[] = [
               If the entry has template variables, a form appears to fill in values before running.
               Variable values persist across reruns so you can iterate without re-entering them.
             </p>
+            <h4 className="text-sm font-semibold text-foreground">Batch Model Comparison</h4>
+            <p>
+              Compare responses from multiple models side by side. Click{' '}
+              <strong>Add to Queue</strong> in the toolbar to enqueue the current model and
+              parameter combination. Each queued item captures its own temperature, max tokens, and
+              reasoning settings, so you can compare different configurations in a single run. Click{' '}
+              <strong>Run Queue</strong> to execute all queued models in sequence. Results appear as
+              separate columns for easy comparison.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Judge Evaluation</h4>
+            <p>
+              After a batch run, an AI judge can score each response across five dimensions:{' '}
+              <strong>Accuracy</strong>, <strong>Helpfulness</strong>, <strong>Relevance</strong>,{' '}
+              <strong>Coherence</strong>, and <strong>Safety</strong> (each 0–10). Each dimension
+              shows a color-coded progress bar, a numeric score, and optional feedback. An average
+              score summarizes the overall quality.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Tool Calls</h4>
+            <p>
+              When a model uses tools during a test run, tool calls and their results are rendered
+              inline in chronological order within the response. Full tool call data is always
+              preserved — nothing is truncated.
+            </p>
             <h4 className="text-sm font-semibold text-foreground">History & Comparison</h4>
             <p>
-              Toggle the history sidebar to see past test runs with their model, temperature, and
+              Open the history sidebar to see past test runs with their model, temperature, and
               timestamp. Expand any run to read its full response. Use the <strong>pin</strong>{' '}
               button to keep a run visible for side-by-side comparison with the current result, or{' '}
               <strong>rerun</strong> to load that run&apos;s parameters and execute again
@@ -446,7 +499,7 @@ export const sectionGroups: SectionGroup[] = [
         icon: FolderTree,
         title: 'Folders & Organization',
         searchText:
-          'folder tree sidebar new folder subfolder rename delete nest drag drop entries reorganize',
+          'folder tree sidebar new folder subfolder rename delete nest drag drop entries reorganize search breadcrumb color undo',
         content: (
           <div className="space-y-3">
             <p>Use the folder tree in the sidebar to organize your entries.</p>
@@ -458,16 +511,30 @@ export const sectionGroups: SectionGroup[] = [
               </li>
               <li>
                 Hover over a folder and click the <strong>three-dot menu</strong> to add a
-                subfolder, rename, or delete it.
+                subfolder, rename, delete, or <strong>set a color</strong>.
               </li>
               <li>Nest folders as deep as you need.</li>
               <li>Click any folder to see its entries.</li>
             </ul>
+            <h4 className="text-sm font-semibold text-foreground">Folder Colors</h4>
+            <p>
+              Assign a color to any folder from the three-dot menu. Choose from six preset colors or
+              select <strong>None</strong> to remove it. The color appears as a dot next to the
+              folder name in the sidebar for quick visual identification.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Search & Breadcrumbs</h4>
+            <p>
+              Use the <strong>search box</strong> at the top of the folder tree to filter folders by
+              name in real time. When viewing a nested folder, a <strong>breadcrumb trail</strong>{' '}
+              shows the full path from the root so you can navigate back to any parent with one
+              click.
+            </p>
             <h4 className="text-sm font-semibold text-foreground">Drag and Drop</h4>
             <p>
               Drag entries between folders in the library view. Drag folders to reorganize your
               structure. Drop onto a folder to move inside it — folders expand automatically when
-              you hover during a drag.
+              you hover during a drag. If you move something by mistake, an{' '}
+              <strong>undo notification</strong> appears so you can reverse the action immediately.
             </p>
           </div>
         ),
@@ -587,7 +654,7 @@ export const sectionGroups: SectionGroup[] = [
         icon: Wrench,
         title: 'Tools & MCP',
         searchText:
-          'tool descriptions external functions ai model name identifier add tool edit delete mcp model context protocol server import bearer token',
+          'tool descriptions external functions ai model name identifier add tool edit delete mcp model context protocol server import bearer token sync manage servers playground',
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">What Are Tool Descriptions?</h4>
@@ -608,13 +675,38 @@ export const sectionGroups: SectionGroup[] = [
               <li>Edit a tool by clicking the pencil icon on its card.</li>
               <li>Delete with the trash icon (you&apos;ll be asked to confirm).</li>
             </ul>
-            <h4 className="text-sm font-semibold text-foreground">MCP Import</h4>
+            <h4 className="text-sm font-semibold text-foreground">MCP Servers</h4>
             <p>
-              You can import tool descriptions from an{' '}
-              <strong>MCP (Model Context Protocol) server</strong>. Enter the server URL in the MCP
-              Import section on the Tools page to discover and import available tools. If the server
-              requires auth, provide a bearer token. Tools that already exist in your workspace are
+              Connect to <strong>MCP (Model Context Protocol) servers</strong> to automatically sync
+              tool definitions. Go to <strong>Settings → Tools</strong> and use the MCP Servers
+              panel:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>
+                <strong>Add Server</strong> — provide a name, server URL, and optional bearer token
+                for authentication. Tools are synced automatically after adding.
+              </li>
+              <li>
+                <strong>Sync</strong> — click the refresh button on any server card to re-sync its
+                tool definitions. Each card shows the tool count, last sync time, and any sync
+                errors.
+              </li>
+              <li>
+                <strong>Remove</strong> — deleting a server also removes all of its synced tools
+                from your workspace.
+              </li>
+            </ul>
+            <h4 className="text-sm font-semibold text-foreground">MCP One-Off Import</h4>
+            <p>
+              To import tools from an MCP server without registering it, use the{' '}
+              <strong>MCP Import</strong> section. Enter the server URL (and optional bearer token)
+              to discover and import available tools. Tools that already exist in your workspace are
               skipped.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Tools in the Playground</h4>
+            <p>
+              When testing prompts in the Playground, a toolbar dropdown lets you enable or disable
+              MCP servers and individual tools per run. Only enabled tools are sent to the AI model.
             </p>
           </div>
         ),
@@ -624,6 +716,55 @@ export const sectionGroups: SectionGroup[] = [
   {
     label: 'Reference',
     sections: [
+      {
+        id: 'super-admin',
+        icon: ShieldCheck,
+        title: 'Super Admin',
+        searchText:
+          'super admin dashboard usage analytics users ai providers models settings logs maintenance mode system configuration email smtp resend google oauth',
+        content: (
+          <div className="space-y-3">
+            <p>
+              Super Admins have access to a dedicated administration area for managing the entire
+              Clarive instance. Access it from the user menu in the top-right corner.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Dashboard</h4>
+            <p>
+              Overview of platform health: total users, entries, and AI sessions with 7-day deltas.
+              Additional metrics cover verified and onboarded user percentages, workspace counts,
+              shared workspace stats, published vs. draft entry counts, and active API keys.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Usage</h4>
+            <p>
+              AI usage analytics with date filtering, summary cards, charts, and a detailed log
+              grid. Expand any row to see full request and response details in a side panel.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Users</h4>
+            <p>
+              Manage all platform users. Admins can reset passwords, delete accounts, and view
+              detailed user information.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">AI Configuration</h4>
+            <p>
+              Configure external AI providers (e.g. OpenAI, Anthropic, or any OpenAI-compatible
+              endpoint). Add or edit providers, fetch available models, assign models to specific
+              actions (generation, evaluation, system messages), and adjust per-model defaults.
+              Changes that require a server restart show a warning banner.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Settings</h4>
+            <p>
+              Consolidated system configuration covering authentication (Google OAuth, registration
+              toggle), email provider (SMTP, Resend, or console for development), application
+              branding, and <strong>maintenance mode</strong> which temporarily disables access for
+              non-admin users.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Logs</h4>
+            <p>
+              System-level logs with filtering and search. Expand any log entry for full details.
+            </p>
+          </div>
+        ),
+      },
       {
         id: 'api-keys',
         icon: Key,
@@ -1070,7 +1211,7 @@ const entry = await client.getEntry(entryId);`}
         icon: Keyboard,
         title: 'Keyboard Shortcuts',
         searchText:
-          'keyboard shortcuts save draft ctrl s publish enter undo redo bold italic strikethrough inline code cmd mac',
+          'keyboard shortcuts save draft ctrl s publish enter undo redo bold italic strikethrough inline code cmd mac sidebar toggle playground run stop escape',
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Editor</h4>
@@ -1100,7 +1241,19 @@ const entry = await client.getEntry(entryId);`}
                 </span>
               </div>
             </div>
+            <h4 className="text-sm font-semibold text-foreground">Navigation</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span>Toggle sidebar</span>
+                <span>
+                  <Kbd>Ctrl</Kbd> + <Kbd>B</Kbd>
+                </span>
+              </div>
+            </div>
             <h4 className="text-sm font-semibold text-foreground">Text Formatting</h4>
+            <p className="text-xs text-foreground-muted">
+              These shortcuts apply when the cursor is inside the editor.
+            </p>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span>Bold</span>
@@ -1124,6 +1277,21 @@ const entry = await client.getEntry(entryId);`}
                 <span>Inline code</span>
                 <span>
                   <Kbd>Ctrl</Kbd> + <Kbd>E</Kbd>
+                </span>
+              </div>
+            </div>
+            <h4 className="text-sm font-semibold text-foreground">Playground</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span>Run test</span>
+                <span>
+                  <Kbd>Ctrl</Kbd> + <Kbd>Enter</Kbd>
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Stop streaming</span>
+                <span>
+                  <Kbd>Esc</Kbd>
                 </span>
               </div>
             </div>

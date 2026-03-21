@@ -13,13 +13,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/authStore';
 
 export default function HelpPage() {
   const location = useLocation();
+  const isSuperUser = useAuthStore((s) => s.currentUser?.isSuperUser);
   const [openSections, setOpenSections] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Filter out super-admin section for non-super users
+  const visibleGroups = useMemo(
+    () =>
+      isSuperUser
+        ? sectionGroups
+        : sectionGroups.map((group) => ({
+            ...group,
+            sections: group.sections.filter((s) => s.id !== 'super-admin'),
+          })),
+    [isSuperUser]
+  );
 
   useEffect(() => {
     document.title = 'Clarive — Help';
@@ -39,8 +53,8 @@ export default function HelpPage() {
   // Filter groups by search query
   const filteredGroups = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return sectionGroups;
-    return sectionGroups
+    if (!q) return visibleGroups;
+    return visibleGroups
       .map((group) => ({
         ...group,
         sections: group.sections.filter(
@@ -48,7 +62,7 @@ export default function HelpPage() {
         ),
       }))
       .filter((group) => group.sections.length > 0);
-  }, [searchQuery]);
+  }, [searchQuery, visibleGroups]);
 
   const visibleSectionIds = useMemo(
     () => filteredGroups.flatMap((g) => g.sections.map((s) => s.id)),
