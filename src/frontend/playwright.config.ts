@@ -1,14 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8080';
-const API_URL = process.env.API_URL ?? 'http://localhost:5000';
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: 0,
+  workers: 1,
   reporter: process.env.CI ? 'list' : 'html',
 
   use: {
@@ -19,29 +18,13 @@ export default defineConfig({
   },
 
   projects: [
-    // Auth setup — runs first, saves storage state for each role
-    { name: 'setup', testDir: './e2e/fixtures', testMatch: 'auth.setup.ts' },
-
-    // Authenticated tests — pre-loaded admin session, skips auth specs
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'e2e/.auth/admin.json',
-      },
-      dependencies: ['setup'],
-      testIgnore: /auth.*\.spec\.ts/,
-    },
-
-    // Unauthenticated tests (login, register) — no setup dependency, no storage state
-    {
-      name: 'no-auth',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: /auth.*\.spec\.ts/,
     },
   ],
 
-  // Disabled when running inside Docker (frontend container already serves the app)
+  // Tests run against the E2E compose stack (make test-e2e-up)
   webServer: process.env.PLAYWRIGHT_DOCKER
     ? undefined
     : {

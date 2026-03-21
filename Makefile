@@ -1,7 +1,7 @@
 .PHONY: help setup dev stop restart dev-reset logs status \
        deploy undeploy build-image \
        build build-frontend build-backend \
-       test test-frontend test-backend test-filter test-e2e test-e2e-ui lint clean \
+       test test-frontend test-backend test-filter test-e2e test-e2e-up test-e2e-down test-e2e-ui lint clean \
        db-shell db-migrate db-migration-add db-reset \
        _require-docker _require-sdk
 
@@ -16,6 +16,9 @@ DEV_COMPOSE = docker compose -p clarive-dev --env-file $(ROOT)/.env -f $(DEPLOY)
 
 # Production compose (appends local override if present, e.g. for proxy network)
 PROD_COMPOSE = docker compose -p clarive --env-file $(DEPLOY)/.env -f $(DEPLOY)/docker-compose.yml $(if $(wildcard $(DEPLOY)/docker-compose.local.yml),-f $(DEPLOY)/docker-compose.local.yml)
+
+# E2E test compose (isolated stack with seed data, non-conflicting ports)
+E2E_COMPOSE = docker compose -p clarive-e2e --env-file $(DEPLOY)/.env.e2e -f $(DEPLOY)/docker-compose.yml -f $(DEPLOY)/docker-compose.e2e.yml
 
 # Colors
 C_RESET  := \033[0m
@@ -216,13 +219,42 @@ test-filter: _require-sdk ## Run filtered tests. Usage: make test-filter FILTER=
 	@cd $(ROOT)/tests/backend/Clarive.Api.UnitTests && dotnet test --nologo --verbosity normal --filter "$(FILTER)" || true
 	@cd $(ROOT)/tests/backend/Clarive.Api.IntegrationTests && dotnet test --nologo --verbosity normal --filter "$(FILTER)"
 
-test-e2e: _require-sdk ## Run E2E tests (requires running dev environment)
+test-e2e-up: _require-docker ## Start E2E test stack (isolated, with seed data)
+	@printf "$(C_CYAN)Starting E2E test stack...$(C_RESET)\n"
+	@$(E2E_COMPOSE) up --build -d
+	@printf "$(C_CYAN)Waiting for E2E stack to become healthy...$(C_RESET)\n"
+	@ATTEMPTS=0; MAX_ATTEMPTS=30; \
+	while [ $$ATTEMPTS -lt $$MAX_ATTEMPTS ]; do \
+		HEALTH=$$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-check{{end}}' clarive-e2e-app 2>/dev/null || echo "not_found"); \
+		case $$HEALTH in \
+			healthy) \
+				printf "\n$(C_BOLD)$(C_GREEN)E2E test stack ready.$(C_RESET)\n"; \
+				printf "  App:    $(C_CYAN)http://localhost:8081$(C_RESET)\n"; \
+				printf "  Run:    $(C_YELLOW)make test-e2e$(C_RESET)\n"; \
+				printf "  Stop:   $(C_YELLOW)make test-e2e-down$(C_RESET)\n\n"; \
+				exit 0;; \
+			unhealthy) \
+				printf "$(C_RED)  E2E app is unhealthy. Check: docker logs clarive-e2e-app$(C_RESET)\n"; \
+				exit 1;; \
+		esac; \
+		ATTEMPTS=$$((ATTEMPTS + 1)); \
+		printf "$(C_DIM)  Waiting... ($$ATTEMPTS/$$MAX_ATTEMPTS)$(C_RESET)\n"; \
+		sleep 3; \
+	done; \
+	printf "$(C_RED)  Health check timed out.$(C_RESET)\n"; \
+	exit 1
+
+test-e2e: _require-sdk ## Run E2E tests against E2E stack
 	@printf "$(C_CYAN)Running E2E tests...$(C_RESET)\n"
-	@cd $(FE_DIR) && npx playwright test
+	@cd $(FE_DIR) && BASE_URL=http://localhost:8081 PLAYWRIGHT_DOCKER=1 npx playwright test
+
+test-e2e-down: ## Tear down E2E test stack and destroy volumes
+	@$(E2E_COMPOSE) down -v
+	@printf "$(C_GREEN)E2E test stack removed.$(C_RESET)\n"
 
 test-e2e-ui: _require-sdk ## Run E2E tests in interactive UI mode
 	@printf "$(C_CYAN)Opening Playwright UI...$(C_RESET)\n"
-	@cd $(FE_DIR) && npx playwright test --ui
+	@cd $(FE_DIR) && BASE_URL=http://localhost:8081 PLAYWRIGHT_DOCKER=1 npx playwright test --ui
 
 lint: _require-sdk ## Run frontend linter
 	@printf "$(C_CYAN)Linting frontend...$(C_RESET)\n"

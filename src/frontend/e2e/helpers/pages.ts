@@ -26,12 +26,13 @@ export async function expectToast(page: Page, text: string | RegExp): Promise<vo
 export async function loginViaUI(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
-  await page.locator('#email').fill(email);
-  await page.locator('#password').fill(password);
+  await page.getByLabel('Email').fill(email);
+  await page.locator('input[type="password"]').fill(password);
   await page.getByRole('button', { name: /sign in|log in/i }).click();
 }
 
 /** Wait for navigation to complete after login. */
 export async function waitForAuthRedirect(page: Page): Promise<void> {
-  await page.waitForURL(/\/(library|dashboard)/, { timeout: 15_000 });
+  // Dashboard is at '/', library at '/library', setup wizard at '/setup-wizard'
+  await page.waitForURL(/\/(library|setup-wizard)?$/, { timeout: 15_000 });
 }

@@ -1,0 +1,22 @@
+# Clarive — E2E Test overrides
+#
+# Runs the production image with ASPNETCORE_ENVIRONMENT from .env.e2e.
+# Ports chosen to avoid conflicts with the dev stack (8080/5433/6379).
+#
+# Usage: make test-e2e-up / make test-e2e / make test-e2e-down
+
+services:
+  postgres:
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: clarive
+      POSTGRES_USER: clarive
+      POSTGRES_PASSWORD: e2e-test-password-not-for-production
+
+  valkey:
+    ports:
+      - "6380:6379"
+
+  clarive:
+    container_name: clarive-e2e-app
