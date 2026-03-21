@@ -57,24 +57,11 @@ public class PlaygroundService(
         var prompts = version.Prompts.OrderBy(p => p.Order).ToList();
 
         // Validate and substitute template fields
-        var fields = request.TemplateFields ?? new Dictionary<string, string>();
-        var allFields = prompts
-            .Where(p => p.IsTemplate)
-            .SelectMany(p => p.TemplateFields)
-            .DistinctBy(f => f.Name)
-            .ToList();
+        var templateResult = ValidateAndRenderTemplates(prompts, request.TemplateFields);
+        if (templateResult.IsError)
+            return templateResult.Errors;
 
-        if (allFields.Count > 0)
-        {
-            fields = TemplateFieldValidator.FilterToDefinedFields(allFields, fields);
-
-            var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
-            if (errors.Count > 0)
-                return Error.Validation(
-                    "VALIDATION_ERROR",
-                    string.Join("; ", errors.Select(e => $"{e.Key}: {e.Value}"))
-                );
-        }
+        var (fields, allFields) = templateResult.Value;
 
         // Resolve model
         var settings = aiSettings.CurrentValue;
@@ -89,8 +76,8 @@ public class PlaygroundService(
         var resolved = resolvedResult.Value;
 
         var logBuilder = new ConversationLogBuilder();
-        long? totalInputTokens = null;
-        long? totalOutputTokens = null;
+        long? totalInputTokens;
+        long? totalOutputTokens;
         McpToolSet? mcpToolSet = null;
 
         var sw = Stopwatch.StartNew();
@@ -98,173 +85,13 @@ public class PlaygroundService(
         {
             using var client = resolved.ChatClient;
 
-            // Fetch MCP tools if servers specified
-            IList<AITool>? mcpTools = null;
-            IChatClient effectiveClient = client;
+            var clientSetup = await BuildEffectiveClientAsync(
+                tenantId, client, resolved, request, model, logBuilder, onEvent, ct);
+            mcpToolSet = clientSetup.McpToolSet;
 
-            if (request.McpServerIds is { Count: > 0 })
-            {
-                mcpToolSet = await mcpToolProvider.GetToolsAsync(
-                    tenantId, request.McpServerIds, request.ExcludedToolNames, ct);
-                mcpTools = mcpToolSet.Tools;
-
-                if (mcpTools.Count > 0)
-                {
-                    var eefic = new EventEmittingFunctionInvokingChatClient(client, loggerFactory);
-
-                    // Wire unified stream — tool events go through OnStreamEvent
-                    // alongside text/reasoning events emitted below in the streaming loop
-                    eefic.OnStreamEvent = onEvent;
-
-                    // Also wire tool events to conversation log builder
-                    eefic.ToolCallStarting += logBuilder.OnToolCallStartingAsync;
-                    eefic.ToolCallCompleted += logBuilder.OnToolCallCompletedAsync;
-
-                    effectiveClient = eefic;
-                }
-            }
-
-            var options = new ChatOptions
-            {
-                ModelId = model,
-                Temperature = resolved.IsTemperatureConfigurable ? request.Temperature : null,
-                MaxOutputTokens = request.MaxTokens,
-                Tools = mcpTools is { Count: > 0 } ? mcpTools.ToList() : null,
-            };
-
-            if (
-                request.ShowReasoning == true
-                && resolved.ApiMode == AiApiMode.ResponsesApi
-            )
-            {
-                options.Reasoning = new ReasoningOptions
-                {
-                    Effort = ChatOptionsBuilder.ParseReasoningEffort(
-                        request.ReasoningEffort ?? "medium"
-                    ),
-                    Output = ReasoningOutput.Full,
-                };
-            }
-
-            var thinkParser =
-                resolved.ApiMode == AiApiMode.ChatCompletions
-                    ? new ThinkTagStreamParser()
-                    : null;
-
-            var conversationMessages = new List<ChatMessage>();
-
-            // System message
-            var systemMessage = version.SystemMessage;
-            if (!string.IsNullOrEmpty(systemMessage))
-            {
-                var rendered = allFields.Count > 0
-                    ? TemplateParser.Render(systemMessage, fields)
-                    : systemMessage;
-                conversationMessages.Add(new ChatMessage(ChatRole.System, rendered));
-                logBuilder.AddSystemMessage(rendered);
-            }
-
-            // Prompt chain loop
-            for (var i = 0; i < prompts.Count; i++)
-            {
-                var prompt = prompts[i];
-                var content =
-                    allFields.Count > 0 && prompt.IsTemplate
-                        ? TemplateParser.Render(prompt.Content, fields)
-                        : prompt.Content;
-
-                conversationMessages.Add(new ChatMessage(ChatRole.User, content));
-                logBuilder.AddUserMessage(content, i);
-
-                var responseText = new StringBuilder();
-                var reasoningText = new StringBuilder();
-
-                // Stream from the effective client (EEFIC wraps if tools enabled)
-                // Text/reasoning events are emitted here via onEvent.
-                // Tool events are emitted by EEFIC.OnStreamEvent during InvokeFunctionAsync.
-                // All flow through the same onEvent callback in chronological order.
-                await foreach (
-                    var update in effectiveClient.GetStreamingResponseAsync(
-                        conversationMessages,
-                        options,
-                        ct
-                    )
-                )
-                {
-                    if (thinkParser is not null && update.Text is not null)
-                    {
-                        foreach (var (segText, isThinking) in thinkParser.ProcessChunk(update.Text))
-                        {
-                            if (isThinking)
-                            {
-                                reasoningText.Append(segText);
-                                if (onEvent is not null)
-                                    await onEvent(ConversationStreamEvent.ReasoningChunk(i, segText));
-                            }
-                            else
-                            {
-                                responseText.Append(segText);
-                                if (onEvent is not null)
-                                    await onEvent(ConversationStreamEvent.TextChunk(i, segText));
-                            }
-                        }
-                    }
-                    else if (update.Text is not null)
-                    {
-                        responseText.Append(update.Text);
-                        if (onEvent is not null)
-                            await onEvent(ConversationStreamEvent.TextChunk(i, update.Text));
-                    }
-
-                    if (thinkParser is null)
-                    {
-                        var reasoningContent = update
-                            .Contents.OfType<TextReasoningContent>()
-                            .FirstOrDefault();
-                        if (reasoningContent?.Text is not null)
-                        {
-                            reasoningText.Append(reasoningContent.Text);
-                            if (onEvent is not null)
-                                await onEvent(ConversationStreamEvent.ReasoningChunk(i, reasoningContent.Text));
-                        }
-                    }
-
-                    var usageContent = update.Contents.OfType<UsageContent>().FirstOrDefault();
-                    if (usageContent is not null)
-                    {
-                        totalInputTokens =
-                            (totalInputTokens ?? 0) + (usageContent.Details.InputTokenCount ?? 0);
-                        totalOutputTokens =
-                            (totalOutputTokens ?? 0) + (usageContent.Details.OutputTokenCount ?? 0);
-                    }
-                }
-
-                // Flush think tag parser
-                if (thinkParser is not null)
-                {
-                    foreach (var (segText, isThinking) in thinkParser.Flush())
-                    {
-                        if (isThinking)
-                        {
-                            reasoningText.Append(segText);
-                            if (onEvent is not null)
-                                await onEvent(ConversationStreamEvent.ReasoningChunk(i, segText));
-                        }
-                        else
-                        {
-                            responseText.Append(segText);
-                            if (onEvent is not null)
-                                await onEvent(ConversationStreamEvent.TextChunk(i, segText));
-                        }
-                    }
-                }
-
-                var fullResponse = responseText.ToString();
-                var fullReasoning = reasoningText.Length > 0 ? reasoningText.ToString() : null;
-
-                logBuilder.AddAssistantMessage(fullResponse, fullReasoning, i);
-                conversationMessages.Add(new ChatMessage(ChatRole.Assistant, fullResponse));
-            }
+            (totalInputTokens, totalOutputTokens) = await StreamPromptChainAsync(
+                clientSetup.EffectiveClient, clientSetup.Options, clientSetup.ThinkParser,
+                prompts, fields, allFields, version.SystemMessage, logBuilder, onEvent, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -411,5 +238,213 @@ public class PlaygroundService(
     public Task<List<TestRunResponse>> GetRunsAsync(Guid entryId, CancellationToken ct)
     {
         return runService.GetRunsAsync(entryId, ct);
+    }
+
+    // ── Private helpers ──
+
+    private static async Task<(long? InputTokens, long? OutputTokens)> StreamPromptChainAsync(
+        IChatClient client,
+        ChatOptions options,
+        ThinkTagStreamParser? thinkParser,
+        List<Prompt> prompts,
+        Dictionary<string, string> fields,
+        List<TemplateField> allFields,
+        string? systemMessage,
+        ConversationLogBuilder logBuilder,
+        Func<ConversationStreamEvent, Task>? onEvent,
+        CancellationToken ct)
+    {
+        long? totalInputTokens = null;
+        long? totalOutputTokens = null;
+        var conversationMessages = new List<ChatMessage>();
+
+        if (!string.IsNullOrEmpty(systemMessage))
+        {
+            var rendered = allFields.Count > 0
+                ? TemplateParser.Render(systemMessage, fields)
+                : systemMessage;
+            conversationMessages.Add(new ChatMessage(ChatRole.System, rendered));
+            logBuilder.AddSystemMessage(rendered);
+        }
+
+        for (var i = 0; i < prompts.Count; i++)
+        {
+            var prompt = prompts[i];
+            var content =
+                allFields.Count > 0 && prompt.IsTemplate
+                    ? TemplateParser.Render(prompt.Content, fields)
+                    : prompt.Content;
+
+            conversationMessages.Add(new ChatMessage(ChatRole.User, content));
+            logBuilder.AddUserMessage(content, i);
+
+            var responseText = new StringBuilder();
+            var reasoningText = new StringBuilder();
+
+            await foreach (
+                var update in client.GetStreamingResponseAsync(
+                    conversationMessages, options, ct)
+            )
+            {
+                if (thinkParser is not null && update.Text is not null)
+                {
+                    foreach (var (segText, isThinking) in thinkParser.ProcessChunk(update.Text))
+                    {
+                        if (isThinking)
+                        {
+                            reasoningText.Append(segText);
+                            if (onEvent is not null)
+                                await onEvent(ConversationStreamEvent.ReasoningChunk(i, segText));
+                        }
+                        else
+                        {
+                            responseText.Append(segText);
+                            if (onEvent is not null)
+                                await onEvent(ConversationStreamEvent.TextChunk(i, segText));
+                        }
+                    }
+                }
+                else if (update.Text is not null)
+                {
+                    responseText.Append(update.Text);
+                    if (onEvent is not null)
+                        await onEvent(ConversationStreamEvent.TextChunk(i, update.Text));
+                }
+
+                if (thinkParser is null)
+                {
+                    var reasoningContent = update
+                        .Contents.OfType<TextReasoningContent>()
+                        .FirstOrDefault();
+                    if (reasoningContent?.Text is not null)
+                    {
+                        reasoningText.Append(reasoningContent.Text);
+                        if (onEvent is not null)
+                            await onEvent(ConversationStreamEvent.ReasoningChunk(i, reasoningContent.Text));
+                    }
+                }
+
+                var usageContent = update.Contents.OfType<UsageContent>().FirstOrDefault();
+                if (usageContent is not null)
+                {
+                    totalInputTokens =
+                        (totalInputTokens ?? 0) + (usageContent.Details.InputTokenCount ?? 0);
+                    totalOutputTokens =
+                        (totalOutputTokens ?? 0) + (usageContent.Details.OutputTokenCount ?? 0);
+                }
+            }
+
+            if (thinkParser is not null)
+            {
+                foreach (var (segText, isThinking) in thinkParser.Flush())
+                {
+                    if (isThinking)
+                    {
+                        reasoningText.Append(segText);
+                        if (onEvent is not null)
+                            await onEvent(ConversationStreamEvent.ReasoningChunk(i, segText));
+                    }
+                    else
+                    {
+                        responseText.Append(segText);
+                        if (onEvent is not null)
+                            await onEvent(ConversationStreamEvent.TextChunk(i, segText));
+                    }
+                }
+            }
+
+            var fullResponse = responseText.ToString();
+            var fullReasoning = reasoningText.Length > 0 ? reasoningText.ToString() : null;
+
+            logBuilder.AddAssistantMessage(fullResponse, fullReasoning, i);
+            conversationMessages.Add(new ChatMessage(ChatRole.Assistant, fullResponse));
+        }
+
+        return (totalInputTokens, totalOutputTokens);
+    }
+
+    private record ClientSetup(
+        IChatClient EffectiveClient,
+        ChatOptions Options,
+        ThinkTagStreamParser? ThinkParser,
+        McpToolSet? McpToolSet);
+
+    private async Task<ClientSetup> BuildEffectiveClientAsync(
+        Guid tenantId,
+        IChatClient baseClient,
+        ResolvedModel resolved,
+        TestEntryRequest request,
+        string model,
+        ConversationLogBuilder logBuilder,
+        Func<ConversationStreamEvent, Task>? onEvent,
+        CancellationToken ct)
+    {
+        IList<AITool>? mcpTools = null;
+        IChatClient effectiveClient = baseClient;
+        McpToolSet? mcpToolSet = null;
+
+        if (request.McpServerIds is { Count: > 0 })
+        {
+            mcpToolSet = await mcpToolProvider.GetToolsAsync(
+                tenantId, request.McpServerIds, request.ExcludedToolNames, ct);
+            mcpTools = mcpToolSet.Tools;
+
+            if (mcpTools.Count > 0)
+            {
+                var eefic = new EventEmittingFunctionInvokingChatClient(baseClient, loggerFactory);
+                eefic.OnStreamEvent = onEvent;
+                eefic.ToolCallStarting += logBuilder.OnToolCallStartingAsync;
+                eefic.ToolCallCompleted += logBuilder.OnToolCallCompletedAsync;
+                effectiveClient = eefic;
+            }
+        }
+
+        var options = new ChatOptions
+        {
+            ModelId = model,
+            Temperature = resolved.IsTemperatureConfigurable ? request.Temperature : null,
+            MaxOutputTokens = request.MaxTokens,
+            Tools = mcpTools is { Count: > 0 } ? mcpTools.ToList() : null,
+        };
+
+        if (request.ShowReasoning == true && resolved.ApiMode == AiApiMode.ResponsesApi)
+        {
+            options.Reasoning = new ReasoningOptions
+            {
+                Effort = ChatOptionsBuilder.ParseReasoningEffort(request.ReasoningEffort ?? "medium"),
+                Output = ReasoningOutput.Full,
+            };
+        }
+
+        var thinkParser = resolved.ApiMode == AiApiMode.ChatCompletions
+            ? new ThinkTagStreamParser()
+            : null;
+
+        return new ClientSetup(effectiveClient, options, thinkParser, mcpToolSet);
+    }
+
+    private static ErrorOr<(Dictionary<string, string> Fields, List<TemplateField> AllFields)>
+        ValidateAndRenderTemplates(List<Prompt> prompts, Dictionary<string, string>? requestFields)
+    {
+        var fields = requestFields ?? new Dictionary<string, string>();
+        var allFields = prompts
+            .Where(p => p.IsTemplate)
+            .SelectMany(p => p.TemplateFields)
+            .DistinctBy(f => f.Name)
+            .ToList();
+
+        if (allFields.Count > 0)
+        {
+            fields = TemplateFieldValidator.FilterToDefinedFields(allFields, fields);
+
+            var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
+            if (errors.Count > 0)
+                return Error.Validation(
+                    "VALIDATION_ERROR",
+                    string.Join("; ", errors.Select(e => $"{e.Key}: {e.Value}"))
+                );
+        }
+
+        return (fields, allFields);
     }
 }
