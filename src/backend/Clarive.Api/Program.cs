@@ -53,6 +53,15 @@ try
                 .Enrich.WithThreadId()
                 .Enrich.WithCorrelationId();
 
+            // Dev: log everything (Debug+). Prod: Information+ only (from appsettings.json).
+            if (builder.Environment.IsDevelopment())
+            {
+                lc.MinimumLevel.Debug()
+                    .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Information)
+                    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
+                    .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Information);
+            }
+
             // PostgreSQL sink — connection string comes from env vars, so configure programmatically
             // NOT wrapped with Async — already batches internally (50 items, 5s flush)
             var pgConn = builder.Configuration.GetConnectionString("DefaultConnection");
