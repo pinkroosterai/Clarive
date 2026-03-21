@@ -50,54 +50,12 @@ public class AiGenerationService(
         var result = await orchestrator.GenerateAsync(config, ct, onProgress);
         sw.Stop();
 
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Generation,
-            sw.ElapsedMilliseconds,
-            result.Usage,
-            ct
-        );
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Evaluation,
-            sw.ElapsedMilliseconds,
-            result.EvaluationUsage,
-            ct
-        );
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Clarification,
-            sw.ElapsedMilliseconds,
-            result.ClarificationUsage,
-            ct
+        await LogAllUsageAsync(
+            tenantId, userId, sw.ElapsedMilliseconds,
+            result.Usage, result.EvaluationUsage, result.ClarificationUsage, ct
         );
 
-        var scoreHistory = BuildInitialScoreHistory(result.Evaluation);
-        var draft = MapPromptSetToDraft(result.Prompts);
-        var questions = result.Clarification?.Questions ?? [];
-        var enhancements = result.Clarification?.Enhancements ?? [];
-
-        var sessionId = Guid.NewGuid();
-        await sessionRepo.CreateAsync(
-            new AiSession
-            {
-                Id = sessionId,
-                TenantId = tenantId,
-                Draft = draft,
-                Questions = questions,
-                Enhancements = enhancements,
-                ScoreHistory = scoreHistory,
-                Config = config,
-                AgentSessionId = result.AgentSessionId,
-                CreatedAt = DateTime.UtcNow,
-            },
-            ct
-        );
-
-        return ToResult(sessionId, draft, questions, enhancements, result.Evaluation, scoreHistory);
+        return await CreateSessionAndBuildResultAsync(tenantId, result, config, ct);
     }
 
     public async Task<ErrorOr<AiGenerationResult>> RefineAsync(
@@ -157,63 +115,12 @@ public class AiGenerationService(
         );
         sw.Stop();
 
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Generation,
-            sw.ElapsedMilliseconds,
-            result.Usage,
-            ct
-        );
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Evaluation,
-            sw.ElapsedMilliseconds,
-            result.EvaluationUsage,
-            ct
-        );
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Clarification,
-            sw.ElapsedMilliseconds,
-            result.ClarificationUsage,
-            ct
+        await LogAllUsageAsync(
+            tenantId, userId, sw.ElapsedMilliseconds,
+            result.Usage, result.EvaluationUsage, result.ClarificationUsage, ct
         );
 
-        var newScoreHistory = new List<IterationScore>(session.ScoreHistory);
-        if (result.Evaluation is not null)
-        {
-            var avgScore = EvaluationNormalizer.ComputeAverageScore(result.Evaluation);
-            newScoreHistory.Add(
-                new IterationScore
-                {
-                    Iteration = newScoreHistory.Count + 1,
-                    Scores = result.Evaluation.PromptEvaluations,
-                    AverageScore = avgScore,
-                }
-            );
-        }
-
-        var draft = MapPromptSetToDraft(result.Prompts);
-        var questions = result.Clarification?.Questions ?? [];
-        var enhancements = result.Clarification?.Enhancements ?? [];
-
-        session.Draft = draft;
-        session.Questions = questions;
-        session.Enhancements = enhancements;
-        session.ScoreHistory = newScoreHistory;
-        await sessionRepo.UpdateAsync(session, ct);
-
-        return ToResult(
-            request.SessionId,
-            draft,
-            questions,
-            enhancements,
-            result.Evaluation,
-            newScoreHistory
-        );
+        return await UpdateSessionAndBuildResultAsync(session, request.SessionId, result, ct);
     }
 
     public async Task<ErrorOr<AiGenerationResult>> EnhanceAsync(
@@ -261,57 +168,12 @@ public class AiGenerationService(
         );
         sw.Stop();
 
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Generation,
-            sw.ElapsedMilliseconds,
-            result.Usage,
-            entryId,
-            ct
-        );
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Evaluation,
-            sw.ElapsedMilliseconds,
-            result.EvaluationUsage,
-            entryId,
-            ct
-        );
-        await LogUsageAsync(
-            tenantId,
-            userId,
-            AiActionType.Clarification,
-            sw.ElapsedMilliseconds,
-            result.ClarificationUsage,
-            entryId,
-            ct
+        await LogAllUsageAsync(
+            tenantId, userId, sw.ElapsedMilliseconds,
+            result.Usage, result.EvaluationUsage, result.ClarificationUsage, ct, entryId
         );
 
-        var scoreHistory = BuildInitialScoreHistory(result.Evaluation);
-        var draft = MapPromptSetToDraft(result.Prompts);
-        var questions = result.Clarification?.Questions ?? [];
-        var enhancements = result.Clarification?.Enhancements ?? [];
-
-        var sessionId = Guid.NewGuid();
-        await sessionRepo.CreateAsync(
-            new AiSession
-            {
-                Id = sessionId,
-                TenantId = tenantId,
-                Draft = draft,
-                Questions = questions,
-                Enhancements = enhancements,
-                ScoreHistory = scoreHistory,
-                Config = config,
-                AgentSessionId = result.AgentSessionId,
-                CreatedAt = DateTime.UtcNow,
-            },
-            ct
-        );
-
-        return ToResult(sessionId, draft, questions, enhancements, result.Evaluation, scoreHistory);
+        return await CreateSessionAndBuildResultAsync(tenantId, result, config, ct);
     }
 
     public async Task<ErrorOr<string>> GenerateSystemMessageAsync(
@@ -487,6 +349,109 @@ public class AiGenerationService(
     }
 
     // ── Private helpers ──
+
+    private Task<AiGenerationResult> CreateSessionAndBuildResultAsync(
+        Guid tenantId,
+        GenerateOrchestratorResult result,
+        GenerationConfig config,
+        CancellationToken ct
+    ) => CreateSessionAndBuildResultAsync(
+        tenantId, result.AgentSessionId, result.Prompts, result.Evaluation, result.Clarification, config, ct
+    );
+
+    private Task<AiGenerationResult> CreateSessionAndBuildResultAsync(
+        Guid tenantId,
+        EnhanceOrchestratorResult result,
+        GenerationConfig config,
+        CancellationToken ct
+    ) => CreateSessionAndBuildResultAsync(
+        tenantId, result.AgentSessionId, result.Prompts, result.Evaluation, result.Clarification, config, ct
+    );
+
+    private async Task<AiGenerationResult> CreateSessionAndBuildResultAsync(
+        Guid tenantId,
+        string agentSessionId,
+        PromptSet prompts,
+        PromptEvaluation? evaluation,
+        ClarificationResult? clarification,
+        GenerationConfig config,
+        CancellationToken ct
+    )
+    {
+        var scoreHistory = BuildInitialScoreHistory(evaluation);
+        var draft = MapPromptSetToDraft(prompts);
+        var questions = clarification?.Questions ?? [];
+        var enhancements = clarification?.Enhancements ?? [];
+
+        var sessionId = Guid.NewGuid();
+        await sessionRepo.CreateAsync(
+            new AiSession
+            {
+                Id = sessionId,
+                TenantId = tenantId,
+                Draft = draft,
+                Questions = questions,
+                Enhancements = enhancements,
+                ScoreHistory = scoreHistory,
+                Config = config,
+                AgentSessionId = agentSessionId,
+                CreatedAt = DateTime.UtcNow,
+            },
+            ct
+        );
+
+        return ToResult(sessionId, draft, questions, enhancements, evaluation, scoreHistory);
+    }
+
+    private async Task<AiGenerationResult> UpdateSessionAndBuildResultAsync(
+        AiSession session,
+        Guid sessionId,
+        GenerateOrchestratorResult result,
+        CancellationToken ct
+    )
+    {
+        var newScoreHistory = new List<IterationScore>(session.ScoreHistory);
+        if (result.Evaluation is not null)
+        {
+            var avgScore = EvaluationNormalizer.ComputeAverageScore(result.Evaluation);
+            newScoreHistory.Add(
+                new IterationScore
+                {
+                    Iteration = newScoreHistory.Count + 1,
+                    Scores = result.Evaluation.PromptEvaluations,
+                    AverageScore = avgScore,
+                }
+            );
+        }
+
+        var draft = MapPromptSetToDraft(result.Prompts);
+        var questions = result.Clarification?.Questions ?? [];
+        var enhancements = result.Clarification?.Enhancements ?? [];
+
+        session.Draft = draft;
+        session.Questions = questions;
+        session.Enhancements = enhancements;
+        session.ScoreHistory = newScoreHistory;
+        await sessionRepo.UpdateAsync(session, ct);
+
+        return ToResult(sessionId, draft, questions, enhancements, result.Evaluation, newScoreHistory);
+    }
+
+    private async Task LogAllUsageAsync(
+        Guid tenantId,
+        Guid userId,
+        long durationMs,
+        UsageDetails? generationUsage,
+        UsageDetails? evaluationUsage,
+        UsageDetails? clarificationUsage,
+        CancellationToken ct,
+        Guid? entryId = null
+    )
+    {
+        await LogUsageAsync(tenantId, userId, AiActionType.Generation, durationMs, generationUsage, entryId, ct);
+        await LogUsageAsync(tenantId, userId, AiActionType.Evaluation, durationMs, evaluationUsage, entryId, ct);
+        await LogUsageAsync(tenantId, userId, AiActionType.Clarification, durationMs, clarificationUsage, entryId, ct);
+    }
 
     private Task LogUsageAsync(
         Guid tenantId,
