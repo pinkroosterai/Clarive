@@ -14,6 +14,7 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 import { FolderTree } from '@/components/library/FolderTree';
 import { NavLink } from '@/components/NavLink';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sidebar,
   SidebarContent,
@@ -81,13 +82,15 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarGroup>
 
-      <SidebarContent data-tour="sidebar-nav">
-        <SidebarGroup>
-          <SidebarGroupLabel>Folders</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <FolderTree />
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent data-tour="sidebar-nav" className="overflow-hidden">
+        <ScrollArea className="flex-1">
+          <SidebarGroup>
+            <SidebarGroupLabel>Folders</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <FolderTree />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </ScrollArea>
       </SidebarContent>
 
       <SidebarFooter>
