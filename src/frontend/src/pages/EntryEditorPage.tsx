@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
 import { EditorAiOverlay } from '@/components/editor/EditorAiOverlay';
 import { PromptEditor } from '@/components/editor/PromptEditor';
+import { SoftLockBanner } from '@/components/editor/SoftLockBanner';
 import { ShareDialog } from '@/components/editor/ShareDialog';
 import { VersionDiffDialog } from '@/components/editor/VersionDiffDialog';
 import { VersionPanel } from '@/components/editor/VersionPanel';
@@ -51,8 +52,8 @@ const EntryEditorPage = () => {
   const isMobile = useIsMobile();
   const currentUser = useAuthStore((s) => s.currentUser);
 
-  const isReadOnly = !!version || currentUser?.role === 'viewer';
   const versionNum = version ? parseInt(version, 10) : undefined;
+  const [softLockOverride, setSoftLockOverride] = useState(false);
 
   // ── Data fetching ──
   const {
@@ -98,8 +99,22 @@ const EntryEditorPage = () => {
     handleChange: editor.handleChange,
   });
 
-  // ── Real-time presence ──
-  const { presenceUsers } = usePresence(entryId, editor.isDirty);
+  // ── Real-time presence & soft lock ──
+  const { presenceUsers, activeEditor, newEditorAlert } = usePresence(entryId, editor.isDirty);
+  const isSoftLocked = !!activeEditor && !softLockOverride;
+  const isReadOnly = !!version || currentUser?.role === 'viewer' || isSoftLocked;
+
+  // Reset soft lock override when navigating to a different entry
+  useEffect(() => {
+    setSoftLockOverride(false);
+  }, [entryId]);
+
+  // Toast when another user starts editing while we're editing
+  useEffect(() => {
+    if (newEditorAlert && editor.isDirty) {
+      toast.info(`${newEditorAlert.name} started editing this prompt`);
+    }
+  }, [newEditorAlert, editor.isDirty]);
 
   const hasDraft = versions.some((v) => v.versionState === 'draft');
   const draftVersion = versions.find((v) => v.versionState === 'draft')?.version;
@@ -421,6 +436,12 @@ const EntryEditorPage = () => {
         </div>
       </div>
       {readOnlyBanner}
+      {isSoftLocked && activeEditor && (
+        <SoftLockBanner
+          activeEditor={activeEditor}
+          onOverride={() => setSoftLockOverride(true)}
+        />
+      )}
       {editor.showEditNotice && (
         <div className="rounded-md bg-primary/10 px-3 py-2 text-xs text-primary">
           Editing will create a new draft (v{(entryData?.version ?? 0) + 1}). Your published version
@@ -517,6 +538,14 @@ const EntryEditorPage = () => {
           onCancel={mutations.handleCancelAiOperation}
         />
         {readOnlyBanner && <div className="mb-4">{readOnlyBanner}</div>}
+        {isSoftLocked && activeEditor && (
+          <div className="mb-4">
+            <SoftLockBanner
+              activeEditor={activeEditor}
+              onOverride={() => setSoftLockOverride(true)}
+            />
+          </div>
+        )}
         <Tabs defaultValue="editor">
           <TabsList className="w-full">
             <TabsTrigger value="editor" className="flex-1">
