@@ -16,6 +16,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Clarive.Api.Helpers;
 using Clarive.Api.Configuration;
+using Clarive.Infrastructure.Cache;
 using Clarive.Infrastructure.Data;
 using Clarive.Api.HealthChecks;
 using Clarive.Api.Middleware;
@@ -134,6 +135,15 @@ try
         connectionString,
         builder.Configuration["CONFIG_ENCRYPTION_KEY"]
     );
+
+    // Register the DbConfigurationProvider for on-demand reload from endpoints
+    if (((IConfigurationBuilder)builder.Configuration).Properties.TryGetValue(
+            "DbConfigSource", out var sourceObj)
+        && sourceObj is DbConfigurationSource dbSource
+        && dbSource.ProviderInstance is not null)
+    {
+        builder.Services.AddSingleton(dbSource.ProviderInstance);
+    }
 
     // ── Authentication (JWT, API key, Google OAuth) ──
     builder.Services.AddClariveAuth(builder.Configuration);
@@ -445,19 +455,28 @@ try
 
     app.MapGet(
             "/api/status",
-            (
+            async (
                 IMaintenanceModeService maintenanceMode,
                 IAgentFactory agentFactory,
-                ITavilyClientService tavilyClient
+                ITavilyClientService tavilyClient,
+                TenantCacheService cache
             ) =>
-                Results.Ok(
+            {
+                var aiConfigured = await cache.GetOrCreateGlobalAsync(
+                    TenantCacheKeys.AiConfiguredKey,
+                    _ => Task.FromResult(agentFactory.IsConfigured),
+                    TenantCacheKeys.AiCacheTtl
+                );
+
+                return Results.Ok(
                     new
                     {
                         maintenance = maintenanceMode.IsEnabled,
-                        aiConfigured = agentFactory.IsConfigured,
+                        aiConfigured,
                         webSearchAvailable = tavilyClient.IsConfigured,
                     }
-                )
+                );
+            }
         )
         .WithTags("System")
         .AllowAnonymous();

@@ -22,6 +22,7 @@ public static class TenantCacheKeys
     public const string AiProvidersKey = "ai_providers_all";
     public const string EnrichedModelsKey = "playground_enriched_models";
     public const string AvailableModelsKey = "playground_available_models";
+    public const string AiConfiguredKey = "ai_configured";
     public const string ModelCostKeyPrefix = "model_cost";
 
     public static readonly TimeSpan AiCacheTtl = TimeSpan.FromMinutes(5);
@@ -51,6 +52,7 @@ public static class TenantCacheKeys
         await cache.EvictGlobalAsync(AiProvidersKey);
         await cache.EvictGlobalAsync(EnrichedModelsKey);
         await cache.EvictGlobalAsync(AvailableModelsKey);
+        await cache.EvictGlobalAsync(AiConfiguredKey);
     }
 
     /// <summary>Format a model cost cache key.</summary>

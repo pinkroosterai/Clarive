@@ -1,5 +1,6 @@
 using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure.Cache;
+using Clarive.Api.Configuration;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Entities;
 using Clarive.Domain.ValueObjects;
@@ -131,6 +132,7 @@ public static class ConfigEndpoints
         IServiceConfigRepository configRepo,
         IEncryptionService encryption,
         TenantCacheService cache,
+        DbConfigurationProvider? dbConfigProvider,
         CancellationToken ct
     )
     {
@@ -198,9 +200,13 @@ public static class ConfigEndpoints
             ct
         );
 
-        // Invalidate playground model cache when AI config changes
+        // Invalidate caches and force config reload when AI config changes
         if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
+        {
             await TenantCacheKeys.EvictAiData(cache);
+            // Force immediate reload so IOptionsMonitor triggers factory reconfiguration
+            dbConfigProvider?.ForceReload();
+        }
 
         return Results.Ok(
             new
@@ -217,6 +223,7 @@ public static class ConfigEndpoints
         HttpContext ctx,
         IServiceConfigRepository configRepo,
         TenantCacheService cache,
+        DbConfigurationProvider? dbConfigProvider,
         CancellationToken ct
     )
     {
@@ -236,9 +243,12 @@ public static class ConfigEndpoints
 
         await configRepo.DeleteByKeyAsync(key, ct);
 
-        // Invalidate playground model cache when AI config changes
+        // Invalidate caches and force config reload when AI config changes
         if (key.StartsWith("Ai:", StringComparison.OrdinalIgnoreCase))
+        {
             await TenantCacheKeys.EvictAiData(cache);
+            dbConfigProvider?.ForceReload();
+        }
 
         return Results.Ok(new { key, reset = true });
     }

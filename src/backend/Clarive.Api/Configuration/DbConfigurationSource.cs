@@ -8,8 +8,14 @@ public class DbConfigurationSource : IConfigurationSource
     public string? EncryptionKeyBase64 { get; set; }
     public TimeSpan ReloadInterval { get; set; } = TimeSpan.FromSeconds(30);
 
-    public IConfigurationProvider Build(IConfigurationBuilder builder) =>
-        new DbConfigurationProvider(this);
+    /// <summary>The last built provider instance, for DI registration.</summary>
+    internal DbConfigurationProvider? ProviderInstance { get; private set; }
+
+    public IConfigurationProvider Build(IConfigurationBuilder builder)
+    {
+        ProviderInstance = new DbConfigurationProvider(this);
+        return ProviderInstance;
+    }
 }
 
 public static class ConfigurationBuilderExtensions
@@ -21,13 +27,15 @@ public static class ConfigurationBuilderExtensions
         TimeSpan? reloadInterval = null
     )
     {
-        return builder.Add(
-            new DbConfigurationSource
-            {
-                ConnectionString = connectionString,
-                EncryptionKeyBase64 = encryptionKeyBase64,
-                ReloadInterval = reloadInterval ?? TimeSpan.FromSeconds(30),
-            }
-        );
+        var source = new DbConfigurationSource
+        {
+            ConnectionString = connectionString,
+            EncryptionKeyBase64 = encryptionKeyBase64,
+            ReloadInterval = reloadInterval ?? TimeSpan.FromSeconds(30),
+        };
+        builder.Add(source);
+        // Store source so the provider instance can be registered in DI
+        builder.Properties["DbConfigSource"] = source;
+        return builder;
     }
 }

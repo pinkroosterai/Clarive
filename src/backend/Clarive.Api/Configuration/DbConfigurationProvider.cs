@@ -148,5 +148,18 @@ public class DbConfigurationProvider : ConfigurationProvider, IDisposable
         return Encoding.UTF8.GetString(plaintext);
     }
 
+    /// <summary>Force an immediate reload from the database, bypassing the timer interval.</summary>
+    public void ForceReload()
+    {
+        try
+        {
+            LoadFromDb();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to force-reload config from database");
+        }
+    }
+
     public void Dispose() => _reloadTimer.Dispose();
 }
