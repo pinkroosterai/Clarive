@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
-import { ConversationView } from './ConversationView';
+import { CollapsedPrompt, ConversationView } from './ConversationView';
 import CopyButton from './CopyButton';
 import { JudgeScorePanel } from './JudgeScorePanel';
 import ReasoningBlock from './ReasoningBlock';
@@ -92,8 +92,6 @@ interface PlaygroundResultsAreaProps {
   comparison: PlaygroundComparisonState;
   template: PlaygroundTemplateState;
   judge: PlaygroundJudgeState;
-  expandedStepInputs: Set<number>;
-  setExpandedStepInputs: React.Dispatch<React.SetStateAction<Set<number>>>;
   copiedIndex: number | null;
   handleRun: () => void;
   handleCopy: (text: string, index: number) => Promise<void>;
@@ -107,8 +105,6 @@ export default function PlaygroundResultsArea({
   comparison,
   template,
   judge,
-  expandedStepInputs,
-  setExpandedStepInputs,
   copiedIndex,
   handleRun,
   handleCopy,
@@ -640,7 +636,6 @@ export default function PlaygroundResultsArea({
                 const isActive = isStreaming && i === currentPromptIndex;
                 const isComplete =
                   response !== undefined && (!isStreaming || i < currentPromptIndex);
-                const showInput = expandedStepInputs.has(i);
 
                 return (
                   <div key={i} className="flex gap-4">
@@ -669,33 +664,12 @@ export default function PlaygroundResultsArea({
                     </div>
 
                     {/* Step content */}
-                    <div className="flex-1 pb-6 min-w-0">
-                      {/* Step header */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium text-foreground-muted">
-                          Prompt {i + 1}
-                        </span>
-                        <button
-                          onClick={() =>
-                            setExpandedStepInputs((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(i)) next.delete(i);
-                              else next.add(i);
-                              return next;
-                            })
-                          }
-                          className="text-xs text-foreground-muted hover:text-foreground transition-colors"
-                        >
-                          {showInput ? 'Hide prompt' : 'Show prompt'}
-                        </button>
-                      </div>
-
-                      {/* Prompt input (collapsed by default) */}
-                      {showInput && (
-                        <div className="bg-elevated/50 rounded-md p-3 text-xs font-mono mb-3 border border-border-subtle whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-themed">
-                          {renderTemplate(prompt.content, fieldValues)}
-                        </div>
-                      )}
+                    <div className="flex-1 pb-6 min-w-0 space-y-2">
+                      {/* Collapsible prompt card — matches historical/pinned view */}
+                      <CollapsedPrompt
+                        content={renderTemplate(prompt.content, fieldValues)}
+                        promptIndex={i}
+                      />
 
                       {/* Render segments chronologically for this prompt */}
                       <div className="space-y-2">

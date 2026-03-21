@@ -163,7 +163,6 @@ const PlaygroundPage = () => {
   });
 
   // ── Response display ──
-  const [expandedStepInputs, setExpandedStepInputs] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // ── History + comparison (extracted hook) ──
@@ -512,8 +511,6 @@ const PlaygroundPage = () => {
           comparison={comparisonState}
           template={templateState}
           judge={judgeState}
-          expandedStepInputs={expandedStepInputs}
-          setExpandedStepInputs={setExpandedStepInputs}
           copiedIndex={copiedIndex}
           handleRun={handleRun}
           handleCopy={handleCopy}

@@ -51,7 +51,9 @@ export const ConversationView = memo(function ConversationView({
         break;
 
       case 'user':
-        elements.push(<CollapsedPrompt key={idx} msg={msg} />);
+        elements.push(
+          <CollapsedPrompt key={idx} content={msg.content} promptIndex={msg.promptIndex ?? 0} />
+        );
         break;
 
       case 'tool_call': {
@@ -102,10 +104,16 @@ export const ConversationView = memo(function ConversationView({
   return <div className="space-y-2">{elements}</div>;
 });
 
-function CollapsedPrompt({ msg }: { msg: ConversationMessage }) {
+export function CollapsedPrompt({
+  content,
+  promptIndex,
+}: {
+  content: string;
+  promptIndex: number;
+}) {
   const [expanded, setExpanded] = useState(false);
-  const preview = msg.content.slice(0, 100).replace(/\n/g, ' ');
-  const isLong = msg.content.length > 120;
+  const preview = content.slice(0, 100).replace(/\n/g, ' ');
+  const isLong = content.length > 120;
 
   return (
     <div className="bg-elevated/30 rounded-md border border-border-subtle">
@@ -115,7 +123,7 @@ function CollapsedPrompt({ msg }: { msg: ConversationMessage }) {
         className="flex items-start gap-2 w-full px-3 py-2 text-left"
       >
         <span className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider shrink-0 mt-0.5">
-          Prompt {(msg.promptIndex ?? 0) + 1}
+          Prompt {promptIndex + 1}
         </span>
         <span className="text-xs text-foreground-muted truncate flex-1">
           {expanded ? '' : `${preview}${isLong ? '…' : ''}`}
@@ -128,8 +136,8 @@ function CollapsedPrompt({ msg }: { msg: ConversationMessage }) {
       </button>
       {expanded && (
         <div className="px-3 pb-2">
-          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-48 overflow-y-auto">
-            {msg.content}
+          <div className="text-xs font-mono whitespace-pre-wrap text-foreground-muted max-h-48 overflow-y-auto scrollbar-themed">
+            {content}
           </div>
         </div>
       )}
