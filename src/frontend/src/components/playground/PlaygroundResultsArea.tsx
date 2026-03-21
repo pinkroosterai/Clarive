@@ -489,7 +489,7 @@ export default function PlaygroundResultsArea({
                         )}
 
                         {pinnedRuns.map((run, pinIndex) => (
-                          <div key={`content-${run.id}`} className="space-y-3 self-start">
+                          <div key={`content-${run.id}`} className="space-y-2 self-start">
                             {run.conversationLog?.length ? (
                               <ConversationView messages={run.conversationLog} />
                             ) : (
@@ -798,7 +798,7 @@ export default function PlaygroundResultsArea({
 
           {/* ── Single prompt view — hidden when comparing ── */}
           {!hasPins && !isChain && (hasResponses || isStreaming) && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {/* Render segments in chronological order for single-prompt view */}
               {segments.map((seg, idx) => {
                 switch (seg.type) {

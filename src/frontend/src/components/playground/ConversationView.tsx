@@ -34,57 +34,11 @@ export const ConversationView = memo(function ConversationView({
     }
   }
 
-  // Check if there are tool calls in this conversation
-  const hasToolCalls = messages.some((m) => m.role === 'tool_call');
-
-  // Group consecutive tool_call + tool_result messages
+  // Render each message individually, matching the streaming view's layout
   const elements: React.ReactNode[] = [];
-  let toolGroup: React.ReactNode[] = [];
-  let inToolGroup = false;
-
-  const flushToolGroup = () => {
-    if (toolGroup.length > 0) {
-      elements.push(
-        <div
-          key={`tool-group-${elements.length}`}
-          className="bg-elevated/20 border-l-2 border-l-accent rounded-r-md py-2 px-3 space-y-1"
-        >
-          <div className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider mb-1">
-            Tool Activity
-          </div>
-          {toolGroup}
-        </div>
-      );
-      toolGroup = [];
-    }
-    inToolGroup = false;
-  };
 
   for (let idx = 0; idx < messages.length; idx++) {
     const msg = messages[idx];
-
-    if (msg.role === 'tool_call' || msg.role === 'tool_result') {
-      inToolGroup = true;
-      if (msg.role === 'tool_call') {
-        const result = msg.callId ? toolResults.get(msg.callId) : undefined;
-        toolGroup.push(
-          <ToolCallBlock
-            key={`tool-${msg.callId ?? idx}`}
-            toolName={msg.toolName ?? 'Unknown'}
-            arguments={msg.arguments ?? null}
-            response={result?.response ?? null}
-            durationMs={result?.durationMs ?? null}
-            error={result?.error ?? null}
-            status={result ? (result.error ? 'error' : 'complete') : 'calling'}
-          />
-        );
-      }
-      // tool_result is rendered as part of tool_call above
-      continue;
-    }
-
-    // Flush any pending tool group before rendering a non-tool message
-    if (inToolGroup) flushToolGroup();
 
     switch (msg.role) {
       case 'system':
@@ -95,29 +49,44 @@ export const ConversationView = memo(function ConversationView({
         elements.push(<CollapsedPrompt key={idx} msg={msg} />);
         break;
 
+      case 'tool_call': {
+        const result = msg.callId ? toolResults.get(msg.callId) : undefined;
+        elements.push(
+          <ToolCallBlock
+            key={`tool-${msg.callId ?? idx}`}
+            toolName={msg.toolName ?? 'Unknown'}
+            arguments={msg.arguments ?? null}
+            response={result?.response ?? null}
+            durationMs={result?.durationMs ?? null}
+            error={result?.error ?? null}
+            status={result ? (result.error ? 'error' : 'complete') : 'calling'}
+          />
+        );
+        break;
+      }
+
+      case 'tool_result':
+        // Rendered as part of tool_call above
+        break;
+
       case 'assistant':
         elements.push(
           <div key={idx}>
             {msg.reasoning && (
               <ReasoningBlock reasoning={msg.reasoning} isStreaming={isStreaming} />
             )}
-            <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
-              {msg.content ? (
+            {msg.content ? (
+              <div className="relative group rounded-lg border border-border-subtle bg-surface p-4">
                 <LLMResponseBlock output={msg.content} isStreaming={isStreaming} />
-              ) : (
-                <span className="text-xs text-foreground-muted">—</span>
-              )}
-            </div>
+              </div>
+            ) : null}
           </div>
         );
         break;
     }
   }
 
-  // Flush any remaining tool group
-  if (inToolGroup) flushToolGroup();
-
-  return <div className="space-y-3">{elements}</div>;
+  return <div className="space-y-2">{elements}</div>;
 });
 
 function CollapsedPrompt({ msg }: { msg: ConversationMessage }) {
