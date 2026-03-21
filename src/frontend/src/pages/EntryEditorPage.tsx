@@ -265,7 +265,7 @@ const EntryEditorPage = () => {
       );
     }
     return (
-      <div className="grid h-full grid-cols-[minmax(0,1fr)_300px] gap-0">
+      <div className="grid h-full grid-cols-[minmax(0,1fr)_360px] gap-0">
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -526,7 +526,7 @@ const EntryEditorPage = () => {
 
   // ── Desktop layout ──
   return (
-    <div className="grid h-full grid-cols-[minmax(0,1fr)_300px] gap-0">
+    <div className="grid h-full grid-cols-[minmax(0,1fr)_360px] gap-0">
       <EditorAiOverlay
         isVisible={isAiRunning}
         label={aiLabel}

@@ -355,18 +355,25 @@ public class AiGenerationService(
         CancellationToken ct
     )
     {
+        var promptMessages = request.Prompts
+            .OrderBy(p => p.SortOrder)
+            .Select(p => new PromptMessage { Content = p.Content })
+            .ToList();
+
+        var hasTemplateVars = promptMessages.Any(p => p.Content.Contains("{{"));
+
         var config = new GenerationConfig
         {
             Description = request.Description ?? "Evaluate prompt quality",
+            GenerateSystemMessage = request.SystemMessage != null,
+            GenerateAsPromptTemplate = hasTemplateVars,
+            GenerateAsPromptChain = promptMessages.Count > 1,
         };
 
         var prompts = new PromptSet
         {
             SystemMessage = request.SystemMessage,
-            Prompts = request.Prompts
-                .OrderBy(p => p.SortOrder)
-                .Select(p => new PromptMessage { Content = p.Content })
-                .ToList(),
+            Prompts = promptMessages,
         };
 
         var sw = Stopwatch.StartNew();
