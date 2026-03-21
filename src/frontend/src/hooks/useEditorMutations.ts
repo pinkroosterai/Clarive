@@ -4,7 +4,13 @@ import { toast } from 'sonner';
 
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, wizardService } from '@/services';
+import { ApiError } from '@/services/api/apiClient';
 import type { Evaluation, PromptEntry } from '@/types';
+
+export interface ConflictState {
+  localEntry: PromptEntry;
+  serverEntry: PromptEntry;
+}
 
 interface UseEditorMutationsOptions {
   entryId: string | undefined;
@@ -24,6 +30,7 @@ export function useEditorMutations({
   handleChange,
 }: UseEditorMutationsOptions) {
   const queryClient = useQueryClient();
+  const [conflictState, setConflictState] = useState<ConflictState | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: (data: PromptEntry) => {
@@ -40,7 +47,41 @@ export function useEditorMutations({
       queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
       toast.success('Draft saved');
     },
-    onError: (err: unknown) => handleApiError(err, { title: 'Failed to save' }),
+    onError: (err: unknown) => {
+      if (err instanceof ApiError && err.status === 409 && err.code === 'CONCURRENCY_CONFLICT') {
+        const serverData = err.details;
+        if (serverData && localEntryRef.current) {
+          const local = localEntryRef.current;
+          const serverEntry = {
+            ...local,
+            title: (serverData.title as string) ?? local.title,
+            systemMessage: (serverData.systemMessage as string | null) ?? null,
+            prompts: Array.isArray(serverData.prompts)
+              ? (serverData.prompts as Array<{ id: string; content: string; order: number }>)
+              : local.prompts,
+            version: (serverData.version as number) ?? local.version,
+            versionState: (serverData.versionState as PromptEntry['versionState']) ?? local.versionState,
+          } as PromptEntry;
+
+          // Auto-resolve if content is identical (metadata-only conflict)
+          const contentSame =
+            local.title === serverEntry.title &&
+            (local.systemMessage ?? '') === (serverEntry.systemMessage ?? '') &&
+            local.prompts.length === serverEntry.prompts.length &&
+            local.prompts.every((p, i) => p.content === serverEntry.prompts[i]?.content);
+
+          if (contentSame) {
+            queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+            toast.info('Conflict auto-resolved — no content changes');
+            return;
+          }
+
+          setConflictState({ localEntry: local, serverEntry });
+          return;
+        }
+      }
+      handleApiError(err, { title: 'Failed to save' });
+    },
   });
 
   const publishMutation = useMutation({
@@ -128,6 +169,20 @@ export function useEditorMutations({
     }
   }, [entryId, handleChange, localEntryRef]);
 
+  const handleResolveConflict = useCallback(
+    (resolved: Partial<PromptEntry>) => {
+      handleChange(resolved, { force: true });
+      setConflictState(null);
+      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+      toast.success('Conflict resolved — changes merged');
+    },
+    [handleChange, queryClient, entryId]
+  );
+
+  const handleDismissConflict = useCallback(() => {
+    setConflictState(null);
+  }, []);
+
   return {
     saveMutation,
     publishMutation,
@@ -139,5 +194,8 @@ export function useEditorMutations({
     isDecomposing,
     handleDecomposeToChain,
     handleCancelAiOperation,
+    conflictState,
+    handleResolveConflict,
+    handleDismissConflict,
   };
 }

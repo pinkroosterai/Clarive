@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { ConflictResolutionDialog } from '@/components/editor/ConflictResolutionDialog';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
 import { EditorAiOverlay } from '@/components/editor/EditorAiOverlay';
 import { PromptEditor } from '@/components/editor/PromptEditor';
@@ -523,6 +524,17 @@ const EntryEditorPage = () => {
         onOpenChange={setDiffOpen}
       />
       <ShareDialog entryId={entryId!} open={shareDialogOpen} onOpenChange={setShareDialogOpen} />
+      {mutations.conflictState && (
+        <ConflictResolutionDialog
+          open={!!mutations.conflictState}
+          onOpenChange={(open) => {
+            if (!open) mutations.handleDismissConflict();
+          }}
+          localEntry={mutations.conflictState.localEntry}
+          serverEntry={mutations.conflictState.serverEntry}
+          onResolve={mutations.handleResolveConflict}
+        />
+      )}
     </>
   );
 

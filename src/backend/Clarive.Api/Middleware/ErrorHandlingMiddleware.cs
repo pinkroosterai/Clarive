@@ -1,5 +1,8 @@
-using Clarive.AI.Configuration;
+using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Clarive.AI.Configuration;
+using Clarive.Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Api.Middleware;
@@ -55,15 +58,53 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
         }
     }
 
+    private static readonly Regex EntryPathPattern = new(
+        @"^/api/entries/([0-9a-fA-F\-]{36})$",
+        RegexOptions.Compiled);
+
     private static async Task HandleConcurrencyAsync(HttpContext context)
     {
         context.Response.StatusCode = StatusCodes.Status409Conflict;
         context.Response.ContentType = "application/json";
 
+        // For entry conflicts, include the server's current state so the frontend can diff
+        object? details = null;
+        var match = EntryPathPattern.Match(context.Request.Path.Value ?? "");
+        if (match.Success
+            && Guid.TryParse(match.Groups[1].Value, out var entryId)
+            && Guid.TryParse(context.User?.FindFirstValue("tenantId"), out var tenantId))
+        {
+            try
+            {
+                var entryRepo = context.RequestServices.GetRequiredService<IEntryRepository>();
+                var entry = await entryRepo.GetByIdAsync(tenantId, entryId);
+                var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId);
+
+                if (entry != null && version != null)
+                {
+                    details = new
+                    {
+                        title = entry.Title,
+                        systemMessage = version.SystemMessage,
+                        prompts = version.Prompts
+                            .OrderBy(p => p.Order)
+                            .Select(p => new { id = p.Id.ToString(), content = p.Content, order = p.Order }),
+                        version = version.Version,
+                        versionState = version.VersionState.ToString().ToLower(),
+                    };
+                }
+            }
+            catch
+            {
+                // Best-effort — if fetching fails, return 409 without details
+            }
+        }
+
         var response = new ErrorResponse(
             new ErrorDetail(
                 "CONCURRENCY_CONFLICT",
-                "The resource was modified by another request. Please reload and try again."
+                "The resource was modified by another request. Please reload and try again.",
+                details
             )
         );
 
