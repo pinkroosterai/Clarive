@@ -34,6 +34,7 @@ using Microsoft.OpenApi;
 using Npgsql;
 using Resend;
 using Serilog;
+using StackExchange.Redis;
 
 // ── Serilog Bootstrap (catches startup errors) ──
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
@@ -227,6 +228,19 @@ try
 
     // ── AI (agents, orchestration) ──
     builder.Services.AddClariveAI(builder.Configuration);
+
+    // ── SignalR (real-time presence) ──
+    var valkeyConnectionString = builder.Configuration.GetConnectionString("Valkey") ?? "localhost:6379";
+    builder.Services
+        .AddSignalR(options =>
+        {
+            options.KeepAliveInterval = TimeSpan.FromSeconds(30);
+            options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+        })
+        .AddStackExchangeRedis(valkeyConnectionString, options =>
+        {
+            options.Configuration.ChannelPrefix = RedisChannel.Literal("clarive:signalr:");
+        });
 
     // ── Rate Limiting ──
     builder.Services.AddRateLimiter(options =>
@@ -426,6 +440,7 @@ try
         .ExcludeFromDescription();
 
     // ── Endpoints ──
+    app.MapClariveHubs();
     app.MapClariveEndpoints();
 
     app.MapGet(

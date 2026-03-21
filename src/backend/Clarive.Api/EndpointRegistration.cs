@@ -1,9 +1,16 @@
 using Clarive.Api.Endpoints;
+using Clarive.Api.Hubs;
 
 namespace Clarive.Api;
 
 public static class EndpointRegistration
 {
+    public static WebApplication MapClariveHubs(this WebApplication app)
+    {
+        app.MapHub<PresenceHub>("/api/hubs/presence").RequireAuthorization();
+        return app;
+    }
+
     public static WebApplication MapClariveEndpoints(this WebApplication app)
     {
         app.MapAuthEndpoints();

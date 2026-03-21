@@ -4,11 +4,12 @@ import { useState } from 'react';
 
 import { ActionsTabContent } from '@/components/editor/ActionsTabContent';
 import { DetailsTabContent } from '@/components/editor/DetailsTabContent';
+import { PresenceIndicators } from '@/components/editor/PresenceIndicators';
 import { QualityTabContent } from '@/components/editor/QualityTabContent';
 import { VersionsTabContent } from '@/components/editor/VersionsTabContent';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Evaluation, PromptEntry, VersionInfo } from '@/types';
+import type { Evaluation, PresenceUser, PromptEntry, VersionInfo } from '@/types';
 
 export interface EditorActionPanelProps {
   entry: PromptEntry;
@@ -43,6 +44,7 @@ export interface EditorActionPanelProps {
   localEvaluation?: Evaluation | null;
   isEvaluating?: boolean;
   onEvaluate?: () => void;
+  presenceUsers?: PresenceUser[];
 }
 
 export function EditorActionPanel({
@@ -78,6 +80,7 @@ export function EditorActionPanel({
   localEvaluation,
   isEvaluating,
   onEvaluate,
+  presenceUsers,
 }: EditorActionPanelProps) {
   const [activeTab, setActiveTab] = useState('actions');
 
@@ -91,6 +94,12 @@ export function EditorActionPanel({
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className="h-full flex flex-col"
     >
+      {presenceUsers && presenceUsers.length > 0 && (
+        <div className="flex items-center gap-2 pb-3 mb-1 border-b border-border-subtle">
+          <span className="text-xs text-muted-foreground">Online:</span>
+          <PresenceIndicators users={presenceUsers} />
+        </div>
+      )}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
         <TabsList className="w-full shrink-0">
           <TabsTrigger value="actions" className="flex-1 gap-1.5 text-xs">

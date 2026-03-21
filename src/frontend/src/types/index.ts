@@ -270,3 +270,10 @@ export interface RecentActivity {
   details: string | null;
   timestamp: string;
 }
+
+export interface PresenceUser {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  state: 'viewing' | 'editing';
+}

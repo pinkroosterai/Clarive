@@ -5,6 +5,7 @@ using Clarive.Infrastructure.Cache;
 using Clarive.Infrastructure.Data;
 using Clarive.Infrastructure.Email;
 using Clarive.Infrastructure.Repositories;
+using Clarive.Infrastructure.Presence;
 using Clarive.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -88,6 +89,9 @@ public static class DependencyInjection
         services.AddScoped<IServiceConfigRepository, EfServiceConfigRepository>();
         services.AddScoped<IAiUsageLogRepository, EfAiUsageLogRepository>();
         services.AddScoped<IShareLinkRepository, EfShareLinkRepository>();
+
+        // ── Presence (ephemeral, in-memory) ──
+        services.AddSingleton<Clarive.Domain.Interfaces.Services.IPresenceTracker, InMemoryPresenceTracker>();
 
         // ── Security ──
         services.AddSingleton<PasswordHasher>();

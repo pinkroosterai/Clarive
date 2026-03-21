@@ -35,6 +35,7 @@ import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { useEditorKeyboardShortcuts } from '@/hooks/useEditorKeyboardShortcuts';
 import { useEditorMutations } from '@/hooks/useEditorMutations';
 import { useEditorState } from '@/hooks/useEditorState';
+import { usePresence } from '@/hooks/usePresence';
 import { findFolderName } from '@/lib/folderUtils';
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, folderService, wizardService } from '@/services';
@@ -96,6 +97,9 @@ const EntryEditorPage = () => {
     },
     handleChange: editor.handleChange,
   });
+
+  // ── Real-time presence ──
+  const { presenceUsers } = usePresence(entryId, editor.isDirty);
 
   const hasDraft = versions.some((v) => v.versionState === 'draft');
   const draftVersion = versions.find((v) => v.versionState === 'draft')?.version;
@@ -471,6 +475,7 @@ const EntryEditorPage = () => {
     localEvaluation: pendingEvaluation,
     isEvaluating,
     onEvaluate: handleEvaluate,
+    presenceUsers,
   } as const;
 
   const isAiRunning =
