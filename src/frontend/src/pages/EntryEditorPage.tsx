@@ -34,6 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
+import { useDuplicateEntry } from '@/hooks/useDuplicateEntry';
 import { useEditorKeyboardShortcuts } from '@/hooks/useEditorKeyboardShortcuts';
 import { useEditorMutations } from '@/hooks/useEditorMutations';
 import { useEditorState } from '@/hooks/useEditorState';
@@ -102,6 +103,13 @@ const EntryEditorPage = () => {
 
   // ── Real-time presence & soft lock ──
   const { presenceUsers, activeEditor, onEditorJoinedRef } = usePresence(entryId, editor.isDirty);
+  const {
+    startDuplicate,
+    confirmDuplicate,
+    cancelDuplicate,
+    folderPickerState: dupFolderPickerState,
+    isDuplicating,
+  } = useDuplicateEntry();
   const isSoftLocked = !!activeEditor && !softLockOverride;
   const isReadOnly = !!version || currentUser?.role === 'viewer' || isSoftLocked;
 
@@ -496,6 +504,8 @@ const EntryEditorPage = () => {
     isEvaluating,
     onEvaluate: handleEvaluate,
     presenceUsers,
+    onDuplicate: !isReadOnly ? () => startDuplicate(localEntry) : undefined,
+    isDuplicating,
   } as const;
 
   const isAiRunning =
@@ -524,6 +534,13 @@ const EntryEditorPage = () => {
         onOpenChange={setDiffOpen}
       />
       <ShareDialog entryId={entryId!} open={shareDialogOpen} onOpenChange={setShareDialogOpen} />
+      <FolderPickerDialog
+        open={dupFolderPickerState.open}
+        onOpenChange={(open) => {
+          if (!open) cancelDuplicate();
+        }}
+        onSelect={confirmDuplicate}
+      />
       {mutations.conflictState && (
         <ConflictResolutionDialog
           open={!!mutations.conflictState}

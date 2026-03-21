@@ -84,6 +84,7 @@ export async function createEntry(
     folderId: data.folderId ?? null,
     prompts: (data.prompts ?? [{ content: '' }]).map((p) => ({
       content: p.content,
+      isTemplate: ('isTemplate' in p && p.isTemplate) || false,
     })),
   };
   return api.post<PromptEntry>('/api/entries', body);
@@ -155,4 +156,8 @@ export async function getTrashedEntries(
     page: res.page,
     pageSize: res.pageSize,
   };
+}
+
+export async function addTags(entryId: string, tags: string[]): Promise<string[]> {
+  return api.post<string[]>(`/api/entries/${entryId}/tags`, { tags });
 }

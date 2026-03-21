@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { HelpLink } from '@/components/common/HelpLink';
 import { EntryCard } from '@/components/library/EntryCard';
 import { FolderBreadcrumb } from '@/components/library/FolderBreadcrumb';
+import { FolderPickerDialog } from '@/components/library/FolderPickerDialog';
 import { TagFilter } from '@/components/library/TagFilter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useDuplicateEntry } from '@/hooks/useDuplicateEntry';
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, folderService } from '@/services';
 import * as favoriteService from '@/services/api/favoriteService';
@@ -147,23 +149,8 @@ export default function LibraryPage() {
     onError: (err: unknown) => handleApiError(err),
   });
 
-  const duplicateMutation = useMutation({
-    mutationFn: async (source: PromptEntry) => {
-      // List view entries don't include full prompt data — fetch the complete entry first
-      const full = await entryService.getEntry(source.id);
-      return entryService.createEntry({
-        title: `${full.title} (copy)`,
-        systemMessage: full.systemMessage,
-        prompts: full.prompts,
-        folderId: full.folderId,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      toast.success('Entry duplicated');
-    },
-    onError: (err: unknown) => handleApiError(err),
-  });
+  const { startDuplicate, confirmDuplicate, cancelDuplicate, folderPickerState, isDuplicating } =
+    useDuplicateEntry();
 
   const favoriteMutation = useMutation({
     mutationFn: ({ id, isFavorited }: { id: string; isFavorited: boolean }) =>
@@ -175,8 +162,8 @@ export default function LibraryPage() {
   });
 
   const handleDuplicate = useCallback(
-    (e: PromptEntry) => duplicateMutation.mutate(e),
-    [duplicateMutation]
+    (e: PromptEntry) => startDuplicate(e),
+    [startDuplicate]
   );
 
   const handleTrash = useCallback((id: string) => trashMutation.mutate(id), [trashMutation]);
@@ -411,6 +398,14 @@ export default function LibraryPage() {
           </div>
         </motion.div>
       )}
+
+      <FolderPickerDialog
+        open={folderPickerState.open}
+        onOpenChange={(open) => {
+          if (!open) cancelDuplicate();
+        }}
+        onSelect={confirmDuplicate}
+      />
     </div>
   );
 }

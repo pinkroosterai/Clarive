@@ -45,6 +45,8 @@ export interface EditorActionPanelProps {
   isEvaluating?: boolean;
   onEvaluate?: () => void;
   presenceUsers?: PresenceUser[];
+  onDuplicate?: () => void;
+  isDuplicating?: boolean;
 }
 
 export function EditorActionPanel({
@@ -81,6 +83,8 @@ export function EditorActionPanel({
   isEvaluating,
   onEvaluate,
   presenceUsers,
+  onDuplicate,
+  isDuplicating,
 }: EditorActionPanelProps) {
   const [activeTab, setActiveTab] = useState('actions');
 
@@ -168,6 +172,8 @@ export function EditorActionPanel({
                 onShare={onShare}
                 hasShareLink={hasShareLink}
                 hasEmptyTitle={hasEmptyTitle}
+                onDuplicate={onDuplicate}
+                isDuplicating={isDuplicating}
               />
             </div>
           </ScrollArea>

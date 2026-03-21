@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  Copy,
   Save,
   Upload,
   Sparkles,
@@ -72,6 +73,8 @@ export interface ActionsTabContentProps {
   onShare?: () => void;
   hasShareLink?: boolean;
   hasEmptyTitle?: boolean;
+  onDuplicate?: () => void;
+  isDuplicating?: boolean;
 }
 
 export function ActionsTabContent({
@@ -101,6 +104,8 @@ export function ActionsTabContent({
   onShare,
   hasShareLink,
   hasEmptyTitle,
+  onDuplicate,
+  isDuplicating,
 }: ActionsTabContentProps) {
   const aiEnabled = useAiEnabled();
   const hasDraft = versions.some((v) => v.versionState === 'draft');
@@ -345,6 +350,28 @@ export function ActionsTabContent({
               <Share2 className="size-4" />
               {hasShareLink ? 'Manage Share Link' : 'Share Link'}
             </Button>
+          </ActionGroup>
+        </>
+      )}
+
+      {onDuplicate && (
+        <>
+          <Separator />
+          <ActionGroup label="More">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 hover:border-primary/30 transition-all"
+                  onClick={onDuplicate}
+                  disabled={isDuplicating}
+                >
+                  <Copy className="size-4" />
+                  {isDuplicating ? 'Duplicating…' : 'Duplicate'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Create a copy of this entry</TooltipContent>
+            </Tooltip>
           </ActionGroup>
         </>
       )}
