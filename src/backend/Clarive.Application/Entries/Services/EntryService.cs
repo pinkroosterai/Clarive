@@ -8,6 +8,7 @@ using Clarive.Domain.Enums;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
 using ErrorOr;
+using Microsoft.Extensions.Logging;
 
 namespace Clarive.Application.Entries.Services;
 
@@ -19,7 +20,8 @@ public partial class EntryService(
     IUserRepository userRepo,
     IAuditLogRepository auditRepo,
     TenantCacheService cache,
-    ClariveDbContext db
+    ClariveDbContext db,
+    ILogger<EntryService> logger
 ) : IEntryService
 {
     private const int MaxPromptContentLength = 100_000;
@@ -76,6 +78,7 @@ public partial class EntryService(
 
                 await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
+                logger.LogInformation("Entry created: {EntryId} '{Title}' in tenant {TenantId}", entry.Id, entry.Title, tenantId);
                 return ((PromptEntry Entry, PromptEntryVersion Version))(entry, version);
             },
             ct
@@ -367,6 +370,7 @@ public partial class EntryService(
 
                 await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
+                logger.LogInformation("Entry trashed: {EntryId} in tenant {TenantId}", entryId, tenantId);
                 return entry;
             },
             ct
@@ -395,6 +399,7 @@ public partial class EntryService(
 
                 await TenantCacheKeys.EvictEntryData(cache, tenantId);
 
+                logger.LogInformation("Entry restored: {EntryId} in tenant {TenantId}", entryId, tenantId);
                 return entry;
             },
             ct
@@ -428,6 +433,7 @@ public partial class EntryService(
         await TenantCacheKeys.EvictEntryData(cache, tenantId);
         await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
 
+        logger.LogWarning("Entry permanently deleted: {EntryId} in tenant {TenantId}", entryId, tenantId);
         return entry;
     }
 

@@ -4,6 +4,7 @@ using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
 using ErrorOr;
+using Microsoft.Extensions.Logging;
 
 namespace Clarive.Application.Users.Services;
 
@@ -11,7 +12,8 @@ public class UserManagementService(
     IUserRepository userRepo,
     ITenantMembershipRepository membershipRepo,
     IInvitationRepository invitationRepo,
-    ClariveDbContext db
+    ClariveDbContext db,
+    ILogger<UserManagementService> logger
 ) : IUserManagementService
 {
     public async Task<MemberListResult> ListMembersAsync(
@@ -88,6 +90,7 @@ public class UserManagementService(
             await userRepo.UpdateAsync(user, ct);
         }
 
+        logger.LogInformation("Role changed for user {UserId} in tenant {TenantId}: {OldRole} → {NewRole}", targetUserId, tenantId, oldRole, newRole.ToString().ToLower());
         return new ChangeRoleResult(user, newRole.ToString().ToLower(), oldRole);
     }
 
@@ -137,6 +140,7 @@ public class UserManagementService(
             await userRepo.DeleteAsync(tenantId, targetUserId, ct);
         }
 
+        logger.LogWarning("Member {UserId} removed from tenant {TenantId}", targetUserId, tenantId);
         return user;
     }
 
@@ -183,6 +187,7 @@ public class UserManagementService(
             ct
         );
 
+        logger.LogWarning("Ownership transferred in tenant {TenantId}: {FromUserId} → {ToUserId}", tenantId, currentUserId, targetUserId);
         return new TransferOwnershipResult(currentUser, targetUser);
     }
 }

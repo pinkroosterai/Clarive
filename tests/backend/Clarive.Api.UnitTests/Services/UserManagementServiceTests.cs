@@ -5,6 +5,7 @@ using Clarive.Domain.Interfaces.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
@@ -37,7 +38,7 @@ public class UserManagementServiceTests : IDisposable
             .UpdateAsync(Arg.Any<TenantMembership>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _sut = new UserManagementService(_userRepo, _membershipRepo, _invitationRepo, _db);
+        _sut = new UserManagementService(_userRepo, _membershipRepo, _invitationRepo, _db, Substitute.For<ILogger<UserManagementService>>());
     }
 
     public void Dispose()

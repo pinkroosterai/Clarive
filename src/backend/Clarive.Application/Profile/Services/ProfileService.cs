@@ -4,10 +4,11 @@ using Clarive.Domain.Entities;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
 using ErrorOr;
+using Microsoft.Extensions.Logging;
 
 namespace Clarive.Application.Profile.Services;
 
-public class ProfileService(IUserRepository userRepo, PasswordHasher passwordHasher)
+public class ProfileService(IUserRepository userRepo, PasswordHasher passwordHasher, ILogger<ProfileService> logger)
     : IProfileService
 {
     private static readonly HashSet<string> ValidThemePreferences = ["light", "dark", "system"];
@@ -97,6 +98,7 @@ public class ProfileService(IUserRepository userRepo, PasswordHasher passwordHas
         }
 
         await userRepo.UpdateAsync(user, ct);
+        logger.LogInformation("Profile updated for user {UserId}", userId);
         return user;
     }
 

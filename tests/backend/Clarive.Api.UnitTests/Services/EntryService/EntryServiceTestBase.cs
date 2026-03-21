@@ -46,7 +46,8 @@ public abstract class EntryServiceTestBase : IDisposable
             UserRepo,
             AuditRepo,
             Cache,
-            Db
+            Db,
+            Substitute.For<ILogger<Application.Entries.Services.EntryService>>()
         );
 
         // Default: CreateAsync / CreateVersionAsync return whatever is passed in

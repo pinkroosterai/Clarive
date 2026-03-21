@@ -3,6 +3,7 @@ using Clarive.Domain.Entities;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
@@ -22,7 +23,7 @@ public class ProfileServiceTests
             .UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<User>());
 
-        _sut = new ProfileService(_userRepo, _passwordHasher);
+        _sut = new ProfileService(_userRepo, _passwordHasher, Substitute.For<ILogger<ProfileService>>());
     }
 
     private User MakeUser(bool withPassword = true) =>

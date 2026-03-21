@@ -5,6 +5,7 @@ using Clarive.Domain.Enums;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
 using YamlDotNet.Serialization;
+using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace Clarive.Application.ImportExport.Services;
@@ -14,7 +15,8 @@ public class ImportExportService(
     IFolderRepository folderRepo,
     ITagRepository tagRepo,
     ClariveDbContext db,
-    TenantCacheService cache
+    TenantCacheService cache,
+    ILogger<ImportExportService> logger
 ) : IImportExportService
 {
     private const int MaxFolderDepth = 20;
@@ -44,6 +46,7 @@ public class ImportExportService(
         var bytes = System.Text.Encoding.UTF8.GetBytes(yaml);
         var fileName = $"clarive-export-{DateTime.UtcNow:yyyy-MM-dd}.yaml";
 
+        logger.LogInformation("Exported {EntryCount} entries for tenant {TenantId}", exportEntries.Count, tenantId);
         return new ExportFileResult(bytes, "application/x-yaml", fileName);
     }
 
@@ -131,6 +134,7 @@ public class ImportExportService(
         await TenantCacheKeys.EvictTagData(cache, tenantId);
         await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
 
+        logger.LogInformation("Imported {EntryCount} entries for tenant {TenantId}", createdEntries.Count, tenantId);
         return new ImportResponse(createdEntries.Count, createdEntries);
     }
 
