@@ -60,6 +60,11 @@ export interface EvaluationEntry {
   feedback: string;
 }
 
+export interface TestRunPromptResponse {
+  promptIndex: number;
+  content: string;
+}
+
 export interface TestEntryParams {
   model?: string;
   temperature?: number;

@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { scoreColor } from '@/components/wizard/scoreUtils';
 import type {
   TestRunResponse,
-  TestRunPromptResponse,
+  ConversationMessage,
   EnrichedModel,
 } from '@/services/api/playgroundService';
 
@@ -196,23 +196,25 @@ export default function PlaygroundHistorySidebar({
 
                     {expandedRunId === run.id && (
                       <div className="mt-2 space-y-2">
-                        {run.responses.map((r: TestRunPromptResponse) => (
-                          <div key={r.promptIndex} className="relative group">
-                            <div className="bg-elevated rounded-md p-2 border border-border-subtle max-h-40 overflow-y-auto scrollbar-themed text-xs">
-                              <LLMResponseBlock output={r.content} isStreaming={false} />
+                        {run.conversationLog
+                          .filter((m: ConversationMessage) => m.role === 'assistant')
+                          .map((msg: ConversationMessage, i: number) => (
+                            <div key={i} className="relative group">
+                              <div className="bg-elevated rounded-md p-2 border border-border-subtle max-h-40 overflow-y-auto scrollbar-themed text-xs">
+                                <LLMResponseBlock output={msg.content} isStreaming={false} />
+                              </div>
+                              <button
+                                onClick={() => handleCopy(msg.content, 1000 + i)}
+                                className="absolute top-1 right-1 p-1 rounded bg-elevated/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                {copiedIndex === 1000 + i ? (
+                                  <Check className="size-3 text-success-text" />
+                                ) : (
+                                  <Copy className="size-3 text-foreground-muted" />
+                                )}
+                              </button>
                             </div>
-                            <button
-                              onClick={() => handleCopy(r.content, 1000 + r.promptIndex)}
-                              className="absolute top-1 right-1 p-1 rounded bg-elevated/80 border border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              {copiedIndex === 1000 + r.promptIndex ? (
-                                <Check className="size-3 text-success-text" />
-                              ) : (
-                                <Copy className="size-3 text-foreground-muted" />
-                              )}
-                            </button>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     )}
                   </div>
