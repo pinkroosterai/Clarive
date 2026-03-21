@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -7,11 +7,7 @@ import PlaygroundHistorySidebar from '@/components/playground/PlaygroundHistoryS
 import PlaygroundResultsArea from '@/components/playground/PlaygroundResultsArea';
 import PlaygroundToolbar from '@/components/playground/PlaygroundToolbar';
 import QueueStrip from '@/components/playground/QueueStrip';
-import {
-  addPinToList,
-  removePinFromList,
-  type QueuedModel,
-} from '@/components/playground/utils';
+import { type QueuedModel } from '@/components/playground/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,11 +22,12 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { usePlaygroundBatchOrchestration } from '@/hooks/usePlaygroundBatchOrchestration';
+import { usePlaygroundComparison } from '@/hooks/usePlaygroundComparison';
 import { usePlaygroundKeyboardShortcuts } from '@/hooks/usePlaygroundKeyboardShortcuts';
+import { usePlaygroundModelSelection } from '@/hooks/usePlaygroundModelSelection';
 import { usePlaygroundQueueManager } from '@/hooks/usePlaygroundQueueManager';
 import { usePlaygroundStreaming } from '@/hooks/usePlaygroundStreaming';
 import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
-import { PLAYGROUND_DEFAULTS } from '@/lib/constants';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { entryService } from '@/services';
 import {
@@ -76,20 +73,29 @@ const PlaygroundPage = () => {
   const prompts = useMemo(() => entry?.prompts ?? [], [entry]);
   const isChain = prompts.length > 1;
 
-  // ── Model & params ──
-  const [selectedModel, setSelectedModel] = useState<EnrichedModel | null>(null);
-  const [temperature, setTemperature] = useState(PLAYGROUND_DEFAULTS.TEMPERATURE);
-  const [maxTokens, setMaxTokens] = useState(PLAYGROUND_DEFAULTS.MAX_TOKENS);
-  const [reasoningEffort, setReasoningEffort] = useState(PLAYGROUND_DEFAULTS.REASONING_EFFORT);
-  const [showReasoning, setShowReasoning] = useState(true);
+  // ── Models query (needed by model selection hook) ──
+  const { data: enrichedModels = [], isError: modelsError } = useQuery({
+    queryKey: ['playground', 'enriched-models'],
+    queryFn: getEnrichedModels,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
-  const applyModelParameters = useCallback((item: QueuedModel) => {
-    setSelectedModel(item.model);
-    setTemperature(item.temperature);
-    setMaxTokens(item.maxTokens);
-    setReasoningEffort(item.reasoningEffort);
-    setShowReasoning(item.showReasoning);
-  }, []);
+  // ── Model & params (extracted hook) ──
+  const {
+    selectedModel,
+    setSelectedModel,
+    temperature,
+    setTemperature,
+    maxTokens,
+    setMaxTokens,
+    reasoningEffort,
+    setReasoningEffort,
+    showReasoning,
+    setShowReasoning,
+    applyModelParameters,
+    handleModelChange,
+  } = usePlaygroundModelSelection(enrichedModels);
 
   // ── Template fields (extracted hook) ──
   const templateFields = useMemo(() => {
@@ -151,37 +157,21 @@ const PlaygroundPage = () => {
   const [expandedStepInputs, setExpandedStepInputs] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  // ── History + comparison ──
-  const [showHistory, setShowHistory] = useState(() => window.matchMedia('(min-width: 768px)').matches);
-  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  const [pinnedRuns, setPinnedRuns] = useState<TestRunResponse[]>([]);
-
-  const addPin = useCallback((run: TestRunResponse) => {
-    setPinnedRuns((prev) => addPinToList(prev, run));
-  }, []);
-
-  const removePin = useCallback((runId: string) => {
-    setPinnedRuns((prev) => removePinFromList(prev, runId));
-  }, []);
-
-  const togglePin = useCallback((run: TestRunResponse) => {
-    setPinnedRuns((prev) =>
-      prev.some((r) => r.id === run.id) ? removePinFromList(prev, run.id) : addPinToList(prev, run)
-    );
-  }, []);
-  const clearAllPins = useCallback(() => setPinnedRuns([]), []);
-  const [activeCarouselIndex, setActiveCarouselIndex] = useState(-1);
+  // ── History + comparison (extracted hook) ──
+  const {
+    showHistory,
+    setShowHistory,
+    expandedRunId,
+    setExpandedRunId,
+    pinnedRuns,
+    activeCarouselIndex,
+    setActiveCarouselIndex,
+    addPin,
+    removePin,
+    togglePin,
+    clearAllPins,
+  } = usePlaygroundComparison();
   const [isFillingTemplateFields, setIsFillingTemplateFields] = useState(false);
-
-  // Reset carousel index when pins change + notify when all cleared
-  const prevPinCountRef = useRef(0);
-  useEffect(() => {
-    setActiveCarouselIndex(-1);
-    if (prevPinCountRef.current > 0 && pinnedRuns.length === 0) {
-      toast.info('Comparison cleared');
-    }
-    prevPinCountRef.current = pinnedRuns.length;
-  }, [pinnedRuns.length]);
 
   // ── Queue manager (extracted hook) ──
   const {
@@ -227,29 +217,12 @@ const PlaygroundPage = () => {
   }, [batchRunQueue, queuedModels, setQueuedModels]);
 
   // ── Queries ──
-  const { data: enrichedModels = [], isError: modelsError } = useQuery({
-    queryKey: ['playground', 'enriched-models'],
-    queryFn: getEnrichedModels,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
-  });
-
   const { data: testRuns = [] } = useQuery({
     queryKey: ['playground', 'runs', entryId],
     queryFn: () => getTestRuns(entryId!),
     staleTime: 30 * 1000,
     enabled: !!entryId,
   });
-
-  useEffect(() => {
-    if (enrichedModels.length > 0 && !selectedModel) {
-      const first = enrichedModels[0];
-      setSelectedModel(first);
-      setTemperature(first.defaultTemperature ?? PLAYGROUND_DEFAULTS.TEMPERATURE);
-      setMaxTokens(first.defaultMaxTokens ?? PLAYGROUND_DEFAULTS.MAX_TOKENS);
-      setReasoningEffort(first.defaultReasoningEffort ?? PLAYGROUND_DEFAULTS.REASONING_EFFORT);
-    }
-  }, [enrichedModels, selectedModel]);
 
   // ── Handlers ──
   const handleCopy = useCallback(async (text: string, index: number) => {
@@ -386,12 +359,7 @@ const PlaygroundPage = () => {
         hasValidationErrors={hasValidationErrors}
         handleRun={handleRun}
         handleAbort={isBatchRunning ? handleBatchAbort : handleAbort}
-        onModelChange={(found) => {
-          setSelectedModel(found);
-          setTemperature(found.defaultTemperature ?? PLAYGROUND_DEFAULTS.TEMPERATURE);
-          setMaxTokens(found.defaultMaxTokens ?? PLAYGROUND_DEFAULTS.MAX_TOKENS);
-          setReasoningEffort(found.defaultReasoningEffort ?? PLAYGROUND_DEFAULTS.REASONING_EFFORT);
-        }}
+        onModelChange={handleModelChange}
         onEnqueue={handleEnqueue}
         queueLength={queuedModels.length}
         isBatchRunning={isBatchRunning}
