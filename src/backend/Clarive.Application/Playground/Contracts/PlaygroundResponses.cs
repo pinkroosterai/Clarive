@@ -1,7 +1,7 @@
 using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 
-namespace Clarive.Application.AiGeneration.Contracts;
+namespace Clarive.Application.Playground.Contracts;
 
 public record TestRunResponse(
     Guid Id,
