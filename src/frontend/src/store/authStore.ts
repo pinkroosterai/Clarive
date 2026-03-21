@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>((rawSet, get) => {
       getSystemStatus()
         .then((status) => {
           if (status.maintenance) set({ maintenanceMode: true });
-          if (status.aiConfigured === false) set({ aiConfigured: false });
+          set({ aiConfigured: status.aiConfigured ?? true });
           set({ webSearchAvailable: status.webSearchAvailable ?? false });
         })
         .catch(() => {
@@ -115,7 +115,7 @@ export const useAuthStore = create<AuthState>((rawSet, get) => {
         try {
           const status = await getSystemStatus();
           if (status.maintenance) set({ maintenanceMode: true });
-          if (status.aiConfigured === false) set({ aiConfigured: false });
+          set({ aiConfigured: status.aiConfigured ?? true });
           set({ webSearchAvailable: status.webSearchAvailable ?? false });
         } catch {
           // Ignore — maintenance status is non-critical
