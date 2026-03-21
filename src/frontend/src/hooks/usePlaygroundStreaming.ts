@@ -2,6 +2,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 
+import { usePlaygroundAutoScroll } from './usePlaygroundAutoScroll';
+
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import {
   testEntry,
@@ -33,10 +35,10 @@ function estimateTokens(charCount: number): number {
 // ── Hook interface ──
 
 export type StreamSegment =
-  | { type: 'reasoning'; text: string }
-  | { type: 'tool_call'; callId: string; toolName: string; arguments?: string | null }
-  | { type: 'tool_result'; callId: string; response?: string | null; error?: string | null; durationMs?: number | null }
-  | { type: 'response'; text: string };
+  | { type: 'reasoning'; text: string; promptIndex: number }
+  | { type: 'tool_call'; callId: string; toolName: string; arguments?: string | null; promptIndex: number }
+  | { type: 'tool_result'; callId: string; response?: string | null; error?: string | null; durationMs?: number | null; promptIndex: number }
+  | { type: 'response'; text: string; promptIndex: number };
 
 export interface UsePlaygroundStreamingOptions {
   entryId: string | undefined;
@@ -95,15 +97,15 @@ export function usePlaygroundStreaming({
 
   // ── Scroll refs ──
   const responseAreaRef = useRef<HTMLDivElement>(null);
-  const isAutoFollowRef = useRef(true);
-  const scrollRafRef = useRef<number | null>(null);
+
+  // ── Auto-follow scrolling (extracted hook) ──
+  const { resetAutoFollow } = usePlaygroundAutoScroll(isStreaming, segments);
 
   // ── Cleanup timers on unmount ──
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
-      if (scrollRafRef.current !== null) cancelAnimationFrame(scrollRafRef.current);
     };
   }, []);
 
@@ -114,39 +116,13 @@ export function usePlaygroundStreaming({
     }
   }, [isReasoning]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Auto-follow scrolling ──
-  // The playground page content scrolls within the document/window because the
-  // AppShell layout uses min-h-svh with no max constraint. We scroll the
-  // document itself rather than trying to find a constrained scroll container.
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!isStreaming) return;
-      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      isAutoFollowRef.current = isNearBottom;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isStreaming]);
-
-  useEffect(() => {
-    if (!isStreaming || !isAutoFollowRef.current) return;
-    if (scrollRafRef.current !== null) return;
-
-    scrollRafRef.current = requestAnimationFrame(() => {
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
-      scrollRafRef.current = null;
-    });
-  }, [segments, isStreaming]);
-
   // ── Derived values ──
   const hasResponses = useMemo(
     () => segments.some((s) => s.type === 'response' && s.text),
     [segments]
   );
   const responseCount = useMemo(
-    () => segments.filter((s) => s.type === 'response').length,
+    () => new Set(segments.filter((s) => s.type === 'response').map((s) => s.promptIndex)).size,
     [segments]
   );
 
@@ -159,7 +135,7 @@ export function usePlaygroundStreaming({
     setSegments([]);
     setError(null);
     setWasStopped(false);
-    isAutoFollowRef.current = true;
+    resetAutoFollow();
     setRateLimitCountdown(0);
     if (rateLimitTimerRef.current) {
       clearInterval(rateLimitTimerRef.current);
@@ -209,24 +185,26 @@ export function usePlaygroundStreaming({
             return;
           }
 
+          const pi = evt.promptIndex ?? 0;
+
           if (evt.type === 'reasoning' && evt.text) {
             setSegments((prev) => {
               const last = prev[prev.length - 1];
-              if (last?.type === 'reasoning') {
-                // Extend existing reasoning segment
+              if (last?.type === 'reasoning' && last.promptIndex === pi) {
+                // Extend existing reasoning segment for same prompt
                 return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
               }
-              return [...prev, { type: 'reasoning', text: evt.text! }];
+              return [...prev, { type: 'reasoning', text: evt.text!, promptIndex: pi }];
             });
           } else if (evt.type === 'text' && evt.text) {
             streamedTextLengthRef.current += evt.text.length;
             setSegments((prev) => {
               const last = prev[prev.length - 1];
-              if (last?.type === 'response') {
-                // Extend existing response segment
+              if (last?.type === 'response' && last.promptIndex === pi) {
+                // Extend existing response segment for same prompt
                 return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
               }
-              return [...prev, { type: 'response', text: evt.text! }];
+              return [...prev, { type: 'response', text: evt.text!, promptIndex: pi }];
             });
           } else if (evt.type === 'tool_start' && evt.callId) {
             setSegments((prev) => [
@@ -236,6 +214,7 @@ export function usePlaygroundStreaming({
                 callId: evt.callId!,
                 toolName: evt.toolName ?? 'Unknown',
                 arguments: evt.arguments,
+                promptIndex: pi,
               },
             ]);
           } else if (evt.type === 'tool_end' && evt.callId) {
@@ -247,6 +226,7 @@ export function usePlaygroundStreaming({
                 response: evt.result,
                 error: evt.error,
                 durationMs: evt.durationMs,
+                promptIndex: pi,
               },
             ]);
           }
