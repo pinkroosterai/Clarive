@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Clarive.Application.AiGeneration.Contracts;
+namespace Clarive.Application.Playground.Contracts;
 
 public record TestEntryRequest(
     [property: StringLength(100)] string? Model = null,
