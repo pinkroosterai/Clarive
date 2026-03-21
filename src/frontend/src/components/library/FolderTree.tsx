@@ -43,16 +43,16 @@ export function FolderTree() {
     });
   }, []);
 
+  const { data: folders = [] } = useQuery({
+    queryKey: ['folders'],
+    queryFn: folderService.getFoldersTree,
+  });
+
   const handleExpandAll = useCallback(
     () => setExpandedIds(collectAllFolderIds(folders)),
     [folders]
   );
   const handleCollapseAll = useCallback(() => setExpandedIds(new Set()), []);
-
-  const { data: folders = [] } = useQuery({
-    queryKey: ['folders'],
-    queryFn: folderService.getFoldersTree,
-  });
 
   const { data: entriesData } = useQuery({
     queryKey: ['entries', null, 1],
