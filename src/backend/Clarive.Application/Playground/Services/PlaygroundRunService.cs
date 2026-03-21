@@ -1,4 +1,3 @@
-using Clarive.AI.Models;
 using System.Text.Json;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Entities;

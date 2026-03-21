@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Clarive.AI.Models;
+namespace Clarive.Domain.ValueObjects;
 
 /// <summary>
 /// Evaluation result from the LLM-as-judge for playground run outputs.

@@ -1,4 +1,4 @@
-namespace Clarive.AI.Models;
+namespace Clarive.Domain.ValueObjects;
 
 public record ConversationMessage(
     string Role,

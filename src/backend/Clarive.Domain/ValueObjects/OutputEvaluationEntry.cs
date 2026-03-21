@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Clarive.AI.Models;
+namespace Clarive.Domain.ValueObjects;
 
 /// <summary>
 /// A single dimension's output evaluation score and feedback from the LLM judge.

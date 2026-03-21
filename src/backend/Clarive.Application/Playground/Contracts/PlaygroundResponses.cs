@@ -1,4 +1,3 @@
-using Clarive.AI.Models;
 using Clarive.Domain.ValueObjects;
 
 namespace Clarive.Application.Playground.Contracts;

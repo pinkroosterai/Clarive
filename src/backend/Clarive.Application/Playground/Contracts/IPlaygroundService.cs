@@ -1,4 +1,3 @@
-using Clarive.AI.Models;
 using Clarive.AI.Pipeline;
 using Clarive.Domain.ValueObjects;
 using ErrorOr;

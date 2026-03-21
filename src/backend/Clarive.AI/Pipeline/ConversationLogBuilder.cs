@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Clarive.AI.Models;
+using Clarive.Domain.ValueObjects;
 using Humanizer;
 using Microsoft.Extensions.AI;
 
