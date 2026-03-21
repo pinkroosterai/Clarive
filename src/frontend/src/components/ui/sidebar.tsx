@@ -14,9 +14,12 @@ import { cn } from '@/lib/utils';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar:state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = '16rem';
+const SIDEBAR_WIDTH_DEFAULT = '16rem';
 const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
+const SIDEBAR_WIDTH_KEY = 'cl_sidebar_width';
+const SIDEBAR_WIDTH_MIN = 192; // 12rem
+const SIDEBAR_WIDTH_MAX = 384; // 24rem
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
 type SidebarContext = {
@@ -27,6 +30,8 @@ type SidebarContext = {
   setOpenMobile: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
+  width: string;
+  setWidth: (width: string) => void;
 };
 
 const SidebarContext = React.createContext<SidebarContext | null>(null);
@@ -62,6 +67,13 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile();
     const [openMobile, setOpenMobile] = React.useState(false);
+    const [width, _setWidth] = React.useState(
+      () => localStorage.getItem(SIDEBAR_WIDTH_KEY) || SIDEBAR_WIDTH_DEFAULT
+    );
+    const setWidth = React.useCallback((w: string) => {
+      _setWidth(w);
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, w);
+    }, []);
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -113,8 +125,10 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile,
         toggleSidebar,
+        width,
+        setWidth,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, width, setWidth]
     );
 
     return (
@@ -123,7 +137,7 @@ const SidebarProvider = React.forwardRef<
           <div
             style={
               {
-                '--sidebar-width': SIDEBAR_WIDTH,
+                '--sidebar-width': width,
                 '--sidebar-width-icon': SIDEBAR_WIDTH_ICON,
                 ...style,
               } as React.CSSProperties
@@ -163,7 +177,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+    const { isMobile, state, openMobile, setOpenMobile, setWidth } = useSidebar();
 
     if (collapsible === 'none') {
       return (
@@ -240,6 +254,33 @@ const Sidebar = React.forwardRef<
           >
             {children}
           </div>
+          {/* Resize handle */}
+          {state === 'expanded' && (
+            <div
+              className="absolute top-0 bottom-0 right-0 w-1 cursor-col-resize bg-transparent hover:bg-primary/20 active:bg-primary/30 transition-colors z-20"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                const target = e.currentTarget;
+                target.setPointerCapture(e.pointerId);
+                const startX = e.clientX;
+                const startWidth = target.parentElement?.getBoundingClientRect().width ?? 256;
+
+                const onPointerMove = (ev: PointerEvent) => {
+                  const delta = side === 'left' ? ev.clientX - startX : startX - ev.clientX;
+                  const newWidth = Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, startWidth + delta));
+                  setWidth(`${newWidth}px`);
+                };
+
+                const onPointerUp = () => {
+                  target.removeEventListener('pointermove', onPointerMove);
+                  target.removeEventListener('pointerup', onPointerUp);
+                };
+
+                target.addEventListener('pointermove', onPointerMove);
+                target.addEventListener('pointerup', onPointerUp);
+              }}
+            />
+          )}
         </div>
       </div>
     );
