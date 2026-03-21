@@ -1,4 +1,8 @@
-import type { EnrichedModel } from '@/services/api/playgroundService';
+import type { RefObject } from 'react';
+
+import type { StreamSegment } from '@/hooks/usePlaygroundStreaming';
+import type { Evaluation, TestRunResponse, EnrichedModel } from '@/services/api/playgroundService';
+import type { TemplateField } from '@/types';
 
 // ── Grouped prop interfaces for PlaygroundToolbar ──
 
@@ -35,6 +39,45 @@ export interface PlaygroundToolState {
   setEnabledServerIds: (v: string[]) => void;
   excludedToolNames: string[];
   setExcludedToolNames: (v: string[]) => void;
+}
+
+// ── Grouped prop interfaces for PlaygroundResultsArea ──
+
+export interface PlaygroundStreamingState {
+  isStreaming: boolean;
+  firstTokenReceived: boolean;
+  segments: StreamSegment[];
+  error: string | null;
+  wasStopped: boolean;
+  rateLimitCountdown: number;
+  elapsedSeconds: number;
+  approxOutputTokens: number;
+  lastTokens: { input: number | null; output: number | null } | null;
+  hasResponses: boolean;
+  responseCount: number;
+  responseAreaRef: RefObject<HTMLDivElement | null>;
+}
+
+export interface PlaygroundComparisonState {
+  pinnedRuns: TestRunResponse[];
+  onUnpin: (runId: string) => void;
+  onClearAllPins: () => void;
+  activeCarouselIndex: number;
+  setActiveCarouselIndex: React.Dispatch<React.SetStateAction<number>>;
+  onClearCurrentRun?: () => void;
+}
+
+export interface PlaygroundTemplateState {
+  templateFields: TemplateField[];
+  fieldValues: Record<string, string>;
+  setFieldValues: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  onFillTemplateFields?: () => void;
+  isFillingTemplateFields?: boolean;
+}
+
+export interface PlaygroundJudgeState {
+  currentJudgeScores: Evaluation | null;
+  isJudging: boolean;
 }
 
 /** A queued model with a full snapshot of its parameters at enqueue time. */

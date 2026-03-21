@@ -12,6 +12,10 @@ import {
   type PlaygroundModelState,
   type PlaygroundRunState,
   type PlaygroundToolState,
+  type PlaygroundStreamingState,
+  type PlaygroundComparisonState,
+  type PlaygroundTemplateState,
+  type PlaygroundJudgeState,
 } from '@/components/playground/utils';
 import {
   AlertDialog,
@@ -179,19 +183,14 @@ const PlaygroundPage = () => {
   const [isFillingTemplateFields, setIsFillingTemplateFields] = useState(false);
 
   // ── Queue manager (extracted hook) ──
-  const {
-    queuedModels,
-    setQueuedModels,
-    handleEnqueue,
-    handleRemoveFromQueue,
-    handleClearQueue,
-  } = usePlaygroundQueueManager({
-    selectedModel,
-    temperature,
-    maxTokens,
-    reasoningEffort,
-    showReasoning,
-  });
+  const { queuedModels, setQueuedModels, handleEnqueue, handleRemoveFromQueue, handleClearQueue } =
+    usePlaygroundQueueManager({
+      selectedModel,
+      temperature,
+      maxTokens,
+      reasoningEffort,
+      showReasoning,
+    });
 
   // ── Batch orchestration (extracted hook) ──
   const {
@@ -304,35 +303,137 @@ const PlaygroundPage = () => {
   // ── Grouped prop objects for PlaygroundToolbar ──
   const modelState = useMemo<PlaygroundModelState>(
     () => ({
-      selectedModel, model, modelsByProvider, modelsError,
-      temperature, setTemperature, maxTokens, setMaxTokens,
-      reasoningEffort, setReasoningEffort, showReasoning, setShowReasoning,
+      selectedModel,
+      model,
+      modelsByProvider,
+      modelsError,
+      temperature,
+      setTemperature,
+      maxTokens,
+      setMaxTokens,
+      reasoningEffort,
+      setReasoningEffort,
+      showReasoning,
+      setShowReasoning,
       onModelChange: handleModelChange,
     }),
-    [selectedModel, model, modelsByProvider, modelsError,
-     temperature, setTemperature, maxTokens, setMaxTokens,
-     reasoningEffort, setReasoningEffort, showReasoning, setShowReasoning,
-     handleModelChange]
+    [
+      selectedModel,
+      model,
+      modelsByProvider,
+      modelsError,
+      temperature,
+      setTemperature,
+      maxTokens,
+      setMaxTokens,
+      reasoningEffort,
+      setReasoningEffort,
+      showReasoning,
+      setShowReasoning,
+      handleModelChange,
+    ]
   );
 
   const runState = useMemo<PlaygroundRunState>(
     () => ({
-      isStreaming, hasValidationErrors,
-      handleRun, handleAbort: isBatchRunning ? handleBatchAbort : handleAbort,
-      onEnqueue: handleEnqueue, queueLength: queuedModels.length,
-      isBatchRunning, batchCurrent, batchTotal,
+      isStreaming,
+      hasValidationErrors,
+      handleRun,
+      handleAbort: isBatchRunning ? handleBatchAbort : handleAbort,
+      onEnqueue: handleEnqueue,
+      queueLength: queuedModels.length,
+      isBatchRunning,
+      batchCurrent,
+      batchTotal,
     }),
-    [isStreaming, hasValidationErrors, handleRun, handleAbort,
-     isBatchRunning, handleBatchAbort, handleEnqueue, queuedModels.length,
-     batchCurrent, batchTotal]
+    [
+      isStreaming,
+      hasValidationErrors,
+      handleRun,
+      handleAbort,
+      isBatchRunning,
+      handleBatchAbort,
+      handleEnqueue,
+      queuedModels.length,
+      batchCurrent,
+      batchTotal,
+    ]
   );
 
   const toolState = useMemo<PlaygroundToolState>(
     () => ({
-      enabledServerIds, setEnabledServerIds,
-      excludedToolNames, setExcludedToolNames,
+      enabledServerIds,
+      setEnabledServerIds,
+      excludedToolNames,
+      setExcludedToolNames,
     }),
     [enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames]
+  );
+
+  const streamingState = useMemo<PlaygroundStreamingState>(
+    () => ({
+      isStreaming,
+      firstTokenReceived,
+      segments,
+      error,
+      wasStopped,
+      rateLimitCountdown,
+      elapsedSeconds,
+      approxOutputTokens,
+      lastTokens,
+      hasResponses,
+      responseCount,
+      responseAreaRef,
+    }),
+    [
+      isStreaming,
+      firstTokenReceived,
+      segments,
+      error,
+      wasStopped,
+      rateLimitCountdown,
+      elapsedSeconds,
+      approxOutputTokens,
+      lastTokens,
+      hasResponses,
+      responseCount,
+      responseAreaRef,
+    ]
+  );
+
+  const comparisonState = useMemo<PlaygroundComparisonState>(
+    () => ({
+      pinnedRuns,
+      onUnpin: removePin,
+      onClearAllPins: clearAllPins,
+      activeCarouselIndex,
+      setActiveCarouselIndex,
+      onClearCurrentRun: clearCurrentRun,
+    }),
+    [
+      pinnedRuns,
+      removePin,
+      clearAllPins,
+      activeCarouselIndex,
+      setActiveCarouselIndex,
+      clearCurrentRun,
+    ]
+  );
+
+  const templateState = useMemo<PlaygroundTemplateState>(
+    () => ({
+      templateFields,
+      fieldValues,
+      setFieldValues,
+      onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
+      isFillingTemplateFields,
+    }),
+    [templateFields, fieldValues, setFieldValues, handleFillTemplateFields, isFillingTemplateFields]
+  );
+
+  const judgeState = useMemo<PlaygroundJudgeState>(
+    () => ({ currentJudgeScores: lastJudgeScores, isJudging }),
+    [lastJudgeScores, isJudging]
   );
 
   if (!aiEnabled) return null;
@@ -407,37 +508,16 @@ const PlaygroundPage = () => {
         <PlaygroundResultsArea
           prompts={prompts}
           isChain={isChain}
-          isStreaming={isStreaming}
-          firstTokenReceived={firstTokenReceived}
-          segments={segments}
-          error={error}
-          wasStopped={wasStopped}
-          rateLimitCountdown={rateLimitCountdown}
-          elapsedSeconds={elapsedSeconds}
-          approxOutputTokens={approxOutputTokens}
-          lastTokens={lastTokens}
-          hasResponses={hasResponses}
-          responseCount={responseCount}
-          responseAreaRef={responseAreaRef}
-          templateFields={templateFields}
-          fieldValues={fieldValues}
-          setFieldValues={setFieldValues}
-          pinnedRuns={pinnedRuns}
-          onUnpin={removePin}
-          onClearAllPins={clearAllPins}
-          activeCarouselIndex={activeCarouselIndex}
-          setActiveCarouselIndex={setActiveCarouselIndex}
+          streaming={streamingState}
+          comparison={comparisonState}
+          template={templateState}
+          judge={judgeState}
           expandedStepInputs={expandedStepInputs}
           setExpandedStepInputs={setExpandedStepInputs}
           copiedIndex={copiedIndex}
           handleRun={handleRun}
           handleCopy={handleCopy}
-          currentJudgeScores={lastJudgeScores}
-          isJudging={isJudging}
           currentVersionLabel={lastVersionLabel}
-          onFillTemplateFields={templateFields.length > 0 ? handleFillTemplateFields : undefined}
-          isFillingTemplateFields={isFillingTemplateFields}
-          onClearCurrentRun={clearCurrentRun}
         />
 
         {/* ── History sidebar — overlay on small screens, inline on md+ ── */}
