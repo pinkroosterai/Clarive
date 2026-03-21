@@ -1,3 +1,4 @@
+using Clarive.Application.Entries.Services;
 using Clarive.Domain.Entities;
 using FluentAssertions;
 using NSubstitute;
@@ -6,6 +7,13 @@ namespace Clarive.Api.UnitTests.Services.EntryService;
 
 public class EntryFavoriteTests : EntryServiceTestBase
 {
+    private readonly EntryFavoriteService _favoriteService;
+
+    public EntryFavoriteTests()
+    {
+        _favoriteService = new EntryFavoriteService(EntryRepo, FavoriteRepo);
+    }
+
     [Fact]
     public async Task FavoriteEntryAsync_EntryNotFound_ReturnsNotFound()
     {
@@ -13,7 +21,7 @@ public class EntryFavoriteTests : EntryServiceTestBase
             .GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await Sut.FavoriteEntryAsync(
+        var result = await _favoriteService.FavoriteEntryAsync(
             TenantId,
             UserId,
             Guid.NewGuid(),
@@ -33,7 +41,7 @@ public class EntryFavoriteTests : EntryServiceTestBase
             .ExistsAsync(TenantId, UserId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(true);
 
-        var result = await Sut.FavoriteEntryAsync(
+        var result = await _favoriteService.FavoriteEntryAsync(
             TenantId,
             UserId,
             entry.Id,
@@ -55,7 +63,7 @@ public class EntryFavoriteTests : EntryServiceTestBase
             .ExistsAsync(TenantId, UserId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(false);
 
-        var result = await Sut.FavoriteEntryAsync(
+        var result = await _favoriteService.FavoriteEntryAsync(
             TenantId,
             UserId,
             entry.Id,
@@ -76,7 +84,7 @@ public class EntryFavoriteTests : EntryServiceTestBase
     [Fact]
     public async Task UnfavoriteEntryAsync_ReturnsSuccess()
     {
-        var result = await Sut.UnfavoriteEntryAsync(
+        var result = await _favoriteService.UnfavoriteEntryAsync(
             TenantId,
             UserId,
             Guid.NewGuid(),

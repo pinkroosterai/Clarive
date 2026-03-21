@@ -1,3 +1,4 @@
+using Clarive.Application.Entries.Services;
 using Clarive.Domain.Entities;
 using FluentAssertions;
 using NSubstitute;
@@ -6,6 +7,13 @@ namespace Clarive.Api.UnitTests.Services.EntryService;
 
 public class EntryTagTests : EntryServiceTestBase
 {
+    private readonly EntryTagService _tagService;
+
+    public EntryTagTests()
+    {
+        _tagService = new EntryTagService(EntryRepo, TagRepo, Cache);
+    }
+
     [Fact]
     public async Task AddEntryTagsAsync_EntryNotFound_ReturnsNotFound()
     {
@@ -13,7 +21,7 @@ public class EntryTagTests : EntryServiceTestBase
             .GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await Sut.AddEntryTagsAsync(
+        var result = await _tagService.AddEntryTagsAsync(
             TenantId,
             Guid.NewGuid(),
             ["tag1"],
@@ -30,7 +38,7 @@ public class EntryTagTests : EntryServiceTestBase
         var entry = MakeEntry();
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        var result = await Sut.AddEntryTagsAsync(TenantId, entry.Id, [], CancellationToken.None);
+        var result = await _tagService.AddEntryTagsAsync(TenantId, entry.Id, [], CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorOr.ErrorType.Validation);
@@ -43,7 +51,7 @@ public class EntryTagTests : EntryServiceTestBase
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
         var longTag = new string('a', 51);
-        var result = await Sut.AddEntryTagsAsync(
+        var result = await _tagService.AddEntryTagsAsync(
             TenantId,
             entry.Id,
             [longTag],
@@ -60,7 +68,7 @@ public class EntryTagTests : EntryServiceTestBase
         var entry = MakeEntry();
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        var result = await Sut.AddEntryTagsAsync(
+        var result = await _tagService.AddEntryTagsAsync(
             TenantId,
             entry.Id,
             ["invalid@tag!"],
@@ -80,7 +88,7 @@ public class EntryTagTests : EntryServiceTestBase
             .GetByEntryIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(new List<string> { "existing", "new-tag" });
 
-        var result = await Sut.AddEntryTagsAsync(
+        var result = await _tagService.AddEntryTagsAsync(
             TenantId,
             entry.Id,
             ["  New-Tag  ", "NEW-TAG"],
@@ -108,7 +116,7 @@ public class EntryTagTests : EntryServiceTestBase
             .GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await Sut.GetEntryTagsAsync(TenantId, Guid.NewGuid(), CancellationToken.None);
+        var result = await _tagService.GetEntryTagsAsync(TenantId, Guid.NewGuid(), CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorOr.ErrorType.NotFound);
@@ -121,7 +129,7 @@ public class EntryTagTests : EntryServiceTestBase
             .GetByIdAsync(TenantId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await Sut.RemoveEntryTagAsync(
+        var result = await _tagService.RemoveEntryTagAsync(
             TenantId,
             Guid.NewGuid(),
             "tag1",
@@ -138,7 +146,7 @@ public class EntryTagTests : EntryServiceTestBase
         var entry = MakeEntry();
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
 
-        var result = await Sut.RemoveEntryTagAsync(
+        var result = await _tagService.RemoveEntryTagAsync(
             TenantId,
             entry.Id,
             "  My-Tag  ",

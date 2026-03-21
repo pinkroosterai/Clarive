@@ -139,36 +139,4 @@ public interface IEntryService
         CancellationToken ct = default
     );
 
-    // Favorite operations
-    Task<ErrorOr<Success>> FavoriteEntryAsync(
-        Guid tenantId,
-        Guid userId,
-        Guid entryId,
-        CancellationToken ct = default
-    );
-    Task<ErrorOr<Success>> UnfavoriteEntryAsync(
-        Guid tenantId,
-        Guid userId,
-        Guid entryId,
-        CancellationToken ct = default
-    );
-
-    // Tag operations
-    Task<ErrorOr<List<string>>> GetEntryTagsAsync(
-        Guid tenantId,
-        Guid entryId,
-        CancellationToken ct = default
-    );
-    Task<ErrorOr<List<string>>> AddEntryTagsAsync(
-        Guid tenantId,
-        Guid entryId,
-        List<string> tagNames,
-        CancellationToken ct = default
-    );
-    Task<ErrorOr<Success>> RemoveEntryTagAsync(
-        Guid tenantId,
-        Guid entryId,
-        string tagName,
-        CancellationToken ct = default
-    );
 }
