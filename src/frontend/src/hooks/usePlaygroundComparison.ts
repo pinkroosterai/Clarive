@@ -5,9 +5,7 @@ import { addPinToList, removePinFromList } from '@/components/playground/utils';
 import type { TestRunResponse } from '@/services/api/playgroundService';
 
 export function usePlaygroundComparison() {
-  const [showHistory, setShowHistory] = useState(
-    () => window.matchMedia('(min-width: 768px)').matches
-  );
+  const [showHistory, setShowHistory] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [pinnedRuns, setPinnedRuns] = useState<TestRunResponse[]>([]);
   const [activeCarouselIndex, setActiveCarouselIndex] = useState(-1);
