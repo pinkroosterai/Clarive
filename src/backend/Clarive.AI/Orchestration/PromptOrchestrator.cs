@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Clarive.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -49,6 +50,9 @@ public class PromptOrchestrator : IPromptOrchestrator
         Func<ProgressEvent, Task>? onProgress = null
     )
     {
+        var sw = Stopwatch.StartNew();
+        _logger.LogInformation("AI Generate started");
+
         if (onProgress is not null)
             await onProgress(ProgressEvent.Generating());
 
@@ -107,6 +111,14 @@ public class PromptOrchestrator : IPromptOrchestrator
                 UsageDetails? clarifyUsage
             ) = await RunParallelFeedback(config, prompts, ct, onProgress);
 
+            sw.Stop();
+            _logger.LogInformation(
+                "AI Generate completed in {DurationMs}ms (input: {InputTokens}, output: {OutputTokens})",
+                sw.ElapsedMilliseconds,
+                genUsage?.InputTokenCount,
+                genUsage?.OutputTokenCount
+            );
+
             return new GenerateOrchestratorResult(
                 agentSessionId,
                 prompts,
@@ -135,6 +147,9 @@ public class PromptOrchestrator : IPromptOrchestrator
         Func<ProgressEvent, Task>? onProgress = null
     )
     {
+        var sw = Stopwatch.StartNew();
+        _logger.LogInformation("AI Refine started");
+
         if (onProgress is not null)
             await onProgress(ProgressEvent.Refining());
 
@@ -201,6 +216,14 @@ public class PromptOrchestrator : IPromptOrchestrator
             UsageDetails? clarifyUsage
         ) = await RunParallelFeedback(config, prompts, ct, onProgress);
 
+        sw.Stop();
+        _logger.LogInformation(
+            "AI Refine completed in {DurationMs}ms (input: {InputTokens}, output: {OutputTokens})",
+            sw.ElapsedMilliseconds,
+            revUsage?.InputTokenCount,
+            revUsage?.OutputTokenCount
+        );
+
         return new GenerateOrchestratorResult(
             agentSessionId,
             prompts,
@@ -220,6 +243,7 @@ public class PromptOrchestrator : IPromptOrchestrator
         Func<ProgressEvent, Task>? onProgress = null
     )
     {
+        _logger.LogInformation("AI Enhance started");
         // Create a dedicated agent session with enhance context stored as metadata.
         // The existing prompt content will be injected into the first refinement task
         // instead of making a wasteful bootstrap LLM call that just echoes it back.
@@ -275,6 +299,7 @@ public class PromptOrchestrator : IPromptOrchestrator
         CancellationToken ct = default
     )
     {
+        var sw = Stopwatch.StartNew();
         var agent = _factory.CreateAgent(
             AiActionType.SystemMessage, AgentInstructions.SystemMessage, "SystemMessageGenerator");
         var task = TaskBuilder.BuildSystemMessageTask(prompts);
@@ -284,6 +309,10 @@ public class PromptOrchestrator : IPromptOrchestrator
             cancellationToken: ct
         );
 
+        _logger.LogInformation(
+            "AI GenerateSystemMessage completed in {DurationMs}ms (input: {InputTokens}, output: {OutputTokens})",
+            sw.ElapsedMilliseconds, response.Usage?.InputTokenCount, response.Usage?.OutputTokenCount
+        );
         return new AgentResult<string>(response.Result.SystemMessage, response.Usage);
     }
 
@@ -294,12 +323,17 @@ public class PromptOrchestrator : IPromptOrchestrator
         CancellationToken ct = default
     )
     {
+        var sw = Stopwatch.StartNew();
         var agent = _factory.CreateAgent(
             AiActionType.FillTemplateFields, AgentInstructions.FillTemplateFields, "TemplateFieldFiller");
         var task = TaskBuilder.BuildFillTemplateFieldsTask(prompts, systemMessage, fields);
 
         var response = await agent.RunAsync<TemplateFieldValuesOutput>(task, cancellationToken: ct);
 
+        _logger.LogInformation(
+            "AI FillTemplateFields completed in {DurationMs}ms ({FieldCount} fields, input: {InputTokens}, output: {OutputTokens})",
+            sw.ElapsedMilliseconds, fields.Count, response.Usage?.InputTokenCount, response.Usage?.OutputTokenCount
+        );
         return new AgentResult<Dictionary<string, string>>(response.Result.Values, response.Usage);
     }
 
@@ -310,6 +344,7 @@ public class PromptOrchestrator : IPromptOrchestrator
         CancellationToken ct = default
     )
     {
+        var sw = Stopwatch.StartNew();
         var agent = _factory.CreateAgent(
             AiActionType.Decomposition, AgentInstructions.Decompose, "PromptDecomposer");
         var task = TaskBuilder.BuildDecompositionTask(promptContent, isTemplate, systemMessage);
@@ -324,6 +359,10 @@ public class PromptOrchestrator : IPromptOrchestrator
 
         var result = chain.Steps.Select(s => new PromptInput(s.Content, s.IsTemplate)).ToList();
 
+        _logger.LogInformation(
+            "AI Decompose completed in {DurationMs}ms ({StepCount} steps, input: {InputTokens}, output: {OutputTokens})",
+            sw.ElapsedMilliseconds, result.Count, response.Usage?.InputTokenCount, response.Usage?.OutputTokenCount
+        );
         return new AgentResult<List<PromptInput>>(result, response.Usage);
     }
 
@@ -440,6 +479,7 @@ public class PromptOrchestrator : IPromptOrchestrator
         CancellationToken ct = default
     )
     {
+        var sw = Stopwatch.StartNew();
         var agent = _factory.CreateAgent(
             AiActionType.PolishDescription, AgentInstructions.PolishDescription, "DescriptionPolisher");
 
@@ -450,6 +490,10 @@ public class PromptOrchestrator : IPromptOrchestrator
 
         var polished = response.Result.Description?.Trim();
 
+        _logger.LogInformation(
+            "AI PolishDescription completed in {DurationMs}ms (input: {InputTokens}, output: {OutputTokens})",
+            sw.ElapsedMilliseconds, response.Usage?.InputTokenCount, response.Usage?.OutputTokenCount
+        );
         return new AgentResult<string>(
             string.IsNullOrEmpty(polished) ? description : polished,
             response.Usage);

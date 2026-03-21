@@ -162,6 +162,7 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
         {
             stopwatch.Stop();
             var durationMs = (long)stopwatch.Elapsed.TotalMilliseconds;
+            _logger?.LogDebug("Tool {FunctionName} executed in {DurationMs}ms", context.Function.Name, durationMs);
             var resultStr = SerializeResult(result);
             var errorStr = caughtException?.Message;
 
