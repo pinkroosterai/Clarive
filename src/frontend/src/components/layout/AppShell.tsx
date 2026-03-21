@@ -33,8 +33,14 @@ export function AppShell() {
 
   const isFullBleed = /\/entry\/[^/]+(\/test|\/version\/\d+)?$/.test(location.pathname);
 
+  const sidebarDefaultOpen = (() => {
+    const cookie = document.cookie.split('; ').find((c) => c.startsWith('sidebar:state='));
+    if (cookie) return cookie.split('=')[1] === 'true';
+    return window.matchMedia('(min-width: 768px)').matches;
+  })();
+
   return (
-    <SidebarProvider defaultOpen={window.matchMedia('(min-width: 768px)').matches}>
+    <SidebarProvider defaultOpen={sidebarDefaultOpen}>
       <DndProvider>
         <AppSidebar />
         <SidebarInset className="min-w-0 max-h-svh overflow-hidden">
