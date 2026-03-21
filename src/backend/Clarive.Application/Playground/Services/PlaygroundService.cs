@@ -91,7 +91,8 @@ public class PlaygroundService(
 
             (totalInputTokens, totalOutputTokens) = await StreamPromptChainAsync(
                 clientSetup.EffectiveClient, clientSetup.Options, clientSetup.ThinkParser,
-                prompts, fields, allFields, version.SystemMessage, logBuilder, onEvent, ct);
+                prompts, fields, allFields, version.SystemMessage, logBuilder, onEvent, ct,
+                clientSetup.Eefic);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -252,7 +253,8 @@ public class PlaygroundService(
         string? systemMessage,
         ConversationLogBuilder logBuilder,
         Func<ConversationStreamEvent, Task>? onEvent,
-        CancellationToken ct)
+        CancellationToken ct,
+        EventEmittingFunctionInvokingChatClient? eefic = null)
     {
         long? totalInputTokens = null;
         long? totalOutputTokens = null;
@@ -269,6 +271,9 @@ public class PlaygroundService(
 
         for (var i = 0; i < prompts.Count; i++)
         {
+            if (eefic is not null)
+                eefic.CurrentPromptIndex = i;
+
             var prompt = prompts[i];
             var content =
                 allFields.Count > 0 && prompt.IsTemplate
@@ -367,7 +372,8 @@ public class PlaygroundService(
         IChatClient EffectiveClient,
         ChatOptions Options,
         ThinkTagStreamParser? ThinkParser,
-        McpToolSet? McpToolSet);
+        McpToolSet? McpToolSet,
+        EventEmittingFunctionInvokingChatClient? Eefic = null);
 
     private async Task<ClientSetup> BuildEffectiveClientAsync(
         Guid tenantId,
@@ -420,7 +426,8 @@ public class PlaygroundService(
             ? new ThinkTagStreamParser()
             : null;
 
-        return new ClientSetup(effectiveClient, options, thinkParser, mcpToolSet);
+        var eeficRef = effectiveClient as EventEmittingFunctionInvokingChatClient;
+        return new ClientSetup(effectiveClient, options, thinkParser, mcpToolSet, eeficRef);
     }
 
     private static ErrorOr<(Dictionary<string, string> Fields, List<TemplateField> AllFields)>

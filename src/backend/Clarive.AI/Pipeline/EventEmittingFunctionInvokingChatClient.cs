@@ -30,6 +30,12 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
     public Func<ConversationStreamEvent, Task>? OnStreamEvent { get; set; }
 
     /// <summary>
+    /// The current prompt index in a multi-prompt chain. Updated by the caller
+    /// before each prompt iteration so tool call events carry the correct index.
+    /// </summary>
+    public int CurrentPromptIndex { get; set; }
+
+    /// <summary>
     /// Raised immediately before a function is invoked.
     /// </summary>
     public event Func<object, ToolCallStartingEventArgs, Task>? ToolCallStarting;
@@ -96,7 +102,8 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
                 await streamHandler(ConversationStreamEvent.ToolCallStart(
                     context.Function.Name,
                     callId,
-                    argsJson
+                    argsJson,
+                    CurrentPromptIndex
                 ));
                 toolStartEmitted = true;
             }
@@ -167,7 +174,8 @@ public class EventEmittingFunctionInvokingChatClient : FunctionInvokingChatClien
                         callId,
                         resultStr,
                         errorStr,
-                        durationMs
+                        durationMs,
+                        CurrentPromptIndex
                     ));
                 }
                 catch (Exception ex)
