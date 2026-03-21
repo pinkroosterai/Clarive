@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { collectDescendantIds, findFolder } from '@/lib/dnd/validation';
+import { getFolderColorClass } from '@/lib/folderColors';
 import { cn } from '@/lib/utils';
 import { folderService } from '@/services';
 import type { Folder as FolderType } from '@/types';
@@ -71,7 +72,11 @@ function PickerNode({
             />
           </button>
         </CollapsibleTrigger>
-        <FolderIcon className="size-4 shrink-0 text-foreground-muted" />
+        {folder.color ? (
+          <span className={cn('size-2.5 shrink-0 rounded-full', getFolderColorClass(folder.color))} />
+        ) : (
+          <FolderIcon className="size-4 shrink-0 text-foreground-muted" />
+        )}
         <span className="truncate text-sm">{folder.name}</span>
       </div>
 

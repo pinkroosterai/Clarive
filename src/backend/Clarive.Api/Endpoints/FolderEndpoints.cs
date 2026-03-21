@@ -20,6 +20,8 @@ public static class FolderEndpoints
 
         group.MapPost("/{folderId:guid}/move", HandleMove).RequireAuthorization("EditorOrAdmin");
 
+        group.MapPatch("/{folderId:guid}/color", HandleSetColor).RequireAuthorization("EditorOrAdmin");
+
         return group;
     }
 
@@ -58,7 +60,7 @@ public static class FolderEndpoints
         var folder = result.Value;
         return Results.Created(
             $"/api/folders/{folder.Id}",
-            new FolderDto(folder.Id, folder.Name, folder.ParentId, [])
+            new FolderDto(folder.Id, folder.Name, folder.ParentId, folder.Color, [])
         );
     }
 
@@ -80,7 +82,7 @@ public static class FolderEndpoints
             return result.Errors.ToHttpResult(ctx);
 
         var folder = result.Value;
-        return Results.Ok(new FolderDto(folder.Id, folder.Name, folder.ParentId, []));
+        return Results.Ok(new FolderDto(folder.Id, folder.Name, folder.ParentId, folder.Color, []));
     }
 
     private static async Task<IResult> HandleDelete(
@@ -114,6 +116,27 @@ public static class FolderEndpoints
             return result.Errors.ToHttpResult(ctx);
 
         var folder = result.Value;
-        return Results.Ok(new FolderDto(folder.Id, folder.Name, folder.ParentId, []));
+        return Results.Ok(new FolderDto(folder.Id, folder.Name, folder.ParentId, folder.Color, []));
+    }
+
+    private static async Task<IResult> HandleSetColor(
+        Guid folderId,
+        HttpContext ctx,
+        SetFolderColorRequest request,
+        IFolderService folderService,
+        CancellationToken ct
+    )
+    {
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
+
+        var tenantId = ctx.GetTenantId();
+        var result = await folderService.SetColorAsync(tenantId, folderId, request, ct);
+
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
+
+        var folder = result.Value;
+        return Results.Ok(new FolderDto(folder.Id, folder.Name, folder.ParentId, folder.Color, []));
     }
 }

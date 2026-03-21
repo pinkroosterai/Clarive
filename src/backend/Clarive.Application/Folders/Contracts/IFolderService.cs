@@ -34,4 +34,11 @@ public interface IFolderService
         MoveFolderRequest request,
         CancellationToken ct = default
     );
+
+    Task<ErrorOr<Folder>> SetColorAsync(
+        Guid tenantId,
+        Guid folderId,
+        SetFolderColorRequest request,
+        CancellationToken ct = default
+    );
 }

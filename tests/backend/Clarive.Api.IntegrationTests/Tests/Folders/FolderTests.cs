@@ -118,4 +118,111 @@ public class FolderTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
+
+    [Fact]
+    public async Task SetColor_ValidColor_Returns200()
+    {
+        var token = await AuthHelper.GetEditorTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        // Create a folder to color
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/folders",
+            new { name = TestData.UniqueFolderName() }
+        );
+        var folderId = created.GetProperty("id").GetString();
+
+        var (response, body) = await Client.PatchJsonAsync<JsonElement>(
+            $"/api/folders/{folderId}/color",
+            new { color = "blue" }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.GetProperty("color").GetString().Should().Be("blue");
+    }
+
+    [Fact]
+    public async Task SetColor_NullClears_Returns200()
+    {
+        var token = await AuthHelper.GetEditorTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        // Create and color a folder
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/folders",
+            new { name = TestData.UniqueFolderName() }
+        );
+        var folderId = created.GetProperty("id").GetString();
+
+        await Client.PatchJsonAsync<JsonElement>(
+            $"/api/folders/{folderId}/color",
+            new { color = "red" }
+        );
+
+        // Clear color
+        var (response, body) = await Client.PatchJsonAsync<JsonElement>(
+            $"/api/folders/{folderId}/color",
+            new { color = (string?)null }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.GetProperty("color").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    [Fact]
+    public async Task SetColor_InvalidColor_Returns422()
+    {
+        var token = await AuthHelper.GetEditorTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/folders",
+            new { name = TestData.UniqueFolderName() }
+        );
+        var folderId = created.GetProperty("id").GetString();
+
+        var (response, _) = await Client.PatchJsonAsync<JsonElement>(
+            $"/api/folders/{folderId}/color",
+            new { color = "neon_rainbow" }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public async Task GetTree_ReturnsColorField()
+    {
+        var token = await AuthHelper.GetEditorTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        // Create and color a folder
+        var (_, created) = await Client.PostJsonAsync<JsonElement>(
+            "/api/folders",
+            new { name = TestData.UniqueFolderName() }
+        );
+        var folderId = created.GetProperty("id").GetString();
+
+        await Client.PatchJsonAsync<JsonElement>(
+            $"/api/folders/{folderId}/color",
+            new { color = "green" }
+        );
+
+        // Fetch tree and find our folder
+        var viewerToken = await AuthHelper.GetViewerTokenAsync(Client);
+        Client.WithBearerToken(viewerToken);
+        var treeResponse = await Client.GetAsync("/api/folders");
+        var tree = await treeResponse.ReadJsonAsync();
+
+        var found = false;
+        foreach (var folder in tree.EnumerateArray())
+        {
+            if (folder.GetProperty("id").GetString() == folderId)
+            {
+                folder.GetProperty("color").GetString().Should().Be("green");
+                found = true;
+                break;
+            }
+        }
+        found.Should().BeTrue("the colored folder should appear in the tree");
+    }
 }

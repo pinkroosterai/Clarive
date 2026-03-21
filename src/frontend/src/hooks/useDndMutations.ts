@@ -1,28 +1,40 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 
 import { handleApiError } from '@/lib/handleApiError';
 import { entryService, folderService } from '@/services';
 
-export function useDndMutations() {
+export interface MoveEntryParams {
+  id: string;
+  folderId: string | null;
+}
+
+export interface MoveFolderParams {
+  id: string;
+  newParentId: string | null;
+}
+
+export function useDndMutations(options?: {
+  onEntryMoved?: (params: MoveEntryParams) => void;
+  onFolderMoved?: (params: MoveFolderParams) => void;
+}) {
   const queryClient = useQueryClient();
 
   const moveEntry = useMutation({
-    mutationFn: ({ id, folderId }: { id: string; folderId: string | null }) =>
+    mutationFn: ({ id, folderId }: MoveEntryParams) =>
       entryService.moveEntry(id, folderId),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
-      toast.success('Entry moved');
+      options?.onEntryMoved?.(variables);
     },
     onError: (err: unknown) => handleApiError(err),
   });
 
   const moveFolder = useMutation({
-    mutationFn: ({ id, newParentId }: { id: string; newParentId: string | null }) =>
+    mutationFn: ({ id, newParentId }: MoveFolderParams) =>
       folderService.moveFolder(id, newParentId),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['folders'] });
-      toast.success('Folder moved');
+      options?.onFolderMoved?.(variables);
     },
     onError: (err: unknown) => handleApiError(err),
   });

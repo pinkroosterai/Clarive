@@ -1,4 +1,5 @@
 using Clarive.Infrastructure.Cache;
+using Clarive.Domain.Constants;
 using Clarive.Domain.QueryResults;
 using Clarive.Domain.Errors;
 using Clarive.Domain.Entities;
@@ -141,6 +142,28 @@ public class FolderService(
         }
 
         folder.ParentId = request.ParentId;
+        await folderRepo.UpdateAsync(folder, ct);
+
+        await TenantCacheKeys.EvictFolderData(cache, tenantId);
+
+        return folder;
+    }
+
+    public async Task<ErrorOr<Folder>> SetColorAsync(
+        Guid tenantId,
+        Guid folderId,
+        SetFolderColorRequest request,
+        CancellationToken ct
+    )
+    {
+        if (!FolderColors.IsValid(request.Color))
+            return Error.Validation("INVALID_COLOR", "The specified color is not a valid preset.");
+
+        var folder = await folderRepo.GetByIdAsync(tenantId, folderId, ct);
+        if (folder is null)
+            return DomainErrors.FolderNotFound;
+
+        folder.Color = request.Color;
         await folderRepo.UpdateAsync(folder, ct);
 
         await TenantCacheKeys.EvictFolderData(cache, tenantId);

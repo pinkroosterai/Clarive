@@ -15,6 +15,7 @@ public class FolderConfiguration : IEntityTypeConfiguration<Folder>
         builder.Property(f => f.TenantId).HasColumnName("tenant_id").IsRequired();
         builder.Property(f => f.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
         builder.Property(f => f.ParentId).HasColumnName("parent_id");
+        builder.Property(f => f.Color).HasColumnName("color").HasMaxLength(20);
         builder.Property(f => f.CreatedAt).HasColumnName("created_at").IsRequired();
 
         builder

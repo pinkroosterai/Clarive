@@ -21,6 +21,7 @@ public class EfFolderRepository(ClariveDbContext db) : IFolderRepository
                 f.Id,
                 f.Name,
                 f.ParentId,
+                f.Color,
                 lookup[f.Id].Select(BuildNode).OrderBy(c => c.Name).ToList()
             );
 

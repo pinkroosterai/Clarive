@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { HelpLink } from '@/components/common/HelpLink';
 import { EntryCard } from '@/components/library/EntryCard';
+import { FolderBreadcrumb } from '@/components/library/FolderBreadcrumb';
 import { TagFilter } from '@/components/library/TagFilter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -234,6 +235,9 @@ export default function LibraryPage() {
           {!aiEnabled && <TooltipContent>AI features are not configured</TooltipContent>}
         </Tooltip>
       </motion.div>
+
+      {/* Breadcrumb trail */}
+      {folderId && folders && <FolderBreadcrumb folderId={folderId} folders={folders} />}
 
       {/* Search & Filter Bar */}
       {(totalCount > 0 || hasActiveFilters) && (

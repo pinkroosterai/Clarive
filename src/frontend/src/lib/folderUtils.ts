@@ -44,6 +44,67 @@ export function buildFolderAncestorPath(
   return path;
 }
 
+/**
+ * Filter a folder tree by query string, keeping matching folders and their ancestor paths.
+ * Returns a new tree (does not mutate the original). Empty query returns the original tree.
+ */
+export function filterFolderTree(tree: Folder[], query: string): Folder[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return tree;
+
+  const filter = (nodes: Folder[]): Folder[] => {
+    const result: Folder[] = [];
+    for (const folder of nodes) {
+      const filteredChildren = filter(folder.children);
+      const nameMatches = folder.name.toLowerCase().includes(q);
+      if (nameMatches || filteredChildren.length > 0) {
+        result.push({ ...folder, children: filteredChildren });
+      }
+    }
+    return result;
+  };
+
+  return filter(tree);
+}
+
+/**
+ * Build a map of folderId → recursive entry count (direct entries + all descendant entries).
+ * Post-order traversal: leaf counts stay as-is, parents sum their own + children's totals.
+ */
+export function buildRecursiveCountMap(
+  tree: Folder[],
+  directCountMap: Map<string | null, number>
+): Map<string, number> {
+  const result = new Map<string, number>();
+
+  const walk = (folders: Folder[]): void => {
+    for (const folder of folders) {
+      walk(folder.children);
+      let total = directCountMap.get(folder.id) ?? 0;
+      for (const child of folder.children) {
+        total += result.get(child.id) ?? 0;
+      }
+      result.set(folder.id, total);
+    }
+  };
+
+  walk(tree);
+  return result;
+}
+
+/** Collect all folder IDs from a tree into a Set (for expand-all). */
+export function collectAllFolderIds(tree: Folder[]): Set<string> {
+  const ids = new Set<string>();
+  const walk = (folders: Folder[]) => {
+    for (const f of folders) {
+      ids.add(f.id);
+      walk(f.children);
+    }
+  };
+  walk(tree);
+  return ids;
+}
+
 export interface FlatFolder {
   id: string;
   name: string;

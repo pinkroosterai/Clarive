@@ -20,6 +20,10 @@ export async function moveFolder(id: string, newParentId: string | null): Promis
   });
 }
 
+export async function setFolderColor(id: string, color: string | null): Promise<Folder> {
+  return api.patch<Folder>(`/api/folders/${id}/color`, { color });
+}
+
 export async function deleteFolder(id: string): Promise<void> {
   return api.delete(`/api/folders/${id}`);
 }

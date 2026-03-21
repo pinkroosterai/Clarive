@@ -5,6 +5,7 @@ import {
   FolderOpen,
   MoreHorizontal,
   FolderPlus,
+  Palette,
   Pencil,
   Trash2,
   FileText,
@@ -12,6 +13,7 @@ import {
 import { memo, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { FolderColorPicker } from './FolderColorPicker';
 import { InlineInput } from './InlineInput';
 
 import { DragHandle } from '@/components/dnd/DragHandle';
@@ -22,11 +24,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarMenuItem } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { draggableEntryId, draggableFolderId, droppableFolderId } from '@/lib/dnd/types';
+import { getFolderColorClass } from '@/lib/folderColors';
 import { cn } from '@/lib/utils';
 import type { Folder as FolderType, PromptEntry } from '@/types';
 
@@ -34,6 +40,7 @@ export interface FolderActions {
   onCreate: (name: string, parentId: string | null) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
+  onSetColor: (id: string, color: string | null) => void;
 }
 
 export const EntryTreeItem = memo(function EntryTreeItem({
@@ -85,6 +92,8 @@ export const FolderTreeNode = memo(function FolderTreeNode({
   entries,
   entryCountMap,
   actions,
+  expandedIds,
+  onToggleExpand,
 }: {
   folder: FolderType;
   depth: number;
@@ -93,9 +102,18 @@ export const FolderTreeNode = memo(function FolderTreeNode({
   entries: PromptEntry[];
   entryCountMap: Map<string | null, number>;
   actions: FolderActions;
+  expandedIds: Set<string>;
+  onToggleExpand: (folderId: string, expanded: boolean) => void;
 }) {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
+  const isOpen = expandedIds.has(folder.id);
+  const setIsOpen = useCallback(
+    (open: boolean | ((prev: boolean) => boolean)) => {
+      const next = typeof open === 'function' ? open(expandedIds.has(folder.id)) : open;
+      onToggleExpand(folder.id, next);
+    },
+    [folder.id, expandedIds, onToggleExpand]
+  );
   const [isRenaming, setIsRenaming] = useState(false);
   const [isCreatingChild, setIsCreatingChild] = useState(false);
 
@@ -175,7 +193,11 @@ export const FolderTreeNode = memo(function FolderTreeNode({
             className="flex min-w-0 flex-1 items-center gap-1.5 py-1 min-h-[44px] text-sm transition-colors duration-150"
             onClick={() => navigate(`/library/folder/${folder.id}`)}
           >
-            <FolderIcon className="size-4 shrink-0 text-foreground-muted" />
+            {folder.color ? (
+              <span className={cn('size-2.5 shrink-0 rounded-full', getFolderColorClass(folder.color))} />
+            ) : (
+              <FolderIcon className="size-4 shrink-0 text-foreground-muted" />
+            )}
             {isRenaming ? (
               <InlineInput
                 defaultValue={folder.name}
@@ -225,6 +247,18 @@ export const FolderTreeNode = memo(function FolderTreeNode({
                 <Pencil className="mr-2 size-4" />
                 Rename
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette className="mr-2 size-4" />
+                  Set color
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <FolderColorPicker
+                    currentColor={folder.color}
+                    onSelect={(color) => actions.onSetColor(folder.id, color)}
+                  />
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               <DropdownMenuItem
                 onClick={() => actions.onDelete(folder.id)}
                 className="text-destructive focus:text-destructive"
@@ -258,6 +292,8 @@ export const FolderTreeNode = memo(function FolderTreeNode({
               entries={entries}
               entryCountMap={entryCountMap}
               actions={actions}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
             />
           ))}
           {folderEntries.map((entry) => (
