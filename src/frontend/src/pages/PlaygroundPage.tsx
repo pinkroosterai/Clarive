@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,7 +8,6 @@ import PlaygroundResultsArea from '@/components/playground/PlaygroundResultsArea
 import PlaygroundToolbar from '@/components/playground/PlaygroundToolbar';
 import QueueStrip from '@/components/playground/QueueStrip';
 import {
-  safeSessionGet,
   addPinToList,
   removePinFromList,
   type QueuedModel,
@@ -26,8 +25,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
+import { usePlaygroundBatchOrchestration } from '@/hooks/usePlaygroundBatchOrchestration';
 import { usePlaygroundKeyboardShortcuts } from '@/hooks/usePlaygroundKeyboardShortcuts';
+import { usePlaygroundQueueManager } from '@/hooks/usePlaygroundQueueManager';
 import { usePlaygroundStreaming } from '@/hooks/usePlaygroundStreaming';
+import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
 import { PLAYGROUND_DEFAULTS } from '@/lib/constants';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { entryService } from '@/services';
@@ -46,7 +48,6 @@ import type { TemplateField } from '@/types';
 const PlaygroundPage = () => {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const aiEnabled = useAiEnabled();
   const storageKey = `playground_${entryId}`;
 
@@ -82,7 +83,15 @@ const PlaygroundPage = () => {
   const [reasoningEffort, setReasoningEffort] = useState(PLAYGROUND_DEFAULTS.REASONING_EFFORT);
   const [showReasoning, setShowReasoning] = useState(true);
 
-  // ── Template fields ──
+  const applyModelParameters = useCallback((item: QueuedModel) => {
+    setSelectedModel(item.model);
+    setTemperature(item.temperature);
+    setMaxTokens(item.maxTokens);
+    setReasoningEffort(item.reasoningEffort);
+    setShowReasoning(item.showReasoning);
+  }, []);
+
+  // ── Template fields (extracted hook) ──
   const templateFields = useMemo(() => {
     const seen = new Set<string>();
     const fields: TemplateField[] = [];
@@ -97,33 +106,7 @@ const PlaygroundPage = () => {
     return fields;
   }, [prompts]);
 
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>(() =>
-    safeSessionGet(storageKey + '_fields', {})
-  );
-
-  useEffect(() => {
-    if (Object.keys(fieldValues).length > 0) {
-      sessionStorage.setItem(storageKey + '_fields', JSON.stringify(fieldValues));
-    }
-  }, [fieldValues, storageKey]);
-
-  // Pre-fill defaults for fields without stored values
-  useEffect(() => {
-    if (templateFields.length === 0) return;
-    const updates: Record<string, string> = {};
-    for (const field of templateFields) {
-      if (!fieldValues[field.name]) {
-        if (field.defaultValue) {
-          updates[field.name] = field.defaultValue;
-        } else if (field.min !== null) {
-          updates[field.name] = String(field.min);
-        }
-      }
-    }
-    if (Object.keys(updates).length > 0) {
-      setFieldValues((prev) => ({ ...prev, ...updates }));
-    }
-  }, [templateFields]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { fieldValues, setFieldValues } = usePlaygroundTemplateFields(templateFields, storageKey);
 
   // ── MCP tool state ──
   const [enabledServerIds, setEnabledServerIds] = useState<string[]>([]);
@@ -146,7 +129,6 @@ const PlaygroundPage = () => {
     isJudging,
     hasResponses,
     responseCount,
-    conversationLog,
     handleRun,
     handleAbort,
     clearCurrentRun,
@@ -201,131 +183,48 @@ const PlaygroundPage = () => {
     prevPinCountRef.current = pinnedRuns.length;
   }, [pinnedRuns.length]);
 
-  // ── Queue state (user-facing queue for building comparisons) ──
-  const [queuedModels, setQueuedModels] = useState<QueuedModel[]>([]);
+  // ── Queue manager (extracted hook) ──
+  const {
+    queuedModels,
+    setQueuedModels,
+    handleEnqueue,
+    handleRemoveFromQueue,
+    handleClearQueue,
+  } = usePlaygroundQueueManager({
+    selectedModel,
+    temperature,
+    maxTokens,
+    reasoningEffort,
+    showReasoning,
+  });
 
-  const handleEnqueue = useCallback(() => {
-    if (!selectedModel) return;
-    setQueuedModels((prev) => [
-      ...prev,
-      {
-        model: selectedModel,
-        temperature,
-        maxTokens,
-        reasoningEffort,
-        showReasoning,
-        isReasoning: selectedModel.isReasoning,
-      },
-    ]);
-    toast.success(`Enqueued ${selectedModel.displayName || selectedModel.modelId}`);
-  }, [selectedModel, temperature, maxTokens, reasoningEffort, showReasoning]);
-
-  const handleRemoveFromQueue = useCallback((index: number) => {
-    setQueuedModels((prev) => prev.filter((_, i) => i !== index));
-  }, []);
-
-  const handleClearQueue = useCallback(() => {
-    setQueuedModels([]);
-  }, []);
-
-  // ── Batch execution state (runtime queue consumed during execution) ──
-  const [executionQueue, setExecutionQueue] = useState<QueuedModel[]>([]);
-  const [batchTotal, setBatchTotal] = useState(0);
-  const batchAbortedRef = useRef(false);
-  const isBatchRunning = executionQueue.length > 0 || (batchTotal > 0 && isStreaming);
-  const batchCurrent = batchTotal - executionQueue.length;
-
-  // ── Batch orchestration: auto-pin completed run + start next ──
-  const prevIsStreamingRef = useRef(false);
-  useEffect(() => {
-    const justFinished = prevIsStreamingRef.current && !isStreaming;
-    prevIsStreamingRef.current = isStreaming;
-
-    if (!justFinished || batchTotal === 0) return;
-
-    // Auto-pin the just-completed run
-    if (lastRunId && !error && !wasStopped) {
-      queryClient
-        .invalidateQueries({ queryKey: ['playground', 'runs', entryId] })
-        .then(() => {
-          const runs = queryClient.getQueryData<TestRunResponse[]>([
-            'playground',
-            'runs',
-            entryId,
-          ]);
-          const completedRun = runs?.find((r) => r.id === lastRunId);
-          if (completedRun) addPin(completedRun);
-        });
-    }
-
-    // Error on one model during batch: toast and continue
-    if (error && executionQueue.length > 0 && !batchAbortedRef.current) {
-      const failedName = selectedModel?.displayName || selectedModel?.modelId || 'Unknown model';
-      toast.error(`Failed: ${failedName}`);
-    }
-
-    // If aborted or no more models, clean up batch state
-    if (batchAbortedRef.current || executionQueue.length === 0) {
-      setBatchTotal(0);
-      batchAbortedRef.current = false;
-      return;
-    }
-
-    // Rate limit: wait for countdown to expire before continuing
-    if (rateLimitCountdown > 0) return;
-
-    // Start next item in execution queue — apply its full param snapshot
-    const nextItem = executionQueue[0];
-    setSelectedModel(nextItem.model);
-    setTemperature(nextItem.temperature);
-    setMaxTokens(nextItem.maxTokens);
-    setReasoningEffort(nextItem.reasoningEffort);
-    setShowReasoning(nextItem.showReasoning);
-    setExecutionQueue((prev) => prev.slice(1));
-  }, [
-    isStreaming,
-    batchTotal,
+  // ── Batch orchestration (extracted hook) ──
+  const {
     executionQueue,
+    batchTotal,
+    batchCurrent,
+    isBatchRunning,
+    handleRunQueue: batchRunQueue,
+    handleBatchAbort,
+  } = usePlaygroundBatchOrchestration({
+    entryId,
+    isStreaming,
     lastRunId,
     error,
     wasStopped,
     rateLimitCountdown,
-    entryId,
-    queryClient,
-    addPin,
     selectedModel,
-  ]);
+    handleRun,
+    handleAbort,
+    addPin,
+    clearAllPins,
+    applyModelParameters,
+  });
 
-  // Rate limit recovery: resume batch when countdown reaches 0
-  useEffect(() => {
-    if (
-      rateLimitCountdown === 0 &&
-      executionQueue.length > 0 &&
-      !isStreaming &&
-      !batchAbortedRef.current &&
-      batchTotal > 0
-    ) {
-      const nextItem = executionQueue[0];
-      setSelectedModel(nextItem.model);
-      setTemperature(nextItem.temperature);
-      setMaxTokens(nextItem.maxTokens);
-      setReasoningEffort(nextItem.reasoningEffort);
-      setShowReasoning(nextItem.showReasoning);
-      setExecutionQueue((prev) => prev.slice(1));
-    }
-  }, [rateLimitCountdown]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Trigger handleRun when model changes during batch execution
-  const prevModelRef = useRef<string | null>(null);
-  useEffect(() => {
-    const modelId = selectedModel?.modelId ?? null;
-    if (modelId && modelId !== prevModelRef.current && batchTotal > 0 && !isStreaming) {
-      prevModelRef.current = modelId;
-      const timer = setTimeout(() => handleRun(), 50);
-      return () => clearTimeout(timer);
-    }
-    if (!modelId) prevModelRef.current = null;
-  }, [selectedModel, batchTotal]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleRunQueue = useCallback(() => {
+    batchRunQueue(queuedModels);
+    setQueuedModels([]);
+  }, [batchRunQueue, queuedModels, setQueuedModels]);
 
   // ── Queries ──
   const { data: enrichedModels = [], isError: modelsError } = useQuery({
@@ -375,7 +274,7 @@ const PlaygroundPage = () => {
     } finally {
       setIsFillingTemplateFields(false);
     }
-  }, [entryId]);
+  }, [entryId, setFieldValues]);
 
   const handleRerun = useCallback(
     (run: TestRunResponse) => {
@@ -388,36 +287,8 @@ const PlaygroundPage = () => {
       }
       toast.success('Parameters loaded from history');
     },
-    [enrichedModels]
+    [enrichedModels, setFieldValues]
   );
-
-  // ── Run Queue handler ──
-  const handleRunQueue = useCallback(() => {
-    if (queuedModels.length === 0) return;
-    // Clear pins for fresh comparison
-    clearAllPins();
-    batchAbortedRef.current = false;
-    prevModelRef.current = null;
-    setBatchTotal(queuedModels.length);
-    // Move user queue to execution queue, clear user queue
-    setExecutionQueue(queuedModels.slice(1));
-    setQueuedModels([]);
-    // Apply first item's params and kick off
-    const first = queuedModels[0];
-    setSelectedModel(first.model);
-    setTemperature(first.temperature);
-    setMaxTokens(first.maxTokens);
-    setReasoningEffort(first.reasoningEffort);
-    setShowReasoning(first.showReasoning);
-  }, [queuedModels, clearAllPins]);
-
-  // ── Batch abort handler ──
-  const handleBatchAbort = useCallback(() => {
-    batchAbortedRef.current = true;
-    setExecutionQueue([]);
-    setBatchTotal(0);
-    handleAbort();
-  }, [handleAbort]);
 
   const model = selectedModel?.modelId ?? '';
   const hasValidationErrors =
