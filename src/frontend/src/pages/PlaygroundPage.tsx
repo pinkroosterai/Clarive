@@ -7,7 +7,12 @@ import PlaygroundHistorySidebar from '@/components/playground/PlaygroundHistoryS
 import PlaygroundResultsArea from '@/components/playground/PlaygroundResultsArea';
 import PlaygroundToolbar from '@/components/playground/PlaygroundToolbar';
 import QueueStrip from '@/components/playground/QueueStrip';
-import { type QueuedModel } from '@/components/playground/utils';
+import {
+  type QueuedModel,
+  type PlaygroundModelState,
+  type PlaygroundRunState,
+  type PlaygroundToolState,
+} from '@/components/playground/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -296,6 +301,40 @@ const PlaygroundPage = () => {
     [enrichedModels]
   );
 
+  // ── Grouped prop objects for PlaygroundToolbar ──
+  const modelState = useMemo<PlaygroundModelState>(
+    () => ({
+      selectedModel, model, modelsByProvider, modelsError,
+      temperature, setTemperature, maxTokens, setMaxTokens,
+      reasoningEffort, setReasoningEffort, showReasoning, setShowReasoning,
+      onModelChange: handleModelChange,
+    }),
+    [selectedModel, model, modelsByProvider, modelsError,
+     temperature, setTemperature, maxTokens, setMaxTokens,
+     reasoningEffort, setReasoningEffort, showReasoning, setShowReasoning,
+     handleModelChange]
+  );
+
+  const runState = useMemo<PlaygroundRunState>(
+    () => ({
+      isStreaming, hasValidationErrors,
+      handleRun, handleAbort: isBatchRunning ? handleBatchAbort : handleAbort,
+      onEnqueue: handleEnqueue, queueLength: queuedModels.length,
+      isBatchRunning, batchCurrent, batchTotal,
+    }),
+    [isStreaming, hasValidationErrors, handleRun, handleAbort,
+     isBatchRunning, handleBatchAbort, handleEnqueue, queuedModels.length,
+     batchCurrent, batchTotal]
+  );
+
+  const toolState = useMemo<PlaygroundToolState>(
+    () => ({
+      enabledServerIds, setEnabledServerIds,
+      excludedToolNames, setExcludedToolNames,
+    }),
+    [enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames]
+  );
+
   if (!aiEnabled) return null;
 
   if (isLoading) {
@@ -341,34 +380,11 @@ const PlaygroundPage = () => {
         entryTitle={entry.title}
         isChain={isChain}
         promptsCount={prompts.length}
-        selectedModel={selectedModel}
-        model={model}
-        modelsByProvider={modelsByProvider}
-        modelsError={modelsError}
-        temperature={temperature}
-        setTemperature={setTemperature}
-        maxTokens={maxTokens}
-        setMaxTokens={setMaxTokens}
-        reasoningEffort={reasoningEffort}
-        setReasoningEffort={setReasoningEffort}
-        showReasoning={showReasoning}
-        setShowReasoning={setShowReasoning}
-        isStreaming={isStreaming}
+        modelState={modelState}
+        runState={runState}
+        toolState={toolState}
         showHistory={showHistory}
         setShowHistory={setShowHistory}
-        hasValidationErrors={hasValidationErrors}
-        handleRun={handleRun}
-        handleAbort={isBatchRunning ? handleBatchAbort : handleAbort}
-        onModelChange={handleModelChange}
-        onEnqueue={handleEnqueue}
-        queueLength={queuedModels.length}
-        isBatchRunning={isBatchRunning}
-        batchCurrent={batchCurrent}
-        batchTotal={batchTotal}
-        enabledServerIds={enabledServerIds}
-        setEnabledServerIds={setEnabledServerIds}
-        excludedToolNames={excludedToolNames}
-        setExcludedToolNames={setExcludedToolNames}
       />
 
       {/* ── Queue strip ── */}

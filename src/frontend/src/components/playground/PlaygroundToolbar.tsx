@@ -22,41 +22,19 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { PLAYGROUND_DEFAULTS } from '@/lib/constants';
 import { mcpServerService, toolService } from '@/services';
-import type { EnrichedModel } from '@/services/api/playgroundService';
+
+import type { PlaygroundModelState, PlaygroundRunState, PlaygroundToolState } from './utils';
 
 interface PlaygroundToolbarProps {
   entryId: string | undefined;
   entryTitle: string;
   isChain: boolean;
   promptsCount: number;
-  selectedModel: EnrichedModel | null;
-  model: string;
-  modelsByProvider: Record<string, EnrichedModel[]>;
-  modelsError: boolean;
-  temperature: number;
-  setTemperature: (v: number) => void;
-  maxTokens: number;
-  setMaxTokens: (v: number) => void;
-  reasoningEffort: string;
-  setReasoningEffort: (v: string) => void;
-  showReasoning: boolean;
-  setShowReasoning: (v: boolean) => void;
-  isStreaming: boolean;
+  modelState: PlaygroundModelState;
+  runState: PlaygroundRunState;
+  toolState: PlaygroundToolState;
   showHistory: boolean;
   setShowHistory: React.Dispatch<React.SetStateAction<boolean>>;
-  hasValidationErrors: boolean;
-  handleRun: () => void;
-  handleAbort: () => void;
-  onModelChange: (model: EnrichedModel) => void;
-  onEnqueue: () => void;
-  queueLength: number;
-  isBatchRunning?: boolean;
-  batchCurrent?: number;
-  batchTotal?: number;
-  enabledServerIds: string[];
-  setEnabledServerIds: (v: string[]) => void;
-  excludedToolNames: string[];
-  setExcludedToolNames: (v: string[]) => void;
 }
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -67,35 +45,23 @@ export default function PlaygroundToolbar({
   entryTitle,
   isChain,
   promptsCount,
-  selectedModel,
-  model,
-  modelsByProvider,
-  modelsError,
-  temperature,
-  setTemperature,
-  maxTokens,
-  setMaxTokens,
-  reasoningEffort,
-  setReasoningEffort,
-  showReasoning,
-  setShowReasoning,
-  isStreaming,
+  modelState,
+  runState,
+  toolState,
   showHistory,
   setShowHistory,
-  hasValidationErrors,
-  handleRun,
-  handleAbort,
-  onModelChange,
-  onEnqueue,
-  queueLength,
-  isBatchRunning,
-  batchCurrent,
-  batchTotal,
-  enabledServerIds,
-  setEnabledServerIds,
-  excludedToolNames,
-  setExcludedToolNames,
 }: PlaygroundToolbarProps) {
+  const {
+    selectedModel, model, modelsByProvider, modelsError,
+    temperature, setTemperature, maxTokens, setMaxTokens,
+    reasoningEffort, setReasoningEffort, showReasoning, setShowReasoning,
+    onModelChange,
+  } = modelState;
+  const {
+    isStreaming, hasValidationErrors, handleRun, handleAbort,
+    onEnqueue, queueLength, isBatchRunning, batchCurrent, batchTotal,
+  } = runState;
+  const { enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames } = toolState;
   const navigate = useNavigate();
 
   // ── MCP servers + tools for toolbar ──
