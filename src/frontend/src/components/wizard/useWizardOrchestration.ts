@@ -298,14 +298,25 @@ export function useWizardOrchestration(
   const saveMutation = useMutation({
     mutationFn: async (folderId: string | null) => {
       if (!state.draft) throw new Error('No draft');
+      const evaluationDims = state.evaluation?.dimensions ?? null;
+
       if (mode === 'new') {
-        return entryService.createEntry({ ...state.draft, folderId });
+        const created = await entryService.createEntry({ ...state.draft, folderId });
+        // Persist evaluation on the newly created entry
+        if (evaluationDims) {
+          return entryService.updateEntry(created.id, {}, { evaluation: evaluationDims });
+        }
+        return created;
       } else {
-        return entryService.updateEntry(existingEntry!.id, {
-          title: state.draft.title,
-          systemMessage: state.draft.systemMessage,
-          prompts: state.draft.prompts,
-        });
+        return entryService.updateEntry(
+          existingEntry!.id,
+          {
+            title: state.draft.title,
+            systemMessage: state.draft.systemMessage,
+            prompts: state.draft.prompts,
+          },
+          evaluationDims ? { evaluation: evaluationDims } : undefined
+        );
       }
     },
     onSuccess: (result) => {

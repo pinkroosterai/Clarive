@@ -102,18 +102,6 @@ export function EditorActionPanel({
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="details" className="flex-1 gap-1.5 text-xs">
-            Details
-            {tagCount > 0 && (
-              <span className="inline-flex items-center justify-center size-4 rounded-full bg-muted-foreground/20 text-[10px] font-medium text-muted-foreground">
-                {tagCount}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="versions" className="flex-1 gap-1.5 text-xs">
-            Versions
-            <span className="text-[10px] font-medium text-muted-foreground">v{entry.version}</span>
-          </TabsTrigger>
           <TabsTrigger value="quality" className="flex-1 gap-1.5 text-xs">
             Quality
             {(localEvaluation || entry.evaluation) && (
@@ -124,6 +112,18 @@ export function EditorActionPanel({
                         Object.keys(localEvaluation.dimensions).length
                     : (entry.evaluationAverageScore ?? 0)
                 )}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="versions" className="flex-1 gap-1.5 text-xs">
+            Versions
+            <span className="text-[10px] font-medium text-muted-foreground">v{entry.version}</span>
+          </TabsTrigger>
+          <TabsTrigger value="details" className="flex-1 gap-1.5 text-xs">
+            Details
+            {tagCount > 0 && (
+              <span className="inline-flex items-center justify-center size-4 rounded-full bg-muted-foreground/20 text-[10px] font-medium text-muted-foreground">
+                {tagCount}
               </span>
             )}
           </TabsTrigger>
@@ -164,14 +164,16 @@ export function EditorActionPanel({
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="details" className="flex-1 overflow-hidden pt-4">
+        <TabsContent value="quality" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
             <div className="pr-3">
-              <DetailsTabContent
-                entry={entry}
-                folderName={folderName}
-                onMoveFolder={onMoveFolder}
-                isReadOnly={isReadOnly}
+              <QualityTabContent
+                evaluation={entry.evaluation}
+                localEvaluation={localEvaluation}
+                isDirty={isDirty}
+                isEvaluating={isEvaluating ?? false}
+                onEvaluate={onEvaluate ?? (() => {})}
+                versions={versions}
               />
             </div>
           </ScrollArea>
@@ -191,16 +193,14 @@ export function EditorActionPanel({
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="quality" className="flex-1 overflow-hidden pt-4">
+        <TabsContent value="details" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
             <div className="pr-3">
-              <QualityTabContent
-                evaluation={entry.evaluation}
-                localEvaluation={localEvaluation}
-                isDirty={isDirty}
-                isEvaluating={isEvaluating ?? false}
-                onEvaluate={onEvaluate ?? (() => {})}
-                versions={versions}
+              <DetailsTabContent
+                entry={entry}
+                folderName={folderName}
+                onMoveFolder={onMoveFolder}
+                isReadOnly={isReadOnly}
               />
             </div>
           </ScrollArea>

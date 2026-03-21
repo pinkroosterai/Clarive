@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { FolderInput, Clock, User, Calendar, Copy, History } from 'lucide-react';
+import { FolderInput, Clock, User, Calendar, Copy, History, Info } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -39,6 +39,10 @@ export function DetailsTabContent({
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Info className="size-4 text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">Details</h3>
+      </div>
       <ActionGroup label="Tags">
         <TagEditor entryId={entry.id} readOnly={isReadOnly} />
       </ActionGroup>

@@ -41,18 +41,24 @@ export function QualityTabContent({
       {hasEvaluation ? (
         <QualityScoreCard evaluation={activeEvaluation} scoreHistory={scoreHistory} />
       ) : (
-        <div className="flex flex-col items-center gap-3 py-8 text-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-elevated">
-            <BarChart3 className="size-6 text-foreground-muted" />
+        <>
+          <div className="flex items-center gap-2">
+            <BarChart3 className="size-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Quality Analysis</h3>
           </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">No evaluation yet</p>
-            <p className="text-xs text-foreground-muted">
-              Evaluate your prompt to get quality scores across clarity, effectiveness,
-              completeness, and faithfulness.
-            </p>
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-elevated">
+              <BarChart3 className="size-6 text-foreground-muted" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">No evaluation yet</p>
+              <p className="text-xs text-foreground-muted">
+                Evaluate your prompt to get quality scores across clarity, effectiveness,
+                completeness, and faithfulness.
+              </p>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <Button

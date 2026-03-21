@@ -12,6 +12,7 @@ import {
   Check,
   Play,
   Share2,
+  Settings2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useRef } from 'react';
@@ -128,6 +129,10 @@ export function ActionsTabContent({
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Settings2 className="size-4 text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">Actions</h3>
+      </div>
       <ActionGroup label="Edit">
         <div className="inline-flex items-center gap-0.5 rounded-md border border-border-subtle p-0.5">
           <Tooltip>
@@ -199,15 +204,17 @@ export function ActionsTabContent({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">
-            {hasEmptyTitle
-              ? 'Title is required to save'
-              : <>Save Draft <kbd className="ml-1 text-xs opacity-60">Ctrl+S</kbd></>}
+            {hasEmptyTitle ? (
+              'Title is required to save'
+            ) : (
+              <>
+                Save Draft <kbd className="ml-1 text-xs opacity-60">Ctrl+S</kbd>
+              </>
+            )}
           </TooltipContent>
         </Tooltip>
 
-        {hasEmptyTitle && isDirty && (
-          <p className="text-xs text-destructive">Title is required</p>
-        )}
+        {hasEmptyTitle && isDirty && <p className="text-xs text-destructive">Title is required</p>}
 
         {isDirty && (
           <AlertDialog>
@@ -300,11 +307,13 @@ export function ActionsTabContent({
               </TooltipTrigger>
             </AlertDialogTrigger>
             <TooltipContent side="left">
-              {hasEmptyTitle
-                ? 'Title is required to publish'
-                : hasDraft
-                  ? <kbd className="text-xs">Ctrl+Enter</kbd>
-                  : 'No draft to publish'}
+              {hasEmptyTitle ? (
+                'Title is required to publish'
+              ) : hasDraft ? (
+                <kbd className="text-xs">Ctrl+Enter</kbd>
+              ) : (
+                'No draft to publish'
+              )}
             </TooltipContent>
           </Tooltip>
           <AlertDialogContent>
@@ -360,7 +369,9 @@ export function ActionsTabContent({
                 </div>
               </TooltipTrigger>
               <TooltipContent side="left">
-                {aiEnabled ? 'Improve your prompt with AI suggestions' : 'AI features are not configured'}
+                {aiEnabled
+                  ? 'Improve your prompt with AI suggestions'
+                  : 'AI features are not configured'}
               </TooltipContent>
             </Tooltip>
 
@@ -380,7 +391,9 @@ export function ActionsTabContent({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="left">
-                  {aiEnabled ? 'Auto-generate a system message from your prompt' : 'AI features are not configured'}
+                  {aiEnabled
+                    ? 'Auto-generate a system message from your prompt'
+                    : 'AI features are not configured'}
                 </TooltipContent>
               </Tooltip>
             )}
@@ -401,7 +414,9 @@ export function ActionsTabContent({
                     </TooltipTrigger>
                   </AlertDialogTrigger>
                   <TooltipContent side="left">
-                    {aiEnabled ? 'Split your prompt into a multi-step chain' : 'AI features are not configured'}
+                    {aiEnabled
+                      ? 'Split your prompt into a multi-step chain'
+                      : 'AI features are not configured'}
                   </TooltipContent>
                 </Tooltip>
                 <AlertDialogContent>
@@ -436,7 +451,9 @@ export function ActionsTabContent({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="left">
-                  {aiEnabled ? 'Run this prompt in the playground' : 'AI features are not configured'}
+                  {aiEnabled
+                    ? 'Run this prompt in the playground'
+                    : 'AI features are not configured'}
                 </TooltipContent>
               </Tooltip>
             )}
