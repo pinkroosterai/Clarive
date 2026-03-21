@@ -187,7 +187,7 @@ export function FolderTree() {
         </SidebarMenuItem>
       </DroppableFolderWrapper>
 
-      {/* Root-level entries (hidden when filtering) */}
+      {/* Unfoldered entries — shown right after All Prompts for easy discovery */}
       {!isFiltering &&
         rootEntries.map((entry) => (
           <EntryTreeItem key={entry.id} entry={entry} depth={0} activeEntryId={entryId} />
