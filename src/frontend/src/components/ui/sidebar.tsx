@@ -261,9 +261,15 @@ const Sidebar = React.forwardRef<
               onPointerDown={(e) => {
                 e.preventDefault();
                 const target = e.currentTarget;
+                const sidebarEl = target.parentElement;
+                const gapEl = sidebarEl?.previousElementSibling as HTMLElement | null;
                 target.setPointerCapture(e.pointerId);
                 const startX = e.clientX;
-                const startWidth = target.parentElement?.getBoundingClientRect().width ?? 256;
+                const startWidth = sidebarEl?.getBoundingClientRect().width ?? 256;
+
+                // Disable transition during drag for smooth resizing
+                sidebarEl?.style.setProperty('transition', 'none');
+                gapEl?.style.setProperty('transition', 'none');
 
                 const onPointerMove = (ev: PointerEvent) => {
                   const delta = side === 'left' ? ev.clientX - startX : startX - ev.clientX;
@@ -272,8 +278,12 @@ const Sidebar = React.forwardRef<
                 };
 
                 const onPointerUp = () => {
+                  target.releasePointerCapture(e.pointerId);
                   target.removeEventListener('pointermove', onPointerMove);
                   target.removeEventListener('pointerup', onPointerUp);
+                  // Re-enable transition after drag
+                  sidebarEl?.style.removeProperty('transition');
+                  gapEl?.style.removeProperty('transition');
                 };
 
                 target.addEventListener('pointermove', onPointerMove);
