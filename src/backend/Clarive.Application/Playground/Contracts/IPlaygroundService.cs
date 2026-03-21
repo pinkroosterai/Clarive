@@ -23,4 +23,6 @@ public interface IPlaygroundService
         Guid runId,
         CancellationToken ct
     );
+
+    Task<List<TestRunResponse>> GetRunsAsync(Guid entryId, CancellationToken ct);
 }

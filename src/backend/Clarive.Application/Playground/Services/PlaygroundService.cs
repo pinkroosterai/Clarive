@@ -407,4 +407,9 @@ public class PlaygroundService(
             return Error.Failure("JUDGE_FAILED", $"LLM judge evaluation failed: {ex.Message}");
         }
     }
+
+    public Task<List<TestRunResponse>> GetRunsAsync(Guid entryId, CancellationToken ct)
+    {
+        return runService.GetRunsAsync(entryId, ct);
+    }
 }

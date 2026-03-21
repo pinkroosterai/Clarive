@@ -171,11 +171,11 @@ public static class PlaygroundEndpoints
     private static async Task<IResult> HandleGetTestRuns(
         Guid entryId,
         HttpContext ctx,
-        IPlaygroundRunService runService,
+        IPlaygroundService playground,
         CancellationToken ct
     )
     {
-        var runs = await runService.GetRunsAsync(entryId, ct);
+        var runs = await playground.GetRunsAsync(entryId, ct);
         return Results.Ok(runs);
     }
 
