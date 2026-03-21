@@ -94,9 +94,11 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
                     };
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Best-effort — if fetching fails, return 409 without details
+                // Best-effort — if entry fetch fails, return 409 without details
+                var fetchLogger = context.RequestServices.GetRequiredService<ILogger<ErrorHandlingMiddleware>>();
+                fetchLogger.LogDebug(ex, "Failed to fetch entry details for conflict response on {Path}", context.Request.Path);
             }
         }
 

@@ -33,7 +33,7 @@ interface ConflictResolutionDialogProps {
 }
 
 function DiffDisplay({ mine, theirs }: { mine: string; theirs: string }) {
-  const changes = diffLines(theirs, mine);
+  const changes = useMemo(() => diffLines(theirs, mine), [mine, theirs]);
   return (
     <div className="rounded-md border border-border-subtle bg-elevated p-3 font-mono text-xs whitespace-pre-wrap overflow-x-auto max-h-48">
       {changes.map((part, i) => {
