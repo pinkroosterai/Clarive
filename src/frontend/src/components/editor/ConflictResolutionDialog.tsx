@@ -72,6 +72,9 @@ function FieldConflict({
   mergedText: string;
   onMergedTextChange: (text: string) => void;
 }) {
+  const resolvedText =
+    choice === 'merged' ? mergedText : choice === 'theirs' ? field.theirs : field.mine;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -134,6 +137,14 @@ function FieldConflict({
           />
         </div>
       )}
+
+      {/* Live result preview */}
+      <div>
+        <div className="text-xs font-medium text-muted-foreground mb-1.5">Result preview</div>
+        <div className="rounded-md border border-primary/20 bg-elevated p-3 font-mono text-xs whitespace-pre-wrap min-h-[40px]">
+          {resolvedText || <span className="text-muted-foreground italic">Empty</span>}
+        </div>
+      </div>
     </div>
   );
 }
@@ -246,8 +257,9 @@ export function ConflictResolutionDialog({
         <div>
           <h1 className="text-lg font-semibold">Resolve conflict</h1>
           <p className="text-sm text-muted-foreground">
-            Someone else saved changes while you were editing. Choose which version to keep for each
-            field, or edit the merged result.
+            Someone else saved changes while you were editing. {diffFields.length} conflicting
+            field{diffFields.length !== 1 ? 's' : ''} — choose which version to keep or edit the
+            merged result.
           </p>
         </div>
         <div className="flex gap-2 shrink-0 ml-4">

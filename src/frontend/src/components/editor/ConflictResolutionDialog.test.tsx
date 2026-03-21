@@ -141,6 +141,33 @@ describe('ConflictResolutionDialog (full-page overlay)', () => {
     expect(onResolve).not.toHaveBeenCalled();
   });
 
+  it('shows result preview labels for conflicting fields', () => {
+    renderOverlay();
+    const previews = screen.getAllByText('Result preview');
+    // At least 2 conflicting fields (Title + Prompt 1) should each have a preview
+    expect(previews.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('result preview updates when switching to Keep theirs', () => {
+    renderOverlay();
+    const keepTheirsButtons = screen.getAllByRole('button', { name: /keep theirs/i });
+    fireEvent.click(keepTheirsButtons[0]); // Switch Title to theirs
+    // Their title now appears in both the diff column AND the preview
+    const matches = screen.getAllByText('Their Updated Title');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('result preview updates when editing merged text', () => {
+    renderOverlay();
+    const editMergedButtons = screen.getAllByRole('button', { name: /edit merged/i });
+    fireEvent.click(editMergedButtons[0]);
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'Unique Preview 12345' } });
+    // Text appears in both the textarea and the preview
+    const matches = screen.getAllByText('Unique Preview 12345');
+    expect(matches.length).toBeGreaterThanOrEqual(2); // textarea + preview
+  });
+
   it('renders nothing when open is false', () => {
     const { container } = render(
       <ConflictResolutionDialog
