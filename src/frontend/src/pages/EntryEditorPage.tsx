@@ -100,7 +100,7 @@ const EntryEditorPage = () => {
   });
 
   // ── Real-time presence & soft lock ──
-  const { presenceUsers, activeEditor, newEditorAlert } = usePresence(entryId, editor.isDirty);
+  const { presenceUsers, activeEditor, onEditorJoinedRef } = usePresence(entryId, editor.isDirty);
   const isSoftLocked = !!activeEditor && !softLockOverride;
   const isReadOnly = !!version || currentUser?.role === 'viewer' || isSoftLocked;
 
@@ -110,11 +110,9 @@ const EntryEditorPage = () => {
   }, [entryId]);
 
   // Toast when another user starts editing while we're editing
-  useEffect(() => {
-    if (newEditorAlert && editor.isDirty) {
-      toast.info(`${newEditorAlert.name} started editing this prompt`);
-    }
-  }, [newEditorAlert, editor.isDirty]);
+  onEditorJoinedRef.current = (user) => {
+    toast.info(`${user.name} started editing this prompt`);
+  };
 
   const hasDraft = versions.some((v) => v.versionState === 'draft');
   const draftVersion = versions.find((v) => v.versionState === 'draft')?.version;

@@ -130,9 +130,10 @@ export function usePresence(entryId: string | undefined, isEditing: boolean) {
   // Derived: first user actively editing (for soft lock)
   const activeEditor = otherUsers.find((u) => u.state === 'editing') ?? null;
 
-  // Detect when a new user starts editing while we're also editing (for toast notification)
+  // Detect when a new user starts editing while we're also editing (for toast notification).
+  // Uses a ref-based callback to avoid stale state and duplicate toasts.
   const prevEditingIdsRef = useRef<Set<string>>(new Set());
-  const [newEditorAlert, setNewEditorAlert] = useState<PresenceUser | null>(null);
+  const onEditorJoinedRef = useRef<((user: PresenceUser) => void) | null>(null);
 
   useEffect(() => {
     const currentEditingIds = new Set(otherUsers.filter((u) => u.state === 'editing').map((u) => u.userId));
@@ -142,7 +143,7 @@ export function usePresence(entryId: string | undefined, isEditing: boolean) {
       for (const id of currentEditingIds) {
         if (!prevIds.has(id)) {
           const user = otherUsers.find((u) => u.userId === id);
-          if (user) setNewEditorAlert(user);
+          if (user) onEditorJoinedRef.current?.(user);
           break;
         }
       }
@@ -151,12 +152,5 @@ export function usePresence(entryId: string | undefined, isEditing: boolean) {
     prevEditingIdsRef.current = currentEditingIds;
   }, [otherUsers]);
 
-  // Clear alert after consumer reads it
-  const consumeNewEditorAlert = useCallback(() => {
-    const alert = newEditorAlert;
-    setNewEditorAlert(null);
-    return alert;
-  }, [newEditorAlert]);
-
-  return { presenceUsers: otherUsers, activeEditor, newEditorAlert, consumeNewEditorAlert };
+  return { presenceUsers: otherUsers, activeEditor, onEditorJoinedRef };
 }
