@@ -4,7 +4,7 @@ using Clarive.Api.Helpers;
 using Clarive.Domain.Enums;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
-using Serilog;
+using Clarive.Application.Audit.Services;
 using static Clarive.Api.Helpers.ResponseMappers;
 
 namespace Clarive.Api.Endpoints;
@@ -139,8 +139,7 @@ public static class WorkspaceEndpoints
             }
         }
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             userId,
             ctx.GetUserName(),
@@ -155,42 +154,4 @@ public static class WorkspaceEndpoints
         return Results.NoContent();
     }
 
-    private static async Task SafeLogAsync(
-        IAuditLogger auditLogger,
-        Guid tenantId,
-        Guid userId,
-        string userName,
-        AuditAction action,
-        string entityType,
-        Guid entityId,
-        string entityTitle,
-        string? details,
-        CancellationToken ct
-    )
-    {
-        try
-        {
-            await auditLogger.LogAsync(
-                tenantId,
-                userId,
-                userName,
-                action,
-                entityType,
-                entityId,
-                entityTitle,
-                details,
-                ct
-            );
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(
-                ex,
-                "Audit logging failed for {Action} on {EntityType} {EntityId}",
-                action,
-                entityType,
-                entityId
-            );
-        }
-    }
 }

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { USERS, TEST_EMAILS } from './helpers/seed-data';
 
 test.describe('Authentication — Registration', () => {
   test.use({ storageState: { cookies: [], origins: [] } }); // no pre-auth
@@ -22,7 +23,7 @@ test.describe('Authentication — Registration', () => {
     await page.goto('/register');
     await page.waitForLoadState('networkidle');
     await page.locator('#name').fill('Duplicate User');
-    await page.locator('#email').fill('admin@clarive.dev'); // seeded user
+    await page.locator('#email').fill(USERS.admin.email); // seeded user
     await page.locator('#password').fill('StrongPass123!');
     await page.locator('#confirmPassword').fill('StrongPass123!');
     await page.getByRole('button', { name: 'Create account' }).click();
@@ -38,7 +39,7 @@ test.describe('Authentication — Registration', () => {
     await page.goto('/register');
     await page.waitForLoadState('networkidle');
     await page.locator('#name').fill('Mismatch User');
-    await page.locator('#email').fill('mismatch@test.dev');
+    await page.locator('#email').fill(TEST_EMAILS.mismatch);
     await page.locator('#password').fill('Password1!');
     await page.locator('#confirmPassword').fill('DifferentPassword!');
     await page.getByRole('button', { name: 'Create account' }).click();

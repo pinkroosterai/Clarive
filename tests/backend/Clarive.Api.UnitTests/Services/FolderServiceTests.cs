@@ -50,7 +50,7 @@ public class FolderServiceTests
     [Fact]
     public async Task GetTreeAsync_ReturnsFolderTree()
     {
-        var tree = new List<FolderDto> { new(Guid.NewGuid(), "Root", null, []) };
+        var tree = new List<FolderDto> { new(Guid.NewGuid(), "Root", null, null, []) };
         _folderRepo.GetTreeAsync(TenantId, Arg.Any<CancellationToken>()).Returns(tree);
 
         var result = await _sut.GetTreeAsync(TenantId, default);

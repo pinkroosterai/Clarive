@@ -5,6 +5,7 @@ using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Domain.Interfaces.Services;
 using ErrorOr;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Clarive.Application.Auth.Services;
@@ -16,7 +17,8 @@ public class AuthService(
     IEmailService emailService,
     IOptions<AppSettings> appSettings,
     JwtService jwtService,
-    PasswordHasher passwordHasher
+    PasswordHasher passwordHasher,
+    ILogger<AuthService> logger
 ) : IAuthService
 {
     public async Task<ErrorOr<string>> VerifyEmailAsync(string token, CancellationToken ct)
@@ -29,7 +31,10 @@ public class AuthService(
             || verification.UsedAt is not null
             || verification.ExpiresAt < DateTime.UtcNow
         )
+        {
+            logger.LogWarning("Email verification failed: invalid or expired token");
             return Error.Validation("INVALID_TOKEN", "Verification token is invalid or expired.");
+        }
 
         var user = await userRepo.GetByIdCrossTenantsAsync(verification.UserId, ct);
         if (user is null)
@@ -45,6 +50,7 @@ public class AuthService(
         await userRepo.UpdateAsync(user, ct);
         await tokenRepo.MarkVerificationUsedAsync(verification.Id, ct);
 
+        logger.LogInformation("Email verified for user {UserId}", user.Id);
         return "Email verified successfully.";
     }
 
@@ -69,11 +75,14 @@ public class AuthService(
             ct
         );
         if (recentCount >= 1)
+        {
+            logger.LogWarning("Verification email rate-limited for user {UserId}", userId);
             return Error.Custom(
                 429,
                 "RATE_LIMIT",
                 "Please wait before requesting another verification email."
             );
+        }
 
         var (rawToken, _) = jwtService.GenerateRefreshToken();
         await tokenRepo.CreateVerificationTokenAsync(
@@ -91,11 +100,13 @@ public class AuthService(
         var verifyUrl = $"{appSettings.Value.FrontendUrl}/verify-email?token={rawToken}";
         await emailService.SendVerificationEmailAsync(user.Email, user.Name, verifyUrl, ct);
 
+        logger.LogInformation("Verification email resent for user {UserId}", userId);
         return "Verification email sent.";
     }
 
     public async Task ForgotPasswordAsync(string? email, CancellationToken ct)
     {
+        logger.LogInformation("Password reset requested for {Email}", email ?? "(empty)");
         if (string.IsNullOrWhiteSpace(email))
             return;
 
@@ -148,7 +159,10 @@ public class AuthService(
         var reset = await tokenRepo.GetResetByHashAsync(tokenHash, ct);
 
         if (reset is null || reset.UsedAt is not null || reset.ExpiresAt < DateTime.UtcNow)
+        {
+            logger.LogWarning("Password reset failed: invalid or expired token");
             return Error.Validation("INVALID_TOKEN", "Reset token is invalid or expired.");
+        }
 
         var user = await userRepo.GetByIdCrossTenantsAsync(reset.UserId, ct);
         if (user is null)
@@ -161,6 +175,7 @@ public class AuthService(
         // Revoke all refresh tokens for security
         await refreshTokenRepo.RevokeAllForUserAsync(user.Id, ct);
 
+        logger.LogInformation("Password reset completed for user {UserId}, all refresh tokens revoked", user.Id);
         return "Password reset successfully.";
     }
 }

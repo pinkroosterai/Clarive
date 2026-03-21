@@ -134,3 +134,9 @@ export const PUBLISHED_ENTRIES = VISIBLE_ENTRIES.filter((e) => e.state === 'publ
 
 /** Root-level folders (no parent) */
 export const ROOT_FOLDERS = Object.values(FOLDERS).filter((f) => f.parent === null);
+
+/** Test-only email addresses (not seeded in backend) */
+export const TEST_EMAILS = {
+  nonexistent: 'nonexistent@example.com',
+  mismatch: 'mismatch@test.dev',
+} as const;

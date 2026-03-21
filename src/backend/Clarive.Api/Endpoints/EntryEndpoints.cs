@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Enums;
+using Clarive.Application.Audit.Services;
 using Clarive.Domain.ValueObjects;
 
 namespace Clarive.Api.Endpoints;
@@ -201,8 +202,7 @@ public static partial class EntryEndpoints
 
         var (entry, version) = result.Value;
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             userId,
             ctx.GetUserName(),
@@ -248,8 +248,7 @@ public static partial class EntryEndpoints
 
         var (entry, working) = result.Value;
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             userId,
             ctx.GetUserName(),
@@ -291,8 +290,7 @@ public static partial class EntryEndpoints
 
         var (entry, published) = result.Value;
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             userId,
             ctx.GetUserName(),
@@ -335,8 +333,7 @@ public static partial class EntryEndpoints
 
         var (entry, newDraft) = result.Value;
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             userId,
             ctx.GetUserName(),
@@ -378,8 +375,7 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             userId,
             ctx.GetUserName(),
@@ -457,8 +453,7 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             ctx.GetUserId(),
             ctx.GetUserName(),
@@ -490,8 +485,7 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             ctx.GetUserId(),
             ctx.GetUserName(),
@@ -536,8 +530,7 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        await SafeLogAsync(
-            auditLogger,
+        await auditLogger.SafeLogAsync(
             tenantId,
             ctx.GetUserId(),
             ctx.GetUserName(),

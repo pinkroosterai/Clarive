@@ -1,12 +1,14 @@
 using Clarive.Auth.Jwt;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Clarive.Application.Account.Services;
 
 public class TokenIssuanceService(
     JwtService jwtService,
-    IRefreshTokenRepository refreshTokenRepo
+    IRefreshTokenRepository refreshTokenRepo,
+    ILogger<TokenIssuanceService> logger
 ) : ITokenIssuanceService
 {
     public async Task<(
@@ -31,6 +33,7 @@ public class TokenIssuanceService(
             ct
         );
 
+        logger.LogDebug("Issued tokens for user {UserId} in tenant {TenantId}", user.Id, user.TenantId);
         return (accessToken, rawRefresh, refreshTokenId);
     }
 }

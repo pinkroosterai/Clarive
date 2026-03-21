@@ -50,9 +50,11 @@ try
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                .Enrich.WithThreadId();
+                .Enrich.WithThreadId()
+                .Enrich.WithCorrelationId();
 
             // PostgreSQL sink — connection string comes from env vars, so configure programmatically
+            // NOT wrapped with Async — already batches internally (50 items, 5s flush)
             var pgConn = builder.Configuration.GetConnectionString("DefaultConnection");
             if (!string.IsNullOrWhiteSpace(pgConn))
             {

@@ -11,13 +11,6 @@ export async function waitForAppShell(page: Page): Promise<void> {
   });
 }
 
-/** Get the visible toast message text. */
-export async function getToastMessage(page: Page): Promise<string> {
-  const toast = page.locator('[data-sonner-toast]').first();
-  await toast.waitFor({ state: 'visible', timeout: 5_000 });
-  return (await toast.textContent()) ?? '';
-}
-
 /** Assert a toast with matching text appears. */
 export async function expectToast(page: Page, text: string | RegExp): Promise<void> {
   const toast = page.locator('[data-sonner-toast]').first();
@@ -27,18 +20,6 @@ export async function expectToast(page: Page, text: string | RegExp): Promise<vo
   } else {
     await expect(toast).toHaveText(text);
   }
-}
-
-/** Navigate to library root and wait for content to load. */
-export async function goToLibrary(page: Page): Promise<void> {
-  await page.goto('/library');
-  await page.waitForLoadState('networkidle');
-}
-
-/** Navigate to an entry editor by clicking its title in the library. */
-export async function openEntryByTitle(page: Page, title: string): Promise<void> {
-  await page.getByRole('link', { name: title }).first().click();
-  await page.waitForURL(/\/entry\//);
 }
 
 /** Fill in the login form and submit. */

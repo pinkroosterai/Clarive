@@ -40,7 +40,7 @@ public class InvitationServiceTests
             ExpirationMinutes = 15,
             RefreshTokenExpirationDays = 7,
         };
-        _jwtService = new JwtService(new OptionsMonitorStub<JwtSettings>(jwtSettings));
+        _jwtService = new JwtService(new OptionsMonitorStub<JwtSettings>(jwtSettings), Substitute.For<ILogger<JwtService>>());
 
         var options = new DbContextOptionsBuilder<ClariveDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())

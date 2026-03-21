@@ -5,6 +5,7 @@ using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Domain.Interfaces.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
@@ -33,7 +34,7 @@ public class AuthServiceTests
             ExpirationMinutes = 15,
             RefreshTokenExpirationDays = 7,
         };
-        _jwtService = new JwtService(new OptionsMonitorStub<JwtSettings>(jwtSettings));
+        _jwtService = new JwtService(new OptionsMonitorStub<JwtSettings>(jwtSettings), Substitute.For<ILogger<JwtService>>());
 
         var appSettings = Options.Create(
             new AppSettings { FrontendUrl = "https://test.clarive.dev" }
@@ -46,7 +47,8 @@ public class AuthServiceTests
             _emailService,
             appSettings,
             _jwtService,
-            _passwordHasher
+            _passwordHasher,
+            Substitute.For<ILogger<AuthService>>()
         );
     }
 

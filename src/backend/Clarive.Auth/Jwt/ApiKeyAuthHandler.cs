@@ -91,6 +91,12 @@ public class ApiKeyAuthHandler(
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, SchemeName);
 
+        Logger.LogDebug(
+            "API key authenticated: {ApiKeyName} for tenant {TenantId} on {Path}",
+            apiKey.Name,
+            apiKey.TenantId,
+            Request.Path
+        );
         return AuthenticateResult.Success(ticket);
     }
 }

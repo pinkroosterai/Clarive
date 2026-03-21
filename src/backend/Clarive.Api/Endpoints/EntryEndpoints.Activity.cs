@@ -1,7 +1,5 @@
 using System.ComponentModel;
 using Clarive.Api.Helpers;
-using Clarive.Domain.Enums;
-using Serilog;
 
 namespace Clarive.Api.Endpoints;
 
@@ -26,45 +24,5 @@ public static partial class EntryEndpoints
         return result.IsError
             ? result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString())
             : Results.Ok(result.Value);
-    }
-
-    private static async Task SafeLogAsync(
-        IAuditLogger auditLogger,
-        Guid tenantId,
-        Guid userId,
-        string userName,
-        AuditAction action,
-        string entityType,
-        Guid entityId,
-        string entityTitle,
-        string? details,
-        CancellationToken ct
-    )
-    {
-        try
-        {
-            await auditLogger.LogAsync(
-                tenantId,
-                userId,
-                userName,
-                action,
-                entityType,
-                entityId,
-                entityTitle,
-                details,
-                ct
-            );
-        }
-        catch (Exception ex)
-        {
-            // Audit logging failures must not affect the primary operation
-            Log.Warning(
-                ex,
-                "Audit logging failed for {Action} on {EntityType} {EntityId}",
-                action,
-                entityType,
-                entityId
-            );
-        }
     }
 }

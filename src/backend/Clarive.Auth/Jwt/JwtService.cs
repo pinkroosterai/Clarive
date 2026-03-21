@@ -14,10 +14,12 @@ namespace Clarive.Auth.Jwt;
 public class JwtService
 {
     private readonly IOptionsMonitor<JwtSettings> _optionsMonitor;
+    private readonly ILogger<JwtService> _logger;
 
-    public JwtService(IOptionsMonitor<JwtSettings> optionsMonitor)
+    public JwtService(IOptionsMonitor<JwtSettings> optionsMonitor, ILogger<JwtService> logger)
     {
         _optionsMonitor = optionsMonitor;
+        _logger = logger;
     }
 
     public string GenerateToken(User user)
@@ -52,7 +54,9 @@ public class JwtService
             signingCredentials: creds
         );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+        _logger.LogDebug("Generated JWT for user {UserId} tenant {TenantId} role {Role}", user.Id, tenantId, role);
+        return jwt;
     }
 
     /// <summary>

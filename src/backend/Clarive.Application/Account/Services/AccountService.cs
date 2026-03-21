@@ -8,6 +8,7 @@ using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
 using ErrorOr;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Clarive.Application.Account.Services;
 
@@ -24,7 +25,8 @@ public class AccountService(
     IConfiguration configuration,
     ClariveDbContext db,
     ITokenIssuanceService tokenIssuance,
-    IUserWorkspaceCreationService workspaceCreation
+    IUserWorkspaceCreationService workspaceCreation,
+    ILogger<AccountService> logger
 ) : IAccountService
 {
     public async Task<ErrorOr<LoginResult>> LoginAsync(
@@ -39,12 +41,16 @@ public class AccountService(
             || user.PasswordHash is null
             || !passwordHasher.Verify(password, user.PasswordHash)
         )
+        {
+            logger.LogWarning("Login failed for {Email} via {AuthMethod}: invalid credentials", email, "password");
             return Error.Unauthorized("INVALID_CREDENTIALS", "Email or password is incorrect.");
+        }
 
         var (accessToken, rawRefresh, refreshTokenId) = await tokenIssuance.IssueTokensAsync(
             user,
             ct
         );
+        logger.LogInformation("Login succeeded for {Email} via {AuthMethod}", email, "password");
         return new LoginResult(user, accessToken, rawRefresh, refreshTokenId);
     }
 
@@ -56,7 +62,10 @@ public class AccountService(
     )
     {
         if (await userRepo.GetByEmailAsync(email, ct) is not null)
+        {
+            logger.LogWarning("Registration rejected for {Email}: email already exists", email);
             return Error.Conflict("EMAIL_ALREADY_EXISTS", "A user with this email already exists.");
+        }
 
         try
         {
@@ -101,6 +110,13 @@ public class AccountService(
                     var (accessToken, rawRefresh, refreshTokenId) =
                         await tokenIssuance.IssueTokensAsync(user, ct);
 
+                    logger.LogInformation(
+                        "Account registered for {Email}, user {UserId}{AdminNote}",
+                        email,
+                        user.Id,
+                        isFirstUser ? " (first user, granted super admin)" : ""
+                    );
+
                     return (ErrorOr<RegisterResult>)
                         new RegisterResult(
                             user,
@@ -116,6 +132,7 @@ public class AccountService(
         }
         catch (DbUpdateException)
         {
+            logger.LogWarning("Concurrent registration conflict for {Email}", email);
             // Unique constraint violation on email — concurrent registration won the race
             return Error.Conflict(
                 "CONCURRENT_REGISTRATION",
@@ -137,6 +154,7 @@ public class AccountService(
         }
         catch (Exception)
         {
+            logger.LogWarning("Google OIDC login failed: invalid or expired ID token");
             return Error.Unauthorized(
                 "INVALID_GOOGLE_TOKEN",
                 "Google ID token is invalid or expired."
@@ -149,6 +167,7 @@ public class AccountService(
         {
             var (accessToken, rawRefresh, refreshTokenId) =
                 await tokenIssuance.IssueTokensAsync(user, ct);
+            logger.LogInformation("Login succeeded for {Email} via {AuthMethod}", user.Email, "google");
             return new GoogleAuthLoginResult(user, accessToken, rawRefresh, refreshTokenId, false);
         }
 
@@ -156,6 +175,7 @@ public class AccountService(
         user = await userRepo.GetByEmailAsync(googleUser.Email, ct);
         if (user is not null)
         {
+            logger.LogWarning("Google OIDC login rejected for {Email}: email conflict with existing account", googleUser.Email);
             return Error.Conflict(
                 "EMAIL_CONFLICT",
                 "An account with this email already exists. "
@@ -178,6 +198,7 @@ public class AccountService(
 
                 var (at, rr, rtId) = await tokenIssuance.IssueTokensAsync(user, ct);
 
+                logger.LogInformation("New account created via {AuthMethod} for {Email}, user {UserId}", "google", googleUser.Email, user.Id);
                 return (ErrorOr<GoogleAuthLoginResult>)
                     new GoogleAuthLoginResult(user, at, rr, rtId, true);
             },
@@ -198,10 +219,13 @@ public class AccountService(
             || existing.RevokedAt is not null
             || existing.ExpiresAt < DateTime.UtcNow
         )
+        {
+            logger.LogWarning("Refresh token rejected: invalid or expired");
             return Error.Unauthorized(
                 "INVALID_REFRESH_TOKEN",
                 "Refresh token is invalid or expired."
             );
+        }
 
         var user = await userRepo.GetByIdCrossTenantsAsync(existing.UserId, ct);
         if (user is null)
@@ -253,6 +277,7 @@ public class AccountService(
         );
 
         var accessToken = jwtService.GenerateToken(user);
+        logger.LogDebug("Tokens refreshed for user {UserId}", user.Id);
         return new RefreshResult(user, accessToken, rawRefresh, newTokenId);
     }
 
@@ -267,10 +292,13 @@ public class AccountService(
         var invitation = await invitationRepo.GetByTokenHashAsync(tokenHash, ct);
 
         if (invitation is null || invitation.ExpiresAt <= DateTime.UtcNow)
+        {
+            logger.LogWarning("Invitation acceptance failed: invalid or expired invitation");
             return Error.NotFound(
                 "INVALID_INVITATION",
                 "This invitation is invalid or has expired."
             );
+        }
 
         if (await userRepo.GetByEmailAsync(invitation.Email, ct) is not null)
             return Error.Conflict("EMAIL_ALREADY_EXISTS", "A user with this email already exists.");
@@ -346,6 +374,7 @@ public class AccountService(
                 var (accessToken, rawRefresh, refreshTokenId) =
                     await tokenIssuance.IssueTokensAsync(user, ct);
 
+                logger.LogInformation("Invitation accepted by {Email}, user {UserId} joined tenant {TenantId}", invitation.Email, user.Id, invitation.TenantId);
                 return (ErrorOr<InvitationAcceptResult>)
                     new InvitationAcceptResult(user, accessToken, rawRefresh, refreshTokenId);
             },

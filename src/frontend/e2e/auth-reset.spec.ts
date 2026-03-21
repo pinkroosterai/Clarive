@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { USERS } from './helpers/seed-data';
+import { USERS, TEST_EMAILS } from './helpers/seed-data';
 
 test.describe('Password Reset Flow', () => {
   test.use({ storageState: { cookies: [], origins: [] } }); // no pre-auth
@@ -29,7 +29,7 @@ test.describe('Password Reset Flow', () => {
     await page.goto('/forgot-password');
     await page.waitForLoadState('networkidle');
 
-    await page.locator('#email').fill('nonexistent@example.com');
+    await page.locator('#email').fill(TEST_EMAILS.nonexistent);
     await page.getByRole('button', { name: /send|reset|submit/i }).click();
 
     // Should still show success to prevent email enumeration

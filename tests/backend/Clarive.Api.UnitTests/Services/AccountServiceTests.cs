@@ -10,6 +10,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 
@@ -52,7 +53,7 @@ public class AccountServiceTests : IDisposable
             ExpirationMinutes = 15,
             RefreshTokenExpirationDays = 7,
         };
-        _jwtService = new JwtService(new OptionsMonitorStub<JwtSettings>(jwtSettings));
+        _jwtService = new JwtService(new OptionsMonitorStub<JwtSettings>(jwtSettings), Substitute.For<ILogger<JwtService>>());
 
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Email:Provider"] = "none" })
@@ -72,7 +73,7 @@ public class AccountServiceTests : IDisposable
             .CreateAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<RefreshToken>());
 
-        _tokenIssuance = new TokenIssuanceService(_jwtService, _refreshTokenRepo);
+        _tokenIssuance = new TokenIssuanceService(_jwtService, _refreshTokenRepo, Substitute.For<ILogger<TokenIssuanceService>>());
         _workspaceCreation = new UserWorkspaceCreationService(
             _tenantRepo,
             _userRepo,
@@ -93,7 +94,8 @@ public class AccountServiceTests : IDisposable
             _configuration,
             _db,
             _tokenIssuance,
-            _workspaceCreation
+            _workspaceCreation,
+            Substitute.For<ILogger<AccountService>>()
         );
     }
 
@@ -179,7 +181,8 @@ public class AccountServiceTests : IDisposable
             config,
             _db,
             _tokenIssuance,
-            _workspaceCreation
+            _workspaceCreation,
+            Substitute.For<ILogger<AccountService>>()
         );
 
         _userRepo
