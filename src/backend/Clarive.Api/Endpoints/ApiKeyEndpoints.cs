@@ -1,9 +1,6 @@
-using System.Security.Cryptography;
-using System.Text;
+using Clarive.Application.ApiKeys;
+using Clarive.Application.ApiKeys.Contracts;
 using Clarive.Api.Helpers;
-using Clarive.Domain.Entities;
-using Clarive.Domain.ValueObjects;
-using Clarive.Domain.Interfaces.Repositories;
 
 namespace Clarive.Api.Endpoints;
 
@@ -24,103 +21,42 @@ public static class ApiKeyEndpoints
 
     private static async Task<IResult> HandleList(
         HttpContext ctx,
-        IApiKeyRepository keyRepo,
+        IApiKeyService apiKeyService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var keys = await keyRepo.GetByTenantAsync(tenantId, ct);
-        // Return with prefix only — never expose full key or hash
-        var response = keys.Select(k => new
-            {
-                k.Id,
-                k.Name,
-                Key = k.KeyPrefix,
-                k.CreatedAt,
-                k.ExpiresAt,
-                k.LastUsedAt,
-                k.UsageCount,
-                IsExpired = k.ExpiresAt.HasValue && k.ExpiresAt.Value < DateTime.UtcNow,
-            })
-            .ToList();
-        return Results.Ok(response);
+        var keys = await apiKeyService.ListAsync(tenantId, ct);
+        return Results.Ok(keys);
     }
 
     private static async Task<IResult> HandleCreate(
         HttpContext ctx,
         CreateApiKeyRequest request,
-        IApiKeyRepository keyRepo,
+        IApiKeyService apiKeyService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
+        var result = await apiKeyService.CreateAsync(tenantId, request, ct);
 
-        if (Validator.ValidateRequest(request) is { } validationErr)
-            return validationErr;
-
-        if (
-            request.ExpiresAt.HasValue
-            && request.ExpiresAt.Value.ToUniversalTime() <= DateTime.UtcNow
-        )
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Expiry date must be in the future.");
-
-        // Generate the key: cl_ + 32 random hex chars
-        var rawKey = $"cl_{Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLower()}";
-        var keyHash = HashKey(rawKey);
-        var prefix = $"{rawKey[..7]}••••••••••••{rawKey[^4..]}";
-
-        var apiKey = await keyRepo.CreateAsync(
-            new ApiKey
-            {
-                Id = Guid.NewGuid(),
-                TenantId = tenantId,
-                Name = request.Name.Trim(),
-                KeyHash = keyHash,
-                KeyPrefix = prefix,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = request.ExpiresAt?.ToUniversalTime(),
-            },
-            ct
-        );
-
-        // Return full key only on creation — never again
-        return Results.Created(
-            $"/api/api-keys/{apiKey.Id}",
-            new ApiKeyCreated(
-                apiKey.Id,
-                apiKey.Name,
-                rawKey,
-                prefix,
-                apiKey.CreatedAt,
-                apiKey.ExpiresAt,
-                apiKey.LastUsedAt,
-                apiKey.UsageCount
-            )
-        );
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.Created($"/api/api-keys/{result.Value.Id}", result.Value);
     }
 
     private static async Task<IResult> HandleDelete(
         Guid keyId,
         HttpContext ctx,
-        IApiKeyRepository keyRepo,
+        IApiKeyService apiKeyService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var key = await keyRepo.GetByIdAsync(tenantId, keyId, ct);
-        if (key is null)
-            return ctx.ErrorResult(
-                404,
-                "NOT_FOUND",
-                "API key not found.",
-                "ApiKey",
-                keyId.ToString()
-            );
+        var result = await apiKeyService.DeleteAsync(tenantId, keyId, ct);
 
-        await keyRepo.DeleteAsync(tenantId, keyId, ct);
-        return Results.NoContent();
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.NoContent();
     }
-
-    public static string HashKey(string rawKey) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawKey))).ToLower();
 }

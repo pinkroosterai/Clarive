@@ -1,8 +1,8 @@
 using Clarive.Infrastructure.Security;
 using System.Security.Cryptography;
 using System.Text;
-using Clarive.Api.Endpoints;
 using Clarive.Api.Helpers;
+using Clarive.Application.ApiKeys.Services;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
@@ -603,7 +603,7 @@ public static class SeedData
                 Id = AK001,
                 TenantId = TenantId,
                 Name = "Production API Key",
-                KeyHash = ApiKeyEndpoints.HashKey(TestApiKey1),
+                KeyHash = ApiKeyService.HashKey(TestApiKey1),
                 KeyPrefix = "cl_seed••••••••••••a3f8",
                 CreatedAt = DateTime.Parse("2025-12-01T10:00:00Z").ToUniversalTime(),
             }
@@ -614,7 +614,7 @@ public static class SeedData
                 Id = AK002,
                 TenantId = TenantId,
                 Name = "Development API Key",
-                KeyHash = ApiKeyEndpoints.HashKey(TestApiKey2),
+                KeyHash = ApiKeyService.HashKey(TestApiKey2),
                 KeyPrefix = "cl_dev_••••••••••••7b21",
                 CreatedAt = DateTime.Parse("2026-01-20T15:30:00Z").ToUniversalTime(),
             }

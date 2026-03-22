@@ -1,12 +1,11 @@
 using Clarive.Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Hosting;
 using Clarive.Auth.Jwt;
-using Clarive.Infrastructure.Cache;
+using Clarive.Application.Tags.Contracts;
 using System.ComponentModel;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Enums;
 using Clarive.Domain.ValueObjects;
-using Clarive.Domain.Interfaces.Repositories;
 
 namespace Clarive.Api.Endpoints;
 
@@ -148,8 +147,7 @@ public static class PublicApiEndpoints
         Guid entryId,
         HttpContext ctx,
         IEntryService entryService,
-        ITagRepository tagRepo,
-        ITenantCacheService cache,
+        ITagService tagService,
         IAuditLogger auditLogger,
         CancellationToken ct
     )
@@ -175,7 +173,7 @@ public static class PublicApiEndpoints
             ct: ct
         );
 
-        var entryTags = await tagRepo.GetByEntryIdAsync(claims.TenantId, entryId, ct);
+        var entryTags = await tagService.GetByEntryIdAsync(claims.TenantId, entryId, ct);
 
         var prompts = published
             .Prompts.OrderBy(p => p.Order)
@@ -282,8 +280,7 @@ public static class PublicApiEndpoints
 
     private static async Task<IResult> HandleListTags(
         HttpContext ctx,
-        ITagRepository tagRepo,
-        ITenantCacheService cache,
+        ITagService tagService,
         CancellationToken ct
     )
     {
@@ -291,15 +288,8 @@ public static class PublicApiEndpoints
         if (claims is null)
             return claimsError!;
 
-        var tags = await cache.GetOrCreateAsync(
-            TenantCacheKeys.WorkspaceTagsKey,
-            claims.TenantId,
-            _ => tagRepo.GetAllWithCountsAsync(claims.TenantId, ct),
-            TenantCacheKeys.WorkspaceTagsTtl,
-            ct
-        );
-
-        var response = tags.Select(t => new { name = t.TagName, entryCount = t.EntryCount })
+        var tags = await tagService.GetAllAsync(claims.TenantId, ct);
+        var response = tags.Select(t => new { name = t.Name, entryCount = t.EntryCount })
             .ToList();
         return Results.Ok(response);
     }

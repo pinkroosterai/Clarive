@@ -1,15 +1,10 @@
-using Clarive.Domain.Interfaces.Services;
-using Clarive.Infrastructure.Cache;
+using Clarive.Application.Tags.Contracts;
 using Clarive.Api.Helpers;
-using Clarive.Domain.ValueObjects;
-using Clarive.Domain.Interfaces.Repositories;
 
 namespace Clarive.Api.Endpoints;
 
 public static class TagEndpoints
 {
-    private const int MaxTagNameLength = 50;
-
     public static RouteGroupBuilder MapTagEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/tags").WithTags("Tags").RequireAuthorization();
@@ -21,83 +16,42 @@ public static class TagEndpoints
         return group;
     }
 
-    private static string? NormalizeTagName(string? name)
-    {
-        return name?.Trim().ToLowerInvariant();
-    }
-
-    private static string? ValidateTagName(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return "Tag name is required.";
-        if (name.Length > MaxTagNameLength)
-            return $"Tag name must be {MaxTagNameLength} characters or fewer.";
-        if (!TagValidation.TagNamePattern().IsMatch(name))
-            return "Tag name can only contain lowercase letters, numbers, hyphens, and spaces.";
-        return null;
-    }
-
     private static async Task<IResult> HandleList(
         HttpContext ctx,
-        ITagRepository tagRepo,
-        ITenantCacheService cache,
+        ITagService tagService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-
-        var tags = await cache.GetOrCreateAsync(
-            TenantCacheKeys.WorkspaceTagsKey,
-            tenantId,
-            _ => tagRepo.GetAllWithCountsAsync(tenantId, ct),
-            TenantCacheKeys.WorkspaceTagsTtl,
-            ct
-        );
-
-        var response = tags.Select(t => new TagSummary(t.TagName, t.EntryCount)).ToList();
-        return Results.Ok(response);
+        var tags = await tagService.GetAllAsync(tenantId, ct);
+        return Results.Ok(tags);
     }
 
     private static async Task<IResult> HandleRename(
         string tagName,
         HttpContext ctx,
         RenameTagRequest request,
-        ITagRepository tagRepo,
-        ITenantCacheService cache,
+        ITagService tagService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var normalizedOld = NormalizeTagName(tagName);
-        var normalizedNew = NormalizeTagName(request.NewName);
+        var result = await tagService.RenameAsync(tenantId, tagName, request.NewName, ct);
 
-        var error = ValidateTagName(normalizedNew);
-        if (error is not null)
-            return ctx.ErrorResult(422, "VALIDATION_ERROR", error);
-
-        if (normalizedOld == normalizedNew)
-            return Results.NoContent();
-
-        await tagRepo.RenameAsync(tenantId, normalizedOld!, normalizedNew!, ct);
-        await TenantCacheKeys.EvictTagData(cache, tenantId);
-
-        return Results.NoContent();
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.NoContent();
     }
 
     private static async Task<IResult> HandleDelete(
         string tagName,
         HttpContext ctx,
-        ITagRepository tagRepo,
-        ITenantCacheService cache,
+        ITagService tagService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var normalized = NormalizeTagName(tagName);
-
-        await tagRepo.DeleteAsync(tenantId, normalized!, ct);
-        await TenantCacheKeys.EvictTagData(cache, tenantId);
-
+        await tagService.DeleteAsync(tenantId, tagName, ct);
         return Results.NoContent();
     }
 }

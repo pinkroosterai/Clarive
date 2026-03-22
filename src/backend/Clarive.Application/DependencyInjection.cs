@@ -1,6 +1,10 @@
 using Clarive.AI.Configuration;
+using Clarive.Application.ApiKeys.Contracts;
+using Clarive.Application.ApiKeys.Services;
 using Clarive.Application.McpServers.Contracts;
 using Clarive.Application.McpServers.Services;
+using Clarive.Application.Tags.Contracts;
+using Clarive.Application.Tags.Services;
 using Clarive.Domain.Interfaces.Services;
 
 namespace Clarive.Application;
@@ -40,6 +44,8 @@ public static class DependencyInjection
         services.AddScoped<IAiProviderService, AiProviderService>();
         services.AddScoped<IAiUsageLogger, AiUsageLogger>();
         services.AddScoped<IShareLinkService, ShareLinkService>();
+        services.AddScoped<ITagService, TagService>();
+        services.AddScoped<IApiKeyService, ApiKeyService>();
         services.Configure<AvatarSettings>(configuration.GetSection("Avatar"));
         services.AddScoped<IAvatarService, AvatarService>();
         services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();
