@@ -23,7 +23,7 @@ public class McpToolProvider(
         CancellationToken ct = default
     )
     {
-        var toolSet = new McpToolSet();
+        var toolSet = new McpToolSet(logger);
 
         if (serverIds.Count == 0)
             return toolSet;

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 
 namespace Clarive.Application.McpServers.Contracts;
 
@@ -12,6 +13,12 @@ public sealed class McpToolSet : IAsyncDisposable
 {
     public IList<AITool> Tools { get; set; } = [];
     private readonly List<IAsyncDisposable> _disposables = [];
+    private readonly ILogger? _logger;
+
+    public McpToolSet(ILogger? logger = null)
+    {
+        _logger = logger;
+    }
 
     internal void AddDisposable(IAsyncDisposable disposable)
     {
@@ -24,7 +31,10 @@ public sealed class McpToolSet : IAsyncDisposable
         for (var i = _disposables.Count - 1; i >= 0; i--)
         {
             try { await _disposables[i].DisposeAsync(); }
-            catch { /* swallow disposal errors */ }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to dispose MCP resource at index {Index}", i);
+            }
         }
         _disposables.Clear();
     }

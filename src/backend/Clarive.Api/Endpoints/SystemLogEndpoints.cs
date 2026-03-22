@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -55,6 +57,7 @@ public static class SystemLogEndpoints
 
     private static async Task<IResult> HandleGetLogs(
         NpgsqlDataSource db,
+        ILoggerFactory loggerFactory,
         string? levels,
         string? source,
         string? search,
@@ -67,6 +70,8 @@ public static class SystemLogEndpoints
         CancellationToken ct = default
     )
     {
+        var logger = loggerFactory.CreateLogger("Clarive.Api.Endpoints.SystemLogEndpoints");
+
         if (dateFrom.HasValue && dateTo.HasValue && dateFrom > dateTo)
             return Results.BadRequest(
                 new
@@ -189,12 +194,13 @@ public static class SystemLogEndpoints
                 {
                     try
                     {
-                        var jsonDoc = System.Text.Json.JsonDocument.Parse(props);
+                        var jsonDoc = JsonDocument.Parse(props);
                         if (jsonDoc.RootElement.TryGetProperty("SourceContext", out var sc))
                             sourceContext = sc.GetString();
                     }
-                    catch
-                    { /* ignore malformed JSON */
+                    catch (JsonException ex)
+                    {
+                        logger.LogDebug(ex, "Failed to parse log properties JSON");
                     }
                 }
 
