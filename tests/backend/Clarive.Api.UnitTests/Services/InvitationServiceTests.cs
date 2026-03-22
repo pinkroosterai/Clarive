@@ -348,7 +348,7 @@ public class InvitationServiceTests
         var result = await _sut.RespondAsync(UserId, Guid.NewGuid(), true, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("INVITATION_NOT_FOUND");
     }
 
     [Fact]
@@ -368,7 +368,7 @@ public class InvitationServiceTests
         var result = await _sut.RespondAsync(UserId, Guid.NewGuid(), true, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("INVITATION_NOT_FOUND");
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public class InvitationServiceTests
         var result = await _sut.RespondAsync(UserId, Guid.NewGuid(), true, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("INVITATION_NOT_FOUND");
     }
 
     [Fact]

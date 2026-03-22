@@ -115,7 +115,7 @@ public class UserManagementServiceTests : IDisposable
         var result = await _sut.ChangeRoleAsync(TenantId, UserId, UserRole.Editor, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("USER_NOT_FOUND");
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public class UserManagementServiceTests : IDisposable
         var result = await _sut.RemoveMemberAsync(TenantId, UserId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("USER_NOT_FOUND");
     }
 
     [Fact]

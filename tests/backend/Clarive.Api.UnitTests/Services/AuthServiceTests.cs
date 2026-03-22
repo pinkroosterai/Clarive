@@ -198,7 +198,7 @@ public class AuthServiceTests
         var result = await _sut.ResendVerificationAsync(TenantId, UserId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("USER_NOT_FOUND");
     }
 
     [Fact]

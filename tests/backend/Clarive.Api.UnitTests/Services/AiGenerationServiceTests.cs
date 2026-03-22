@@ -163,7 +163,7 @@ public class AiGenerationServiceTests
         );
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("SESSION_NOT_FOUND");
     }
 
     [Fact]
@@ -207,7 +207,7 @@ public class AiGenerationServiceTests
         var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class AiGenerationServiceTests
         var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
     }
 
     [Fact]
@@ -236,7 +236,7 @@ public class AiGenerationServiceTests
         var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("VERSION_NOT_FOUND");
     }
 
     // ── GenerateSystemMessageAsync ──
@@ -251,7 +251,7 @@ public class AiGenerationServiceTests
         var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
     }
 
     [Fact]
@@ -313,7 +313,7 @@ public class AiGenerationServiceTests
         var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
     }
 
     [Fact]

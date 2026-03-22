@@ -1082,7 +1082,7 @@ export const sectionGroups: SectionGroup[] = [
                   </tr>
                   <tr>
                     <td className="p-2 font-mono">404</td>
-                    <td className="p-2 font-mono">NOT_FOUND</td>
+                    <td className="p-2 font-mono">ENTRY_NOT_FOUND</td>
                     <td className="p-2">Entry doesn&apos;t exist or is trashed</td>
                   </tr>
                   <tr>

@@ -80,7 +80,7 @@ public class SuperAdminServiceTests : IDisposable
         var result = await _sut.ResetUserPasswordAsync(UserId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("USER_NOT_FOUND");
     }
 
     [Fact]

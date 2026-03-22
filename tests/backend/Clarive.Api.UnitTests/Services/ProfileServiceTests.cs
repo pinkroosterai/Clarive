@@ -53,7 +53,7 @@ public class ProfileServiceTests
         );
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("USER_NOT_FOUND");
     }
 
     [Fact]
@@ -325,7 +325,7 @@ public class ProfileServiceTests
         var result = await _sut.CompleteOnboardingAsync(TenantId, UserId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("USER_NOT_FOUND");
     }
 
     [Fact]

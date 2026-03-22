@@ -100,7 +100,7 @@ public class FolderServiceTests
         var result = await _sut.CreateAsync(TenantId, request, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("FOLDER_NOT_FOUND");
     }
 
     // ── RenameAsync ──
@@ -138,7 +138,7 @@ public class FolderServiceTests
         );
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("FOLDER_NOT_FOUND");
     }
 
     // ── DeleteAsync ──
@@ -177,7 +177,7 @@ public class FolderServiceTests
         var result = await _sut.DeleteAsync(TenantId, folderId, default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("FOLDER_NOT_FOUND");
     }
 
     [Fact]
@@ -273,7 +273,7 @@ public class FolderServiceTests
         var result = await _sut.MoveAsync(TenantId, folderId, new MoveFolderRequest(null), default);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("FOLDER_NOT_FOUND");
     }
 
     [Fact]
@@ -311,7 +311,7 @@ public class FolderServiceTests
         );
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("NOT_FOUND");
+        result.FirstError.Code.Should().Be("FOLDER_NOT_FOUND");
     }
 
     [Fact]
