@@ -9,9 +9,9 @@
   <ItemGroup>
     <PackageReference Include="Google.Apis.Auth" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Serilog" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Clarive.Domain\Clarive.Domain.csproj" />
-    <ProjectReference Include="..\Clarive.Infrastructure\Clarive.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
