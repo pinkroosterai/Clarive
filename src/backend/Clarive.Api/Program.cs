@@ -132,11 +132,9 @@ try
     builder.Services.AddClariveInfrastructure(builder.Configuration);
 
     // ── Quartz Hosted Service (starts scheduler, graceful shutdown) ──
-    // StartDelay gives EF migrations time to create qrtz_ tables before the scheduler queries them
     builder.Services.AddQuartzHostedService(options =>
     {
         options.WaitForJobsToComplete = true;
-        options.StartDelay = TimeSpan.FromSeconds(15);
     });
 
     // ── Database Configuration Override (highest priority, overrides env vars) ──
@@ -508,6 +506,24 @@ try
                 Log.Warning(ex, "Migration attempt {Attempt} failed, retrying in 3s...", attempt);
                 await Task.Delay(3000);
             }
+        }
+
+        // Create Quartz.NET tables if they don't exist (managed by Quartz, not EF)
+        var dataSource = scope.ServiceProvider.GetRequiredService<NpgsqlDataSource>();
+        await using var conn = await dataSource.OpenConnectionAsync();
+        await using var checkCmd = dataSource.CreateCommand(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'qrtz_job_details'"
+        );
+        checkCmd.Connection = conn;
+        var exists = (long)(await checkCmd.ExecuteScalarAsync())! > 0;
+        if (!exists)
+        {
+            Log.Information("Creating Quartz.NET scheduler tables...");
+            var ddl = await File.ReadAllTextAsync("quartz_postgres.sql");
+            await using var ddlCmd = dataSource.CreateCommand(ddl);
+            ddlCmd.Connection = conn;
+            await ddlCmd.ExecuteNonQueryAsync();
+            Log.Information("Quartz.NET scheduler tables created");
         }
     }
 

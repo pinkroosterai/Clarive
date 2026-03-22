@@ -16,4 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Clarive.Application\Clarive.Application.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="quartz_postgres.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
