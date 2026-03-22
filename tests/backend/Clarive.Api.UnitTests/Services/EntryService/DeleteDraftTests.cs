@@ -16,7 +16,7 @@ public class DeleteDraftTests : EntryServiceTestBase
             .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await Sut.DeleteDraftAsync(TenantId, entryId, CancellationToken.None);
+        var result = await VersionSut.DeleteDraftAsync(TenantId, entryId, CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
@@ -33,7 +33,7 @@ public class DeleteDraftTests : EntryServiceTestBase
             .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(published);
 
-        var result = await Sut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await VersionSut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NO_DRAFT");
@@ -49,7 +49,7 @@ public class DeleteDraftTests : EntryServiceTestBase
             .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var result = await Sut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await VersionSut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NO_DRAFT");
@@ -69,7 +69,7 @@ public class DeleteDraftTests : EntryServiceTestBase
             .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var result = await Sut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await VersionSut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("NO_PUBLISHED_VERSION");
@@ -90,7 +90,7 @@ public class DeleteDraftTests : EntryServiceTestBase
             .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(published);
 
-        var result = await Sut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
+        var result = await VersionSut.DeleteDraftAsync(TenantId, entry.Id, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         result.Value.Should().Be(entry);

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Clarive.Api.Helpers;
+using Clarive.Application.Entries.Contracts;
 
 namespace Clarive.Api.Endpoints;
 
@@ -8,7 +9,7 @@ public static partial class EntryEndpoints
     private static async Task<IResult> HandleGetActivity(
         Guid entryId,
         HttpContext ctx,
-        IEntryService entryService,
+        IEntryActivityService activityService,
         CancellationToken ct,
         [Description("Page number (1-based)")] int? page = null,
         [Description("Items per page (max 50)")] int? pageSize = null
@@ -20,7 +21,7 @@ public static partial class EntryEndpoints
             ? Math.Min(pageSize.Value, MaxActivityPageSize)
             : DefaultActivityPageSize;
 
-        var result = await entryService.GetEntryActivityAsync(tenantId, entryId, p, ps, ct);
+        var result = await activityService.GetEntryActivityAsync(tenantId, entryId, p, ps, ct);
         return result.IsError
             ? result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString())
             : Results.Ok(result.Value);

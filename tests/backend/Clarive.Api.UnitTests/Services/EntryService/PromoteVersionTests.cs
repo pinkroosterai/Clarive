@@ -16,7 +16,7 @@ public class PromoteVersionTests : EntryServiceTestBase
             .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await Sut.PromoteVersionAsync(TenantId, entryId, 1, CancellationToken.None);
+        var result = await VersionSut.PromoteVersionAsync(TenantId, entryId, 1, CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
@@ -34,7 +34,7 @@ public class PromoteVersionTests : EntryServiceTestBase
             .GetVersionAsync(TenantId, entry.Id, 1, Arg.Any<CancellationToken>())
             .Returns(draftVersion);
 
-        var result = await Sut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
+        var result = await VersionSut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
@@ -49,7 +49,7 @@ public class PromoteVersionTests : EntryServiceTestBase
             .GetVersionAsync(TenantId, entry.Id, 99, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var result = await Sut.PromoteVersionAsync(TenantId, entry.Id, 99, CancellationToken.None);
+        var result = await VersionSut.PromoteVersionAsync(TenantId, entry.Id, 99, CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
@@ -77,7 +77,7 @@ public class PromoteVersionTests : EntryServiceTestBase
             .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null); // no existing draft
 
-        var result = await Sut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
+        var result = await VersionSut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         var (_, newDraft) = result.Value;
@@ -124,7 +124,7 @@ public class PromoteVersionTests : EntryServiceTestBase
             .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(existingDraft);
 
-        var result = await Sut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
+        var result = await VersionSut.PromoteVersionAsync(TenantId, entry.Id, 1, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         await EntryRepo.Received(1).DeleteVersionAsync(existingDraft, Arg.Any<CancellationToken>());

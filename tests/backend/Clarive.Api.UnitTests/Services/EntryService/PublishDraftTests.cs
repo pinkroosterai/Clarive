@@ -16,7 +16,7 @@ public class PublishDraftTests : EntryServiceTestBase
             .GetByIdAsync(TenantId, entryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await Sut.PublishDraftAsync(TenantId, entryId, UserId, CancellationToken.None);
+        var result = await VersionSut.PublishDraftAsync(TenantId, entryId, UserId, CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
@@ -31,7 +31,7 @@ public class PublishDraftTests : EntryServiceTestBase
             .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var result = await Sut.PublishDraftAsync(
+        var result = await VersionSut.PublishDraftAsync(
             TenantId,
             entry.Id,
             UserId,
@@ -54,7 +54,7 @@ public class PublishDraftTests : EntryServiceTestBase
             .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(published);
 
-        var result = await Sut.PublishDraftAsync(
+        var result = await VersionSut.PublishDraftAsync(
             TenantId,
             entry.Id,
             UserId,
@@ -80,7 +80,7 @@ public class PublishDraftTests : EntryServiceTestBase
             .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null); // no prior published
 
-        var result = await Sut.PublishDraftAsync(
+        var result = await VersionSut.PublishDraftAsync(
             TenantId,
             entry.Id,
             UserId,
@@ -112,7 +112,7 @@ public class PublishDraftTests : EntryServiceTestBase
             .GetPublishedVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns(oldPublished);
 
-        var result = await Sut.PublishDraftAsync(
+        var result = await VersionSut.PublishDraftAsync(
             TenantId,
             entry.Id,
             UserId,

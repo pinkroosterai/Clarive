@@ -38,12 +38,6 @@ public interface IEntryService
         CancellationToken ct = default
     );
 
-    Task<ErrorOr<List<VersionInfo>>> GetVersionHistoryAsync(
-        Guid tenantId,
-        Guid entryId,
-        CancellationToken ct = default
-    );
-
     Task<ErrorOr<object>> GetVersionDetailAsync(
         Guid tenantId,
         Guid entryId,
@@ -65,6 +59,7 @@ public interface IEntryService
         CancellationToken ct = default
     );
 
+    // Write operations
     Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion Version)>> CreateEntryAsync(
         Guid tenantId,
         Guid userId,
@@ -76,26 +71,6 @@ public interface IEntryService
         Guid tenantId,
         Guid entryId,
         UpdateEntryRequest request,
-        CancellationToken ct = default
-    );
-
-    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> PublishDraftAsync(
-        Guid tenantId,
-        Guid entryId,
-        Guid userId,
-        CancellationToken ct = default
-    );
-
-    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion NewDraft)>> PromoteVersionAsync(
-        Guid tenantId,
-        Guid entryId,
-        int version,
-        CancellationToken ct = default
-    );
-
-    Task<ErrorOr<PromptEntry>> DeleteDraftAsync(
-        Guid tenantId,
-        Guid entryId,
         CancellationToken ct = default
     );
 
@@ -129,14 +104,4 @@ public interface IEntryService
         Guid entryId,
         CancellationToken ct = default
     );
-
-    // Activity
-    Task<ErrorOr<EntryActivityResponse>> GetEntryActivityAsync(
-        Guid tenantId,
-        Guid entryId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default
-    );
-
 }

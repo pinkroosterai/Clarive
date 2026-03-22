@@ -18,6 +18,8 @@ public static class DependencyInjection
         );
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IEntryService, EntryService>();
+        services.AddScoped<IEntryVersionService, EntryVersionService>();
+        services.AddScoped<IEntryActivityService, EntryActivityService>();
         services.AddScoped<IEntryTagService, EntryTagService>();
         services.AddScoped<IEntryFavoriteService, EntryFavoriteService>();
         services.AddScoped<ITokenIssuanceService, TokenIssuanceService>();

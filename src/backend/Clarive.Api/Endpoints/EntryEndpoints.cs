@@ -170,12 +170,12 @@ public static partial class EntryEndpoints
     private static async Task<IResult> HandleGetVersions(
         Guid entryId,
         HttpContext ctx,
-        IEntryService entryService,
+        IEntryVersionService versionService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var result = await entryService.GetVersionHistoryAsync(tenantId, entryId, ct);
+        var result = await versionService.GetVersionHistoryAsync(tenantId, entryId, ct);
         return result.IsError
             ? result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString())
             : Results.Ok(result.Value);
@@ -292,6 +292,7 @@ public static partial class EntryEndpoints
     private static async Task<IResult> HandlePublish(
         Guid entryId,
         HttpContext ctx,
+        IEntryVersionService versionService,
         IEntryService entryService,
         IAuditLogger auditLogger,
         CancellationToken ct
@@ -300,7 +301,7 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await entryService.PublishDraftAsync(tenantId, entryId, userId, ct);
+        var result = await versionService.PublishDraftAsync(tenantId, entryId, userId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
@@ -335,6 +336,7 @@ public static partial class EntryEndpoints
         Guid entryId,
         int version,
         HttpContext ctx,
+        IEntryVersionService versionService,
         IEntryService entryService,
         IAuditLogger auditLogger,
         CancellationToken ct
@@ -343,7 +345,7 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await entryService.PromoteVersionAsync(tenantId, entryId, version, ct);
+        var result = await versionService.PromoteVersionAsync(tenantId, entryId, version, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
@@ -377,6 +379,7 @@ public static partial class EntryEndpoints
     private static async Task<IResult> HandleDeleteDraft(
         Guid entryId,
         HttpContext ctx,
+        IEntryVersionService versionService,
         IEntryService entryService,
         IAuditLogger auditLogger,
         CancellationToken ct
@@ -385,7 +388,7 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await entryService.DeleteDraftAsync(tenantId, entryId, ct);
+        var result = await versionService.DeleteDraftAsync(tenantId, entryId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 

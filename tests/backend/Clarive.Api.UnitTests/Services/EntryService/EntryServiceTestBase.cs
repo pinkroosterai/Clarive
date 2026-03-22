@@ -24,6 +24,7 @@ public abstract class EntryServiceTestBase : IDisposable
     protected readonly TenantCacheService Cache;
     protected readonly ClariveDbContext Db;
     protected readonly Application.Entries.Services.EntryService Sut;
+    protected readonly Application.Entries.Services.EntryVersionService VersionSut;
 
     protected static readonly Guid TenantId = Guid.NewGuid();
     protected static readonly Guid UserId = Guid.NewGuid();
@@ -39,16 +40,22 @@ public abstract class EntryServiceTestBase : IDisposable
         Cache = new TenantCacheService(
             new ZiggyCreatures.Caching.Fusion.FusionCache(new ZiggyCreatures.Caching.Fusion.FusionCacheOptions())
         );
+        var unitOfWork = new UnitOfWork(Db);
         Sut = new Application.Entries.Services.EntryService(
             EntryRepo,
             FolderRepo,
             TagRepo,
             FavoriteRepo,
             UserRepo,
-            AuditRepo,
             Cache,
-            new UnitOfWork(Db),
+            unitOfWork,
             Substitute.For<ILogger<Application.Entries.Services.EntryService>>()
+        );
+        VersionSut = new Application.Entries.Services.EntryVersionService(
+            EntryRepo,
+            UserRepo,
+            unitOfWork,
+            Cache
         );
 
         // Default: CreateAsync / CreateVersionAsync return whatever is passed in
