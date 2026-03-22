@@ -28,8 +28,6 @@ These are the only settings you need in your `.env` file. Run `make setup` to ge
 | `CLARIVE_VERSION` | Docker Hub image tag (self-host only) | `latest` |
 | `POSTGRES_USER` | PostgreSQL username | `clarive` |
 | `POSTGRES_DB` | Database name | `clarive` |
-| `JWT_ISSUER` | JWT issuer claim | `Clarive` |
-| `JWT_AUDIENCE` | JWT audience claim | `Clarive` |
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET environment | `Production` |
 | `VALKEY_URL` | Valkey cache connection (host:port) | `valkey:6379` |
 

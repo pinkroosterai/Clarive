@@ -27,14 +27,14 @@ Everything runs in Docker. No local SDKs needed for basic development.
 
 ## Testing
 
-We have 750+ automated tests across four layers. All of them should pass before you open a PR.
+We have 1400+ automated tests across four layers. All of them should pass before you open a PR.
 
 | Layer | Framework | Tests | Command |
 |---|---|---|---|
-| Backend unit | xUnit | 221+ | `make test-backend` |
-| Backend integration | xUnit + Testcontainers | 203+ | `make test-backend` |
-| Frontend unit | Vitest + Testing Library | 320+ | `make test-frontend` |
-| E2E | Playwright | 22 specs | `make test-e2e` |
+| Backend unit | xUnit | ~479 | `make test-backend` |
+| Backend integration | xUnit + Testcontainers | ~334 | `make test-backend` |
+| Frontend unit | Vitest + Testing Library | ~567 | `make test-frontend` |
+| E2E | Playwright | 14 specs (~49 tests) | `make test-e2e` |
 
 Integration tests spin up a real PostgreSQL instance via [Testcontainers](https://testcontainers.com/). No database mocks. E2E tests hit the full stack through Playwright.
 

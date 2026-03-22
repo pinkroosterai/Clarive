@@ -6,7 +6,7 @@
 - Git
 
 For running tests and migrations locally (outside Docker):
-- Node.js 20+
+- Node.js 22+
 - .NET SDK 10.0
 
 ## Getting Started
@@ -49,28 +49,24 @@ Clarive/
 ├── src/
 │   ├── frontend/                # React + TypeScript + Vite
 │   │   ├── src/
-│   │   │   ├── pages/           # 28 route pages (lazy-loaded)
-│   │   │   ├── components/      # 15 feature directories + shadcn/ui
+│   │   │   ├── pages/           # 27 route pages (lazy-loaded)
+│   │   │   ├── components/      # 15 feature directories (~165 components)
 │   │   │   ├── services/api/    # 26 API service modules
-│   │   │   ├── hooks/           # 23 custom hooks
+│   │   │   ├── hooks/           # 22 custom hooks
 │   │   │   ├── store/           # Zustand auth store
 │   │   │   ├── lib/             # Utilities, validation, config
 │   │   │   └── types/           # Shared TypeScript types
-│   │   └── e2e/                 # 22 Playwright specs
-│   └── backend/
-│       └── Clarive.Api/
-│           ├── Endpoints/       # 18 endpoint groups (~85 routes)
-│           ├── Services/        # 45+ business services
-│           │   └── Agents/      # AI orchestration
-│           ├── Data/            # DbContext, 25 entity configs, migrations
-│           │   └── Repositories/# 19 EF Core repositories
-│           ├── Models/          # 26 entities, 63 DTOs
-│           ├── Auth/            # JWT, API keys, tenant provider
-│           ├── Middleware/      # Error handling, maintenance, security headers
-│           └── Background/      # 6 cleanup services
+│   │   └── e2e/                 # 14 Playwright specs
+│   └── backend/                 # 6-project layered solution
+│       ├── Clarive.Api/         # 29 endpoint groups (~135 routes), middleware
+│       ├── Clarive.Application/ # 27 application services (feature-based modules)
+│       ├── Clarive.Domain/      # 28 entities, 8 value objects, 26 repo interfaces
+│       ├── Clarive.Infrastructure/ # 26 repositories, 27 EF configs, 31 migrations
+│       ├── Clarive.AI/          # Agent orchestration, pipeline, evaluation
+│       └── Clarive.Auth/        # JWT + Google OIDC
 ├── tests/backend/
-│   ├── Clarive.Api.UnitTests/           # 221+ unit tests
-│   └── Clarive.Api.IntegrationTests/    # 203+ tests (Testcontainers)
+│   ├── Clarive.Api.UnitTests/           # ~479 unit tests
+│   └── Clarive.Api.IntegrationTests/    # ~334 tests (Testcontainers)
 ├── docs/                        # Architecture, OpenAPI spec, guides
 ├── deploy/                      # Production compose + container configs
 │   └── unified/                 # nginx, supervisord, entrypoint

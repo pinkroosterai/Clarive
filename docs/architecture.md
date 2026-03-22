@@ -38,7 +38,7 @@ Nginx serves the React build and proxies `/api/` to the .NET backend. Supervisor
 | Frontend | React 18, TypeScript, Vite 7, Tailwind CSS, shadcn/ui (Radix), Tiptap v3 |
 | State | Zustand (auth only), TanStack React Query (server state) |
 | Backend | C# ASP.NET Core 10 Minimal APIs |
-| ORM | EF Core 10 (Npgsql) with 25 entity configurations |
+| ORM | EF Core 10 (Npgsql) with 27 entity configurations |
 | Database | PostgreSQL 16 with EF Core migrations |
 | Cache | Valkey 8 (distributed cache with AOF persistence), tenant-scoped TenantCacheService |
 | Auth | JWT (15-min access) + rotating refresh tokens (7-day), Google OIDC, API keys |
@@ -55,13 +55,13 @@ React 18 SPA with TypeScript. All pages are lazy-loaded via `React.lazy()`. Stat
 
 The editor is Tiptap v3 with custom extensions for template variable highlighting. Drag-and-drop uses @dnd-kit.
 
-28 route pages, 15 component feature directories, 26 API service modules, 23 custom hooks.
+27 route pages, 15 component feature directories (~165 components), 26 API service modules, 22 custom hooks.
 
 ### Backend (`src/backend/Clarive.Api/`)
 
 ASP.NET Core 10 Minimal APIs. Services return `ErrorOr<T>`, endpoints bridge errors to HTTP via `result.Errors.ToHttpResult(ctx)`. Request validation uses MiniValidation with Data Annotations.
 
-18 endpoint groups (~85 routes), 45+ services, 19 EF Core repositories, 26 entity models, 63 DTOs.
+29 endpoint groups (~135 routes), 27 application services, 26 EF Core repositories, 28 entity models.
 
 Background services handle token cleanup, AI session cleanup, usage log cleanup, account purge, LiteLLM registry sync, and maintenance mode sync.
 

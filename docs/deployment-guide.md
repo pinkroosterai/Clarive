@@ -61,18 +61,17 @@ make db-reset                         # Destroy all database volumes (with confi
 
 ## Docker Architecture
 
-The compose file (`deploy/docker-compose.yml`) defines four services:
+The compose file (`deploy/docker-compose.yml`) defines three services:
 
+- **app** — Unified container: nginx reverse proxy + ASP.NET Core backend (port 8080). Nginx serves the React frontend as static files and proxies `/api/` to the backend.
 - **postgres** — PostgreSQL 16 with health check
 - **valkey** — Valkey 8 cache with AOF persistence, 256MB maxmemory, allkeys-lru eviction
-- **backend** — ASP.NET Core API (internal port 5000, not exposed to host)
-- **frontend** — React app served by nginx (port 8080), proxies `/api/` to backend
 
-All services communicate over Docker's default network. Only port 8080 is exposed to the host. Valkey and PostgreSQL are internal-only.
+Only port 8080 is exposed to the host. Valkey and PostgreSQL are internal-only.
 
 ```
-Browser → :8080 (nginx)
-                ├── /api/*  → backend:5000
+Browser → :8080 (nginx inside app container)
+                ├── /api/*  → localhost:5000 (ASP.NET Core)
                 └── /*      → static files / SPA fallback
 ```
 
@@ -93,7 +92,6 @@ To serve Clarive on a custom domain, update `deploy/.env`:
 
 ```env
 CORS_ORIGINS=https://your-domain.example.com
-ALLOWED_HOSTS=your-domain.example.com;127.0.0.1
 ```
 
 Then redeploy with `make deploy`.
