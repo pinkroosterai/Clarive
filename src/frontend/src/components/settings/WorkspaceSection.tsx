@@ -92,21 +92,21 @@ export default function WorkspaceSection() {
   });
 
   const leaveMutation = useMutation({
-    mutationFn: () => workspaceService.leaveWorkspace(activeWorkspace!.id),
-    onSuccess: async () => {
-      const leftName = activeWorkspace!.name;
-      const remaining = workspaces.filter((w) => w.id !== activeWorkspace!.id);
+    mutationFn: (workspace: { id: string; name: string }) =>
+      workspaceService.leaveWorkspace(workspace.id),
+    onSuccess: async (_, workspace) => {
+      const remaining = workspaces.filter((w) => w.id !== workspace.id);
       setWorkspaces(remaining);
       const personal = remaining.find((w) => w.isPersonal) ?? remaining[0];
       if (personal) {
         try {
           await switchWorkspace(personal.id);
-        } catch {
-          // Switch failed but leave succeeded — still navigate away
+        } catch (err) {
+          console.error('Failed to switch workspace after leave:', err);
         }
       }
       queryClient.clear();
-      toast.success(`You have left ${leftName}`);
+      toast.success(`You have left ${workspace.name}`);
       navigate('/', { replace: true });
     },
     onError: (err: unknown) => handleApiError(err),
@@ -272,7 +272,9 @@ export default function WorkspaceSection() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => leaveMutation.mutate()}
+                      onClick={() => {
+                        if (activeWorkspace) leaveMutation.mutate(activeWorkspace);
+                      }}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                       Leave workspace
