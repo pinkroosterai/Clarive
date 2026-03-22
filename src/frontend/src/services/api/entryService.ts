@@ -43,6 +43,16 @@ function summaryToEntry(s: EntrySummary): PromptEntry {
   };
 }
 
+export interface EntryTreeItem {
+  id: string;
+  title: string;
+  folderId: string | null;
+}
+
+export async function getEntriesTree(): Promise<EntryTreeItem[]> {
+  return api.get<EntryTreeItem[]>('/api/entries/tree');
+}
+
 export async function getEntriesList(
   folderId?: string | null,
   page: number = 1,

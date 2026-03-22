@@ -333,6 +333,20 @@ public class EfEntryRepository(ClariveDbContext db, TenantCacheService cache) : 
         await db.SaveChangesAsync(ct);
     }
 
+    // ── Tree (minimal projection for sidebar) ──
+
+    public async Task<List<(Guid Id, string Title, Guid? FolderId)>> GetTreeAsync(
+        Guid tenantId,
+        CancellationToken ct
+    )
+    {
+        return await db
+            .PromptEntries.Where(e => e.TenantId == tenantId && !e.IsTrashed)
+            .OrderBy(e => e.Title)
+            .Select(e => ValueTuple.Create(e.Id, e.Title, e.FolderId))
+            .ToListAsync(ct);
+    }
+
     // ── Dashboard ──
 
     public async Task<(int Total, int Published, int Drafts)> GetStatsAsync(

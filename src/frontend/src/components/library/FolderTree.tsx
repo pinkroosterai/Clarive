@@ -14,10 +14,10 @@ import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { buildRecursiveCountMap, collectAllFolderIds, filterFolderTree } from '@/lib/folderUtils';
 import { folderService, entryService } from '@/services';
-import type { PromptEntry } from '@/types';
+import type { EntryTreeItem } from '@/services/api/entryService';
 
 /** Build a map of folderId -> number of entries directly inside it. */
-function buildEntryCountMap(entries: PromptEntry[]): Map<string | null, number> {
+function buildEntryCountMap(entries: EntryTreeItem[]): Map<string | null, number> {
   const map = new Map<string | null, number>();
   for (const e of entries) {
     map.set(e.folderId, (map.get(e.folderId) ?? 0) + 1);
@@ -54,12 +54,11 @@ export function FolderTree() {
   );
   const handleCollapseAll = useCallback(() => setExpandedIds(new Set()), []);
 
-  const { data: entriesData } = useQuery({
-    queryKey: ['entries', null, 1],
-    queryFn: () => entryService.getEntriesList(null, 1, 1000),
+  const { data: entries = [] } = useQuery({
+    queryKey: ['entries', 'tree'],
+    queryFn: entryService.getEntriesTree,
     staleTime: 60_000, // avoid refetching on every navigation — 1 min cache
   });
-  const entries = useMemo(() => entriesData?.items ?? [], [entriesData]);
 
   const rootEntries = useMemo(() => entries.filter((e) => e.folderId === null), [entries]);
   const directCountMap = useMemo(() => buildEntryCountMap(entries), [entries]);

@@ -34,7 +34,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { draggableEntryId, draggableFolderId, droppableFolderId } from '@/lib/dnd/types';
 import { getFolderColorClass } from '@/lib/folderColors';
 import { cn } from '@/lib/utils';
-import type { Folder as FolderType, PromptEntry } from '@/types';
+import type { DraggableEntry } from '@/lib/dnd/types';
+import type { Folder as FolderType } from '@/types';
 
 export interface FolderActions {
   onCreate: (name: string, parentId: string | null) => void;
@@ -48,7 +49,7 @@ export const EntryTreeItem = memo(function EntryTreeItem({
   depth,
   activeEntryId,
 }: {
-  entry: PromptEntry;
+  entry: DraggableEntry;
   depth: number;
   activeEntryId: string | undefined;
 }) {
@@ -99,7 +100,7 @@ export const FolderTreeNode = memo(function FolderTreeNode({
   depth: number;
   activeFolderId: string | undefined;
   activeEntryId: string | undefined;
-  entries: PromptEntry[];
+  entries: DraggableEntry[];
   entryCountMap: Map<string | null, number>;
   actions: FolderActions;
   expandedIds: Set<string>;

@@ -86,6 +86,12 @@ public interface IEntryRepository
         CancellationToken ct = default
     );
 
+    // Tree (minimal projection for sidebar)
+    Task<List<(Guid Id, string Title, Guid? FolderId)>> GetTreeAsync(
+        Guid tenantId,
+        CancellationToken ct = default
+    );
+
     // Dashboard
     Task<(int Total, int Published, int Drafts)> GetStatsAsync(
         Guid tenantId,

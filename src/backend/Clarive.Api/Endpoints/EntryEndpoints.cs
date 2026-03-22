@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using Clarive.Api.Helpers;
+using Clarive.Application.Entries.Contracts;
 using Clarive.Domain.Enums;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Application.Audit.Services;
 using Clarive.Domain.ValueObjects;
 
@@ -13,6 +15,7 @@ public static partial class EntryEndpoints
         var group = app.MapGroup("/api/entries").WithTags("Entries").RequireAuthorization();
 
         group.MapGet("/", HandleList);
+        group.MapGet("/tree", HandleGetTree);
         group.MapGet("/trash", HandleListTrashed);
         group.MapGet("/{entryId:guid}", HandleGet);
         group.MapGet("/{entryId:guid}/versions", HandleGetVersions);
@@ -63,6 +66,19 @@ public static partial class EntryEndpoints
         var p = page is > 0 ? page.Value : 1;
         var ps = pageSize is > 0 ? Math.Min(pageSize.Value, MaxPageSize) : DefaultPageSize;
         return (p, ps);
+    }
+
+    // ── Tree (minimal sidebar data) ──
+    private static async Task<IResult> HandleGetTree(
+        HttpContext ctx,
+        IEntryRepository entryRepo,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var items = await entryRepo.GetTreeAsync(tenantId, ct);
+        var dtos = items.Select(i => new EntryTreeItemDto(i.Id, i.Title, i.FolderId));
+        return Results.Ok(dtos);
     }
 
     // ── List entries ──

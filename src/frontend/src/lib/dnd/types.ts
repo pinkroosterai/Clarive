@@ -1,9 +1,16 @@
-import type { PromptEntry, Folder } from '@/types';
+import type { Folder } from '@/types';
+
+/** Minimal entry shape needed for drag-and-drop operations. */
+export interface DraggableEntry {
+  id: string;
+  title: string;
+  folderId: string | null;
+}
 
 // ── Drag data discriminated union ──────────────────────────────────────────
 export interface EntryDragData {
   type: 'entry';
-  entry: PromptEntry;
+  entry: DraggableEntry;
 }
 
 export interface FolderDragData {
