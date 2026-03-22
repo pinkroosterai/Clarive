@@ -41,8 +41,8 @@ const LoginPage = () => {
         setAllowRegistration(s.allowRegistration);
         setEmailEnabled(s.emailEnabled);
       })
-      .catch(() => {
-        // Non-critical — registration/email flags default to safe values
+      .catch((err) => {
+        console.warn('[silentCatch] login:getSetupStatus:', err);
       });
   }, []);
 

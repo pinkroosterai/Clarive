@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { HubConnectionState } from '@microsoft/signalr';
 import { useAuthStore } from '@/store/authStore';
 import { getPresenceConnection, startPresenceConnection } from '@/services/presenceService';
+import { silentCatch } from '@/lib/silentCatch';
 import type { PresenceUser } from '@/types';
 
 const validStates = new Set<PresenceUser['state']>(['viewing', 'editing']);
@@ -31,7 +32,7 @@ export function usePresence(entryId: string | undefined, isEditing: boolean) {
   const invokeIfConnected = useCallback((method: string, ...args: unknown[]) => {
     const connection = getPresenceConnection();
     if (connection.state === HubConnectionState.Connected) {
-      connection.invoke(method, ...args).catch(() => {});
+      silentCatch(connection.invoke(method, ...args), `presence:${method}`);
     }
   }, []);
 
@@ -68,9 +69,9 @@ export function usePresence(entryId: string | undefined, isEditing: boolean) {
     ensureReconnectDelegate();
     reconnectRef.current = () => {
       if (entryIdRef.current) {
-        connection.invoke('JoinEntry', entryIdRef.current).catch(() => {});
+        silentCatch(connection.invoke('JoinEntry', entryIdRef.current), 'presence:JoinEntry');
         const state = isEditingRef.current ? 'editing' : 'viewing';
-        connection.invoke('UpdateEditingState', entryIdRef.current, state).catch(() => {});
+        silentCatch(connection.invoke('UpdateEditingState', entryIdRef.current, state), 'presence:UpdateEditingState');
       }
     };
 
@@ -89,7 +90,7 @@ export function usePresence(entryId: string | undefined, isEditing: boolean) {
     // Browser close: server's OnDisconnectedAsync handles cleanup
     const onBeforeUnload = () => {
       if (connection.state === HubConnectionState.Connected) {
-        connection.stop().catch(() => {});
+        silentCatch(connection.stop(), 'presence:stop');
       }
     };
     window.addEventListener('beforeunload', onBeforeUnload);
@@ -101,11 +102,11 @@ export function usePresence(entryId: string | undefined, isEditing: boolean) {
           return connection.invoke('JoinEntry', entryId);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.warn('[silentCatch] presence:startAndJoin:', err));
 
     return () => {
       if (connection.state === HubConnectionState.Connected) {
-        connection.invoke('LeaveEntry', entryId).catch(() => {});
+        silentCatch(connection.invoke('LeaveEntry', entryId), 'presence:LeaveEntry');
       }
       connection.off('UserJoined', onUserJoined);
       connection.off('UserLeft', onUserLeft);

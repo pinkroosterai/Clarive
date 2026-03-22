@@ -86,8 +86,8 @@ function MaintenanceGuard() {
       .then((s) => {
         if (s.maintenance) setMaintenanceMode(true);
       })
-      .catch(() => {
-        // Non-critical — maintenance check is best-effort for unauthenticated visitors
+      .catch((err) => {
+        console.warn('[silentCatch] app:getSystemStatus:', err);
       });
   }, [currentUser, maintenanceMode, setMaintenanceMode]);
 

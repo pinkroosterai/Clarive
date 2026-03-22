@@ -31,7 +31,9 @@ export function useDuplicateEntry() {
       });
       // Clone tags if present
       if (full.tags && full.tags.length > 0) {
-        await entryService.addTags(created.id, full.tags).catch(() => {});
+        await entryService.addTags(created.id, full.tags).catch((err) => {
+          console.warn('[silentCatch] duplicateEntry:addTags:', err);
+        });
       }
       return created;
     },

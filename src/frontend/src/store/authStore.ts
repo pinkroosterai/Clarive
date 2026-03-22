@@ -58,8 +58,8 @@ export const useAuthStore = create<AuthState>((rawSet, get) => {
           set({ aiConfigured: status.aiConfigured ?? true });
           set({ webSearchAvailable: status.webSearchAvailable ?? false });
         })
-        .catch(() => {
-          // Non-critical — system status (AI, maintenance) uses safe defaults
+        .catch((err) => {
+          console.warn('[silentCatch] auth:getSystemStatus:', err);
         });
     },
     setWorkspaces: (workspaces: Workspace[]) => {

@@ -94,8 +94,8 @@ export function useThemeProvider(): ThemeContextValue {
 
       // Persist to backend if authenticated (fire-and-forget)
       if (isAuthenticated) {
-        updateProfile({ themePreference: pref }).catch(() => {
-          // Non-critical — localStorage is the source of truth for UX
+        updateProfile({ themePreference: pref }).catch((err) => {
+          console.warn('[silentCatch] theme:updateProfile:', err);
         });
       }
     },

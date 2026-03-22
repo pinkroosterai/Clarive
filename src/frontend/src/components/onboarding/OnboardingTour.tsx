@@ -97,8 +97,8 @@ export function OnboardingTour() {
       driverRef.current.destroy();
     }
     driverRef.current = null;
-    completeOnboarding().catch(() => {
-      // Non-critical — onboarding flag is set optimistically in local state
+    completeOnboarding().catch((err) => {
+      console.warn('[silentCatch] onboarding:complete:', err);
     });
     setUser({ ...currentUser, onboardingCompleted: true });
   }, [currentUser, setUser]);
