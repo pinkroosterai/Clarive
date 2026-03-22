@@ -132,9 +132,11 @@ try
     builder.Services.AddClariveInfrastructure(builder.Configuration);
 
     // ── Quartz Hosted Service (starts scheduler, graceful shutdown) ──
+    // StartDelay gives EF migrations time to create qrtz_ tables before the scheduler queries them
     builder.Services.AddQuartzHostedService(options =>
     {
         options.WaitForJobsToComplete = true;
+        options.StartDelay = TimeSpan.FromSeconds(15);
     });
 
     // ── Database Configuration Override (highest priority, overrides env vars) ──
