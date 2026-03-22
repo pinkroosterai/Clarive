@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Cache;
 using Clarive.Domain.QueryResults;
 using Clarive.Infrastructure.Data;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Infrastructure.Repositories;
 
-public class EfEntryRepository(ClariveDbContext db, TenantCacheService cache) : IEntryRepository
+public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) : IEntryRepository
 {
     public async Task<(List<PromptEntry> Items, int TotalCount)> GetByFolderAsync(
         Guid tenantId,

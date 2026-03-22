@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Hosting;
 using Clarive.Auth.Jwt;
 using Clarive.Infrastructure.Cache;
@@ -148,7 +149,7 @@ public static class PublicApiEndpoints
         HttpContext ctx,
         IEntryService entryService,
         ITagRepository tagRepo,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         IAuditLogger auditLogger,
         CancellationToken ct
     )
@@ -282,7 +283,7 @@ public static class PublicApiEndpoints
     private static async Task<IResult> HandleListTags(
         HttpContext ctx,
         ITagRepository tagRepo,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {

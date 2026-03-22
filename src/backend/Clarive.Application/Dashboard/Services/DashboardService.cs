@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using System.Text.Json;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
@@ -12,7 +13,7 @@ public class DashboardService(
     IFolderRepository folderRepo,
     IAuditLogRepository auditRepo,
     IFavoriteRepository favoriteRepo,
-    TenantCacheService cache
+    ITenantCacheService cache
 ) : IDashboardService
 {
     public async Task<DashboardStatsResponse> GetStatsAsync(

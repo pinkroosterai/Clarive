@@ -15,7 +15,7 @@ public class ImportExportService(
     IFolderRepository folderRepo,
     ITagRepository tagRepo,
     IUnitOfWork unitOfWork,
-    TenantCacheService cache,
+    ITenantCacheService cache,
     ILogger<ImportExportService> logger
 ) : IImportExportService
 {

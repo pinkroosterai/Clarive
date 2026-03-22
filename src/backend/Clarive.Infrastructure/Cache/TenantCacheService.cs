@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Clarive.Infrastructure.Cache;
@@ -7,7 +8,7 @@ namespace Clarive.Infrastructure.Cache;
 /// FusionCache provides L1 memory + L2 distributed (Valkey), stampede protection,
 /// fail-safe, and eager refresh out of the box.
 /// </summary>
-public class TenantCacheService(IFusionCache cache)
+public class TenantCacheService(IFusionCache cache) : ITenantCacheService
 {
     private static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
 

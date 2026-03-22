@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure;
 using Clarive.Infrastructure.Cache;
 using Clarive.Infrastructure.Data;
@@ -21,7 +22,7 @@ public abstract class EntryServiceTestBase : IDisposable
     protected readonly IFavoriteRepository FavoriteRepo = Substitute.For<IFavoriteRepository>();
     protected readonly IUserRepository UserRepo = Substitute.For<IUserRepository>();
     protected readonly IAuditLogRepository AuditRepo = Substitute.For<IAuditLogRepository>();
-    protected readonly TenantCacheService Cache;
+    protected readonly ITenantCacheService Cache;
     protected readonly ClariveDbContext Db;
     protected readonly Application.Entries.Services.EntryService Sut;
     protected readonly Application.Entries.Services.EntryVersionService VersionSut;

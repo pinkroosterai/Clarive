@@ -14,7 +14,7 @@ public class EntryVersionService(
     IEntryRepository entryRepo,
     IUserRepository userRepo,
     IUnitOfWork unitOfWork,
-    TenantCacheService cache
+    ITenantCacheService cache
 ) : IEntryVersionService
 {
     public async Task<

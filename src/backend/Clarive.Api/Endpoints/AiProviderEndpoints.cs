@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Cache;
 using Clarive.Api.Helpers;
 using Clarive.Domain.ValueObjects;
@@ -38,7 +39,7 @@ public static class AiProviderEndpoints
         HttpContext ctx,
         CreateAiProviderRequest request,
         IAiProviderService service,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {
@@ -58,7 +59,7 @@ public static class AiProviderEndpoints
         HttpContext ctx,
         UpdateAiProviderRequest request,
         IAiProviderService service,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {
@@ -74,7 +75,7 @@ public static class AiProviderEndpoints
         Guid id,
         HttpContext ctx,
         IAiProviderService service,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {
@@ -119,7 +120,7 @@ public static class AiProviderEndpoints
         HttpContext ctx,
         AddAiProviderModelRequest request,
         IAiProviderService service,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {
@@ -142,7 +143,7 @@ public static class AiProviderEndpoints
         HttpContext ctx,
         UpdateAiProviderModelRequest request,
         IAiProviderService service,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {
@@ -158,7 +159,7 @@ public static class AiProviderEndpoints
         Guid modelId,
         HttpContext ctx,
         IAiProviderService service,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {

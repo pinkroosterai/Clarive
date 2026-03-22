@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Cache;
 using Clarive.Domain.Constants;
 using Clarive.Domain.QueryResults;
@@ -12,7 +13,7 @@ namespace Clarive.Application.Folders.Services;
 public class FolderService(
     IFolderRepository folderRepo,
     IEntryRepository entryRepo,
-    TenantCacheService cache
+    ITenantCacheService cache
 ) : IFolderService
 {
     public async Task<ErrorOr<List<FolderDto>>> GetTreeAsync(Guid tenantId, CancellationToken ct)

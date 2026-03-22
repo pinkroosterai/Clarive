@@ -18,7 +18,7 @@ public class EntryService(
     ITagRepository tagRepo,
     IFavoriteRepository favoriteRepo,
     IUserRepository userRepo,
-    TenantCacheService cache,
+    ITenantCacheService cache,
     IUnitOfWork unitOfWork,
     ILogger<EntryService> logger
 ) : IEntryService

@@ -17,7 +17,7 @@ public class ModelResolutionService(
     IAgentFactory agentFactory,
     IEncryptionService encryption,
     IOptionsMonitor<AiSettings> aiSettings,
-    TenantCacheService cache,
+    ITenantCacheService cache,
     ILogger<ModelResolutionService> logger
 ) : IModelResolutionService
 {

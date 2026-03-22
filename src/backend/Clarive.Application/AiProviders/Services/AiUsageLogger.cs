@@ -9,7 +9,7 @@ namespace Clarive.Application.AiProviders.Services;
 public class AiUsageLogger(
     IAiUsageLogRepository repo,
     IAiProviderRepository providerRepo,
-    TenantCacheService cache,
+    ITenantCacheService cache,
     ILogger<AiUsageLogger> logger
 ) : IAiUsageLogger
 {

@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Application.Entries.Contracts;
 using Clarive.Application.Tags.Contracts;
 using Clarive.Domain.Errors;
@@ -10,7 +11,7 @@ namespace Clarive.Application.Entries.Services;
 public class EntryTagService(
     IEntryRepository entryRepo,
     ITagRepository tagRepo,
-    TenantCacheService cache
+    ITenantCacheService cache
 ) : IEntryTagService
 {
     private const int MaxTagNameLength = 50;

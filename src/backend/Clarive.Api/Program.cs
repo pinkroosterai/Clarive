@@ -459,7 +459,7 @@ try
                 IMaintenanceModeService maintenanceMode,
                 IAgentFactory agentFactory,
                 ITavilyClientService tavilyClient,
-                TenantCacheService cache
+                ITenantCacheService cache
             ) =>
             {
                 var aiConfigured = await cache.GetOrCreateGlobalAsync(

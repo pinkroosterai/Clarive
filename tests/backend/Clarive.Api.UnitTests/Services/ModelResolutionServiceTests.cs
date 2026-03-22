@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.AI.Agents;
 using Clarive.AI.Configuration;
 using Clarive.Infrastructure.Security;
@@ -20,7 +21,7 @@ public class ModelResolutionServiceTests
     private readonly IOptionsMonitor<AiSettings> _aiSettings = Substitute.For<
         IOptionsMonitor<AiSettings>
     >();
-    private readonly TenantCacheService _cache;
+    private readonly ITenantCacheService _cache;
     private readonly ILogger<ModelResolutionService> _logger = Substitute.For<
         ILogger<ModelResolutionService>
     >();

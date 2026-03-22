@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Cache;
 using Clarive.Api.Helpers;
 using Clarive.Domain.ValueObjects;
@@ -39,7 +40,7 @@ public static class TagEndpoints
     private static async Task<IResult> HandleList(
         HttpContext ctx,
         ITagRepository tagRepo,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {
@@ -62,7 +63,7 @@ public static class TagEndpoints
         HttpContext ctx,
         RenameTagRequest request,
         ITagRepository tagRepo,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {
@@ -87,7 +88,7 @@ public static class TagEndpoints
         string tagName,
         HttpContext ctx,
         ITagRepository tagRepo,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         CancellationToken ct
     )
     {

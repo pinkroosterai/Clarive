@@ -65,7 +65,7 @@ public static class DependencyInjection
             .WithSerializer(
                 new FusionCacheSystemTextJsonSerializer()
             );
-        services.AddScoped<TenantCacheService>();
+        services.AddScoped<ITenantCacheService, TenantCacheService>();
 
         // ── Unit of Work ──
         services.AddScoped<IUnitOfWork, UnitOfWork>();

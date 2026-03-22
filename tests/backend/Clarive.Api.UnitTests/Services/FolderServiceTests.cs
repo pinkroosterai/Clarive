@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Cache;
 using Clarive.Domain.QueryResults;
 using Clarive.Domain.Entities;
@@ -13,7 +14,7 @@ public class FolderServiceTests
 {
     private readonly IFolderRepository _folderRepo = Substitute.For<IFolderRepository>();
     private readonly IEntryRepository _entryRepo = Substitute.For<IEntryRepository>();
-    private readonly TenantCacheService _cache;
+    private readonly ITenantCacheService _cache;
     private readonly FolderService _sut;
 
     private static readonly Guid TenantId = Guid.NewGuid();

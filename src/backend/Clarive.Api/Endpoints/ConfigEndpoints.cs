@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure.Cache;
 using Clarive.Api.Configuration;
@@ -131,7 +132,7 @@ public static class ConfigEndpoints
         HttpContext ctx,
         IServiceConfigRepository configRepo,
         IEncryptionService encryption,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         DbConfigurationProvider? dbConfigProvider,
         CancellationToken ct
     )
@@ -222,7 +223,7 @@ public static class ConfigEndpoints
         string key,
         HttpContext ctx,
         IServiceConfigRepository configRepo,
-        TenantCacheService cache,
+        ITenantCacheService cache,
         DbConfigurationProvider? dbConfigProvider,
         CancellationToken ct
     )
