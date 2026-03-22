@@ -14,19 +14,19 @@ namespace Clarive.Infrastructure.Data.Migrations
 
             migrationBuilder.Sql(
                 """
-                CREATE INDEX CONCURRENTLY ix_prompt_entries_title_trgm
+                CREATE INDEX IF NOT EXISTS ix_prompt_entries_title_trgm
                     ON prompt_entries USING GIN (title gin_trgm_ops);
                 """);
 
             migrationBuilder.Sql(
                 """
-                CREATE INDEX CONCURRENTLY ix_users_name_trgm
+                CREATE INDEX IF NOT EXISTS ix_users_name_trgm
                     ON users USING GIN (name gin_trgm_ops);
                 """);
 
             migrationBuilder.Sql(
                 """
-                CREATE INDEX CONCURRENTLY ix_users_email_trgm
+                CREATE INDEX IF NOT EXISTS ix_users_email_trgm
                     ON users USING GIN (email gin_trgm_ops);
                 """);
         }
