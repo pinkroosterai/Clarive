@@ -190,7 +190,7 @@ public class ShareLinkTests : IntegrationTestBase
         // Create password-protected link
         var (_, createBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/entries/{TestData.EntryBlogPostGenerator}/share-link",
-            new { password = "secret123" }
+            new { password = "secret-123-pwd" }
         );
 
         var shareToken = createBody!.GetProperty("token").GetString()!;
@@ -206,7 +206,7 @@ public class ShareLinkTests : IntegrationTestBase
         // Verify with correct password
         var (verifyResponse, verifyBody) = await Client.PostJsonAsync<JsonElement>(
             $"/api/share/{Uri.EscapeDataString(shareToken)}/verify",
-            new { password = "secret123" }
+            new { password = "secret-123-pwd" }
         );
 
         verifyResponse.StatusCode.Should().Be(HttpStatusCode.OK);

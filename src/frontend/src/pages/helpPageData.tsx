@@ -558,7 +558,7 @@ export const sectionGroups: SectionGroup[] = [
                 automatically.
               </li>
               <li>
-                Optionally add a <strong>password</strong> (minimum 8 characters). Visitors will
+                Optionally add a <strong>password</strong> (minimum 12 characters). Visitors will
                 need to enter it before viewing.
               </li>
               <li>

@@ -247,8 +247,8 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {password.length > 0 && password.length < 8 && (
-                    <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+                  {password.length > 0 && password.length < 12 && (
+                    <p className="text-xs text-muted-foreground">Minimum 12 characters</p>
                   )}
                 </>
               )}
@@ -257,7 +257,7 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
             <Button
               className="w-full"
               onClick={handleCreate}
-              disabled={createMutation.isPending || (usePassword && password.length < 8)}
+              disabled={createMutation.isPending || (usePassword && password.length < 12)}
             >
               {createMutation.isPending ? 'Creating...' : 'Create Share Link'}
             </Button>

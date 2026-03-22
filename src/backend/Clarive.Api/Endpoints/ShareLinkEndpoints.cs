@@ -1,4 +1,5 @@
 using Clarive.Api.Helpers;
+using Clarive.Application.Common;
 using Clarive.Domain.ValueObjects;
 
 namespace Clarive.Api.Endpoints;
@@ -29,11 +30,11 @@ public static class ShareLinkEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        if (request.Password is not null && request.Password.Length < 8)
+        if (request.Password is not null && request.Password.Length < Validator.MinPasswordLength)
             return ctx.ErrorResult(
                 422,
                 "VALIDATION_ERROR",
-                "Share link password must be at least 8 characters."
+                $"Share link password must be at least {Validator.MinPasswordLength} characters."
             );
 
         var result = await shareLinkService.CreateAsync(
