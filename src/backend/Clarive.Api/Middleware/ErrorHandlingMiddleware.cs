@@ -91,6 +91,7 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
                             .Select(p => new { id = p.Id.ToString(), content = p.Content, order = p.Order }),
                         version = version.Version,
                         versionState = version.VersionState.ToString().ToLower(),
+                        rowVersion = entry.RowVersion,
                     };
                 }
             }
