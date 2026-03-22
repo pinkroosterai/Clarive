@@ -148,7 +148,7 @@ public static class DependencyInjection
                     pg.TablePrefix = "qrtz_";
                 });
                 store.UseNewtonsoftJsonSerializer();
-                store.PerformSchemaValidation = true;
+                store.PerformSchemaValidation = false;
             });
 
             // ── Infrastructure cleanup jobs ──
