@@ -1,4 +1,4 @@
-using Clarive.Infrastructure.Data;
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Domain.Errors;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
@@ -12,7 +12,7 @@ public class UserManagementService(
     IUserRepository userRepo,
     ITenantMembershipRepository membershipRepo,
     IInvitationRepository invitationRepo,
-    ClariveDbContext db,
+    IUnitOfWork unitOfWork,
     ILogger<UserManagementService> logger
 ) : IUserManagementService
 {
@@ -159,7 +159,7 @@ public class UserManagementService(
         if (currentUser is null)
             return DomainErrors.CurrentUserNotFound;
 
-        await db.Database.InTransactionAsync(
+        await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 // Update User.Role for both users

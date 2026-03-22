@@ -1,8 +1,8 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Cache;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Clarive.Infrastructure.Data;
 using Clarive.Domain.Errors;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
@@ -21,7 +21,7 @@ public partial class EntryService(
     IUserRepository userRepo,
     IAuditLogRepository auditRepo,
     TenantCacheService cache,
-    ClariveDbContext db,
+    IUnitOfWork unitOfWork,
     ILogger<EntryService> logger
 ) : IEntryService
 {
@@ -38,7 +38,7 @@ public partial class EntryService(
         )
             return DomainErrors.FolderNotFound;
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 var now = DateTime.UtcNow;
@@ -105,7 +105,7 @@ public partial class EntryService(
             throw new DbUpdateConcurrencyException(
                 "The entry was modified by another user since you loaded it.");
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 var now = DateTime.UtcNow;
@@ -177,7 +177,7 @@ public partial class EntryService(
         if (draft is null || draft.VersionState != VersionState.Draft)
             return Error.Conflict("NO_DRAFT", "No draft version to publish.");
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 var now = DateTime.UtcNow;
@@ -222,7 +222,7 @@ public partial class EntryService(
         if (historical is null || historical.VersionState != VersionState.Historical)
             return DomainErrors.HistoricalVersionNotFound;
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 var now = DateTime.UtcNow;
@@ -307,7 +307,7 @@ public partial class EntryService(
                 "Cannot delete the only version. A published version must exist to fall back to."
             );
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 await entryRepo.DeleteVersionAsync(working, ct);
@@ -338,7 +338,7 @@ public partial class EntryService(
         )
             return DomainErrors.TargetFolderNotFound;
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 entry.FolderId = folderId;
@@ -361,7 +361,7 @@ public partial class EntryService(
         if (entry is null)
             return DomainErrors.EntryNotFound;
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 entry.IsTrashed = true;
@@ -390,7 +390,7 @@ public partial class EntryService(
         if (!entry.IsTrashed)
             return Error.Conflict("NOT_TRASHED", "Entry is not in trash.");
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 entry.IsTrashed = false;
@@ -422,7 +422,7 @@ public partial class EntryService(
                 "Entry must be trashed before permanent deletion."
             );
 
-        await db.Database.InTransactionAsync(
+        await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 await entryRepo.DeleteAsync(tenantId, entryId, ct);

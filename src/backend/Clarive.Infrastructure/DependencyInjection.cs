@@ -67,6 +67,9 @@ public static class DependencyInjection
             );
         services.AddScoped<TenantCacheService>();
 
+        // ── Unit of Work ──
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
         // ── Repositories (Scoped — one DbContext per request) ──
         services.AddScoped<ITenantRepository, EfTenantRepository>();
         services.AddScoped<IUserRepository, EfUserRepository>();

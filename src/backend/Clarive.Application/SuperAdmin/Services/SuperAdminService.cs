@@ -1,3 +1,4 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Security;
 using System.Security.Cryptography;
 using Clarive.Infrastructure.Data;
@@ -11,6 +12,7 @@ namespace Clarive.Application.SuperAdmin.Services;
 
 public class SuperAdminService(
     ClariveDbContext db,
+    IUnitOfWork unitOfWork,
     IUserRepository userRepo,
     PasswordHasher passwordHasher
 ) : ISuperAdminService
@@ -208,7 +210,7 @@ public class SuperAdminService(
         if (user is null)
             return false;
 
-        await db.Database.InTransactionAsync(
+        await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 var memberships = await db

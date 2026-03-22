@@ -2,7 +2,6 @@ using Clarive.Domain.Interfaces.Services;
 using Clarive.Auth.Google;
 using Clarive.Auth.Jwt;
 using Clarive.Infrastructure.Security;
-using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
@@ -23,7 +22,7 @@ public class AccountService(
     JwtService jwtService,
     PasswordHasher passwordHasher,
     IConfiguration configuration,
-    ClariveDbContext db,
+    IUnitOfWork unitOfWork,
     ITokenIssuanceService tokenIssuance,
     IUserWorkspaceCreationService workspaceCreation,
     ILogger<AccountService> logger
@@ -69,7 +68,7 @@ public class AccountService(
 
         try
         {
-            return await db.Database.InTransactionAsync(
+            return await unitOfWork.ExecuteInTransactionAsync(
                 async () =>
                 {
                     var isFirstUser = !await userRepo.AnyUsersExistAsync(ct);
@@ -184,7 +183,7 @@ public class AccountService(
         }
 
         // 3. New user — create tenant + user (no password, email auto-verified)
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 (user, _) = await workspaceCreation.CreateUserWithPersonalWorkspaceAsync(
@@ -303,7 +302,7 @@ public class AccountService(
         if (await userRepo.GetByEmailAsync(invitation.Email, ct) is not null)
             return Error.Conflict("EMAIL_ALREADY_EXISTS", "A user with this email already exists.");
 
-        return await db.Database.InTransactionAsync(
+        return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 // Create user in the invited workspace

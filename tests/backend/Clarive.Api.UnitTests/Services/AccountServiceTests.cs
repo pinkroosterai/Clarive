@@ -1,6 +1,7 @@
 using Clarive.Domain.Interfaces.Services;
 using Clarive.Auth.Google;
 using Clarive.Auth.Jwt;
+using Clarive.Infrastructure;
 using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
@@ -92,7 +93,7 @@ public class AccountServiceTests : IDisposable
             _jwtService,
             _passwordHasher,
             _configuration,
-            _db,
+            new UnitOfWork(_db),
             _tokenIssuance,
             _workspaceCreation,
             Substitute.For<ILogger<AccountService>>()
@@ -179,7 +180,7 @@ public class AccountServiceTests : IDisposable
             _jwtService,
             _passwordHasher,
             config,
-            _db,
+            new UnitOfWork(_db),
             _tokenIssuance,
             _workspaceCreation,
             Substitute.For<ILogger<AccountService>>()

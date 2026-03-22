@@ -1,9 +1,9 @@
+using Clarive.Domain.Interfaces.Services;
 using System.Text.Json.Nodes;
 using Clarive.Application.Common;
 using Clarive.Application.McpServers.Contracts;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
-using Clarive.Infrastructure.Data;
 using Clarive.Infrastructure.Security;
 using ErrorOr;
 using Humanizer;
@@ -17,7 +17,7 @@ public class McpServerService(
     IToolRepository toolRepo,
     IEncryptionService encryptionService,
     IHttpClientFactory httpClientFactory,
-    ClariveDbContext db,
+    IUnitOfWork unitOfWork,
     ILogger<McpServerService> logger
 ) : IMcpServerService
 {
@@ -120,7 +120,7 @@ public class McpServerService(
             var newTools = await FetchAndMapToolsAsync(server.Url, bearerToken, tenantId, serverId, ct);
 
             // Clean-replace in a transaction so delete+create+update are atomic
-            await db.Database.InTransactionAsync(async () =>
+            await unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 await toolRepo.DeleteByServerIdAsync(tenantId, serverId, ct);
 

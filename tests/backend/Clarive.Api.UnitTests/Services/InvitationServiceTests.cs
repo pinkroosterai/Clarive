@@ -1,4 +1,5 @@
 using Clarive.Auth.Jwt;
+using Clarive.Infrastructure;
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
@@ -61,7 +62,7 @@ public class InvitationServiceTests
             .Returns(ci => ci.Arg<TenantMembership>());
 
         _sut = new InvitationService(
-            db,
+            new UnitOfWork(db),
             _invitationRepo,
             _userRepo,
             _tenantRepo,

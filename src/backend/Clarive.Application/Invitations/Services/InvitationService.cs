@@ -1,5 +1,4 @@
 using Clarive.Auth.Jwt;
-using Clarive.Infrastructure.Data;
 using Clarive.Domain.Errors;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
@@ -11,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Clarive.Application.Invitations.Services;
 
 public class InvitationService(
-    ClariveDbContext db,
+    IUnitOfWork unitOfWork,
     IInvitationRepository invitationRepo,
     IUserRepository userRepo,
     ITenantRepository tenantRepo,
@@ -186,7 +185,7 @@ public class InvitationService(
             return Error.Conflict("ALREADY_MEMBER", "You are already a member of this workspace.");
         }
 
-        var membership = await db.Database.InTransactionAsync(
+        var membership = await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 var m = await membershipRepo.CreateAsync(

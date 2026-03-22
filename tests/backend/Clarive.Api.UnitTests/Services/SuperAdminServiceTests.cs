@@ -1,3 +1,4 @@
+using Clarive.Infrastructure;
 using Clarive.Infrastructure.Security;
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
@@ -30,7 +31,7 @@ public class SuperAdminServiceTests : IDisposable
             .UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<User>());
 
-        _sut = new SuperAdminService(_db, _userRepo, _passwordHasher);
+        _sut = new SuperAdminService(_db, new UnitOfWork(_db), _userRepo, _passwordHasher);
     }
 
     public void Dispose()

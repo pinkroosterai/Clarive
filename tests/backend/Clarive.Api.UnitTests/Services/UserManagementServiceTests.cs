@@ -1,3 +1,4 @@
+using Clarive.Infrastructure;
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
@@ -38,7 +39,7 @@ public class UserManagementServiceTests : IDisposable
             .UpdateAsync(Arg.Any<TenantMembership>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _sut = new UserManagementService(_userRepo, _membershipRepo, _invitationRepo, _db, Substitute.For<ILogger<UserManagementService>>());
+        _sut = new UserManagementService(_userRepo, _membershipRepo, _invitationRepo, new UnitOfWork(_db), Substitute.For<ILogger<UserManagementService>>());
     }
 
     public void Dispose()

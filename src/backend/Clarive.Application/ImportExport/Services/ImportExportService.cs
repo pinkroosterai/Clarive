@@ -1,5 +1,5 @@
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Cache;
-using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.ValueObjects;
@@ -14,7 +14,7 @@ public class ImportExportService(
     IEntryRepository entryRepo,
     IFolderRepository folderRepo,
     ITagRepository tagRepo,
-    ClariveDbContext db,
+    IUnitOfWork unitOfWork,
     TenantCacheService cache,
     ILogger<ImportExportService> logger
 ) : IImportExportService
@@ -62,7 +62,7 @@ public class ImportExportService(
         var batchEntries = new List<PromptEntry>();
         var batchVersions = new List<PromptEntryVersion>();
 
-        await db.Database.InTransactionAsync(
+        await unitOfWork.ExecuteInTransactionAsync(
             async () =>
             {
                 foreach (var item in entryList)

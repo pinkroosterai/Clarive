@@ -1,3 +1,4 @@
+using Clarive.Infrastructure;
 using Clarive.Infrastructure.Cache;
 using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
@@ -46,7 +47,7 @@ public abstract class EntryServiceTestBase : IDisposable
             UserRepo,
             AuditRepo,
             Cache,
-            Db,
+            new UnitOfWork(Db),
             Substitute.For<ILogger<Application.Entries.Services.EntryService>>()
         );
 
