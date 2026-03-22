@@ -240,7 +240,9 @@ try
     builder.Services.AddClariveAI(builder.Configuration);
 
     // ── SignalR (real-time presence) ──
-    var valkeyConnectionString = builder.Configuration.GetConnectionString("Valkey") ?? "localhost:6379";
+    var valkeyConnectionString = builder.Configuration.GetConnectionString("Valkey") is { Length: > 0 } valkey
+        ? valkey
+        : "localhost:6379";
     builder.Services
         .AddSignalR(options =>
         {

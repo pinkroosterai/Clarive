@@ -166,7 +166,8 @@ public class FolderTests : IntegrationTestBase
         );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body.GetProperty("color").ValueKind.Should().Be(JsonValueKind.Null);
+        body.TryGetProperty("color", out var colorProp).Should().BeFalse(
+            "color should be omitted from JSON when null (WhenWritingNull policy)");
     }
 
     [Fact]
