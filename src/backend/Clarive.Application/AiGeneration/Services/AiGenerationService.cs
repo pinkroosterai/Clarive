@@ -131,13 +131,11 @@ public class AiGenerationService(
         Func<ProgressEvent, Task>? onProgress = null
     )
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null || entry.IsTrashed)
-            return DomainErrors.EntryNotFound;
+        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, ct);
+        if (workingResult.IsError)
+            return workingResult.Errors;
 
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
-            return DomainErrors.VersionNotFoundForEntry;
+        var (entry, working) = workingResult.Value;
 
         var prompts = working
             .Prompts.OrderBy(p => p.Order)
@@ -183,13 +181,11 @@ public class AiGenerationService(
         CancellationToken ct
     )
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null || entry.IsTrashed)
-            return DomainErrors.EntryNotFound;
+        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, ct);
+        if (workingResult.IsError)
+            return workingResult.Errors;
 
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
-            return DomainErrors.VersionNotFoundForEntry;
+        var (entry, working) = workingResult.Value;
 
         if (!string.IsNullOrEmpty(working.SystemMessage))
             return Error.Conflict("ALREADY_EXISTS", "Entry already has a system message.");
@@ -223,13 +219,11 @@ public class AiGenerationService(
         CancellationToken ct
     )
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null || entry.IsTrashed)
-            return DomainErrors.EntryNotFound;
+        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, ct);
+        if (workingResult.IsError)
+            return workingResult.Errors;
 
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
-            return DomainErrors.VersionNotFoundForEntry;
+        var (entry, working) = workingResult.Value;
 
         if (working.Prompts.Count != 1)
             return Error.Conflict(
@@ -266,13 +260,11 @@ public class AiGenerationService(
         CancellationToken ct
     )
     {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null || entry.IsTrashed)
-            return DomainErrors.EntryNotFound;
+        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, ct);
+        if (workingResult.IsError)
+            return workingResult.Errors;
 
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
-            return DomainErrors.VersionNotFoundForEntry;
+        var (entry, working) = workingResult.Value;
 
         var prompts = working.Prompts.OrderBy(p => p.Order).ToList();
         var allFields = prompts
@@ -499,6 +491,23 @@ public class AiGenerationService(
         await LogUsageAsync(tenantId, userId, AiActionType.Generation, durationMs, generationUsage, entryId, ct);
         await LogUsageAsync(tenantId, userId, AiActionType.Evaluation, durationMs, evaluationUsage, entryId, ct);
         await LogUsageAsync(tenantId, userId, AiActionType.Clarification, durationMs, clarificationUsage, entryId, ct);
+    }
+
+    private async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion Working)>> GetValidatedWorkingVersionAsync(
+        Guid tenantId,
+        Guid entryId,
+        CancellationToken ct
+    )
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null || entry.IsTrashed)
+            return DomainErrors.EntryNotFound;
+
+        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        if (working is null)
+            return DomainErrors.VersionNotFoundForEntry;
+
+        return (entry, working);
     }
 
     private Task LogUsageAsync(
