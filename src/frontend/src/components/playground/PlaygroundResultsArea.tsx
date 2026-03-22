@@ -1,22 +1,14 @@
-import {
-  Play,
-  Square,
-  ChevronDown,
-  Copy,
-  Check,
-  Loader2,
-  Pin,
-  PinOff,
-  Sparkles,
-} from 'lucide-react';
+import { Play, Square, Copy, Check, Loader2, Pin, PinOff } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 import { CollapsedPrompt, ConversationView } from './ConversationView';
 import CopyButton from './CopyButton';
 import { JudgeScorePanel } from './JudgeScorePanel';
-import ReasoningBlock from './ReasoningBlock';
+import { PlaygroundErrorDisplay } from './PlaygroundErrorDisplay';
 import { ScoreBadgeBar } from './ScoreBadgeBar';
-import { ToolCallBlock } from './ToolCallBlock';
+import { SegmentTimeline } from './SegmentTimeline';
+import { StreamingIndicator } from './StreamingIndicator';
+import { TemplateVariablesSection } from './TemplateVariablesSection';
 import type {
   PlaygroundStreamingState,
   PlaygroundComparisonState,
@@ -24,23 +16,9 @@ import type {
   PlaygroundJudgeState,
 } from './utils';
 
-import LLMResponseBlock from '@/components/editor/LLMResponseBlock';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { scoreColor } from '@/components/wizard/scoreUtils';
-import { getStreamingStatusMessage } from '@/hooks/usePlaygroundStreaming';
-import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
 import { renderTemplate } from '@/lib/templateRenderer';
 import type { TestRunPromptResponse } from '@/services/api/playgroundService';
 
@@ -132,13 +110,7 @@ export default function PlaygroundResultsArea({
     setActiveCarouselIndex,
     onClearCurrentRun,
   } = comparison;
-  const {
-    templateFields,
-    fieldValues,
-    setFieldValues,
-    onFillTemplateFields,
-    isFillingTemplateFields,
-  } = template;
+  const { fieldValues } = template;
   const { currentJudgeScores, isJudging } = judge;
   const hasPins = pinnedRuns.length > 0;
   const [showPrompts, setShowPrompts] = useState(false);
@@ -192,10 +164,9 @@ export default function PlaygroundResultsArea({
       `[data-pin-index="${clampedPinIndex}"]`
     );
     if (!target) return;
-    // Scroll horizontally within the ScrollArea viewport without affecting window scroll
-    const targetLeft = target.offsetLeft;
+    const targetLeft = (target as HTMLElement).offsetLeft;
     const viewportWidth = viewport.clientWidth;
-    const targetWidth = target.offsetWidth;
+    const targetWidth = (target as HTMLElement).offsetWidth;
     const scrollLeft = targetLeft - (viewportWidth - targetWidth) / 2;
     viewport.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
   }, [clampedPinIndex]);
@@ -205,114 +176,7 @@ export default function PlaygroundResultsArea({
       <ScrollArea className="flex-1 min-w-0">
         <div className="p-6">
           {/* Template variables (collapsible) */}
-          {templateFields.length > 0 &&
-            (() => {
-              const missingCount = templateFields.filter((f) => !fieldValues[f.name]).length;
-              return (
-                <Collapsible
-                  defaultOpen
-                  open={missingCount > 0 ? true : undefined}
-                  className="mb-6"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <CollapsibleTrigger className="group flex items-center gap-2 text-xs font-medium text-foreground-muted">
-                      <ChevronDown className="size-3.5 transition-transform duration-200 group-data-[state=closed]:-rotate-90" />
-                      Template Variables ({templateFields.length})
-                      {missingCount > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">
-                          {missingCount} required
-                        </span>
-                      )}
-                    </CollapsibleTrigger>
-                    {onFillTemplateFields && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs gap-1"
-                        onClick={onFillTemplateFields}
-                        disabled={isFillingTemplateFields}
-                        aria-busy={isFillingTemplateFields}
-                        aria-label="Fill template fields with AI-generated examples"
-                      >
-                        {isFillingTemplateFields ? (
-                          <Loader2 className="size-3 animate-spin" />
-                        ) : (
-                          <Sparkles className="size-3" />
-                        )}
-                        {isFillingTemplateFields ? 'Generating...' : 'Fill with examples'}
-                      </Button>
-                    )}
-                  </div>
-                  <CollapsibleContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {templateFields.map((field) => {
-                        const isEmpty = !fieldValues[field.name];
-                        return (
-                          <div key={field.name} className="space-y-1">
-                            <Label className="text-xs font-mono">{`{{${field.name}}}`}</Label>
-                            {field.type === 'enum' && field.enumValues.length > 0 ? (
-                              <Select
-                                value={fieldValues[field.name] || ''}
-                                onValueChange={(v) =>
-                                  setFieldValues((prev) => ({ ...prev, [field.name]: v }))
-                                }
-                              >
-                                <SelectTrigger
-                                  className={`h-8 text-xs ${isEmpty ? 'border-destructive' : ''}`}
-                                >
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {field.enumValues.map((v) => (
-                                    <SelectItem key={v} value={v} className="text-xs">
-                                      {v}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (field.type === 'int' || field.type === 'float') &&
-                              field.min !== null &&
-                              field.max !== null ? (
-                              <div className="flex items-center gap-2">
-                                <Slider
-                                  min={field.min}
-                                  max={field.max}
-                                  step={field.type === 'int' ? 1 : 0.01}
-                                  value={[Number(fieldValues[field.name]) || field.min]}
-                                  onValueChange={([v]) =>
-                                    setFieldValues((prev) => ({ ...prev, [field.name]: String(v) }))
-                                  }
-                                  className="flex-1"
-                                />
-                                <span className="text-xs text-foreground-muted tabular-nums w-10 text-right">
-                                  {fieldValues[field.name] || field.min}
-                                </span>
-                              </div>
-                            ) : (
-                              <Input
-                                value={fieldValues[field.name] || ''}
-                                onChange={(e) =>
-                                  setFieldValues((prev) => ({
-                                    ...prev,
-                                    [field.name]: e.target.value,
-                                  }))
-                                }
-                                placeholder={field.type !== 'string' ? field.type : 'value'}
-                                className={`h-8 text-xs ${isEmpty ? 'border-destructive' : ''}`}
-                                type={
-                                  field.type === 'int' || field.type === 'float' ? 'number' : 'text'
-                                }
-                              />
-                            )}
-                            {isEmpty && <p className="text-xs text-destructive">Required</p>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              );
-            })()}
+          <TemplateVariablesSection template={template} />
 
           {/* ── Comparison layout — all pins shown side-by-side ── */}
           {hasPins && (
@@ -358,14 +222,13 @@ export default function PlaygroundResultsArea({
 
               {/* Grid column container — rows align headers, responses, and scores */}
               {(() => {
-                // Build columns: optional current run + all pinned runs (equal peers)
                 const totalColumns = (hasCurrentRun ? 1 : 0) + pinnedRuns.length;
                 const needsScroll = totalColumns > 2;
 
                 return (
                   <ScrollArea ref={scrollContainerRef}>
                     <div>
-                      {/* 3-row grid: [header] [responses] [scores] — each row stretches to tallest cell */}
+                      {/* 3-row grid: [header] [responses] [scores] */}
                       <div
                         className="grid gap-x-4 gap-y-3"
                         style={{
@@ -414,77 +277,23 @@ export default function PlaygroundResultsArea({
                           </div>
                         ))}
 
-                        {/* ── Row 2: Response content — unified segment timeline ── */}
+                        {/* ── Row 2: Response content ── */}
                         {hasCurrentRun && (
                           <div className="space-y-2 self-start min-w-0">
-                            {segments.map((seg, idx) => {
-                              switch (seg.type) {
-                                case 'reasoning':
-                                  return (
-                                    <ReasoningBlock
-                                      key={`seg-${idx}`}
-                                      reasoning={seg.text}
-                                      isStreaming={isStreaming}
-                                    />
-                                  );
-                                case 'tool_call': {
-                                  // Find matching tool_result in segments
-                                  const result = segments.find(
-                                    (s) => s.type === 'tool_result' && s.callId === seg.callId
-                                  );
-                                  const toolResult =
-                                    result?.type === 'tool_result' ? result : undefined;
-                                  return (
-                                    <ToolCallBlock
-                                      key={`seg-${idx}`}
-                                      toolName={seg.toolName}
-                                      arguments={seg.arguments ?? null}
-                                      response={toolResult?.response ?? null}
-                                      durationMs={toolResult?.durationMs ?? null}
-                                      error={toolResult?.error ?? null}
-                                      status={
-                                        toolResult
-                                          ? toolResult.error
-                                            ? 'error'
-                                            : 'complete'
-                                          : 'calling'
-                                      }
-                                    />
-                                  );
-                                }
-                                case 'tool_result':
-                                  return null; // Rendered as part of tool_call above
-                                case 'response':
-                                  return (
-                                    <div
-                                      key={`seg-${idx}`}
-                                      className="relative group rounded-lg border border-border-subtle bg-surface p-4"
-                                    >
-                                      <LLMResponseBlock
-                                        output={seg.text}
-                                        isStreaming={isStreaming}
-                                      />
-                                      {!isStreaming && seg.text && (
-                                        <CopyButton
-                                          text={seg.text}
-                                          index={2000 + idx}
-                                          copiedIndex={copiedIndex}
-                                          onCopy={handleCopy}
-                                        />
-                                      )}
-                                    </div>
-                                  );
-                                default:
-                                  return null;
-                              }
-                            })}
+                            <SegmentTimeline
+                              segments={segments}
+                              isStreaming={isStreaming}
+                              copiedIndex={copiedIndex}
+                              handleCopy={handleCopy}
+                              copyIndexOffset={2000}
+                            />
                             {segments.length === 0 && isStreaming && (
                               <span className="text-xs text-foreground-muted">—</span>
                             )}
                           </div>
                         )}
 
-                        {pinnedRuns.map((run, pinIndex) => (
+                        {pinnedRuns.map((run) => (
                           <div key={`content-${run.id}`} className="space-y-2 self-start">
                             {run.conversationLog?.length ? (
                               <ConversationView
@@ -500,7 +309,7 @@ export default function PlaygroundResultsArea({
                           </div>
                         ))}
 
-                        {/* ── Row 3: Judge scores (aligned across columns) ── */}
+                        {/* ── Row 3: Judge scores ── */}
                         {hasCurrentRun && (
                           <div className="self-start min-w-0">
                             {!isStreaming && currentJudgeScores && (
@@ -559,73 +368,22 @@ export default function PlaygroundResultsArea({
 
           {/* Streaming indicator (non-comparison mode) */}
           {!hasPins && isStreaming && (
-            <div
-              ref={responseAreaRef}
-              className="flex items-center gap-2 text-sm text-foreground-muted mb-4"
-              aria-live="polite"
-              role="status"
-            >
-              {firstTokenReceived ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  <span>
-                    {getStreamingStatusMessage(elapsedSeconds)}{' '}
-                    {elapsedSeconds > 0 && `${elapsedSeconds}s`}
-                    {approxOutputTokens > 0 && (
-                      <span className="text-foreground-muted/70 ml-1">
-                        · ~{approxOutputTokens.toLocaleString()} tokens
-                      </span>
-                    )}
-                  </span>
-                </>
-              ) : (
-                <span className="flex items-center gap-1">
-                  Connecting{elapsedSeconds > 0 && ` ${elapsedSeconds}s`}
-                  <span className="inline-flex gap-0.5">
-                    <span className="size-1 rounded-full bg-foreground-muted animate-pulse" />
-                    <span className="size-1 rounded-full bg-foreground-muted animate-pulse [animation-delay:200ms]" />
-                    <span className="size-1 rounded-full bg-foreground-muted animate-pulse [animation-delay:400ms]" />
-                  </span>
-                </span>
-              )}
-            </div>
+            <StreamingIndicator
+              responseAreaRef={responseAreaRef}
+              firstTokenReceived={firstTokenReceived}
+              elapsedSeconds={elapsedSeconds}
+              approxOutputTokens={approxOutputTokens}
+            />
           )}
 
           {/* Error */}
           {error && (
-            <div
-              aria-live="assertive"
-              className={`text-sm rounded-lg p-4 mb-4 flex items-center justify-between gap-3 ${
-                isRateLimitError(error)
-                  ? 'text-warning-text bg-warning-bg border border-warning-border'
-                  : 'text-destructive bg-destructive/10'
-              }`}
-            >
-              <div className="flex-1">
-                <span>
-                  {isRateLimitError(error) && rateLimitCountdown > 0
-                    ? `Rate limit reached — you can try again in ${rateLimitCountdown}s`
-                    : mapPlaygroundError(error)}
-                </span>
-                {isRateLimitError(error) && rateLimitCountdown > 0 && (
-                  <div className="mt-2 h-1 rounded-full bg-warning-border/30 overflow-hidden">
-                    <div
-                      className="h-full bg-warning-text/60 rounded-full transition-all duration-1000 ease-linear"
-                      style={{ width: `${((60 - rateLimitCountdown) / 60) * 100}%` }}
-                    />
-                  </div>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRun}
-                disabled={isStreaming || rateLimitCountdown > 0}
-                className="shrink-0"
-              >
-                {rateLimitCountdown > 0 ? `Retry in ${rateLimitCountdown}s` : 'Retry'}
-              </Button>
-            </div>
+            <PlaygroundErrorDisplay
+              error={error}
+              rateLimitCountdown={rateLimitCountdown}
+              isStreaming={isStreaming}
+              onRetry={handleRun}
+            />
           )}
 
           {/* ── Chain view (multi-prompt) — hidden when comparing ── */}
@@ -665,81 +423,23 @@ export default function PlaygroundResultsArea({
 
                     {/* Step content */}
                     <div className="flex-1 pb-6 min-w-0 space-y-2">
-                      {/* Collapsible prompt card — matches historical/pinned view */}
                       <CollapsedPrompt
                         content={renderTemplate(prompt.content, fieldValues)}
                         promptIndex={i}
                       />
-
-                      {/* Render segments chronologically for this prompt */}
                       <div className="space-y-2">
-                        {segments
-                          .filter((s) => s.promptIndex === i)
-                          .map((seg, idx) => {
-                            switch (seg.type) {
-                              case 'reasoning':
-                                return (
-                                  <ReasoningBlock
-                                    key={`chain-${i}-seg-${idx}`}
-                                    reasoning={seg.text}
-                                    isStreaming={isActive}
-                                  />
-                                );
-                              case 'tool_call': {
-                                const result = segments.find(
-                                  (s) => s.type === 'tool_result' && s.callId === seg.callId
-                                );
-                                const toolResult =
-                                  result?.type === 'tool_result' ? result : undefined;
-                                return (
-                                  <ToolCallBlock
-                                    key={`chain-${i}-tool-${seg.callId}`}
-                                    toolName={seg.toolName}
-                                    arguments={seg.arguments ?? null}
-                                    response={toolResult?.response ?? null}
-                                    durationMs={toolResult?.durationMs ?? null}
-                                    error={toolResult?.error ?? null}
-                                    status={
-                                      toolResult
-                                        ? toolResult.error
-                                          ? 'error'
-                                          : 'complete'
-                                        : 'calling'
-                                    }
-                                  />
-                                );
-                              }
-                              case 'tool_result':
-                                return null; // Rendered as part of tool_call above
-                              case 'response':
-                                return (
-                                  <div key={`chain-${i}-seg-${idx}`} className="relative group">
-                                    <div
-                                      className={`rounded-lg border p-4 ${
-                                        isActive
-                                          ? 'border-primary/30 bg-primary/5'
-                                          : 'border-border-subtle bg-surface'
-                                      }`}
-                                    >
-                                      <LLMResponseBlock
-                                        output={seg.text || ''}
-                                        isStreaming={isActive}
-                                      />
-                                    </div>
-                                    {!isStreaming && seg.text && (
-                                      <CopyButton
-                                        text={seg.text}
-                                        index={i}
-                                        copiedIndex={copiedIndex}
-                                        onCopy={handleCopy}
-                                      />
-                                    )}
-                                  </div>
-                                );
-                              default:
-                                return null;
-                            }
-                          })}
+                        <SegmentTimeline
+                          segments={segments.filter((s) => s.promptIndex === i)}
+                          isStreaming={isActive}
+                          copiedIndex={copiedIndex}
+                          handleCopy={handleCopy}
+                          copyIndexOffset={i}
+                          responseClassName={`rounded-lg border p-4 ${
+                            isActive
+                              ? 'border-primary/30 bg-primary/5'
+                              : 'border-border-subtle bg-surface'
+                          }`}
+                        />
                       </div>
                       {isStreaming && i === responseCount && !response && (
                         <div className="rounded-lg border border-border-subtle bg-surface/50 p-4">
@@ -779,56 +479,12 @@ export default function PlaygroundResultsArea({
           {/* ── Single prompt view — hidden when comparing ── */}
           {!hasPins && !isChain && (hasResponses || isStreaming) && (
             <div className="space-y-2">
-              {/* Render segments in chronological order for single-prompt view */}
-              {segments.map((seg, idx) => {
-                switch (seg.type) {
-                  case 'reasoning':
-                    return (
-                      <ReasoningBlock
-                        key={`seg-${idx}`}
-                        reasoning={seg.text}
-                        isStreaming={isStreaming}
-                      />
-                    );
-                  case 'tool_call': {
-                    const result = segments.find(
-                      (s) => s.type === 'tool_result' && s.callId === seg.callId
-                    );
-                    const toolResult = result?.type === 'tool_result' ? result : undefined;
-                    return (
-                      <ToolCallBlock
-                        key={`seg-${idx}`}
-                        toolName={seg.toolName}
-                        arguments={seg.arguments ?? null}
-                        response={toolResult?.response ?? null}
-                        durationMs={toolResult?.durationMs ?? null}
-                        error={toolResult?.error ?? null}
-                        status={toolResult ? (toolResult.error ? 'error' : 'complete') : 'calling'}
-                      />
-                    );
-                  }
-                  case 'tool_result':
-                    return null; // Rendered as part of tool_call above
-                  case 'response':
-                    return (
-                      <div key={`seg-${idx}`} className="relative group">
-                        <div className="rounded-lg border border-border-subtle bg-surface p-4">
-                          <LLMResponseBlock output={seg.text} isStreaming={isStreaming} />
-                        </div>
-                        {!isStreaming && seg.text && (
-                          <CopyButton
-                            text={seg.text}
-                            index={idx}
-                            copiedIndex={copiedIndex}
-                            onCopy={handleCopy}
-                          />
-                        )}
-                      </div>
-                    );
-                  default:
-                    return null;
-                }
-              })}
+              <SegmentTimeline
+                segments={segments}
+                isStreaming={isStreaming}
+                copiedIndex={copiedIndex}
+                handleCopy={handleCopy}
+              />
               {segments.length === 0 && isStreaming && (
                 <div className="rounded-lg border border-border-subtle bg-surface/50 p-4">
                   <div className="h-6 w-2/3 rounded bg-foreground-muted/10 animate-pulse" />
