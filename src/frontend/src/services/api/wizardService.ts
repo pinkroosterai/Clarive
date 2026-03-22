@@ -170,6 +170,19 @@ export async function polishDescription(description: string): Promise<string> {
   return res.polished;
 }
 
+export async function resolveMergeConflict(
+  fieldName: string,
+  versionA: string,
+  versionB: string
+): Promise<string> {
+  const res = await api.post<{ mergedText: string }>('/api/ai/resolve-merge-conflict', {
+    fieldName,
+    versionA,
+    versionB,
+  });
+  return res.mergedText;
+}
+
 export async function evaluateEntry(
   systemMessage: string | null,
   prompts: Array<{ content: string; sortOrder: number }>,

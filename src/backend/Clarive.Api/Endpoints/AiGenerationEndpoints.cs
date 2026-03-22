@@ -36,6 +36,7 @@ public static class AiGenerationEndpoints
         group.MapPost("/fill-template-fields", HandleFillTemplateFields);
         group.MapPost("/polish-description", HandlePolishDescription);
         group.MapPost("/evaluate", HandleEvaluate);
+        group.MapPost("/resolve-merge-conflict", HandleResolveMergeConflict);
 
         return group;
     }
@@ -365,5 +366,32 @@ public static class AiGenerationEndpoints
         return result.IsError
             ? result.Errors.ToHttpResult(ctx)
             : Results.Ok(new { polished = result.Value });
+    }
+
+    // ── Resolve merge conflict ──
+
+    private record ResolveMergeConflictRequest(string FieldName, string VersionA, string VersionB);
+
+    private static async Task<IResult> HandleResolveMergeConflict(
+        HttpContext ctx,
+        ResolveMergeConflictRequest request,
+        IAiGenerationService aiService
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var result = await aiService.ResolveMergeConflictAsync(
+            tenantId,
+            userId,
+            request.FieldName,
+            request.VersionA,
+            request.VersionB,
+            ctx.RequestAborted
+        );
+
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.Ok(new { mergedText = result.Value });
     }
 }

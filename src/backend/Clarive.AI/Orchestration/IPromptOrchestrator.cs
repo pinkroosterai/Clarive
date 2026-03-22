@@ -77,6 +77,16 @@ public interface IPromptOrchestrator
     );
 
     /// <summary>
+    /// Single-turn: merges two conflicting versions of a field.
+    /// </summary>
+    Task<AgentResult<string>> ResolveMergeConflictAsync(
+        string fieldName,
+        string versionA,
+        string versionB,
+        CancellationToken ct = default
+    );
+
+    /// <summary>
     /// Single-turn: rewrites a rough description into a clear, structured description.
     /// </summary>
     Task<AgentResult<string>> PolishDescriptionAsync(

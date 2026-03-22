@@ -1,9 +1,12 @@
 import { diffLines } from 'diff';
-import { Check, Pencil } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { Check, Loader2, Pencil, Sparkles } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAiEnabled } from '@/hooks/useAiEnabled';
+import { handleApiError } from '@/lib/handleApiError';
+import { wizardService } from '@/services';
 import type { PromptEntry } from '@/types';
 
 type Choice = 'mine' | 'theirs' | 'merged';
@@ -65,12 +68,18 @@ function FieldConflict({
   onChoiceChange,
   mergedText,
   onMergedTextChange,
+  aiEnabled,
+  aiLoading,
+  onAiResolve,
 }: {
   field: FieldDiff;
   choice: Choice;
   onChoiceChange: (choice: Choice) => void;
   mergedText: string;
   onMergedTextChange: (text: string) => void;
+  aiEnabled: boolean;
+  aiLoading: boolean;
+  onAiResolve: () => void;
 }) {
   const resolvedText =
     choice === 'merged' ? mergedText : choice === 'theirs' ? field.theirs : field.mine;
@@ -85,6 +94,7 @@ function FieldConflict({
             size="sm"
             className="h-7 text-xs gap-1"
             onClick={() => onChoiceChange('mine')}
+            disabled={aiLoading}
           >
             {choice === 'mine' && <Check className="h-3 w-3" />}
             Keep mine
@@ -94,6 +104,7 @@ function FieldConflict({
             size="sm"
             className="h-7 text-xs gap-1"
             onClick={() => onChoiceChange('theirs')}
+            disabled={aiLoading}
           >
             {choice === 'theirs' && <Check className="h-3 w-3" />}
             Keep theirs
@@ -102,6 +113,7 @@ function FieldConflict({
             variant={choice === 'merged' ? 'default' : 'outline'}
             size="sm"
             className="h-7 text-xs gap-1"
+            disabled={aiLoading}
             onClick={() => {
               if (choice !== 'merged') {
                 // Pre-fill with currently selected version
@@ -113,6 +125,22 @@ function FieldConflict({
             {choice === 'merged' && <Pencil className="h-3 w-3" />}
             Edit merged
           </Button>
+          {aiEnabled && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              disabled={aiLoading}
+              onClick={onAiResolve}
+            >
+              {aiLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Sparkles className="h-3 w-3" />
+              )}
+              {aiLoading ? 'Merging...' : 'Resolve with AI'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -156,6 +184,8 @@ export function ConflictResolutionDialog({
   serverEntry,
   onResolve,
 }: ConflictResolutionDialogProps) {
+  const aiEnabled = useAiEnabled();
+
   const fields = useMemo<FieldDiff[]>(() => {
     const result: FieldDiff[] = [];
 
@@ -208,6 +238,28 @@ export function ConflictResolutionDialog({
     }
     return initial;
   });
+
+  const [aiLoadingFields, setAiLoadingFields] = useState<Record<string, boolean>>({});
+
+  const handleAiResolve = useCallback(
+    async (field: FieldDiff) => {
+      setAiLoadingFields((prev) => ({ ...prev, [field.key]: true }));
+      try {
+        const merged = await wizardService.resolveMergeConflict(
+          field.label,
+          field.mine,
+          field.theirs
+        );
+        setMergedTexts((prev) => ({ ...prev, [field.key]: merged }));
+        setChoices((prev) => ({ ...prev, [field.key]: 'merged' }));
+      } catch (err) {
+        handleApiError(err, { title: 'AI merge failed' });
+      } finally {
+        setAiLoadingFields((prev) => ({ ...prev, [field.key]: false }));
+      }
+    },
+    []
+  );
 
   const handleResolve = () => {
     const resolved: Partial<PromptEntry> = {};
@@ -283,6 +335,9 @@ export function ConflictResolutionDialog({
                 onMergedTextChange={(t) =>
                   setMergedTexts((prev) => ({ ...prev, [field.key]: t }))
                 }
+                aiEnabled={aiEnabled}
+                aiLoading={aiLoadingFields[field.key] ?? false}
+                onAiResolve={() => handleAiResolve(field)}
               />
             ) : (
               <div key={field.key} className="flex items-center gap-2">

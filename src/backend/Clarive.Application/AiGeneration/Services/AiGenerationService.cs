@@ -340,6 +340,37 @@ public class AiGenerationService(
         return result.Value;
     }
 
+    public async Task<ErrorOr<string>> ResolveMergeConflictAsync(
+        Guid tenantId,
+        Guid userId,
+        string fieldName,
+        string versionA,
+        string versionB,
+        CancellationToken ct
+    )
+    {
+        if (string.IsNullOrWhiteSpace(fieldName))
+            return Error.Validation("VALIDATION_ERROR", "Field name is required.");
+
+        if (string.IsNullOrWhiteSpace(versionA) && string.IsNullOrWhiteSpace(versionB))
+            return Error.Validation("VALIDATION_ERROR", "At least one version must have content.");
+
+        var sw = Stopwatch.StartNew();
+        var result = await orchestrator.ResolveMergeConflictAsync(fieldName, versionA, versionB, ct);
+        sw.Stop();
+
+        await LogUsageAsync(
+            tenantId,
+            userId,
+            AiActionType.SystemMessage,
+            sw.ElapsedMilliseconds,
+            result.Usage,
+            ct
+        );
+
+        return result.Value;
+    }
+
     public async Task<ErrorOr<EvaluationDto>> EvaluateAsync(
         Guid tenantId,
         Guid userId,

@@ -88,6 +88,19 @@ public interface IAiGenerationService
     );
 
     /// <summary>
+    /// Merges two conflicting versions of a field using AI.
+    /// Returns the merged text for user review.
+    /// </summary>
+    Task<ErrorOr<string>> ResolveMergeConflictAsync(
+        Guid tenantId,
+        Guid userId,
+        string fieldName,
+        string versionA,
+        string versionB,
+        CancellationToken ct = default
+    );
+
+    /// <summary>
     /// Evaluates prompt content against quality dimensions (Clarity, Effectiveness, Completeness, Faithfulness).
     /// Standalone evaluation — decoupled from the generate/refine/enhance workflows.
     /// </summary>

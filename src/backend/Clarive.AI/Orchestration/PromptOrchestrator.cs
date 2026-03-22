@@ -474,6 +474,41 @@ public class PromptOrchestrator : IPromptOrchestrator
         public Dictionary<string, string> Values { get; set; } = new();
     }
 
+    internal class GeneratedMergeOutput
+    {
+        [Description("The merged text combining both versions")]
+        public string MergedText { get; set; } = "";
+    }
+
+    public async Task<AgentResult<string>> ResolveMergeConflictAsync(
+        string fieldName,
+        string versionA,
+        string versionB,
+        CancellationToken ct
+    )
+    {
+        var sw = Stopwatch.StartNew();
+        var instructions = string.Format(AgentInstructions.MergeConflict, fieldName);
+        var agent = _factory.CreateAgent(
+            AiActionType.SystemMessage, instructions, "MergeConflictResolver");
+
+        var userMessage = $"VERSION A:\n{versionA}\n\nVERSION B:\n{versionB}";
+        var response = await agent.RunAsync<GeneratedMergeOutput>(
+            userMessage,
+            cancellationToken: ct
+        );
+
+        var merged = response.Result.MergedText?.Trim();
+
+        _logger.LogInformation(
+            "AI MergeConflict completed in {DurationMs}ms (input: {InputTokens}, output: {OutputTokens})",
+            sw.ElapsedMilliseconds, response.Usage?.InputTokenCount, response.Usage?.OutputTokenCount
+        );
+        return new AgentResult<string>(
+            string.IsNullOrEmpty(merged) ? versionA : merged,
+            response.Usage);
+    }
+
     internal class GeneratedPolishOutput
     {
         [Description("The rewritten description, clear and suitable for AI prompt generation")]

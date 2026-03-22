@@ -301,6 +301,18 @@ internal class MockPromptOrchestrator : IPromptOrchestrator
         return Task.FromResult(new AgentResult<Dictionary<string, string>>(values));
     }
 
+    public Task<AgentResult<string>> ResolveMergeConflictAsync(
+        string fieldName,
+        string versionA,
+        string versionB,
+        CancellationToken ct = default
+    )
+    {
+        return Task.FromResult(
+            new AgentResult<string>($"{versionA}\n\n{versionB}")
+        );
+    }
+
     public Task<AgentResult<string>> PolishDescriptionAsync(
         string description,
         CancellationToken ct = default

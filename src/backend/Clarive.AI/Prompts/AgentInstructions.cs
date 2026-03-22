@@ -541,4 +541,16 @@ public static class AgentInstructions
         first needed. Do not defer a variable to a later step if an earlier step requires its value.
         Preserve all template variable syntax exactly as written.
         """;
+
+    public const string MergeConflict = """
+        You are merging two versions of a prompt entry's {0} field. Both versions were edited
+        by different users concurrently.
+
+        Combine both versions, preserving the intent and valuable content of each change:
+        - If the changes are in different parts, include both.
+        - If they conflict directly, prefer the version that adds more detail or clarity.
+        - Maintain consistent style and formatting throughout the merged result.
+
+        Return ONLY the merged text with no explanation, commentary, or metadata.
+        """;
 }
