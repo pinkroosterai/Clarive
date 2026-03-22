@@ -92,6 +92,11 @@ public static class DependencyInjection
         services.AddScoped<IServiceConfigRepository, EfServiceConfigRepository>();
         services.AddScoped<IAiUsageLogRepository, EfAiUsageLogRepository>();
         services.AddScoped<IShareLinkRepository, EfShareLinkRepository>();
+        services.AddScoped<ISystemConfigRepository, EfSystemConfigRepository>();
+        services.AddScoped<IPlatformStatsRepository, EfPlatformStatsRepository>();
+        services.AddScoped<ISuperAdminRepository, EfSuperAdminRepository>();
+        services.AddScoped<IOnboardingRepository, EfOnboardingRepository>();
+        services.AddScoped<IAccountPurgeRepository, EfAccountPurgeRepository>();
 
         // ── Presence (ephemeral, in-memory) ──
         services.AddSingleton<Clarive.Domain.Interfaces.Services.IPresenceTracker, InMemoryPresenceTracker>();

@@ -1,6 +1,5 @@
-using Clarive.Infrastructure.Data;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Domain.Interfaces.Services;
-using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Application.Background;
 
@@ -34,21 +33,16 @@ public class AccountPurgeBackgroundService(
     private async Task PurgeExpiredAccountsAsync(CancellationToken ct)
     {
         using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
+        var repo = scope.ServiceProvider.GetRequiredService<IAccountPurgeRepository>();
         var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-        var now = DateTime.UtcNow;
         var totalTenants = 0;
         var totalUsers = 0;
 
         // Purge tenants scheduled for deletion — in batches for bounded memory and partial-failure resilience
         while (true)
         {
-            var tenants = await db
-                .Tenants.Include(t => t.Users)
-                .Where(t => t.DeleteScheduledAt != null && t.DeleteScheduledAt <= now)
-                .Take(BatchSize)
-                .ToListAsync(ct);
+            var tenants = await repo.GetExpiredTenantsAsync(BatchSize, ct);
 
             if (tenants.Count == 0)
                 break;
@@ -81,22 +75,17 @@ public class AccountPurgeBackgroundService(
                         );
                 }
 
-                // Cascade delete handles all child entities
-                db.Tenants.Remove(tenant);
                 logger.LogInformation("Tenant {TenantId} permanently deleted", tenant.Id);
             }
 
-            await db.SaveChangesAsync(ct);
+            await repo.RemoveTenantsAsync(tenants, ct);
             totalTenants += tenants.Count;
         }
 
         // Purge individual users (non-admin) scheduled for deletion — in batches
         while (true)
         {
-            var users = await db
-                .Users.Where(u => u.DeleteScheduledAt != null && u.DeleteScheduledAt <= now)
-                .Take(BatchSize)
-                .ToListAsync(ct);
+            var users = await repo.GetExpiredUsersAsync(BatchSize, ct);
 
             if (users.Count == 0)
                 break;
@@ -104,10 +93,9 @@ public class AccountPurgeBackgroundService(
             foreach (var user in users)
             {
                 logger.LogInformation("Purging user {UserId} ({UserEmail})", user.Id, user.Email);
-                db.Users.Remove(user);
             }
 
-            await db.SaveChangesAsync(ct);
+            await repo.RemoveUsersAsync(users, ct);
             totalUsers += users.Count;
         }
 

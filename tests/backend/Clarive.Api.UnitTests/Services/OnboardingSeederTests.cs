@@ -1,33 +1,40 @@
-using Clarive.Infrastructure.Data;
+using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
+using Clarive.Domain.Interfaces.Repositories;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
+using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
 
-public class OnboardingSeederTests : IDisposable
+public class OnboardingSeederTests
 {
-    private readonly ClariveDbContext _db;
+    private readonly IOnboardingRepository _repo = Substitute.For<IOnboardingRepository>();
     private readonly OnboardingSeeder _sut;
 
     private static readonly Guid TenantId = Guid.NewGuid();
     private static readonly Guid UserId = Guid.NewGuid();
 
+    // Capture what was passed to the repository
+    private Folder? _capturedFolder;
+    private List<PromptEntry>? _capturedEntries;
+    private List<PromptEntryVersion>? _capturedVersions;
+
     public OnboardingSeederTests()
     {
-        var options = new DbContextOptionsBuilder<ClariveDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-        _db = new ClariveDbContext(options);
-        _sut = new OnboardingSeeder(_db);
-    }
+        _repo.SeedAsync(
+            Arg.Any<Folder>(),
+            Arg.Any<List<PromptEntry>>(),
+            Arg.Any<List<PromptEntryVersion>>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(ci =>
+        {
+            _capturedFolder = ci.Arg<Folder>();
+            _capturedEntries = ci.Arg<List<PromptEntry>>();
+            _capturedVersions = ci.Arg<List<PromptEntryVersion>>();
+            return Task.CompletedTask;
+        });
 
-    public void Dispose()
-    {
-        _db.Dispose();
-        GC.SuppressFinalize(this);
+        _sut = new OnboardingSeeder(_repo);
     }
 
     [Fact]
@@ -35,11 +42,10 @@ public class OnboardingSeederTests : IDisposable
     {
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
-        var folders = await _db.Folders.ToListAsync();
-        folders.Should().ContainSingle();
-        folders[0].Name.Should().Be("Getting Started");
-        folders[0].TenantId.Should().Be(TenantId);
-        folders[0].ParentId.Should().BeNull();
+        _capturedFolder.Should().NotBeNull();
+        _capturedFolder!.Name.Should().Be("Getting Started");
+        _capturedFolder.TenantId.Should().Be(TenantId);
+        _capturedFolder.ParentId.Should().BeNull();
     }
 
     [Fact]
@@ -47,11 +53,10 @@ public class OnboardingSeederTests : IDisposable
     {
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
-        var entries = await _db.PromptEntries.ToListAsync();
-        entries.Should().HaveCount(3);
-        entries.Select(e => e.Title).Should().Contain("Blog Post Writer");
-        entries.Select(e => e.Title).Should().Contain("Code Review Assistant");
-        entries.Select(e => e.Title).Should().Contain("Email Composer");
+        _capturedEntries.Should().HaveCount(3);
+        _capturedEntries!.Select(e => e.Title).Should().Contain("Blog Post Writer");
+        _capturedEntries.Select(e => e.Title).Should().Contain("Code Review Assistant");
+        _capturedEntries.Select(e => e.Title).Should().Contain("Email Composer");
     }
 
     [Fact]
@@ -59,9 +64,8 @@ public class OnboardingSeederTests : IDisposable
     {
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
-        var versions = await _db.PromptEntryVersions.ToListAsync();
-        versions.Should().HaveCount(3);
-        versions
+        _capturedVersions.Should().HaveCount(3);
+        _capturedVersions!
             .Should()
             .AllSatisfy(v =>
             {
@@ -76,8 +80,7 @@ public class OnboardingSeederTests : IDisposable
     {
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
-        var versions = await _db.PromptEntryVersions.ToListAsync();
-        versions.Should().AllSatisfy(v => v.SystemMessage.Should().NotBeNullOrWhiteSpace());
+        _capturedVersions.Should().AllSatisfy(v => v.SystemMessage.Should().NotBeNullOrWhiteSpace());
     }
 
     [Fact]
@@ -85,10 +88,8 @@ public class OnboardingSeederTests : IDisposable
     {
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
-        var emailEntry = await _db.PromptEntries.FirstAsync(e => e.Title == "Email Composer");
-        var version = await _db
-            .PromptEntryVersions.Include(v => v.Prompts)
-            .FirstAsync(v => v.EntryId == emailEntry.Id);
+        var emailEntry = _capturedEntries!.First(e => e.Title == "Email Composer");
+        var version = _capturedVersions!.First(v => v.EntryId == emailEntry.Id);
 
         version.Prompts.Should().HaveCount(2);
         version.Prompts.Should().AllSatisfy(p => p.IsTemplate.Should().BeTrue());
@@ -99,9 +100,7 @@ public class OnboardingSeederTests : IDisposable
     {
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
-        var folder = await _db.Folders.FirstAsync();
-        var entries = await _db.PromptEntries.ToListAsync();
-        entries.Should().AllSatisfy(e => e.FolderId.Should().Be(folder.Id));
+        _capturedEntries.Should().AllSatisfy(e => e.FolderId.Should().Be(_capturedFolder!.Id));
     }
 
     [Fact]
@@ -109,14 +108,24 @@ public class OnboardingSeederTests : IDisposable
     {
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
-        var blogEntry = await _db.PromptEntries.FirstAsync(e => e.Title == "Blog Post Writer");
-        var version = await _db
-            .PromptEntryVersions.Include(v => v.Prompts)
-                .ThenInclude(p => p.TemplateFields)
-            .FirstAsync(v => v.EntryId == blogEntry.Id);
+        var blogEntry = _capturedEntries!.First(e => e.Title == "Blog Post Writer");
+        var version = _capturedVersions!.First(v => v.EntryId == blogEntry.Id);
 
         var prompt = version.Prompts.First();
         prompt.IsTemplate.Should().BeTrue();
         prompt.TemplateFields.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task SeedStarterTemplatesAsync_CallsRepositorySeedOnce()
+    {
+        await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
+
+        await _repo.Received(1).SeedAsync(
+            Arg.Any<Folder>(),
+            Arg.Any<List<PromptEntry>>(),
+            Arg.Any<List<PromptEntryVersion>>(),
+            Arg.Any<CancellationToken>()
+        );
     }
 }

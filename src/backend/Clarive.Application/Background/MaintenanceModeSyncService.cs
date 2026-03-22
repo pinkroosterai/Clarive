@@ -1,8 +1,8 @@
+using Clarive.Application.SuperAdmin.Services;
+using Clarive.Domain.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
-using Clarive.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Clarive.Application.Background;
 
@@ -34,8 +34,8 @@ public class MaintenanceModeSyncService(
     private async Task SyncAsync(CancellationToken ct)
     {
         using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-        var config = await db.SystemConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.Id == 1, ct);
+        var repo = scope.ServiceProvider.GetRequiredService<ISystemConfigRepository>();
+        var config = await repo.GetAsync(ct);
 
         if (config is not null)
             maintenanceMode.SyncFromDb(config.MaintenanceEnabled);

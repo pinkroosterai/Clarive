@@ -1,5 +1,4 @@
-using Clarive.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using Clarive.Domain.Interfaces.Repositories;
 
 namespace Clarive.Application.SuperAdmin.Services;
 
@@ -16,16 +15,16 @@ public class MaintenanceModeService(IServiceScopeFactory scopeFactory) : IMainte
     )
     {
         using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
+        var repo = scope.ServiceProvider.GetRequiredService<ISystemConfigRepository>();
 
-        var config = await db.SystemConfigs.FirstOrDefaultAsync(c => c.Id == 1, ct);
+        var config = await repo.GetAsync(ct);
         if (config is null)
             return;
 
         config.MaintenanceEnabled = enabled;
         config.MaintenanceSince = enabled ? DateTime.UtcNow : null;
         config.MaintenanceBy = enabled ? changedBy : null;
-        await db.SaveChangesAsync(ct);
+        await repo.SaveAsync(config, ct);
 
         _enabled = enabled;
     }

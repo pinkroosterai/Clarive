@@ -1,14 +1,16 @@
-using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
+using Clarive.Domain.Interfaces.Repositories;
 
 namespace Clarive.Application.Common;
 
-public class OnboardingSeeder(ClariveDbContext db) : IOnboardingSeeder
+public class OnboardingSeeder(IOnboardingRepository repo) : IOnboardingSeeder
 {
     public async Task SeedStarterTemplatesAsync(Guid tenantId, Guid userId, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
+        var entries = new List<PromptEntry>();
+        var versions = new List<PromptEntryVersion>();
 
         // 1. Create "Getting Started" folder at root level
         var folder = new Folder
@@ -19,14 +21,10 @@ public class OnboardingSeeder(ClariveDbContext db) : IOnboardingSeeder
             ParentId = null,
             CreatedAt = now,
         };
-        db.Folders.Add(folder);
 
         // 2. Blog Post Writer
         CreatePublishedEntry(
-            tenantId,
-            userId,
-            folder.Id,
-            now,
+            entries, versions, tenantId, userId, folder.Id, now,
             title: "Blog Post Writer",
             systemMessage: "You are a professional blog writer. Write engaging, well-structured blog posts on the given topic. Use clear headings, practical examples, and a compelling introduction.",
             prompts:
@@ -37,10 +35,7 @@ public class OnboardingSeeder(ClariveDbContext db) : IOnboardingSeeder
 
         // 3. Code Review Assistant
         CreatePublishedEntry(
-            tenantId,
-            userId,
-            folder.Id,
-            now,
+            entries, versions, tenantId, userId, folder.Id, now,
             title: "Code Review Assistant",
             systemMessage: "You are an experienced senior developer performing code reviews. Analyze code for bugs, performance issues, security concerns, and adherence to best practices. Be specific and constructive.",
             prompts:
@@ -51,10 +46,7 @@ public class OnboardingSeeder(ClariveDbContext db) : IOnboardingSeeder
 
         // 4. Email Composer (prompt chain — 2 prompts)
         CreatePublishedEntry(
-            tenantId,
-            userId,
-            folder.Id,
-            now,
+            entries, versions, tenantId, userId, folder.Id, now,
             title: "Email Composer",
             systemMessage: "You are a professional email writer. Draft clear, concise, and well-structured emails for business communication.",
             prompts:
@@ -64,10 +56,12 @@ public class OnboardingSeeder(ClariveDbContext db) : IOnboardingSeeder
             ]
         );
 
-        await db.SaveChangesAsync(ct);
+        await repo.SeedAsync(folder, entries, versions, ct);
     }
 
-    private void CreatePublishedEntry(
+    private static void CreatePublishedEntry(
+        List<PromptEntry> entries,
+        List<PromptEntryVersion> versions,
         Guid tenantId,
         Guid userId,
         Guid folderId,
@@ -126,7 +120,7 @@ public class OnboardingSeeder(ClariveDbContext db) : IOnboardingSeeder
             CreatedAt = now,
         };
 
-        db.PromptEntries.Add(entry);
-        db.PromptEntryVersions.Add(version);
+        entries.Add(entry);
+        versions.Add(version);
     }
 }

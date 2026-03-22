@@ -1,43 +1,28 @@
-using Clarive.Infrastructure;
 using Clarive.Infrastructure.Security;
-using Clarive.Infrastructure.Data;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
 
-public class SuperAdminServiceTests : IDisposable
+public class SuperAdminServiceTests
 {
+    private readonly IPlatformStatsRepository _statsRepo = Substitute.For<IPlatformStatsRepository>();
+    private readonly ISuperAdminRepository _adminRepo = Substitute.For<ISuperAdminRepository>();
     private readonly IUserRepository _userRepo = Substitute.For<IUserRepository>();
     private readonly PasswordHasher _passwordHasher = new();
-    private readonly ClariveDbContext _db;
     private readonly SuperAdminService _sut;
 
     private static readonly Guid UserId = Guid.NewGuid();
 
     public SuperAdminServiceTests()
     {
-        var options = new DbContextOptionsBuilder<ClariveDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-        _db = new ClariveDbContext(options);
-
         _userRepo
             .UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<User>());
 
-        _sut = new SuperAdminService(_db, new UnitOfWork(_db), _userRepo, _passwordHasher);
-    }
-
-    public void Dispose()
-    {
-        _db.Dispose();
-        GC.SuppressFinalize(this);
+        _sut = new SuperAdminService(_statsRepo, _adminRepo, _userRepo, _passwordHasher);
     }
 
     // ── SoftDeleteUserAsync ──
@@ -127,5 +112,32 @@ public class SuperAdminServiceTests : IDisposable
         var password2 = (await _sut.ResetUserPasswordAsync(UserId, default)).Value;
 
         password1.Should().NotBe(password2);
+    }
+
+    // ── HardDeleteUserAsync ──
+
+    [Fact]
+    public async Task HardDeleteUserAsync_UserNotFound_ReturnsFalse()
+    {
+        _userRepo
+            .GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>())
+            .Returns((User?)null);
+
+        var result = await _sut.HardDeleteUserAsync(UserId, default);
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task HardDeleteUserAsync_Valid_DelegatesToAdminRepo()
+    {
+        var user = new User { Id = UserId, Email = "user@test.com" };
+        _userRepo.GetByIdCrossTenantsAsync(UserId, Arg.Any<CancellationToken>()).Returns(user);
+
+        var result = await _sut.HardDeleteUserAsync(UserId, default);
+
+        result.Should().BeTrue();
+        await _adminRepo.Received(1)
+            .HardDeleteUserWithMembershipsAsync(user, Arg.Any<CancellationToken>());
     }
 }
