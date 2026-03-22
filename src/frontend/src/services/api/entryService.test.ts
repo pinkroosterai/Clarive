@@ -165,7 +165,7 @@ describe('createEntry', () => {
       title: 'New Entry',
       systemMessage: 'Be helpful',
       folderId: 'f1',
-      prompts: [{ content: 'Hello' }],
+      prompts: [{ content: 'Hello', isTemplate: false }],
     });
     expect(result).toEqual(entry);
   });
@@ -180,7 +180,7 @@ describe('createEntry', () => {
       title: 'Minimal',
       systemMessage: null,
       folderId: null,
-      prompts: [{ content: '' }],
+      prompts: [{ content: '', isTemplate: false }],
     });
   });
 
@@ -200,7 +200,7 @@ describe('createEntry', () => {
       title: 'Test',
       systemMessage: null,
       folderId: null,
-      prompts: [{ content: 'First' }, { content: 'Second' }],
+      prompts: [{ content: 'First', isTemplate: false }, { content: 'Second', isTemplate: false }],
     });
   });
 });

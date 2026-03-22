@@ -8,7 +8,7 @@ vi.mock('@/services/api/apiClient', () => ({
   },
 }));
 
-import { testEntry, getTestRuns, getAvailableModels } from './playgroundService';
+import { testEntry, getTestRuns, getEnrichedModels } from './playgroundService';
 
 import { api } from '@/services/api/apiClient';
 
@@ -115,22 +115,26 @@ describe('getTestRuns', () => {
   });
 });
 
-// ── getAvailableModels ──
+// ── getEnrichedModels ──
 
-describe('getAvailableModels', () => {
-  it('calls GET /api/ai/models and returns models array', async () => {
-    mockApi.get.mockResolvedValue({ models: ['gpt-4o', 'gpt-4o-mini', 'gpt-5.2'] });
+describe('getEnrichedModels', () => {
+  it('calls GET /api/ai/available-models and returns models array', async () => {
+    const models = [
+      { modelId: 'gpt-4o', displayName: 'GPT-4o', providerId: 'p1', providerName: 'OpenAI' },
+      { modelId: 'gpt-4o-mini', displayName: 'GPT-4o Mini', providerId: 'p1', providerName: 'OpenAI' },
+    ];
+    mockApi.get.mockResolvedValue({ models });
 
-    const result = await getAvailableModels();
+    const result = await getEnrichedModels();
 
-    expect(mockApi.get).toHaveBeenCalledWith('/api/ai/models');
-    expect(result).toEqual(['gpt-4o', 'gpt-4o-mini', 'gpt-5.2']);
+    expect(mockApi.get).toHaveBeenCalledWith('/api/ai/available-models');
+    expect(result).toEqual(models);
   });
 
   it('returns empty array when no models available', async () => {
     mockApi.get.mockResolvedValue({ models: [] });
 
-    const result = await getAvailableModels();
+    const result = await getEnrichedModels();
 
     expect(result).toEqual([]);
   });
