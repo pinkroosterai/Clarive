@@ -1,6 +1,9 @@
 using Clarive.Api.Helpers;
+using Clarive.Application.SuperAdmin.Contracts;
 using Clarive.Domain.Enums;
 using Clarive.Domain.ValueObjects;
+using Quartz;
+using Quartz.Impl.Matchers;
 
 namespace Clarive.Api.Endpoints;
 
@@ -18,6 +21,14 @@ public static class SuperEndpoints
         group.MapGet("/users", HandleGetUsers);
         group.MapDelete("/users/{userId}", HandleDeleteUser);
         group.MapPost("/users/{userId}/reset-password", HandleResetPassword);
+
+        // ── Job monitoring & control ──
+        group.MapGet("/jobs", HandleGetJobs);
+        group.MapGet("/jobs/{name}/history", HandleGetJobHistory);
+        group.MapPost("/jobs/{name}/trigger", HandleTriggerJob);
+        group.MapPost("/jobs/{name}/pause", HandlePauseJob);
+        group.MapPost("/jobs/{name}/resume", HandleResumeJob);
+        group.MapPut("/jobs/{name}/schedule", HandleUpdateJobSchedule);
 
         return group;
     }
@@ -125,4 +136,181 @@ public static class SuperEndpoints
 
         return Results.Ok(new ResetPasswordResponse(NewPassword: result.Value));
     }
+
+    // ── Job endpoints ──
+
+    private static async Task<IResult> HandleGetJobs(
+        ISchedulerFactory schedulerFactory,
+        IJobHistoryService historyService,
+        CancellationToken ct = default
+    )
+    {
+        var scheduler = await schedulerFactory.GetScheduler(ct);
+        var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup(), ct);
+
+        var jobs = new List<object>();
+        foreach (var key in jobKeys.OrderBy(k => k.Group).ThenBy(k => k.Name))
+        {
+            var triggers = await scheduler.GetTriggersOfJob(key, ct);
+            var trigger = triggers.FirstOrDefault();
+
+            string? cronExpression = null;
+            string triggerState = "None";
+            DateTimeOffset? nextFireTime = null;
+
+            if (trigger is not null)
+            {
+                triggerState = (await scheduler.GetTriggerState(trigger.Key, ct)).ToString();
+                nextFireTime = trigger.GetNextFireTimeUtc();
+                if (trigger is ICronTrigger cronTrigger)
+                    cronExpression = cronTrigger.CronExpressionString;
+            }
+
+            // Get latest execution from history
+            DateTime? lastRunUtc = null;
+            long? lastDurationMs = null;
+            bool? lastSucceeded = null;
+
+            var historyResult = await historyService.GetHistoryByJobAsync(key.Name, 1, 1, ct);
+            if (!historyResult.IsError && historyResult.Value.Items.Count > 0)
+            {
+                var latest = historyResult.Value.Items[0];
+                lastRunUtc = latest.FireTimeUtc;
+                lastDurationMs = latest.DurationMs;
+                lastSucceeded = latest.Succeeded;
+            }
+
+            jobs.Add(new
+            {
+                name = key.Name,
+                group = key.Group,
+                cronExpression,
+                triggerState,
+                lastRunUtc,
+                nextFireTimeUtc = nextFireTime?.UtcDateTime,
+                lastDurationMs,
+                lastSucceeded,
+            });
+        }
+
+        return Results.Ok(jobs);
+    }
+
+    private static async Task<IResult> HandleGetJobHistory(
+        string name,
+        IJobHistoryService historyService,
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken ct = default
+    )
+    {
+        var result = await historyService.GetHistoryByJobAsync(name, page, pageSize, ct);
+
+        if (result.IsError)
+            return Results.BadRequest(new { error = result.FirstError.Description });
+
+        var (items, total) = result.Value;
+        return Results.Ok(new
+        {
+            items = items.Select(h => new
+            {
+                fireTimeUtc = h.FireTimeUtc,
+                startedAtUtc = h.StartedAtUtc,
+                finishedAtUtc = h.FinishedAtUtc,
+                durationMs = h.DurationMs,
+                succeeded = h.Succeeded,
+                exceptionMessage = h.ExceptionMessage,
+            }),
+            totalCount = total,
+            page,
+            pageSize,
+        });
+    }
+
+    private static async Task<IResult> HandleTriggerJob(
+        string name,
+        ISchedulerFactory schedulerFactory,
+        CancellationToken ct = default
+    )
+    {
+        var scheduler = await schedulerFactory.GetScheduler(ct);
+        var jobKey = await FindJobKeyByNameAsync(scheduler, name, ct);
+        if (jobKey is null) return Results.NotFound();
+
+        await scheduler.TriggerJob(jobKey, ct);
+        return Results.Ok(new { triggered = true });
+    }
+
+    private static async Task<IResult> HandlePauseJob(
+        string name,
+        ISchedulerFactory schedulerFactory,
+        CancellationToken ct = default
+    )
+    {
+        var scheduler = await schedulerFactory.GetScheduler(ct);
+        var jobKey = await FindJobKeyByNameAsync(scheduler, name, ct);
+        if (jobKey is null) return Results.NotFound();
+
+        var triggers = await scheduler.GetTriggersOfJob(jobKey, ct);
+        foreach (var trigger in triggers)
+            await scheduler.PauseTrigger(trigger.Key, ct);
+
+        return Results.Ok(new { paused = true });
+    }
+
+    private static async Task<IResult> HandleResumeJob(
+        string name,
+        ISchedulerFactory schedulerFactory,
+        CancellationToken ct = default
+    )
+    {
+        var scheduler = await schedulerFactory.GetScheduler(ct);
+        var jobKey = await FindJobKeyByNameAsync(scheduler, name, ct);
+        if (jobKey is null) return Results.NotFound();
+
+        var triggers = await scheduler.GetTriggersOfJob(jobKey, ct);
+        foreach (var trigger in triggers)
+            await scheduler.ResumeTrigger(trigger.Key, ct);
+
+        return Results.Ok(new { resumed = true });
+    }
+
+    private static async Task<IResult> HandleUpdateJobSchedule(
+        string name,
+        UpdateScheduleRequest request,
+        ISchedulerFactory schedulerFactory,
+        CancellationToken ct = default
+    )
+    {
+        if (!CronExpression.IsValidExpression(request.CronExpression))
+            return Results.BadRequest(new { error = "Invalid cron expression." });
+
+        var scheduler = await schedulerFactory.GetScheduler(ct);
+        var jobKey = await FindJobKeyByNameAsync(scheduler, name, ct);
+        if (jobKey is null) return Results.NotFound();
+
+        var triggers = await scheduler.GetTriggersOfJob(jobKey, ct);
+        var oldTrigger = triggers.FirstOrDefault();
+        if (oldTrigger is null) return Results.NotFound();
+
+        var newTrigger = TriggerBuilder.Create()
+            .WithIdentity(oldTrigger.Key)
+            .ForJob(jobKey)
+            .WithCronSchedule(request.CronExpression)
+            .Build();
+
+        var nextFire = await scheduler.RescheduleJob(oldTrigger.Key, newTrigger, ct);
+
+        return Results.Ok(new { cronExpression = request.CronExpression, nextFireTimeUtc = nextFire?.UtcDateTime });
+    }
+
+    private static async Task<JobKey?> FindJobKeyByNameAsync(
+        IScheduler scheduler, string name, CancellationToken ct)
+    {
+        var allKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup(), ct);
+        return allKeys.FirstOrDefault(k => k.Name == name);
+    }
 }
+
+// ── Request/Response records ──
+record UpdateScheduleRequest(string CronExpression);

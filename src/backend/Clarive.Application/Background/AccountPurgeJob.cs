@@ -1,40 +1,21 @@
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Domain.Interfaces.Services;
+using Quartz;
 
 namespace Clarive.Application.Background;
 
-public class AccountPurgeBackgroundService(
-    IServiceScopeFactory scopeFactory,
-    ILogger<AccountPurgeBackgroundService> logger
-) : BackgroundService
+[DisallowConcurrentExecution]
+public class AccountPurgeJob(
+    IAccountPurgeRepository repo,
+    IEmailService emailService,
+    ILogger<AccountPurgeJob> logger
+) : IJob
 {
-    protected override async Task ExecuteAsync(CancellationToken ct)
-    {
-        // Initial delay to let the app fully start
-        await Task.Delay(TimeSpan.FromMinutes(1), ct);
-
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                await PurgeExpiredAccountsAsync(ct);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                logger.LogError(ex, "Error during account purge cycle");
-            }
-
-            await Task.Delay(TimeSpan.FromHours(24), ct);
-        }
-    }
-
     private const int BatchSize = 50;
 
-    private async Task PurgeExpiredAccountsAsync(CancellationToken ct)
+    public async Task Execute(IJobExecutionContext context)
     {
-        using var scope = scopeFactory.CreateScope();
-        var repo = scope.ServiceProvider.GetRequiredService<IAccountPurgeRepository>();
-        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+        var ct = context.CancellationToken;
 
         var totalTenants = 0;
         var totalUsers = 0;

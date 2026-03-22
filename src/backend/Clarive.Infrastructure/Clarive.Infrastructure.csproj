@@ -16,6 +16,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Resend" />
     <PackageReference Include="Serilog.Sinks.Postgresql.Alternative" />
+    <PackageReference Include="Quartz" />
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" />
+    <PackageReference Include="Quartz.Serialization.Json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Clarive.Domain\Clarive.Domain.csproj" />

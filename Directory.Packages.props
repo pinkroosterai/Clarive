@@ -51,6 +51,12 @@
     <PackageVersion Include="SkiaSharp"                        Version="3.*"  />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.*" />
 
+    <!-- ── Job Scheduling ─────────────────────────────────────────── -->
+    <PackageVersion Include="Quartz"                           Version="3.*"  />
+    <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.*" />
+    <PackageVersion Include="Quartz.Extensions.Hosting"        Version="3.*"  />
+    <PackageVersion Include="Quartz.Serialization.Json"        Version="3.*"  />
+
     <!-- ── Utilities ───────────────────────────────────────────────── -->
     <PackageVersion Include="ErrorOr"                          Version="2.*"  />
     <PackageVersion Include="Humanizer.Core"                   Version="3.*"  />

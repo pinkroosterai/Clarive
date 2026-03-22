@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Quartz;
+using Quartz.Impl.Matchers;
 using Resend;
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
@@ -97,6 +99,7 @@ public static class DependencyInjection
         services.AddScoped<ISuperAdminRepository, EfSuperAdminRepository>();
         services.AddScoped<IOnboardingRepository, EfOnboardingRepository>();
         services.AddScoped<IAccountPurgeRepository, EfAccountPurgeRepository>();
+        services.AddScoped<IJobExecutionHistoryRepository, EfJobExecutionHistoryRepository>();
 
         // ── Presence (ephemeral, in-memory) ──
         services.AddSingleton<Clarive.Domain.Interfaces.Services.IPresenceTracker, InMemoryPresenceTracker>();
@@ -131,11 +134,70 @@ public static class DependencyInjection
         });
         services.Configure<EmailSettings>(configuration.GetSection("Email"));
 
-        // ── Background Services ──
-        services.AddHostedService<TokenCleanupBackgroundService>();
-        services.AddHostedService<AiSessionCleanupService>();
-        services.AddHostedService<AiUsageCleanupService>();
-        services.AddHostedService<LogCleanupService>();
+        // ── Quartz.NET Scheduler (persistent PostgreSQL job store) ──
+        services.AddQuartz(q =>
+        {
+            q.UseDefaultThreadPool(tp => tp.MaxConcurrency = 5);
+
+            q.UsePersistentStore(store =>
+            {
+                store.UseProperties = true;
+                store.UsePostgres(pg =>
+                {
+                    pg.ConnectionString = connectionString;
+                    pg.TablePrefix = "qrtz_";
+                });
+                store.UseNewtonsoftJsonSerializer();
+                store.PerformSchemaValidation = true;
+            });
+
+            // ── Infrastructure cleanup jobs ──
+            q.AddJob<TokenCleanupJob>(opts => opts
+                .WithIdentity("TokenCleanup", "Infrastructure")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("TokenCleanup", "Infrastructure")
+                .WithIdentity("TokenCleanup-trigger")
+                .WithCronSchedule("0 0 */6 * * ?"));
+
+            q.AddJob<AiSessionCleanupJob>(opts => opts
+                .WithIdentity("AiSessionCleanup", "Infrastructure")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("AiSessionCleanup", "Infrastructure")
+                .WithIdentity("AiSessionCleanup-trigger")
+                .WithCronSchedule("0 0 * * * ?"));
+
+            q.AddJob<AiUsageCleanupJob>(opts => opts
+                .WithIdentity("AiUsageCleanup", "Infrastructure")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("AiUsageCleanup", "Infrastructure")
+                .WithIdentity("AiUsageCleanup-trigger")
+                .WithCronSchedule("0 0 3 * * ?"));
+
+            q.AddJob<LogCleanupJob>(opts => opts
+                .WithIdentity("LogCleanup", "Infrastructure")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("LogCleanup", "Infrastructure")
+                .WithIdentity("LogCleanup-trigger")
+                .WithCronSchedule("0 0 4 * * ?"));
+
+            q.AddJob<HistoryCleanupJob>(opts => opts
+                .WithIdentity("HistoryCleanup", "Infrastructure")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("HistoryCleanup", "Infrastructure")
+                .WithIdentity("HistoryCleanup-trigger")
+                .WithCronSchedule("0 0 5 * * ?"));
+
+            // ── Job execution history listener (captures all job events) ──
+            q.AddJobListener<JobExecutionHistoryListener>(GroupMatcher<JobKey>.AnyGroup());
+        });
+
+        // Listener is singleton (Quartz requirement) — uses IServiceScopeFactory internally
+        services.AddSingleton<JobExecutionHistoryListener>();
 
         return services;
     }

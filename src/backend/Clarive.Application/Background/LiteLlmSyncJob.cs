@@ -1,19 +1,21 @@
 using Clarive.Domain.Interfaces.Services;
 using Clarive.Domain.Interfaces.Repositories;
+using Quartz;
 
 namespace Clarive.Application.Background;
 
 /// <summary>
 /// Periodically fetches the LiteLLM model pricing registry from GitHub,
 /// caches it locally, and auto-populates NULL cost/context fields on existing models.
-/// Runs every 24 hours. On first run, loads from local cache file if available.
+/// Fires immediately on startup (via StartNow trigger), then daily at 1:00 AM.
 /// </summary>
-public class LiteLlmSyncService(
-    IServiceScopeFactory scopeFactory,
+[DisallowConcurrentExecution]
+public class LiteLlmSyncJob(
     IHttpClientFactory httpClientFactory,
     ILiteLlmRegistryCache registryCache,
-    ILogger<LiteLlmSyncService> logger
-) : BackgroundService
+    IAiProviderRepository providerRepo,
+    ILogger<LiteLlmSyncJob> logger
+) : IJob
 {
     // Suppress S1075: URL is a well-known public registry, not a configuration concern
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -25,18 +27,18 @@ public class LiteLlmSyncService(
         "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
 
     private const string CacheFilePath = "data/litellm-model-prices.json";
-    private static readonly TimeSpan Interval = TimeSpan.FromHours(24);
 
-    protected override async Task ExecuteAsync(CancellationToken ct)
+    public async Task Execute(IJobExecutionContext context)
     {
-        // Cold start: load from local cache file immediately
-        await LoadFromLocalCacheAsync(ct);
+        var ct = context.CancellationToken;
 
-        while (!ct.IsCancellationRequested)
+        // On first run, load from local cache file if available
+        if (!await registryCache.IsLoadedAsync(ct))
         {
-            await FetchAndSyncAsync(ct);
-            await Task.Delay(Interval, ct);
+            await LoadFromLocalCacheAsync(ct);
         }
+
+        await FetchAndSyncAsync(ct);
     }
 
     private async Task LoadFromLocalCacheAsync(CancellationToken ct)
@@ -81,9 +83,6 @@ public class LiteLlmSyncService(
 
     private async Task SyncExistingModelsAsync(CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-        var providerRepo = scope.ServiceProvider.GetRequiredService<IAiProviderRepository>();
-
         var providers = await providerRepo.GetAllAsync(ct);
         var updated = 0;
 

@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ErrorOr" />
+    <PackageReference Include="Quartz" />
     <PackageReference Include="Humanizer.Core" />
     <PackageReference Include="MiniValidation" />
     <PackageReference Include="ModelContextProtocol" />

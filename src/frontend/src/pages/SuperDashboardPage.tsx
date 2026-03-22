@@ -10,6 +10,7 @@ import {
   X,
   Settings,
   Cpu,
+  Briefcase,
   ScrollText,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -19,6 +20,7 @@ import AiTab from '@/components/super/AiTab';
 import AiUsageDashboard from '@/components/super/AiUsageDashboard';
 import { CompactMetricStrip, type MetricItem } from '@/components/super/CompactMetricStrip';
 import { HeroStatCard } from '@/components/super/HeroStatCard';
+import JobsTab from '@/components/super/JobsTab';
 import LogsTab from '@/components/super/LogsTab';
 import SettingsTab from '@/components/super/SettingsTab';
 import UsersTable from '@/components/super/UsersTable';
@@ -32,7 +34,7 @@ import { getSuperStats } from '@/services/api/superService';
 
 // ── Tab configuration ──
 
-const VALID_TABS = ['dashboard', 'usage', 'users', 'ai', 'settings', 'logs'];
+const VALID_TABS = ['dashboard', 'usage', 'users', 'ai', 'settings', 'logs', 'jobs'];
 const RESTART_STORAGE_KEY = 'cl_pending_restart';
 
 interface PendingRestart {
@@ -228,6 +230,10 @@ const SuperDashboardPage = () => {
             <ScrollText className="size-4 hidden sm:block" />
             Logs
           </TabsTrigger>
+          <TabsTrigger value="jobs" className={TAB_STYLE}>
+            <Briefcase className="size-4 hidden sm:block" />
+            Jobs
+          </TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab — Platform Overview + AI Usage Analytics */}
@@ -369,6 +375,19 @@ const SuperDashboardPage = () => {
             transition={{ duration: 0.25 }}
           >
             <LogsTab />
+          </motion.div>
+          </ErrorBoundary>
+        </TabsContent>
+
+        {/* Jobs Tab */}
+        <TabsContent value="jobs" className="mt-6">
+          <ErrorBoundary fallback={PageErrorFallback}>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <JobsTab />
           </motion.div>
           </ErrorBoundary>
         </TabsContent>

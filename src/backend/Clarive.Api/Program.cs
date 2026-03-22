@@ -33,6 +33,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Npgsql;
+using Quartz;
 using Resend;
 using Serilog;
 using StackExchange.Redis;
@@ -127,8 +128,14 @@ try
                 + "Set it in appsettings.Development.json or the CONNECTIONSTRINGS__DEFAULTCONNECTION environment variable."
         );
 
-    // ── Infrastructure (DbContext, repos, email, cache, security, bg jobs) ──
+    // ── Infrastructure (DbContext, repos, email, cache, security, Quartz jobs) ──
     builder.Services.AddClariveInfrastructure(builder.Configuration);
+
+    // ── Quartz Hosted Service (starts scheduler, graceful shutdown) ──
+    builder.Services.AddQuartzHostedService(options =>
+    {
+        options.WaitForJobsToComplete = true;
+    });
 
     // ── Database Configuration Override (highest priority, overrides env vars) ──
     builder.Configuration.AddDatabaseConfiguration(

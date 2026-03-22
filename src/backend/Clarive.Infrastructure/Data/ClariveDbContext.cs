@@ -46,6 +46,7 @@ public class ClariveDbContext : DbContext
     public DbSet<AiProviderModel> AiProviderModels => Set<AiProviderModel>();
     public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
+    public DbSet<JobExecutionHistory> JobExecutionHistories => Set<JobExecutionHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

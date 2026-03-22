@@ -6,6 +6,7 @@ using Clarive.Application.McpServers.Services;
 using Clarive.Application.Tags.Contracts;
 using Clarive.Application.Tags.Services;
 using Clarive.Domain.Interfaces.Services;
+using Quartz;
 
 namespace Clarive.Application;
 
@@ -40,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IModelResolutionService, ModelResolutionService>();
         services.AddScoped<IPlaygroundRunService, PlaygroundRunService>();
         services.AddScoped<ISuperAdminService, SuperAdminService>();
+        services.AddScoped<IJobHistoryService, JobHistoryService>();
         services.AddScoped<IPlaygroundService, PlaygroundService>();
         services.AddScoped<IAiProviderService, AiProviderService>();
         services.AddScoped<IAiUsageLogger, AiUsageLogger>();
@@ -58,11 +60,43 @@ public static class DependencyInjection
         // ── Settings ──
         services.Configure<AppSettings>(configuration.GetSection("App"));
 
-        // ── Background Services ──
-        services.AddHostedService<AccountPurgeBackgroundService>();
-        services.AddHostedService<MaintenanceModeSyncService>();
-        services.AddHostedService<LiteLlmSyncService>();
-        services.AddHostedService<McpSyncBackgroundService>();
+        // ── Quartz Jobs (Application layer — scheduler configured in Infrastructure) ──
+        services.AddQuartz(q =>
+        {
+            q.AddJob<AccountPurgeJob>(opts => opts
+                .WithIdentity("AccountPurge", "Application")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("AccountPurge", "Application")
+                .WithIdentity("AccountPurge-trigger")
+                .WithCronSchedule("0 0 2 * * ?"));
+
+            q.AddJob<MaintenanceSyncJob>(opts => opts
+                .WithIdentity("MaintenanceSync", "Application")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("MaintenanceSync", "Application")
+                .WithIdentity("MaintenanceSync-trigger")
+                .WithCronSchedule("*/10 * * * * ?",
+                    x => x.WithMisfireHandlingInstructionDoNothing()));
+
+            q.AddJob<LiteLlmSyncJob>(opts => opts
+                .WithIdentity("LiteLlmSync", "Application")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("LiteLlmSync", "Application")
+                .WithIdentity("LiteLlmSync-trigger")
+                .StartNow()
+                .WithCronSchedule("0 0 1 * * ?"));
+
+            q.AddJob<McpSyncJob>(opts => opts
+                .WithIdentity("McpSync", "Application")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("McpSync", "Application")
+                .WithIdentity("McpSync-trigger")
+                .WithCronSchedule("0 */5 * * * ?"));
+        });
 
         return services;
     }

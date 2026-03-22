@@ -1,41 +1,19 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Hosting;
 using Clarive.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Quartz;
 
 namespace Clarive.Infrastructure.BackgroundJobs;
 
-public class TokenCleanupBackgroundService(
-    IServiceScopeFactory scopeFactory,
-    ILogger<TokenCleanupBackgroundService> logger
-) : BackgroundService
+[DisallowConcurrentExecution]
+public class TokenCleanupJob(
+    ClariveDbContext db,
+    ILogger<TokenCleanupJob> logger
+) : IJob
 {
-    protected override async Task ExecuteAsync(CancellationToken ct)
+    public async Task Execute(IJobExecutionContext context)
     {
-        // Initial delay to let the app fully start
-        await Task.Delay(TimeSpan.FromMinutes(2), ct);
-
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                await CleanupExpiredTokensAsync(ct);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                logger.LogError(ex, "Error during token cleanup cycle");
-            }
-
-            await Task.Delay(TimeSpan.FromHours(6), ct);
-        }
-    }
-
-    private async Task CleanupExpiredTokensAsync(CancellationToken ct)
-    {
-        using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ClariveDbContext>();
-
+        var ct = context.CancellationToken;
         var cutoff = DateTime.UtcNow;
 
         var refreshDeleted = await db
