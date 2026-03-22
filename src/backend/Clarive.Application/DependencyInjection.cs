@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IImportExportService, ImportExportService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IFolderService, FolderService>();
         services.AddScoped<IModelResolutionService, ModelResolutionService>();
         services.AddScoped<IPlaygroundRunService, PlaygroundRunService>();
