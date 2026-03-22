@@ -39,34 +39,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     private OpenAIClient? _openAiClient;
     private bool _isConfigured;
 
-    public bool IsConfigured
-    {
-        get
-        {
-            _lock.EnterReadLock();
-            try
-            {
-                return _isConfigured;
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
-        }
-    }
+    public bool IsConfigured => WithReadLock(() => _isConfigured);
 
-    public (string? ModelId, string? ProviderName) GetModelInfo(AiActionType actionType)
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            return _actionModelInfo.TryGetValue(actionType, out var info) ? info : (null, null);
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
+    public (string? ModelId, string? ProviderName) GetModelInfo(AiActionType actionType) =>
+        WithReadLock(() => _actionModelInfo.TryGetValue(actionType, out var info) ? info : (null, null));
 
     public event Action? OnReconfigured;
 
@@ -100,88 +76,61 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     public (AIAgent Agent, ToolProgressReporter? ToolProgress) CreateGenerationAgent(
         GenerationConfig config,
         IList<AITool>? tools = null
-    )
+    ) => WithReadLock(() =>
     {
-        _lock.EnterReadLock();
-        try
+        EnsureConfigured();
+        var client = _actionClients[AiActionType.Generation];
+
+        if (tools is { Count: > 0 })
         {
-            EnsureConfigured();
-            var client = _actionClients[AiActionType.Generation];
+            var reporter = new ToolProgressReporter();
+            var handler = new TavilyToolProgressHandler(reporter);
 
-            if (tools is { Count: > 0 })
-            {
-                var reporter = new ToolProgressReporter();
-                var handler = new TavilyToolProgressHandler(reporter);
+            var pipeline = new ChatClientBuilder(client)
+                .Use(innerClient =>
+                {
+                    var eefic = new EventEmittingFunctionInvokingChatClient(
+                        innerClient,
+                        _loggerFactory
+                    );
+                    eefic.ToolCallStarting += handler.OnToolCallStartingAsync;
+                    eefic.ToolCallCompleted += handler.OnToolCallCompletedAsync;
+                    return eefic;
+                })
+                .Build();
 
-                var pipeline = new ChatClientBuilder(client)
-                    .Use(innerClient =>
-                    {
-                        var eefic = new EventEmittingFunctionInvokingChatClient(
-                            innerClient,
-                            _loggerFactory
-                        );
-                        eefic.ToolCallStarting += handler.OnToolCallStartingAsync;
-                        eefic.ToolCallCompleted += handler.OnToolCallCompletedAsync;
-                        return eefic;
-                    })
-                    .Build();
-
-                var agent = pipeline.AsAIAgent(
-                    instructions: AgentInstructions.BuildGeneration(config),
-                    name: "PromptGenerator",
-                    tools: tools,
-                    loggerFactory: _loggerFactory
-                );
-
-                return (agent, reporter);
-            }
-
-            var standardAgent = client.AsAIAgent(
+            var agent = pipeline.AsAIAgent(
                 instructions: AgentInstructions.BuildGeneration(config),
                 name: "PromptGenerator",
+                tools: tools,
                 loggerFactory: _loggerFactory
             );
 
-            return (standardAgent, null);
+            return (agent, reporter);
         }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
 
-    public IChatClient GetActionChatClient(AiActionType actionType)
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            EnsureConfigured();
-            return _actionClients[actionType];
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
+        var standardAgent = client.AsAIAgent(
+            instructions: AgentInstructions.BuildGeneration(config),
+            name: "PromptGenerator",
+            loggerFactory: _loggerFactory
+        );
+
+        return (standardAgent, (ToolProgressReporter?)null);
+    });
+
+    public IChatClient GetActionChatClient(AiActionType actionType) =>
+        WithReadLock(() => { EnsureConfigured(); return _actionClients[actionType]; });
 
     public AIAgent CreateAgent(
         AiActionType actionType,
         string instructions,
         string name
-    )
+    ) => WithReadLock(() =>
     {
-        _lock.EnterReadLock();
-        try
-        {
-            EnsureConfigured();
-            return _actionClients[actionType]
-                .AsAIAgent(instructions: instructions, name: name, loggerFactory: _loggerFactory);
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
+        EnsureConfigured();
+        return _actionClients[actionType]
+            .AsAIAgent(instructions: instructions, name: name, loggerFactory: _loggerFactory);
+    });
 
     public static OpenAIClient CreateOpenAIClient(string apiKey, string? endpointUrl)
     {
@@ -274,8 +223,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             }
         }
 
-        _lock.EnterWriteLock();
-        try
+        WithWriteLock(() =>
         {
             // Dispose old clients
             foreach (var client in _actionClients.Values)
@@ -306,49 +254,29 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             }
 
             _isConfigured = _actionClients.Count == ConfigurableActions.Length;
-        }
-        finally
-        {
-            _lock.ExitWriteLock();
-        }
+        });
     }
 
-    private void ResetClients()
+    private void ResetClients() => WithWriteLock(() =>
     {
-        _lock.EnterWriteLock();
-        try
-        {
-            foreach (var client in _actionClients.Values)
-                (client as IDisposable)?.Dispose();
+        foreach (var client in _actionClients.Values)
+            (client as IDisposable)?.Dispose();
 
-            _actionClients.Clear();
-            _actionModelInfo.Clear();
-            _openAiClient = null;
-            _isConfigured = false;
-        }
-        finally
-        {
-            _lock.ExitWriteLock();
-        }
-    }
+        _actionClients.Clear();
+        _actionModelInfo.Clear();
+        _openAiClient = null;
+        _isConfigured = false;
+    });
 
-    public IChatClient CreateChatClient(string model)
+    public IChatClient CreateChatClient(string model) => WithReadLock(() =>
     {
-        _lock.EnterReadLock();
-        try
-        {
-            EnsureConfigured();
+        EnsureConfigured();
 #pragma warning disable OPENAI001 // Responses API is experimental
-            return new ChatClientBuilder(_openAiClient!.GetResponsesClient().AsIChatClient(model))
-                .UseLogging(_loggerFactory)
-                .Build();
+        return new ChatClientBuilder(_openAiClient!.GetResponsesClient().AsIChatClient(model))
+            .UseLogging(_loggerFactory)
+            .Build();
 #pragma warning restore OPENAI001
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
+    });
 
     public IChatClient CreateChatClientForProvider(
         string apiKey,
@@ -372,18 +300,21 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         return new ChatClientBuilder(baseClient).UseLogging(_loggerFactory).Build();
     }
 
-    public OpenAIClient GetOpenAIClient()
+    public OpenAIClient GetOpenAIClient() =>
+        WithReadLock(() => { EnsureConfigured(); return _openAiClient!; });
+
+    private T WithReadLock<T>(Func<T> action)
     {
         _lock.EnterReadLock();
-        try
-        {
-            EnsureConfigured();
-            return _openAiClient!;
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        try { return action(); }
+        finally { _lock.ExitReadLock(); }
+    }
+
+    private void WithWriteLock(Action action)
+    {
+        _lock.EnterWriteLock();
+        try { action(); }
+        finally { _lock.ExitWriteLock(); }
     }
 
     private void EnsureConfigured()
@@ -397,17 +328,12 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
     public void Dispose()
     {
         _changeSubscription?.Dispose();
-        _lock.EnterWriteLock();
-        try
+        WithWriteLock(() =>
         {
             foreach (var client in _actionClients.Values)
                 (client as IDisposable)?.Dispose();
             _actionClients.Clear();
-        }
-        finally
-        {
-            _lock.ExitWriteLock();
-        }
+        });
         _lock.Dispose();
     }
 }
