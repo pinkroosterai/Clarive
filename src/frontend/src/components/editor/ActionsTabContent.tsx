@@ -1,22 +1,9 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Copy,
-  Save,
-  Upload,
-  Sparkles,
-  Wand2,
-  Workflow,
-  RotateCcw,
-  Trash2,
-  Undo2,
-  Redo2,
-  Check,
-  Play,
-  Share2,
-  Settings2,
-} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Copy, Upload, Share2, Settings2 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useState, useEffect, useRef } from 'react';
+
+import { AiActions } from './AiActions';
+import { EditActions } from './EditActions';
 
 import {
   AlertDialog,
@@ -112,18 +99,6 @@ export function ActionsTabContent({
   const hasPublished = versions.some((v) => v.versionState === 'published');
   const publishedVersion = versions.find((v) => v.versionState === 'published')?.version;
 
-  // Save success feedback
-  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
-  const wasSaving = useRef(false);
-  useEffect(() => {
-    if (wasSaving.current && !isSaving) {
-      setShowSaveSuccess(true);
-      const t = setTimeout(() => setShowSaveSuccess(false), 1500);
-      return () => clearTimeout(t);
-    }
-    wasSaving.current = isSaving;
-  }, [isSaving]);
-
   if (isReadOnly) {
     return (
       <div className="py-4 text-center text-sm text-foreground-muted">
@@ -138,152 +113,23 @@ export function ActionsTabContent({
         <Settings2 className="size-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Actions</h3>
       </div>
+
       <ActionGroup label="Edit">
-        <div className="inline-flex items-center gap-0.5 rounded-md border border-border-subtle p-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onUndo}
-                disabled={!canUndo}
-                className="size-10 md:size-8"
-                aria-label="Undo"
-              >
-                <Undo2 className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              Undo <kbd className="ml-1 text-xs opacity-60">Ctrl+Z</kbd>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onRedo}
-                disabled={!canRedo}
-                className="size-10 md:size-8"
-                aria-label="Redo"
-              >
-                <Redo2 className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              Redo <kbd className="ml-1 text-xs opacity-60">Ctrl+Shift+Z</kbd>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="w-full gap-2"
-              onClick={onSave}
-              disabled={(!isDirty && !showSaveSuccess) || isSaving || hasEmptyTitle}
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                {showSaveSuccess ? (
-                  <motion.span
-                    key="check"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                  >
-                    <Check className="size-4 text-success-text" />
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="save"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                  >
-                    <Save className="size-4" />
-                  </motion.span>
-                )}
-              </AnimatePresence>
-              {showSaveSuccess ? 'Saved!' : isSaving ? 'Saving\u2026' : 'Save Draft'}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            {hasEmptyTitle ? (
-              'Title is required to save'
-            ) : (
-              <>
-                Save Draft <kbd className="ml-1 text-xs opacity-60">Ctrl+S</kbd>
-              </>
-            )}
-          </TooltipContent>
-        </Tooltip>
-
-        {hasEmptyTitle && isDirty && <p className="text-xs text-destructive">Title is required</p>}
-
-        {isDirty && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full gap-2 text-destructive hover:text-destructive"
-              >
-                <RotateCcw className="size-4" />
-                Discard Changes
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Discard all changes?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will revert to the last saved state. Unsaved changes cannot be recovered.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={onDiscard}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Discard
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-
-        {onDeleteDraft && hasDraft && hasPublished && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full gap-2 text-destructive hover:text-destructive"
-                disabled={isDeletingDraft}
-              >
-                <Trash2 className="size-4" />
-                {isDeletingDraft ? 'Deleting\u2026' : 'Delete Draft'}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this draft?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete the current draft and revert to the published
-                  version. Draft content cannot be recovered.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={onDeleteDraft}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Delete Draft
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+        <EditActions
+          isDirty={isDirty}
+          onSave={onSave}
+          onDiscard={onDiscard}
+          onUndo={onUndo}
+          onRedo={onRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          isSaving={isSaving}
+          hasEmptyTitle={hasEmptyTitle}
+          hasDraft={hasDraft}
+          hasPublished={hasPublished}
+          onDeleteDraft={onDeleteDraft}
+          isDeletingDraft={isDeletingDraft}
+        />
       </ActionGroup>
 
       <Separator />
@@ -379,111 +225,18 @@ export function ActionsTabContent({
       {(aiEnabled || showGenerateSystemMessage || showDecomposeToChain) && (
         <>
           <Separator />
-
           <ActionGroup label="AI Tools">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <Button
-                    variant="outline"
-                    className="w-full gap-2 hover:border-primary/30 transition-all"
-                    onClick={onEnhance}
-                    disabled={!aiEnabled}
-                  >
-                    <Sparkles className="size-4" />
-                    AI Enhance
-                  </Button>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                {aiEnabled
-                  ? 'Improve your prompt with AI suggestions'
-                  : 'AI features are not configured'}
-              </TooltipContent>
-            </Tooltip>
-
-            {showGenerateSystemMessage && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2 hover:border-primary/30 transition-all"
-                      onClick={onGenerateSystemMessage}
-                      disabled={isGeneratingSystemMessage || !aiEnabled}
-                    >
-                      <Wand2 className="size-4" />
-                      {isGeneratingSystemMessage ? 'Generating\u2026' : 'Generate System Message'}
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  {aiEnabled
-                    ? 'Auto-generate a system message from your prompt'
-                    : 'AI features are not configured'}
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {showDecomposeToChain && (
-              <AlertDialog>
-                <Tooltip>
-                  <AlertDialogTrigger asChild>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2 hover:border-primary/30 transition-all"
-                        disabled={isDecomposing || !aiEnabled}
-                      >
-                        <Workflow className="size-4" />
-                        {isDecomposing ? 'Decomposing\u2026' : 'Decompose to Chain'}
-                      </Button>
-                    </TooltipTrigger>
-                  </AlertDialogTrigger>
-                  <TooltipContent side="left">
-                    {aiEnabled
-                      ? 'Split your prompt into a multi-step chain'
-                      : 'AI features are not configured'}
-                  </TooltipContent>
-                </Tooltip>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Decompose to chain?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will split your prompt into a multi-step chain. The original prompt will
-                      be preserved as the first step.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDecomposeToChain}>Decompose</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-
-            {onTest && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2 hover:border-primary/30 transition-all"
-                      onClick={onTest}
-                      disabled={!aiEnabled}
-                    >
-                      <Play className="size-4" />
-                      Test Prompt
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  {aiEnabled
-                    ? 'Run this prompt in the playground'
-                    : 'AI features are not configured'}
-                </TooltipContent>
-              </Tooltip>
-            )}
+            <AiActions
+              aiEnabled={aiEnabled}
+              onEnhance={onEnhance}
+              onGenerateSystemMessage={onGenerateSystemMessage}
+              onDecomposeToChain={onDecomposeToChain}
+              isGeneratingSystemMessage={isGeneratingSystemMessage}
+              isDecomposing={isDecomposing}
+              showGenerateSystemMessage={showGenerateSystemMessage}
+              showDecomposeToChain={showDecomposeToChain}
+              onTest={onTest}
+            />
           </ActionGroup>
         </>
       )}
