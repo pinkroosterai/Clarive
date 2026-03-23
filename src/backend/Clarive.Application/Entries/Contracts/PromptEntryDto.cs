@@ -18,7 +18,8 @@ public record PromptEntryDto(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     List<string> Tags,
-    bool IsFavorited
+    bool IsFavorited,
+    double? EvaluationAverageScore
 )
 {
     public static PromptEntryDto FromEntryAndVersion(
@@ -47,7 +48,8 @@ public record PromptEntryDto(
             entry.CreatedAt,
             entry.UpdatedAt,
             Tags: tags ?? [],
-            IsFavorited: isFavorited
+            IsFavorited: isFavorited,
+            EvaluationAverageScore: version?.EvaluationAverageScore
         );
     }
 }

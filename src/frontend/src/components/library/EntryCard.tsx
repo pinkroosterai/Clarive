@@ -27,6 +27,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { draggableEntryId } from '@/lib/dnd/types';
 import { parseTemplateTags } from '@/lib/templateParser';
+import { scoreColor } from '@/components/wizard/scoreUtils';
 import * as favoriteService from '@/services/api/favoriteService';
 import type { PromptEntry } from '@/types';
 
@@ -111,6 +112,34 @@ export const EntryCard = memo(function EntryCard({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <Badge variant={badge.variant}>{badgeLabel}</Badge>
+            {entry.evaluationAverageScore != null ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs tabular-nums ${scoreColor(entry.evaluationAverageScore).text}`}
+                    >
+                      {entry.evaluationAverageScore.toFixed(1)}
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Quality score: {scoreColor(entry.evaluationAverageScore).label}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Badge variant="outline" className="text-xs text-foreground-muted">
+                      —
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Not evaluated</TooltipContent>
+              </Tooltip>
+            )}
             {onToggleFavorite && (
               <Button
                 variant="ghost"

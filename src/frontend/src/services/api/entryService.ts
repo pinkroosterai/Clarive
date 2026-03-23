@@ -18,6 +18,7 @@ interface EntrySummary {
   updatedAt: string;
   tags: string[];
   isFavorited: boolean;
+  evaluationAverageScore: number | null;
 }
 
 function summaryToEntry(s: EntrySummary): PromptEntry {
@@ -40,6 +41,7 @@ function summaryToEntry(s: EntrySummary): PromptEntry {
     firstPromptPreview: s.firstPromptPreview,
     tags: s.tags,
     isFavorited: s.isFavorited,
+    evaluationAverageScore: s.evaluationAverageScore,
   };
 }
 
