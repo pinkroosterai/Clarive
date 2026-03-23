@@ -341,11 +341,13 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
         CancellationToken ct
     )
     {
-        return await db
+        var rows = await db
             .PromptEntries.Where(e => e.TenantId == tenantId && !e.IsTrashed)
             .OrderBy(e => e.Title)
-            .Select(e => ValueTuple.Create(e.Id, e.Title, e.FolderId))
+            .Select(e => new { e.Id, e.Title, e.FolderId })
             .ToListAsync(ct);
+
+        return rows.Select(e => (e.Id, e.Title, e.FolderId)).ToList();
     }
 
     // ── Dashboard ──

@@ -37,13 +37,20 @@ test.describe('Workspace Invitation', () => {
       await page.waitForTimeout(500);
     }
 
-    // Navigate to Settings > Users
-    await page.goto('/settings?tab=users');
+    // Navigate to Settings, then click Users tab (more reliable than query param)
+    await page.goto('/settings');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1_000);
+    await page.getByRole('tab', { name: /users/i }).click();
+    await page.waitForTimeout(500);
 
-    // Click "Invite User" button
-    await page.getByRole('button', { name: /invite user/i }).click();
+    // Scroll down past WorkspaceSection to reach UserManagement
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
+
+    // Wait for "Invite User" button to appear (UserManagement must finish loading)
+    const inviteButton = page.getByRole('button', { name: /invite user/i });
+    await expect(inviteButton).toBeVisible({ timeout: 15_000 });
+    await inviteButton.click();
 
     // Fill in the invite dialog
     const dialog = page.getByRole('dialog');

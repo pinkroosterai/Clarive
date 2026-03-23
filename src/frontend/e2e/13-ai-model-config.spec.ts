@@ -55,6 +55,18 @@ test.describe('Super Admin — AI Model Configuration', () => {
       timeout: 5_000,
     });
 
+    // --- Step 4b: Enable function calling + structured response on primary model ---
+    // Quick Setup only shows models with these capabilities enabled.
+    // Each model row has 3 switches: [reasoning, functionCalling, structuredResponse]
+    const primaryModelRow = page.locator('tr').filter({ hasText: GROQ_MODEL_ID }).first();
+    const switches = primaryModelRow.locator('[role="switch"]');
+    // Toggle function calling (index 1)
+    await switches.nth(1).click();
+    await page.waitForTimeout(300);
+    // Toggle structured response (index 2)
+    await switches.nth(2).click();
+    await page.waitForTimeout(300);
+
     // --- Step 5: Quick Setup — assign primary model to all 8 actions ---
     await page.keyboard.press('Escape');
     await page.waitForTimeout(200);

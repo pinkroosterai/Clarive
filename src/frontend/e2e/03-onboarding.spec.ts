@@ -19,6 +19,10 @@ test.describe('Second User Registration & Onboarding', () => {
     await passwordInputs.nth(0).fill(EDITOR.password);
     await passwordInputs.nth(1).fill(EDITOR.password);
 
+    // Anti-spam: backend requires ≥3s between form load and submit (DetectBot timing check).
+    // Playwright fills instantly, so wait to avoid being flagged as a bot.
+    await page.waitForTimeout(3_100);
+
     // Submit
     await page.getByRole('button', { name: /create account/i }).click();
 
