@@ -1,6 +1,8 @@
 using Clarive.Api.Helpers;
 using Clarive.Domain.Enums;
 using Clarive.Domain.ValueObjects;
+using Clarive.Domain.Interfaces.Services;
+using Clarive.Domain.Interfaces.Repositories;
 
 namespace Clarive.Api.Endpoints;
 
@@ -50,6 +52,8 @@ public static class UserEndpoints
         UpdateUserRoleRequest request,
         IUserManagementService userManagementService,
         IAuditLogger auditLogger,
+        IEmailService emailService,
+        ITenantRepository tenantRepo,
         CancellationToken ct
     )
     {
@@ -88,6 +92,11 @@ public static class UserEndpoints
             ct
         );
 
+        // Notify the affected user
+        var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
+        if (tenant is not null)
+            _ = emailService.SendRoleChangedAsync(result.Value.User.Email, result.Value.User.Name, tenant.Name, result.Value.OldRole, result.Value.NewRole, CancellationToken.None);
+
         return Results.Ok(
             new
             {
@@ -105,6 +114,8 @@ public static class UserEndpoints
         HttpContext ctx,
         IUserManagementService userManagementService,
         IAuditLogger auditLogger,
+        IEmailService emailService,
+        ITenantRepository tenantRepo,
         CancellationToken ct
     )
     {
@@ -136,6 +147,11 @@ public static class UserEndpoints
             ct
         );
 
+        // Notify the removed user
+        var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
+        if (tenant is not null)
+            _ = emailService.SendRemovedFromWorkspaceAsync(result.Value.Email, result.Value.Name, tenant.Name, CancellationToken.None);
+
         return Results.NoContent();
     }
 
@@ -144,6 +160,8 @@ public static class UserEndpoints
         TransferOwnershipRequest request,
         IUserManagementService userManagementService,
         IAuditLogger auditLogger,
+        IEmailService emailService,
+        ITenantRepository tenantRepo,
         CancellationToken ct
     )
     {
@@ -178,6 +196,16 @@ public static class UserEndpoints
             $"Transferred ownership from {result.Value.PreviousAdmin.Name} to {result.Value.NewAdmin.Name}",
             ct
         );
+
+        // Notify both parties
+        var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
+        if (tenant is not null)
+        {
+            var fromName = result.Value.PreviousAdmin.Name;
+            var toName = result.Value.NewAdmin.Name;
+            _ = emailService.SendOwnershipTransferredAsync(result.Value.PreviousAdmin.Email, fromName, tenant.Name, fromName, toName, CancellationToken.None);
+            _ = emailService.SendOwnershipTransferredAsync(result.Value.NewAdmin.Email, toName, tenant.Name, fromName, toName, CancellationToken.None);
+        }
 
         return Results.Ok(
             new

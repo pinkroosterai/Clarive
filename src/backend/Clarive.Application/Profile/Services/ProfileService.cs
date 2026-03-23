@@ -3,13 +3,18 @@ using Clarive.Domain.Errors;
 using Clarive.Domain.Entities;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
+using Clarive.Domain.Interfaces.Services;
 using ErrorOr;
 using Microsoft.Extensions.Logging;
 
 namespace Clarive.Application.Profile.Services;
 
-public class ProfileService(IUserRepository userRepo, PasswordHasher passwordHasher, ILogger<ProfileService> logger)
-    : IProfileService
+public class ProfileService(
+    IUserRepository userRepo,
+    PasswordHasher passwordHasher,
+    IEmailService emailService,
+    ILogger<ProfileService> logger
+) : IProfileService
 {
     private static readonly HashSet<string> ValidThemePreferences = ["light", "dark", "system"];
 
@@ -61,6 +66,8 @@ public class ProfileService(IUserRepository userRepo, PasswordHasher passwordHas
         }
 
         // Apply email update
+        var oldEmail = user.Email;
+        var emailChanged = false;
         if (request.Email is not null)
         {
             if (!Validator.IsValidEmail(request.Email))
@@ -70,7 +77,9 @@ public class ProfileService(IUserRepository userRepo, PasswordHasher passwordHas
             if (existing is not null && existing.Id != user.Id)
                 return Error.Conflict("EMAIL_EXISTS", "An account with this email already exists.");
 
-            user.Email = request.Email.Trim().ToLowerInvariant();
+            var newEmail = request.Email.Trim().ToLowerInvariant();
+            emailChanged = !string.Equals(oldEmail, newEmail, StringComparison.OrdinalIgnoreCase);
+            user.Email = newEmail;
         }
 
         // Apply password update
@@ -99,6 +108,13 @@ public class ProfileService(IUserRepository userRepo, PasswordHasher passwordHas
 
         await userRepo.UpdateAsync(user, ct);
         logger.LogInformation("Profile updated for user {UserId}", userId);
+
+        // Fire-and-forget security notifications (CancellationToken.None — send even if request cancelled)
+        if (request.NewPassword is not null)
+            _ = emailService.SendPasswordChangedAsync(user.Email, user.Name, CancellationToken.None);
+        if (emailChanged)
+            _ = emailService.SendEmailChangedAsync(oldEmail, user.Name, user.Email, CancellationToken.None);
+
         return user;
     }
 

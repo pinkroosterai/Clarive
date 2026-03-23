@@ -6,4 +6,5 @@ public record EmailSettings
     public string ApiKey { get; init; } = "";
     public string FromAddress { get; init; } = "noreply@clarive.dev";
     public string FromName { get; init; } = "Clarive";
+    public string BaseUrl { get; set; } = "";
 }

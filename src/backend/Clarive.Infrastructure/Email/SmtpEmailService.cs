@@ -21,10 +21,12 @@ public class SmtpEmailService(
         CancellationToken ct = default
     )
     {
+        var baseUrl = settings.Value.BaseUrl;
         await SendAsync(
             toEmail,
             "Verify your email address",
-            EmailTemplates.Verification(userName, verifyUrl),
+            EmailTemplates.Verification(baseUrl, userName, verifyUrl),
+            EmailTemplates.VerificationPlainText(userName, verifyUrl),
             ct
         );
         logger.LogInformation("Verification email sent to {Email}", toEmail);
@@ -37,10 +39,12 @@ public class SmtpEmailService(
         CancellationToken ct = default
     )
     {
+        var baseUrl = settings.Value.BaseUrl;
         await SendAsync(
             toEmail,
             "Reset your password",
-            EmailTemplates.PasswordReset(userName, resetUrl),
+            EmailTemplates.PasswordReset(baseUrl, userName, resetUrl),
+            EmailTemplates.PasswordResetPlainText(userName, resetUrl),
             ct
         );
         logger.LogInformation("Password reset email sent to {Email}", toEmail);
@@ -53,10 +57,12 @@ public class SmtpEmailService(
         CancellationToken ct = default
     )
     {
+        var baseUrl = settings.Value.BaseUrl;
         await SendAsync(
             toEmail,
             "Your account is scheduled for deletion",
-            EmailTemplates.DeletionScheduled(userName, purgeDate),
+            EmailTemplates.DeletionScheduled(baseUrl, userName, purgeDate),
+            EmailTemplates.DeletionScheduledPlainText(userName, purgeDate),
             ct
         );
         logger.LogInformation("Deletion scheduled email sent to {Email}", toEmail);
@@ -68,10 +74,12 @@ public class SmtpEmailService(
         CancellationToken ct = default
     )
     {
+        var baseUrl = settings.Value.BaseUrl;
         await SendAsync(
             toEmail,
             "Your account has been deleted",
-            EmailTemplates.DeletionCompleted(userName),
+            EmailTemplates.DeletionCompleted(baseUrl, userName),
+            EmailTemplates.DeletionCompletedPlainText(userName),
             ct
         );
         logger.LogInformation("Deletion completed email sent to {Email}", toEmail);
@@ -86,10 +94,12 @@ public class SmtpEmailService(
         CancellationToken ct = default
     )
     {
+        var baseUrl = settings.Value.BaseUrl;
         await SendAsync(
             toEmail,
             $"You've been invited to join {workspaceName} on Clarive",
-            EmailTemplates.Invitation(inviterName, workspaceName, role, acceptUrl),
+            EmailTemplates.Invitation(baseUrl, inviterName, workspaceName, role, acceptUrl),
+            EmailTemplates.InvitationPlainText(inviterName, workspaceName, role, acceptUrl),
             ct
         );
         logger.LogInformation("Invitation email sent to {Email}", toEmail);
@@ -105,10 +115,19 @@ public class SmtpEmailService(
         CancellationToken ct = default
     )
     {
+        var baseUrl = settings.Value.BaseUrl;
         await SendAsync(
             toEmail,
             $"You've been invited to join {workspaceName} on Clarive",
             EmailTemplates.WorkspaceInvite(
+                baseUrl,
+                recipientName,
+                workspaceName,
+                role,
+                inviterName,
+                loginUrl
+            ),
+            EmailTemplates.WorkspaceInvitePlainText(
                 recipientName,
                 workspaceName,
                 role,
@@ -122,11 +141,67 @@ public class SmtpEmailService(
 
     public async Task SendTestEmailAsync(string toEmail, CancellationToken ct = default)
     {
-        await SendAsync(toEmail, "Clarive Test Email", EmailTemplates.TestEmail(), ct);
+        var baseUrl = settings.Value.BaseUrl;
+        await SendAsync(
+            toEmail,
+            "Clarive Test Email",
+            EmailTemplates.TestEmail(baseUrl),
+            EmailTemplates.TestEmailPlainText(),
+            ct
+        );
         logger.LogInformation("Test email sent to {Email}", toEmail);
     }
 
-    private async Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct)
+    public async Task SendPasswordChangedAsync(string toEmail, string userName, CancellationToken ct = default)
+    {
+        var baseUrl = settings.Value.BaseUrl;
+        await SendAsync(toEmail, "Your password was changed", EmailTemplates.PasswordChanged(baseUrl, userName), EmailTemplates.PasswordChangedPlainText(userName), ct);
+        logger.LogInformation("Password changed email sent to {Email}", toEmail);
+    }
+
+    public async Task SendEmailChangedAsync(string toEmail, string userName, string newEmail, CancellationToken ct = default)
+    {
+        var baseUrl = settings.Value.BaseUrl;
+        await SendAsync(toEmail, "Your email address was changed", EmailTemplates.EmailChanged(baseUrl, userName, newEmail), EmailTemplates.EmailChangedPlainText(userName, newEmail), ct);
+        logger.LogInformation("Email changed notification sent to {Email}", toEmail);
+    }
+
+    public async Task SendApiKeyCreatedAsync(string toEmail, string userName, string keyName, string keyPrefix, CancellationToken ct = default)
+    {
+        var baseUrl = settings.Value.BaseUrl;
+        await SendAsync(toEmail, "New API key created", EmailTemplates.ApiKeyCreated(baseUrl, userName, keyName, keyPrefix), EmailTemplates.ApiKeyCreatedPlainText(userName, keyName, keyPrefix), ct);
+        logger.LogInformation("API key created email sent to {Email}", toEmail);
+    }
+
+    public async Task SendApiKeyRevokedAsync(string toEmail, string userName, string keyName, CancellationToken ct = default)
+    {
+        var baseUrl = settings.Value.BaseUrl;
+        await SendAsync(toEmail, "API key revoked", EmailTemplates.ApiKeyRevoked(baseUrl, userName, keyName), EmailTemplates.ApiKeyRevokedPlainText(userName, keyName), ct);
+        logger.LogInformation("API key revoked email sent to {Email}", toEmail);
+    }
+
+    public async Task SendRoleChangedAsync(string toEmail, string userName, string workspaceName, string oldRole, string newRole, CancellationToken ct = default)
+    {
+        var baseUrl = settings.Value.BaseUrl;
+        await SendAsync(toEmail, $"Your role in {workspaceName} was updated", EmailTemplates.RoleChanged(baseUrl, userName, workspaceName, oldRole, newRole), EmailTemplates.RoleChangedPlainText(userName, workspaceName, oldRole, newRole), ct);
+        logger.LogInformation("Role changed email sent to {Email}", toEmail);
+    }
+
+    public async Task SendRemovedFromWorkspaceAsync(string toEmail, string userName, string workspaceName, CancellationToken ct = default)
+    {
+        var baseUrl = settings.Value.BaseUrl;
+        await SendAsync(toEmail, $"You were removed from {workspaceName}", EmailTemplates.RemovedFromWorkspace(baseUrl, userName, workspaceName), EmailTemplates.RemovedFromWorkspacePlainText(userName, workspaceName), ct);
+        logger.LogInformation("Removed from workspace email sent to {Email}", toEmail);
+    }
+
+    public async Task SendOwnershipTransferredAsync(string toEmail, string userName, string workspaceName, string fromName, string toName, CancellationToken ct = default)
+    {
+        var baseUrl = settings.Value.BaseUrl;
+        await SendAsync(toEmail, $"Ownership of {workspaceName} was transferred", EmailTemplates.OwnershipTransferred(baseUrl, userName, workspaceName, fromName, toName), EmailTemplates.OwnershipTransferredPlainText(userName, workspaceName, fromName, toName), ct);
+        logger.LogInformation("Ownership transferred email sent to {Email}", toEmail);
+    }
+
+    private async Task SendAsync(string to, string subject, string htmlBody, string plainBody, CancellationToken ct)
     {
         var host = configuration["Email:SmtpHost"] ?? "";
         var port = int.TryParse(configuration["Email:SmtpPort"], out var p) ? p : 587;
@@ -142,7 +217,11 @@ public class SmtpEmailService(
         message.From.Add(new MailboxAddress(settings.Value.FromName, settings.Value.FromAddress));
         message.To.Add(MailboxAddress.Parse(to));
         message.Subject = subject;
-        message.Body = new TextPart("html") { Text = htmlBody };
+
+        var multipart = new MultipartAlternative();
+        multipart.Add(new TextPart("plain") { Text = plainBody });
+        multipart.Add(new TextPart("html") { Text = htmlBody });
+        message.Body = multipart;
 
         using var client = new SmtpClient();
         client.Timeout = 30_000;

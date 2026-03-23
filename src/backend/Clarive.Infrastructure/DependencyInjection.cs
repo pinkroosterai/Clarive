@@ -133,6 +133,11 @@ public static class DependencyInjection
             };
         });
         services.Configure<EmailSettings>(configuration.GetSection("Email"));
+        services.PostConfigure<EmailSettings>(email =>
+        {
+            if (string.IsNullOrEmpty(email.BaseUrl))
+                email.BaseUrl = configuration["App:FrontendUrl"] ?? "http://localhost:8080";
+        });
 
         // ── Quartz.NET Scheduler (persistent PostgreSQL job store) ──
         services.AddQuartz(q =>

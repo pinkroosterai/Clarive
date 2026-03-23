@@ -114,4 +114,46 @@ public class ConsoleEmailService(ILogger<ConsoleEmailService> logger) : IEmailSe
         logger.LogInformation("[EMAIL] Test Email → {Email}", toEmail);
         return Task.CompletedTask;
     }
+
+    public Task SendPasswordChangedAsync(string toEmail, string userName, CancellationToken ct = default)
+    {
+        logger.LogInformation("[EMAIL] Password Changed → {Email} ({Name})", toEmail, userName);
+        return Task.CompletedTask;
+    }
+
+    public Task SendEmailChangedAsync(string toEmail, string userName, string newEmail, CancellationToken ct = default)
+    {
+        logger.LogInformation("[EMAIL] Email Changed → {Email} ({Name})\n  New: {NewEmail}", toEmail, userName, newEmail);
+        return Task.CompletedTask;
+    }
+
+    public Task SendApiKeyCreatedAsync(string toEmail, string userName, string keyName, string keyPrefix, CancellationToken ct = default)
+    {
+        logger.LogInformation("[EMAIL] API Key Created → {Email} ({Name})\n  Key: {KeyName} ({Prefix})", toEmail, userName, keyName, keyPrefix);
+        return Task.CompletedTask;
+    }
+
+    public Task SendApiKeyRevokedAsync(string toEmail, string userName, string keyName, CancellationToken ct = default)
+    {
+        logger.LogInformation("[EMAIL] API Key Revoked → {Email} ({Name})\n  Key: {KeyName}", toEmail, userName, keyName);
+        return Task.CompletedTask;
+    }
+
+    public Task SendRoleChangedAsync(string toEmail, string userName, string workspaceName, string oldRole, string newRole, CancellationToken ct = default)
+    {
+        logger.LogInformation("[EMAIL] Role Changed → {Email} ({Name})\n  Workspace: {Workspace}\n  {OldRole} → {NewRole}", toEmail, userName, workspaceName, oldRole, newRole);
+        return Task.CompletedTask;
+    }
+
+    public Task SendRemovedFromWorkspaceAsync(string toEmail, string userName, string workspaceName, CancellationToken ct = default)
+    {
+        logger.LogInformation("[EMAIL] Removed from Workspace → {Email} ({Name})\n  Workspace: {Workspace}", toEmail, userName, workspaceName);
+        return Task.CompletedTask;
+    }
+
+    public Task SendOwnershipTransferredAsync(string toEmail, string userName, string workspaceName, string fromName, string toName, CancellationToken ct = default)
+    {
+        logger.LogInformation("[EMAIL] Ownership Transferred → {Email} ({Name})\n  Workspace: {Workspace}\n  From: {From} → To: {To}", toEmail, userName, workspaceName, fromName, toName);
+        return Task.CompletedTask;
+    }
 }

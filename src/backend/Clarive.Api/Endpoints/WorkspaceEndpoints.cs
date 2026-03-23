@@ -4,6 +4,7 @@ using Clarive.Api.Helpers;
 using Clarive.Domain.Enums;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Application.Audit.Services;
 using static Clarive.Api.Helpers.ResponseMappers;
 
@@ -95,6 +96,8 @@ public static class WorkspaceEndpoints
         Guid tenantId,
         ITenantMembershipRepository membershipRepo,
         IUserRepository userRepo,
+        ITenantRepository tenantRepo,
+        IEmailService emailService,
         IAuditLogger auditLogger,
         CancellationToken ct
     )
@@ -150,6 +153,12 @@ public static class WorkspaceEndpoints
             "Left workspace",
             ct
         );
+
+        // Confirm to the leaving user
+        var leavingUser = await userRepo.GetByIdCrossTenantsAsync(userId, ct);
+        var tenant = await tenantRepo.GetByIdAsync(tenantId, ct);
+        if (leavingUser is not null && tenant is not null)
+            _ = emailService.SendRemovedFromWorkspaceAsync(leavingUser.Email, leavingUser.Name, tenant.Name, CancellationToken.None);
 
         return Results.NoContent();
     }

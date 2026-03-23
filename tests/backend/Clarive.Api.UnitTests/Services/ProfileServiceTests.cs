@@ -2,6 +2,7 @@ using Clarive.Infrastructure.Security;
 using Clarive.Domain.Entities;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
+using Clarive.Domain.Interfaces.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -12,6 +13,7 @@ public class ProfileServiceTests
 {
     private readonly IUserRepository _userRepo = Substitute.For<IUserRepository>();
     private readonly PasswordHasher _passwordHasher = new();
+    private readonly IEmailService _emailService = Substitute.For<IEmailService>();
     private readonly ProfileService _sut;
 
     private static readonly Guid TenantId = Guid.NewGuid();
@@ -23,7 +25,7 @@ public class ProfileServiceTests
             .UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<User>());
 
-        _sut = new ProfileService(_userRepo, _passwordHasher, Substitute.For<ILogger<ProfileService>>());
+        _sut = new ProfileService(_userRepo, _passwordHasher, _emailService, Substitute.For<ILogger<ProfileService>>());
     }
 
     private User MakeUser(bool withPassword = true) =>
