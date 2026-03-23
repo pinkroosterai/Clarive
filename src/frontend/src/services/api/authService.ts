@@ -15,12 +15,16 @@ export async function login(email: string, password: string): Promise<AuthRespon
 export async function register(
   email: string,
   password: string,
-  name: string
+  name: string,
+  honeypot?: string,
+  formLoadedAt?: number
 ): Promise<AuthResponse> {
   const res = await api.post<AuthResponse>('/api/auth/register', {
     email,
     password,
     name,
+    honeypot,
+    formLoadedAt,
   });
   setToken(res.token);
   setRefreshToken(res.refreshToken);

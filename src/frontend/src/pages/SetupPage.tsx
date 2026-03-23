@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Eye, EyeOff, ShieldAlert, Info } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -27,6 +27,8 @@ const SetupPage = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
+  const formLoadedAt = useRef(Date.now());
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -39,7 +41,7 @@ const SetupPage = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      const res = await authService.register(data.email, data.password, data.name);
+      const res = await authService.register(data.email, data.password, data.name, honeypot, formLoadedAt.current);
       setUser(res.user);
       if (res.workspaces) setWorkspaces(res.workspaces);
       toast.success('Admin account created! Your instance is ready.');
@@ -182,6 +184,17 @@ const SetupPage = () => {
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+              {/* Anti-spam honeypot — hidden from humans, filled by bots */}
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                autoComplete="off"
+                tabIndex={-1}
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, width: 0 }}
               />
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="animate-spin" />}

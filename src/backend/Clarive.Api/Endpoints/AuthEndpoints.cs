@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Clarive.Auth.Google;
 using Clarive.Api.Helpers;
 using Clarive.Domain.ValueObjects;
@@ -147,12 +148,26 @@ public static class AuthEndpoints
             return validationErr;
 
         // Block registration if disabled (always allow first user for initial setup)
-        if (!IsRegistrationAllowed(configuration) && await userRepo.AnyUsersExistAsync(ct))
+        var usersExist = await userRepo.AnyUsersExistAsync(ct);
+        if (!IsRegistrationAllowed(configuration) && usersExist)
             return ctx.ErrorResult(
                 403,
                 "REGISTRATION_DISABLED",
                 "New account registration is currently disabled."
             );
+
+        // Anti-spam: honeypot + timing validation (skip for first-user setup)
+        if (usersExist)
+        {
+            var botReason = DetectBot(request);
+            if (botReason is not null)
+            {
+                var logger = loggerFactory.CreateLogger("AuthEndpoints");
+                var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                logger.LogWarning("Bot registration detected: {Reason}, IP: {Ip}, Email: {Email}", botReason, ip, request.Email);
+                return Results.Created("/api/auth/me", GenerateFakeAuthResponse());
+            }
+        }
 
         var result = await accountService.RegisterAsync(
             request.Email,
@@ -427,5 +442,45 @@ public static class AuthEndpoints
         var value = configuration["App:AllowRegistration"];
         // Default to true if not explicitly set to "false"
         return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private const int MinFormCompletionMs = 3000;
+
+    private static string? DetectBot(RegisterRequest request)
+    {
+        if (!string.IsNullOrEmpty(request.Honeypot))
+            return "honeypot";
+
+        if (request.FormLoadedAt is > 0)
+        {
+            var elapsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - request.FormLoadedAt.Value;
+            if (elapsed < MinFormCompletionMs)
+                return $"timing ({elapsed}ms)";
+        }
+
+        return null;
+    }
+
+    private static AuthResponse GenerateFakeAuthResponse()
+    {
+        var fakeId = Guid.NewGuid();
+        var fakeToken = $"eyJ{Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))}.{Convert.ToBase64String(RandomNumberGenerator.GetBytes(64))}.{Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))}";
+        var fakeRefresh = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        return new AuthResponse(
+            fakeToken,
+            fakeRefresh,
+            new UserDto(
+                fakeId,
+                $"user-{fakeId:N}"[..12] + "@clarive.dev",
+                "User",
+                "editor",
+                false,
+                false,
+                null,
+                true,
+                false
+            ),
+            [new WorkspaceDto(Guid.NewGuid(), "Personal", "admin", true, 1, null)]
+        );
     }
 }

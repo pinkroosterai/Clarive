@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -33,6 +33,8 @@ const RegisterPage = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
+  const formLoadedAt = useRef(Date.now());
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -45,7 +47,7 @@ const RegisterPage = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      const res = await authService.register(data.email, data.password, data.name);
+      const res = await authService.register(data.email, data.password, data.name, honeypot, formLoadedAt.current);
       setUser(res.user);
       if (res.workspaces) setWorkspaces(res.workspaces);
       toast.success('Account created! Check your email to verify your address.');
@@ -189,6 +191,17 @@ const RegisterPage = () => {
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+              {/* Anti-spam honeypot — hidden from humans, filled by bots */}
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                autoComplete="off"
+                tabIndex={-1}
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, width: 0 }}
               />
               <p className="text-xs text-foreground-muted text-center">
                 By creating an account, you agree to our{' '}
