@@ -32,7 +32,7 @@ export function EmailVerificationBanner() {
     <div className="flex items-center justify-between gap-3 bg-warning-bg border-b border-warning-border px-4 py-2.5 text-sm">
       <div className="flex items-center gap-2 text-warning-text">
         <Mail className="size-4 shrink-0" />
-        <span>Verify your email to unlock AI features.</span>
+        <span>Verify your email to unlock all features.</span>
         <Button
           variant="ghost"
           size="sm"
