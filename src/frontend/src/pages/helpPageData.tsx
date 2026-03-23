@@ -67,38 +67,38 @@ export const sectionGroups: SectionGroup[] = [
         searchText:
           'dashboard entry count published prompts recently edited activity new entry ai wizard title system message draft publish versioned snapshot guided tour onboarding',
         plainTextContent:
-          'Your Dashboard. The dashboard shows your entry count, published prompts, recently edited entries, and a feed of workspace activity. Creating Your First Entry. Click New Entry in the sidebar to start from scratch. Want AI to draft it for you? Click New Entry, then Use AI Wizard. Add a title, optionally set a system message, and write your prompt in the editor. Save as a draft or publish when ready. Publishing creates a versioned snapshot automatically. Guided Tour. New accounts see an interactive guided tour on first login that walks through the dashboard, sidebar navigation, entry editor, and key features.',
+          'Your Dashboard. When you open Clarive, you land on the dashboard. It shows how many entries you have, which ones you published, what you edited recently, and what your teammates have been up to. Creating Your First Entry. Hit New Entry in the sidebar, give it a title, write your prompt, and save. Publish when you are happy to lock in a versioned snapshot. Or choose Use AI Wizard to let AI generate a prompt from your description. Guided Tour. First time? An interactive tour walks you through the dashboard, sidebar, editor, and key features step by step.',
         searchAliases: ['how to create a prompt', 'first steps', 'new to clarive', 'get started'],
         relatedSections: ['entry-editor', 'ai-wizard'],
         content: (
           <div className="space-y-3">
+            <img
+              src="/static/help/help-dashboard.png"
+              alt="Dashboard showing greeting, stat cards for entries, published, drafts, and folders, plus recent entries list"
+              className="rounded-lg border border-border-subtle mb-4 w-full"
+              loading="lazy"
+            />
             <h4 className="text-sm font-semibold text-foreground">Your Dashboard</h4>
             <p>
-              The dashboard shows your entry count, published prompts, recently edited entries, and
-              a feed of workspace activity. It&apos;s a good place to pick up where you left off.
+              When you open Clarive, you land on the dashboard. It shows how many entries you have,
+              which ones you&apos;ve published, what you edited recently, and what your teammates
+              have been up to. Think of it as your home base.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Creating Your First Entry</h4>
-            <ul className="list-disc list-inside space-y-1">
-              <li>
-                Click <strong>New Entry</strong> in the sidebar to start from scratch.
-              </li>
-              <li>
-                Want AI to draft it for you? Click <strong>New Entry</strong>, then{' '}
-                <strong>Use AI Wizard</strong>.
-              </li>
-              <li>
-                Add a title, optionally set a system message, and write your prompt in the editor.
-              </li>
-              <li>
-                Save as a draft or publish when it&apos;s ready. Publishing creates a versioned
-                snapshot automatically.
-              </li>
-            </ul>
+            <p>
+              Hit <strong>New Entry</strong> in the sidebar. Give it a title, write your prompt, and
+              save. That&apos;s it — you&apos;ve got a draft. When you&apos;re happy with it, click{' '}
+              <strong>Publish</strong> to lock in a versioned snapshot.
+            </p>
+            <p>
+              Don&apos;t want to start from scratch? Choose <strong>Use AI Wizard</strong> instead
+              and let the AI generate a prompt based on your description.
+            </p>
             <h4 className="text-sm font-semibold text-foreground">Guided Tour</h4>
             <p>
-              New accounts see an interactive guided tour on first login that walks through the
-              dashboard, sidebar navigation, entry editor, and key features. The tour highlights
-              each area with step-by-step explanations so you can get oriented quickly.
+              First time here? You&apos;ll see an interactive tour that walks you through the
+              dashboard, sidebar, editor, and key features step by step. It only shows up once, so
+              you won&apos;t be bothered by it later.
             </p>
           </div>
         ),
@@ -110,27 +110,48 @@ export const sectionGroups: SectionGroup[] = [
         searchText:
           'sidebar resize drag width collapse expand toggle keyboard shortcut ctrl b workspace switcher folder tree new entry trash notifications',
         plainTextContent:
-          'The sidebar is your main navigation hub — it holds the workspace switcher, folder tree, and quick-access links to create entries, view trash, and check notifications. Resizing. Drag the right edge of the sidebar to adjust its width. Your preferred width is saved automatically. Collapsing. Collapse the sidebar to icon-only mode using the toggle at the top, or press Ctrl+B. The collapsed state is remembered across sessions. On mobile, the sidebar opens as a slide-over sheet.',
+          'Everything in Clarive starts from the sidebar on the left. Workspace Switcher. At the top you see which workspace you are in and your role. Click it to switch between workspaces. Folder Tree. Your folders live right below the workspace switcher. Click any folder to jump to its contents. Resizing. Drag the sidebar right edge to make it wider or narrower. Clarive remembers your preference. Collapsing. Press Ctrl+B to collapse to icon-only mode. You can still reach everything. Notifications. Badge on the bell icon means someone invited you to a workspace. Click to accept or decline. On Mobile. The sidebar becomes a slide-over panel on smaller screens.',
         searchAliases: ['how to navigate', 'collapse sidebar', 'resize sidebar'],
         relatedSections: ['folders', 'keyboard-shortcuts'],
         content: (
           <div className="space-y-3">
             <p>
-              The sidebar is your main navigation hub — it holds the workspace switcher, folder
-              tree, and quick-access links to create entries, view trash, and check notifications.
+              Everything in Clarive starts from the sidebar on the left. It&apos;s where you switch
+              workspaces, browse your folders, create new entries, and get to settings.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Workspace Switcher</h4>
+            <p>
+              At the top you&apos;ll see which workspace you&apos;re in and your role. Click it to
+              switch between workspaces — each one has its own entries, folders, and settings, so
+              switching changes everything you see.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Folder Tree</h4>
+            <p>
+              Your folders live right below the workspace switcher. Click any folder to jump
+              straight to its contents. The number next to each folder tells you how many entries
+              are in it.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Resizing</h4>
             <p>
-              Drag the right edge of the sidebar to adjust its width. The sidebar can be resized
-              between a compact and a wide layout. Your preferred width is saved automatically and
-              restored on your next visit.
+              Need more room? Drag the sidebar&apos;s right edge to make it wider or narrower.
+              Clarive remembers your preference.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Collapsing</h4>
             <p>
-              Collapse the sidebar to icon-only mode using the toggle at the top, or press{' '}
-              <Kbd>Ctrl</Kbd> + <Kbd>B</Kbd> (<Kbd>Cmd</Kbd> + <Kbd>B</Kbd> on macOS). The collapsed
-              state is remembered across sessions. On mobile, the sidebar opens as a slide-over
-              sheet instead.
+              Press <Kbd>Ctrl</Kbd> + <Kbd>B</Kbd> (<Kbd>Cmd</Kbd> + <Kbd>B</Kbd> on macOS) to
+              collapse the sidebar down to just icons. You can still reach everything — New Entry,
+              Library, Dashboard, Trash, Settings, Help — it just takes less space. Clarive
+              remembers whether you prefer it open or collapsed.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Notifications</h4>
+            <p>
+              See a badge on the bell icon? That means someone invited you to a workspace. Click it
+              to accept or decline without leaving what you&apos;re working on.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">On Mobile</h4>
+            <p>
+              On smaller screens, the sidebar becomes a slide-over panel. It opens when you need it
+              and closes when you navigate somewhere.
             </p>
           </div>
         ),
@@ -142,74 +163,75 @@ export const sectionGroups: SectionGroup[] = [
         searchText:
           'title system message prompt cards rich-text editor sidebar tabs actions details versions prompt chains follow-up bold italic headings bubble menu draft published historical versioning diff restore delete draft ai enhance generate system message decompose chain test prompt playground',
         plainTextContent:
-          'Editor Layout. Each entry has a title, an optional system message, and one or more prompt cards in the rich-text editor. The right sidebar has three tabs: Actions, Details, and Versions. Prompt Chains. An entry can hold multiple prompts as a chain. Click Add follow-up prompt to add a new card. Rich-Text Editing. Bold, italic, headings H1-H3, bullet and numbered lists, inline code, and code blocks. Select text for the bubble menu. Entry States. Draft — work in progress. Published — current active version. Historical — previous version kept for reference. Versioning. Every publish creates a new version. Browse past versions, compare side-by-side with diff view, or restore a historical version as a new draft. AI Tools. AI Enhance, Generate System Message, Decompose to Chain, Test Prompt.',
+          'How the Editor Works. Every entry has a title, an optional system message that tells the AI how to behave, and one or more prompt cards. On the right you find tabs for Actions, Details, and Versions. Prompt Chains. Got a complex task? Break it into steps with Add follow-up prompt. Formatting. Bold, italic, headings, lists, inline code, code blocks. Select text for the formatting toolbar. Drafts Published and Historical. Draft is work in progress. Published is the live version. Historical is an older version you can restore. Version History. Every publish saves a new version. Browse, compare side by side, or restore an older one. AI Tools. AI Enhance, Generate System Message, Decompose to Chain, Test Prompt.',
         searchAliases: ['how to edit a prompt', 'save draft', 'publish entry', 'version history'],
         relatedSections: ['playground', 'templates', 'ai-wizard', 'share-links'],
         content: (
           <div className="space-y-3">
             <img
               src="/static/help/help-editor.png"
-              alt="Entry Editor layout showing title, system message, prompt card with template variables, and sidebar tabs"
+              alt="Entry Editor showing draft badge, title, system message, prompt card with highlighted template variables, and Add follow-up button"
               className="rounded-lg border border-border-subtle mb-4 w-full"
               loading="lazy"
             />
-            <h4 className="text-sm font-semibold text-foreground">Editor Layout</h4>
+            <h4 className="text-sm font-semibold text-foreground">How the Editor Works</h4>
             <p>
-              Each entry has a <strong>title</strong>, an optional <strong>system message</strong>{' '}
-              (instructions for the AI), and one or more <strong>prompt cards</strong> in the
-              rich-text editor. The right sidebar is organized into three tabs:{' '}
-              <strong>Actions</strong> (save, publish, AI tools), <strong>Details</strong> (tags,
-              metadata, folder, activity), and <strong>Versions</strong> (history, diff, restore).
+              Every entry has three parts: a <strong>title</strong> at the top, an optional{' '}
+              <strong>system message</strong> (tells the AI how to behave), and one or more{' '}
+              <strong>prompt cards</strong> where you write your actual prompt. On the right
+              you&apos;ll find tabs for <strong>Actions</strong> (save, publish, AI tools),{' '}
+              <strong>Details</strong> (tags, folder, activity), and <strong>Versions</strong>.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Prompt Chains</h4>
             <p>
-              An entry can hold multiple prompts arranged as a chain. Click{' '}
-              <strong>Add follow-up prompt</strong> to add a new card. Reorder with the up/down
-              arrows or remove with the delete button on each card.
+              Got a complex task? Break it into steps. Click <strong>Add follow-up prompt</strong>{' '}
+              to create a chain of prompts that run in sequence. Reorder them with the arrows, or
+              remove any step you don&apos;t need.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Rich-Text Editing</h4>
+            <h4 className="text-sm font-semibold text-foreground">Formatting</h4>
             <p>
-              The editor supports bold, italic, headings (H1–H3), bullet and numbered lists, inline
-              code, and code blocks. Select text to open the <strong>bubble menu</strong> with
-              formatting options, or use keyboard shortcuts.
+              The editor gives you bold, italic, headings, lists, inline code, and code blocks.
+              Select any text to see the formatting toolbar, or use keyboard shortcuts if you prefer.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Entry States</h4>
+            <h4 className="text-sm font-semibold text-foreground">Drafts, Published, and Historical</h4>
             <ul className="list-disc list-inside space-y-1">
               <li>
-                <strong>Draft</strong> — work in progress, visible to you and your team.
+                <strong>Draft</strong> — you&apos;re still working on it. Everyone in your workspace
+                can see it.
               </li>
               <li>
-                <strong>Published</strong> — the current active version. Editing a published entry
-                creates a new draft; the published version stays untouched until you publish again.
+                <strong>Published</strong> — the live version. If you edit a published entry,
+                Clarive creates a new draft while keeping the published version untouched.
               </li>
               <li>
-                <strong>Historical</strong> — a previous version, kept for reference. You can
-                restore any historical version as a new draft.
+                <strong>Historical</strong> — an older version you can look back at or restore as a
+                new draft.
               </li>
             </ul>
-            <h4 className="text-sm font-semibold text-foreground">Versioning</h4>
+            <h4 className="text-sm font-semibold text-foreground">Version History</h4>
             <p>
-              Every publish creates a new version. Open the <strong>Versions</strong> tab in the
-              sidebar to browse past versions, compare any two side-by-side with a diff view, or
-              restore a historical version as a new draft. You can also delete a draft to revert to
-              the published version.
+              Every time you publish, Clarive saves a new version. Open the{' '}
+              <strong>Versions</strong> tab to browse them, compare any two side by side, or restore
+              an older one. Changed your mind about a draft? Delete it to go back to the last
+              published version.
             </p>
             <h4 className="text-sm font-semibold text-foreground">AI Tools</h4>
+            <p>You&apos;ll find these in the Actions tab:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>
-                <strong>AI Enhance</strong> — analyze and improve your current prompt.
+                <strong>AI Enhance</strong> — let AI analyze your prompt and suggest improvements.
               </li>
               <li>
-                <strong>Generate System Message</strong> — create a system message from your prompt
-                content (available when no system message is set).
+                <strong>Generate System Message</strong> — AI creates a system message based on your
+                prompt. Shows up when you haven&apos;t set one yet.
               </li>
               <li>
-                <strong>Decompose to Chain</strong> — split a single prompt into a multi-step chain
-                (available for single-prompt entries).
+                <strong>Decompose to Chain</strong> — turns a single prompt into a multi-step chain.
+                Handy for complex tasks.
               </li>
               <li>
-                <strong>Test Prompt</strong> — run your prompt in the playground to see the AI
-                response.
+                <strong>Test Prompt</strong> — opens the playground so you can try your prompt
+                against a live AI model.
               </li>
             </ul>
           </div>
@@ -222,63 +244,61 @@ export const sectionGroups: SectionGroup[] = [
         searchText:
           'ai wizard generate prompts description polish refine wand system message template variables prompt chain web research review quality scores clarity effectiveness completeness faithfulness clarification enhancement save enhance existing entries',
         plainTextContent:
-          'The AI Wizard generates prompts from a description. It works in three steps: Describe — Tell the wizard what you need. Polish — click the wand button to refine your description. Options include system message, template variables, prompt chain, web research. Review — see the generated prompt with quality scores across clarity, effectiveness, completeness, and faithfulness. Select enhancement suggestions and regenerate. Save — save the result as a new entry. Enhancing Existing Entries. Open any entry and click AI Enhance to analyze your current prompt and refine it.',
+          'Don\'t know where to start? Describe what you need and the AI Wizard will write the prompt for you. Describe — tell the wizard what your prompt should do. Click the wand button to polish your description. Turn on system message, template variables, prompt chain, or web research. Review — see the generated prompt with quality scores for clarity, effectiveness, completeness, and faithfulness. Pick improvements or regenerate. Save — save it as a new entry. Already Have a Prompt? Open any entry and click AI Enhance to analyze and improve it.',
         searchAliases: ['generate prompt with AI', 'ai create prompt', 'wizard generate'],
         relatedSections: ['entry-editor', 'templates'],
         content: (
           <div className="space-y-3">
             <img
               src="/static/help/help-wizard.png"
-              alt="AI Wizard Describe step showing text area, configuration toggles, and 3-step progress bar"
+              alt="AI Wizard Describe step with 3-step progress bar, text area, and configuration toggles for system message, template, chain, and web research"
               className="rounded-lg border border-border-subtle mb-4 w-full"
               loading="lazy"
             />
-            <p>The AI Wizard generates prompts from a description. It works in three steps:</p>
+            <p>
+              Don&apos;t know where to start? Describe what you need and the AI Wizard will write
+              the prompt for you. It works in three steps:
+            </p>
             <ol className="list-decimal list-inside space-y-2">
               <li>
-                <strong>Describe</strong> — Tell the wizard what you need. Describe the purpose of
-                the prompt you want to create &mdash; what task it should handle, what inputs it
-                takes, and what kind of output it produces. The more specific you are, the better
-                the result.
+                <strong>Describe</strong> — Tell the wizard what your prompt should do. What task
+                does it handle? What inputs does it need? What should the output look like? The more
+                detail you give, the better the result. You can also:
                 <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
                   <li>
-                    <strong>Polish</strong> (wand icon) — Click the wand button in the text area to
-                    let AI refine your description into a clearer, more detailed purpose statement.
-                    This improves generation quality without changing your intent.
+                    Click the <strong>wand button</strong> to let AI polish your description before
+                    generating
                   </li>
                   <li>
-                    <strong>System message</strong> — sets the AI&apos;s role and behavior before
-                    the main prompt.
+                    Turn on <strong>system message</strong> to set the AI&apos;s role
                   </li>
                   <li>
-                    <strong>Template variables</strong> — adds {'{{variable}}'} placeholders for
-                    dynamic content.
+                    Add <strong>template variables</strong> for dynamic {'{{placeholders}}'}
                   </li>
                   <li>
-                    <strong>Prompt chain</strong> — splits the output into multiple sequential
-                    prompts for complex tasks.
+                    Enable <strong>prompt chain</strong> to split the output into multiple steps
                   </li>
                   <li>
-                    <strong>Web research</strong> — searches the web for context to improve
-                    accuracy.
+                    Turn on <strong>web research</strong> so the AI looks up relevant context first
                   </li>
                 </ul>
               </li>
               <li>
-                <strong>Review</strong> — See the generated prompt with quality scores across four
-                dimensions: clarity, effectiveness, completeness, and faithfulness (each 0–10). The
-                wizard may ask clarification questions to sharpen the result. Select enhancement
-                suggestions and regenerate until you&apos;re satisfied.
+                <strong>Review</strong> — The wizard shows you the generated prompt with quality
+                scores (clarity, effectiveness, completeness, faithfulness — each scored 0–10). Not
+                happy? Pick from the suggested improvements or regenerate. The wizard might also ask
+                you clarification questions to get it right.
               </li>
               <li>
-                <strong>Save</strong> — Save the result as a new entry in your library.
+                <strong>Save</strong> — When you&apos;re satisfied, save it as a new entry in your
+                library.
               </li>
             </ol>
-            <h4 className="text-sm font-semibold text-foreground">Enhancing Existing Entries</h4>
+            <h4 className="text-sm font-semibold text-foreground">Already Have a Prompt?</h4>
             <p>
-              Open any entry in the editor and click <strong>AI Enhance</strong>. The wizard
-              analyzes your current prompt, shows quality scores, and lets you refine before saving
-              the improvements back.
+              You can use the wizard on existing entries too. Open any entry and click{' '}
+              <strong>AI Enhance</strong> in the Actions tab — the wizard will analyze your prompt,
+              score it, and suggest improvements.
             </p>
           </div>
         ),
@@ -290,87 +310,79 @@ export const sectionGroups: SectionGroup[] = [
         searchText:
           'playground test prompt model temperature max tokens reasoning effort show thinking run stop streaming token count history comparison pin rerun copy response chain step ctrl enter escape batch queue compare models judge evaluation scoring accuracy helpfulness relevance coherence safety tool calls',
         plainTextContent:
-          'Testing Your Prompts. The Playground lets you run any published entry against a live AI model and see the response in real time. Toolbar Controls. Model — pick from available models grouped by provider. Temperature — controls randomness 0 deterministic 2 very creative. Max Tokens — limits response length. Reasoning Effort — Low, Medium, High, Extra High for reasoning models. Show Thinking — display model reasoning process. Running a Test. Click Run or Ctrl+Enter. Response streams token by token with elapsed time and token estimate. Press Esc or Stop to abort. Template variables show a form to fill values before running. Batch Model Comparison. Compare responses from multiple models side by side. Add to Queue captures model and parameter combination. Run Queue executes all in sequence. Judge Evaluation. AI judge scores each response on Accuracy, Helpfulness, Relevance, Coherence, Safety 0-10. Tool Calls. Tool calls and results rendered inline in chronological order. History and Comparison. Past test runs with model, temperature, timestamp. Pin for side-by-side comparison, rerun to execute again.',
+          'Try Your Prompts. The Playground lets you run any entry against a live AI model and watch the response come in. Pick a Model and Tweak the Settings. Model — choose from available models. Temperature — lower is more predictable, higher is more creative. Max Tokens — caps response length. Reasoning Effort — higher effort means better answers on hard problems. Show Thinking — peeks behind the curtain. Running a Test. Click Run or Ctrl+Enter. Response streams live with timer and token count. Hit Esc to stop. Template variables get a form to fill in first. Comparing Models Side by Side. Click Enqueue to save model and settings to a queue. Run Queue to compare them all. AI Judge. Let AI score each response on accuracy, helpfulness, relevance, coherence, safety. Run History. Every test run is saved. Browse, pin for comparison, or rerun with one click.',
         searchAliases: ['how to test a prompt', 'compare models', 'run prompt against AI', 'batch comparison'],
         relatedSections: ['entry-editor', 'tools'],
         content: (
           <div className="space-y-3">
             <img
               src="/static/help/help-playground.png"
-              alt="Playground showing toolbar with model selector, parameters, template variable inputs, and Run button"
+              alt="Playground toolbar with model selector, Enqueue button, Run button, reasoning and token parameters, and template variable inputs"
               className="rounded-lg border border-border-subtle mb-4 w-full"
               loading="lazy"
             />
-            <h4 className="text-sm font-semibold text-foreground">Testing Your Prompts</h4>
+            <h4 className="text-sm font-semibold text-foreground">Try Your Prompts</h4>
             <p>
-              The Playground lets you run any published entry against a live AI model and see the
-              response in real time. Open it from the <strong>Test Prompt</strong> button in the
-              editor&apos;s Actions tab, or navigate directly to an entry&apos;s test page.
+              The Playground lets you run any entry against a live AI model and watch the response
+              come in. Click <strong>Test Prompt</strong> in the editor, or go directly to any
+              entry&apos;s test page.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Toolbar Controls</h4>
+            <h4 className="text-sm font-semibold text-foreground">Pick a Model and Tweak the Settings</h4>
             <ul className="list-disc list-inside space-y-1">
               <li>
-                <strong>Model</strong> — pick from available models, grouped by provider. Selecting
-                a model auto-fills its default temperature, max tokens, and reasoning settings.
+                <strong>Model</strong> — choose from available models, grouped by provider. Each one
+                comes with sensible defaults.
               </li>
               <li>
-                <strong>Temperature</strong> — controls randomness (0 = deterministic, 2 = very
-                creative). Adjustable in 0.1 increments. Hidden for reasoning models.
+                <strong>Temperature</strong> — lower means more predictable, higher means more
+                creative. Set it to 0 for factual tasks, crank it up for brainstorming.
               </li>
               <li>
-                <strong>Max Tokens</strong> — limits the response length. Defaults come from the
-                model configuration.
+                <strong>Max Tokens</strong> — caps how long the response can be.
               </li>
               <li>
-                <strong>Reasoning Effort</strong> — appears for reasoning models. Choose Low,
-                Medium, High, or Extra High.
+                <strong>Reasoning Effort</strong> — for reasoning models only. Higher effort =
+                better answers on hard problems, but takes longer.
               </li>
               <li>
-                <strong>Show Thinking</strong> — toggle to display the model&apos;s reasoning
-                process alongside the final response.
+                <strong>Show Thinking</strong> — peeks behind the curtain to see how the model
+                reasons through its answer.
               </li>
             </ul>
             <h4 className="text-sm font-semibold text-foreground">Running a Test</h4>
             <p>
-              Click the <strong>Run</strong> button (or press <Kbd>Ctrl</Kbd> + <Kbd>Enter</Kbd>) to
-              start. The response streams in token by token with a live elapsed-time counter and
-              token estimate. For prompt chains, numbered step indicators show progress through each
-              prompt. Press <Kbd>Esc</Kbd> or click <strong>Stop</strong> to abort mid-stream.
+              Click <strong>Run</strong> (or <Kbd>Ctrl</Kbd> + <Kbd>Enter</Kbd>) and the response
+              streams in live, with a timer and token count. For prompt chains, you&apos;ll see
+              progress through each step. Need to stop? Hit <Kbd>Esc</Kbd>.
             </p>
             <p>
-              If the entry has template variables, a form appears to fill in values before running.
-              Variable values persist across reruns so you can iterate without re-entering them.
+              If your entry uses template variables, you&apos;ll get a form to fill them in first.
+              Your values stick around between runs so you don&apos;t have to retype them.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Batch Model Comparison</h4>
+            <h4 className="text-sm font-semibold text-foreground">Comparing Models Side by Side</h4>
             <p>
-              Compare responses from multiple models side by side. Click{' '}
-              <strong>Add to Queue</strong> in the toolbar to enqueue the current model and
-              parameter combination. Each queued item captures its own temperature, max tokens, and
-              reasoning settings, so you can compare different configurations in a single run. Click{' '}
-              <strong>Run Queue</strong> to execute all queued models in sequence. Results appear as
-              separate columns for easy comparison.
+              Want to see how different models handle the same prompt? Click{' '}
+              <strong>Enqueue</strong> to save the current model and settings to a queue. Add as
+              many combinations as you like, then hit <strong>Run Queue</strong>. Results show up in
+              columns so you can compare them at a glance.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Judge Evaluation</h4>
+            <h4 className="text-sm font-semibold text-foreground">AI Judge</h4>
             <p>
-              After a batch run, an AI judge can score each response across five dimensions:{' '}
-              <strong>Accuracy</strong>, <strong>Helpfulness</strong>, <strong>Relevance</strong>,{' '}
-              <strong>Coherence</strong>, and <strong>Safety</strong> (each 0–10). Each dimension
-              shows a color-coded progress bar, a numeric score, and optional feedback. An average
-              score summarizes the overall quality.
+              After a batch run, let an AI judge score each response on accuracy, helpfulness,
+              relevance, coherence, and safety (0–10 each). You get color-coded bars, scores, and
+              written feedback — no need to read every response yourself.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Tool Calls</h4>
             <p>
-              When a model uses tools during a test run, tool calls and their results are rendered
-              inline in chronological order within the response. Full tool call data is always
-              preserved — nothing is truncated.
+              If a model calls tools during a run, you&apos;ll see the calls and results inline,
+              exactly as they happened. Nothing gets cut off.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">History & Comparison</h4>
+            <h4 className="text-sm font-semibold text-foreground">Run History</h4>
             <p>
-              Open the history sidebar to see past test runs with their model, temperature, and
-              timestamp. Expand any run to read its full response. Use the <strong>pin</strong>{' '}
-              button to keep a run visible for side-by-side comparison with the current result, or{' '}
-              <strong>rerun</strong> to load that run&apos;s parameters and execute again
-              immediately. Hover over any response to copy it.
+              Every test run is saved. Open the history sidebar to browse past runs, expand any one
+              to read the full response, or <strong>pin</strong> it for side-by-side comparison with
+              your latest result. You can also <strong>rerun</strong> any previous test with one
+              click.
             </p>
           </div>
         ),
@@ -392,19 +404,24 @@ export const sectionGroups: SectionGroup[] = [
         relatedSections: ['entry-editor', 'playground'],
         content: (
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-foreground">What Are Template Variables?</h4>
+            <img
+              src="/static/help/help-templates.png"
+              alt="Variable edit popover showing name, type, default value, and description fields over a prompt card with highlighted template variables"
+              className="rounded-lg border border-border-subtle mb-4 w-full"
+              loading="lazy"
+            />
+            <h4 className="text-sm font-semibold text-foreground">Make Your Prompts Reusable</h4>
             <p>
-              Variables turn prompts into reusable templates. Wrap any word in double curly braces —{' '}
-              <Code>{'{{topic}}'}</Code> — and it becomes a placeholder that gets filled in before
-              the prompt runs. Clarive highlights variables in the editor so they stand out.
+              Wrap any word in double curly braces — like{' '}
+              <Code>{'{{topic}}'}</Code> — and it becomes a placeholder that gets filled in each
+              time the prompt runs. Clarive highlights variables in the editor so you can spot them.
             </p>
 
-            <h4 className="text-sm font-semibold text-foreground">Adding & Editing Variables</h4>
+            <h4 className="text-sm font-semibold text-foreground">Adding &amp; Editing Variables</h4>
             <p>
-              You can type variables directly, or click the <strong>{'{ }'} button</strong> in the
-              top-right corner of any prompt card to insert one. Either way,{' '}
-              <strong>click any highlighted variable</strong> to open a popover where you can set
-              its name, type, constraints, default value, and description — no syntax to memorize.
+              Type them directly, or click the <strong>{'{ }'} button</strong> on any prompt card to
+              insert one. Click any highlighted variable to open a popover where you can set its
+              name, type, constraints, default value, and description — no syntax to memorize.
             </p>
 
             <h4 className="text-sm font-semibold text-foreground">Variable Types</h4>
@@ -487,6 +504,12 @@ export const sectionGroups: SectionGroup[] = [
         relatedSections: ['folders', 'favorites'],
         content: (
           <div className="space-y-3">
+            <img
+              src="/static/help/help-library.png"
+              alt="Library card grid with search bar, status filter, sort dropdown, and entry cards showing quality scores and tags"
+              className="rounded-lg border border-border-subtle mb-4 w-full"
+              loading="lazy"
+            />
             <h4 className="text-sm font-semibold text-foreground">Browsing Your Library</h4>
             <p>
               The library shows all entries in your workspace as a responsive grid — one column on
@@ -526,7 +549,7 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Favorites',
         searchText: 'star favorite entry card dashboard timestamp unstar',
         plainTextContent:
-          'Starring Entries. Click the star icon on any entry card to mark it as a favorite. Click again to remove it. Starred entries appear in the Favorites section on your dashboard. Where Favorites Appear. The dashboard shows a dedicated Favorites panel. Each favorite is a clickable link. You can also unstar entries from the dashboard.',
+          'Starring Entries. Click the star icon on any entry card in the library to mark it as a favorite. Click again to remove it. You can also star or unstar entries from the editor title bar. Where to Star. Star icon appears on entry cards in the library grid, in the entry editor next to the title, and in the dashboard favorites panel. Dashboard Favorites Panel. The dashboard shows a dedicated Favorites panel when you have starred entries. Each favorite is a clickable link with a timestamp. Click the star icon in the panel to unstar. Workspace Scope. Favorites are per-workspace. Starring an entry in one workspace does not affect other workspaces. There is no limit on how many entries you can favorite.',
         searchAliases: ['how to bookmark prompts', 'star entries', 'quick access'],
         relatedSections: ['library'],
         content: (
@@ -538,11 +561,29 @@ export const sectionGroups: SectionGroup[] = [
               <strong>Favorites</strong> section on your dashboard for quick access, along with a
               timestamp showing when you favorited them.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Where Favorites Appear</h4>
+            <h4 className="text-sm font-semibold text-foreground">Where to Star</h4>
+            <p>The star icon appears in three places:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>On <strong>entry cards</strong> in the library grid</li>
+              <li>
+                In the <strong>entry editor</strong>, next to the title — so you can star an entry
+                while editing without going back to the library
+              </li>
+              <li>
+                In the <strong>dashboard Favorites panel</strong> — click to unstar directly
+              </li>
+            </ul>
+            <h4 className="text-sm font-semibold text-foreground">Dashboard Favorites Panel</h4>
             <p>
-              The dashboard shows a dedicated Favorites panel when you have starred entries. Each
-              favorite is a clickable link that opens the entry directly. You can also unstar
-              entries from the dashboard by clicking the star icon there.
+              When you have starred entries, the dashboard shows a dedicated Favorites panel. Each
+              favorite is a clickable link that opens the entry directly, along with a timestamp
+              showing when you favorited it.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Workspace Scope</h4>
+            <p>
+              Favorites are <strong>per-workspace</strong>. Starring an entry in one workspace does
+              not affect other workspaces you belong to. There is no limit on how many entries you
+              can favorite.
             </p>
           </div>
         ),
@@ -561,7 +602,7 @@ export const sectionGroups: SectionGroup[] = [
           <div className="space-y-3">
             <img
               src="/static/help/help-folders.png"
-              alt="Library view showing folder tree in sidebar with colored folders and entry cards in grid layout"
+              alt="Sidebar folder tree showing workspace name, colored folders with entry counts, search box, and New folder button"
               className="rounded-lg border border-border-subtle mb-4 w-full"
               loading="lazy"
             />
@@ -614,6 +655,12 @@ export const sectionGroups: SectionGroup[] = [
         relatedSections: ['entry-editor'],
         content: (
           <div className="space-y-3">
+            <img
+              src="/static/help/help-share.png"
+              alt="Manage Share Link dialog showing status, view count, creation date, and Copy Link, Regenerate, Revoke actions"
+              className="rounded-lg border border-border-subtle mb-4 w-full max-w-sm"
+              loading="lazy"
+            />
             <p>
               Share a read-only view of any published prompt with anyone — no account required. Open
               an entry and click <strong>Share Link</strong> in the Actions sidebar to create one.
@@ -678,27 +725,27 @@ export const sectionGroups: SectionGroup[] = [
         relatedSections: ['account-settings'],
         content: (
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-foreground">Personal vs Shared Workspaces</h4>
+            <h4 className="text-sm font-semibold text-foreground">Your Personal Workspace</h4>
             <p>
-              Every account starts with a <strong>personal workspace</strong> that only you can
-              access. You can also be invited to <strong>shared workspaces</strong> for team
-              collaboration. Each workspace has its own entries, folders, and settings.
+              You start with a <strong>personal workspace</strong> that&apos;s just yours. Everything
+              in it — entries, folders, settings — is private to you.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Switching Workspaces</h4>
+            <h4 className="text-sm font-semibold text-foreground">Shared Workspaces</h4>
             <p>
-              Use the <strong>workspace switcher</strong> at the top of the sidebar. Your active
-              workspace is marked with a checkmark.
+              When you need to collaborate, someone can invite you to a{' '}
+              <strong>shared workspace</strong>. Each workspace is its own world with separate
+              entries, folders, and settings. Switch between them using the{' '}
+              <strong>workspace switcher</strong> at the top of the sidebar.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Inviting Members</h4>
+            <h4 className="text-sm font-semibold text-foreground">Inviting People</h4>
             <p>
-              Admins can invite members from <strong>Settings &gt; Users</strong>. Invitations go
-              out by email and must be accepted before the user gains access. Admins can resend or
-              revoke pending invitations.
+              If you&apos;re an admin, go to <strong>Settings &gt; Users</strong> to invite people
+              by email. They&apos;ll get an email and need to accept before they can see anything.
+              You can resend or cancel pending invitations.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Accepting Invitations</h4>
+            <h4 className="text-sm font-semibold text-foreground">Got an Invitation?</h4>
             <p>
-              When you receive an invitation, a badge appears on the bell icon in the sidebar. Click
-              it to accept or decline.
+              Look for a badge on the bell icon in the sidebar. Click it to accept or decline.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Roles</h4>
             <ul className="list-disc list-inside space-y-1">
@@ -855,6 +902,12 @@ export const sectionGroups: SectionGroup[] = [
         relatedSections: ['public-api', 'sdks'],
         content: (
           <div className="space-y-3">
+            <img
+              src="/static/help/help-apikeys.png"
+              alt="API Keys settings tab showing tab navigation, Create API Key button, and key table with name, masked key, dates, and usage"
+              className="rounded-lg border border-border-subtle mb-4 w-full"
+              loading="lazy"
+            />
             <p>
               API keys let you access Clarive programmatically through the REST API. Only workspace
               admins can create and manage them.
@@ -1402,23 +1455,39 @@ const entry = await client.getEntry(entryId);`}
         searchText:
           'trash delete 30 days permanently removed restore original folder bulk restore admin permanent deletion',
         plainTextContent:
-          'Deleted entries go to trash and are kept for 30 days before permanent removal. Restoring. Click Restore to move entry back to its original folder. If the folder was deleted, entry goes to the root. Bulk restore multiple entries. Permanent Deletion. Admins can permanently delete entries from trash immediately. Permanent deletion cannot be undone.',
+          'Accessing Trash. Click Trash in the sidebar to view all deleted entries. Deleted entries are kept for 30 days before automatic permanent removal. Trash View. The trash shows each deleted entry with its name, when it was deleted, and who deleted it. Click any entry to open a preview sheet with the full content. Restoring Entries. Click Restore to move an entry back to its original folder. If the original folder was deleted, the entry goes to the root level. Select multiple entries and use bulk restore to recover them all at once. Folders and Deletion. Deleting a folder moves all its entries to trash individually. The folder itself is removed immediately. Restoring an entry from a deleted folder places it at the root level. Permanent Deletion. Only workspace admins can permanently delete entries from trash. This removes the entry immediately and cannot be undone. Entries not manually deleted are automatically purged after 30 days.',
         searchAliases: ['recover deleted entry', 'restore from trash', 'permanently delete'],
         content: (
           <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-foreground">Accessing Trash</h4>
             <p>
-              Deleted entries go to the trash and stay there for <strong>30 days</strong> before
-              they&apos;re permanently removed.
+              Click <strong>Trash</strong> in the sidebar to view all deleted entries. Deleted
+              entries are kept for <strong>30 days</strong> before they&apos;re automatically and
+              permanently removed.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Trash View</h4>
+            <p>
+              The trash shows each deleted entry with its name, when it was deleted, and who deleted
+              it. Click any entry to open a <strong>preview sheet</strong> showing the full content
+              — useful for checking whether you want to restore it.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Restoring Entries</h4>
             <p>
-              Open <strong>Trash</strong> from the sidebar to see deleted entries. Click restore on
-              any entry to put it back in its original folder. Bulk restore is available too —
-              select multiple entries and restore them at once.
+              Click <strong>Restore</strong> to move an entry back to its original folder. If the
+              original folder was deleted, the entry goes to the root level instead. Select multiple
+              entries and use <strong>bulk restore</strong> to recover them all at once.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Folders &amp; Deletion</h4>
+            <p>
+              Deleting a folder moves all its entries to trash individually — the folder itself is
+              removed immediately. When you restore an entry whose folder no longer exists, it&apos;s
+              placed at the root level.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Permanent Deletion</h4>
             <p>
-              Only admins can permanently delete entries from the trash. This can&apos;t be undone.
+              Only workspace <strong>admins</strong> can permanently delete entries from the trash.
+              This removes the entry immediately and <strong>cannot be undone</strong>. Entries that
+              aren&apos;t manually deleted are automatically purged after 30 days.
             </p>
           </div>
         ),
@@ -1430,7 +1499,7 @@ const entry = await client.getEntry(entryId);`}
         searchText:
           'profile display name email password avatar google sign-in sessions browser os ip address revoke import export yaml backup audit log events created updated published trashed restored deleted 30 days appearance theme light dark system account deletion',
         plainTextContent:
-          'Profile. Update your display name, email, or avatar from the Profile tab. Change your password with minimum 12 characters. Google Sign-In users have name and email managed by Google. Active Sessions. View all active sessions showing browser, OS, IP address. Revoke any session except your current one. Import and Export. Export all entries or a folder as YAML. Import YAML files with duplicate handling. Audit Log. Chronological log of events: created, updated, published, trashed, restored, deleted. Filterable and retained for 30 days. Appearance. Choose light, dark, or system theme. Account Deletion. Permanently delete your account from the Profile tab.',
+          'Profile. Update your display name, email, or avatar from the Profile tab. Change your password with minimum 12 characters. Google Sign-In users can set a password to enable email-based login. Active Sessions. View all active sessions showing browser, OS, IP address, and creation time. Revoke any session except your current one — revoking a session signs that device out immediately and invalidates its refresh token. Use Revoke All Others to sign out everywhere else. Import and Export. Export all entries or a single folder as YAML. The export includes titles, system messages, prompt content, template variables, and tags. Import creates entries as drafts in the workspace root. Entries with duplicate titles are imported with a numeric suffix. Audit Log. Admins can view a timeline of workspace activity with events: entry_created, entry_updated, entry_published, entry_trashed, entry_restored, entry_deleted. Logs are retained for 30 days, paginated at 20 per page. Appearance. Click the theme icon to cycle between Light, Dark, and System. System follows your OS preference and updates automatically. Account Deletion. Permanently delete your account from the Profile tab with a 30-day grace period during which you can cancel.',
         searchAliases: ['change password', 'update profile', 'delete account', 'theme'],
         relatedSections: ['workspaces'],
         content: (
@@ -1456,11 +1525,12 @@ const entry = await client.getEntry(entryId);`}
             <ul className="list-disc list-inside space-y-1">
               <li>
                 Click the <strong>trash icon</strong> on any other session to revoke it
-                individually.
+                individually. This signs that device out immediately and invalidates its refresh
+                token.
               </li>
               <li>
                 Use <strong>Revoke All Others</strong> to sign out every session except the one
-                you&apos;re using right now.
+                you&apos;re using right now — useful if you suspect unauthorized access.
               </li>
             </ul>
             <h4 className="text-sm font-semibold text-foreground">Import & Export</h4>
@@ -1477,9 +1547,14 @@ const entry = await client.getEntry(entryId);`}
               <li>
                 <strong>Import</strong> — drag and drop a <Code>.yaml</Code> or <Code>.yml</Code>{' '}
                 file, or click to browse. Imported entries are created as <strong>drafts</strong> in
-                the workspace root. The file name and size are shown before you confirm.
+                the workspace root. Entries with duplicate titles are imported with a numeric suffix.
+                The file name and size are shown before you confirm.
               </li>
             </ul>
+            <p className="text-xs text-foreground-muted">
+              Exports include titles, system messages, prompt content, template variables, and tags.
+              Version history and folder structure are not included.
+            </p>
             <h4 className="text-sm font-semibold text-foreground">Audit Log</h4>
             <p>
               Admins can view a timeline of workspace activity. Each entry shows the timestamp,
