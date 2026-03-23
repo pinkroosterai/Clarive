@@ -2,11 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AllCommunityModule, type ColDef, type ICellRendererParams } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { Check, Pause, Play, RotateCw, X } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { Check, Pause, Play, RefreshCw, RotateCw, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { agGridTheme } from '@/lib/agGridTheme';
 import {
   getJobs,
@@ -146,16 +147,60 @@ function HistoryPanel({ jobName }: { jobName: string }) {
 
 // ── Main Grid ──
 
+const POLL_INTERVAL = 10_000;
+
+function LiveIndicator({
+  dataUpdatedAt,
+  isFetching,
+}: {
+  dataUpdatedAt: number;
+  isFetching: boolean;
+}) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const ago = dataUpdatedAt
+    ? formatDistanceToNow(dataUpdatedAt, { addSuffix: true, includeSeconds: true })
+    : 'never';
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+            <span
+              className={`size-2 rounded-full ${isFetching ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}
+            />
+            <span>{isFetching ? 'Updating...' : `Updated ${ago}`}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Auto-refreshes every {POLL_INTERVAL / 1000}s</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export default function JobsGrid() {
   const gridRef = useRef<AgGridReact<JobSummary>>(null);
   const queryClient = useQueryClient();
   const [selectedJob, setSelectedJob] = useState<JobSummary | null>(null);
   const [expandedJob, setExpandedJob] = useState<string | null>(null);
 
-  const { data: jobs = [], isLoading } = useQuery({
+  const {
+    data: jobs = [],
+    isLoading,
+    isFetching,
+    dataUpdatedAt,
+  } = useQuery({
     queryKey: ['super', 'jobs'],
     queryFn: getJobs,
-    refetchInterval: 30_000,
+    refetchInterval: POLL_INTERVAL,
   });
 
   const invalidate = useCallback(
@@ -252,9 +297,21 @@ export default function JobsGrid() {
           <RotateCw className="size-3.5 mr-1" />
           Resume
         </Button>
+        <div className="mx-2 h-4 w-px bg-border" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={invalidate}
+          disabled={isFetching}
+          className="gap-1"
+        >
+          <RefreshCw className={`size-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
         <div className="flex-1" />
+        <LiveIndicator dataUpdatedAt={dataUpdatedAt} isFetching={isFetching} />
         {selectedJob && (
-          <span className="text-xs text-foreground-muted">
+          <span className="ml-3 text-xs text-foreground-muted">
             Selected: <strong>{selectedJob.name}</strong>
           </span>
         )}
