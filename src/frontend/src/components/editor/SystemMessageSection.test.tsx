@@ -55,12 +55,14 @@ describe('SystemMessageSection', () => {
   it('hides remove button in read-only mode', () => {
     render(<SystemMessageSection systemMessage="Test" onChange={vi.fn()} isReadOnly={true} />);
 
-    // The collapsible trigger exists, but the X (remove) button should not
+    // The collapsible trigger and help popover button exist, but the X (remove) button should not
     const buttons = screen.queryAllByRole('button');
-    // Only the collapsible trigger should be present, not the remove button
-    expect(buttons.length).toBe(1);
-    // The remove button renders an X icon with no accessible name
-    // The collapsible trigger has "System Message" text
-    expect(buttons[0]).toHaveTextContent('System Message');
+    // No button should be the remove button (which has no accessible name and no text)
+    const removeButton = buttons.find(
+      (btn) => !btn.textContent && !btn.getAttribute('aria-label')
+    );
+    expect(removeButton).toBeUndefined();
+    // The collapsible trigger should still be present
+    expect(buttons.some((btn) => btn.textContent?.includes('System Message'))).toBe(true);
   });
 });

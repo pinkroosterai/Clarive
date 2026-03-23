@@ -1,5 +1,4 @@
 import { Info } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -9,8 +8,6 @@ interface HelpPopoverProps {
 }
 
 export function HelpPopover({ content, section }: HelpPopoverProps) {
-  const navigate = useNavigate();
-
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -25,13 +22,9 @@ export function HelpPopover({ content, section }: HelpPopoverProps) {
       <PopoverContent className="w-64 p-3" side="top" align="start">
         <p className="text-xs text-foreground-muted leading-relaxed">{content}</p>
         {section && (
-          <button
-            type="button"
-            onClick={() => navigate(`/help#${section}`)}
-            className="mt-2 text-xs text-primary hover:underline"
-          >
+          <a href={`/help#${section}`} className="mt-2 block text-xs text-primary hover:underline">
             Learn more
-          </button>
+          </a>
         )}
       </PopoverContent>
     </Popover>
