@@ -511,17 +511,16 @@ try
         // Create Quartz.NET tables if they don't exist (managed by Quartz, not EF)
         var dataSource = scope.ServiceProvider.GetRequiredService<NpgsqlDataSource>();
         await using var conn = await dataSource.OpenConnectionAsync();
-        await using var checkCmd = dataSource.CreateCommand(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'qrtz_job_details'"
-        );
-        checkCmd.Connection = conn;
+
+        await using var checkCmd = conn.CreateCommand();
+        checkCmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'qrtz_job_details'";
         var exists = (long)(await checkCmd.ExecuteScalarAsync())! > 0;
         if (!exists)
         {
             Log.Information("Creating Quartz.NET scheduler tables...");
             var ddl = await File.ReadAllTextAsync("quartz_postgres.sql");
-            await using var ddlCmd = dataSource.CreateCommand(ddl);
-            ddlCmd.Connection = conn;
+            await using var ddlCmd = conn.CreateCommand();
+            ddlCmd.CommandText = ddl;
             await ddlCmd.ExecuteNonQueryAsync();
             Log.Information("Quartz.NET scheduler tables created");
         }

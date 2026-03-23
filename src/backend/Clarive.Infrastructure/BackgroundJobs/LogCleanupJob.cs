@@ -17,13 +17,10 @@ public class LogCleanupJob(
         var ct = context.CancellationToken;
 
         var cutoff = DateTime.UtcNow - MaxAge;
-        await using var cmd = dataSource.CreateCommand(
-            "DELETE FROM logs WHERE timestamp < @cutoff"
-        );
-        cmd.Parameters.AddWithValue("@cutoff", cutoff);
-
         await using var conn = await dataSource.OpenConnectionAsync(ct);
-        cmd.Connection = conn;
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM logs WHERE timestamp < @cutoff";
+        cmd.Parameters.AddWithValue("@cutoff", cutoff);
         var deleted = await cmd.ExecuteNonQueryAsync(ct);
 
         if (deleted > 0)

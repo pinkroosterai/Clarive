@@ -92,11 +92,9 @@ public class QuartzSchedulerTests : IntegrationTestBase
         using var scope = Fixture.Services.CreateScope();
         var dataSource = scope.ServiceProvider.GetRequiredService<Npgsql.NpgsqlDataSource>();
 
-        await using var cmd = dataSource.CreateCommand(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name LIKE 'qrtz_%'"
-        );
         await using var conn = await dataSource.OpenConnectionAsync();
-        cmd.Connection = conn;
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name LIKE 'qrtz_%'";
         var count = (long)(await cmd.ExecuteScalarAsync())!;
 
         count.Should().BeGreaterOrEqualTo(11, "all 11 qrtz_ tables should exist after migration");
