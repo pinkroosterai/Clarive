@@ -1,19 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { ConflictResolutionDialog } from '@/components/editor/ConflictResolutionDialog';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
 import { EditorAiOverlay } from '@/components/editor/EditorAiOverlay';
+import { EditorDialogs } from '@/components/editor/EditorDialogs';
+import { EditorError, EditorSkeleton } from '@/components/editor/EditorLoadingStates';
 import { PromptEditor } from '@/components/editor/PromptEditor';
 import { SoftLockBanner } from '@/components/editor/SoftLockBanner';
-import { ShareDialog } from '@/components/editor/ShareDialog';
-import { VersionDiffDialog } from '@/components/editor/VersionDiffDialog';
 import { VersionPanel } from '@/components/editor/VersionPanel';
-import { FolderPickerDialog } from '@/components/library/FolderPickerDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +27,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,15 +35,15 @@ import { useDuplicateEntry } from '@/hooks/useDuplicateEntry';
 import { useEditorKeyboardShortcuts } from '@/hooks/useEditorKeyboardShortcuts';
 import { useEditorMutations } from '@/hooks/useEditorMutations';
 import { useEditorState } from '@/hooks/useEditorState';
+import { useEvaluation } from '@/hooks/useEvaluation';
+import { useFavoriteMutation } from '@/hooks/useFavoriteMutation';
 import { usePresence } from '@/hooks/usePresence';
+import { usePublishFlow } from '@/hooks/usePublishFlow';
 import { findFolderName } from '@/lib/folderUtils';
-import { handleApiError } from '@/lib/handleApiError';
-import { entryService, folderService, wizardService } from '@/services';
+import { entryService, folderService } from '@/services';
 import { ApiError } from '@/services/api/apiClient';
-import * as favoriteService from '@/services/api/favoriteService';
 import { getShareLink } from '@/services/api/shareLinkService';
 import { useAuthStore } from '@/store/authStore';
-import type { Evaluation } from '@/types';
 
 const EntryEditorPage = () => {
   const { entryId, version } = useParams<{ entryId: string; version?: string }>();
@@ -81,16 +78,20 @@ const EntryEditorPage = () => {
 
   // ── Hooks ──
   const editor = useEditorState(entryData);
-  const [pendingEvaluation, setPendingEvaluation] = useState<Evaluation | null>(null);
-  const pendingEvaluationRef = useRef<Evaluation | null>(null);
-  pendingEvaluationRef.current = pendingEvaluation;
+  const {
+    isEvaluating,
+    pendingEvaluation,
+    pendingEvaluationRef,
+    handleEvaluate,
+    clearPendingEvaluation,
+  } = useEvaluation(entryId, editor.localEntryRef);
 
   const mutations = useEditorMutations({
     entryId,
     localEntryRef: editor.localEntryRef,
     pendingEvaluationRef,
     onSaveSuccess: () => {
-      setPendingEvaluation(null);
+      clearPendingEvaluation();
       editor.setIsDirty(false);
       editor.clearHistory();
     },
@@ -123,50 +124,21 @@ const EntryEditorPage = () => {
     toast.info(`${user.name} started editing this prompt`);
   };
 
-  const hasDraft = versions.some((v) => v.versionState === 'draft');
-  const draftVersion = versions.find((v) => v.versionState === 'draft')?.version;
-
-  // ── Shared query client ──
-  const queryClient = useQueryClient();
-
-  const promoteMutation = useMutation({
-    mutationFn: () => entryService.promoteVersion(entryId!, versionNum!),
-    onSuccess: (promoted) => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
-      toast.success('Version restored as new draft');
-      navigate(`/entry/${promoted.id}`);
-    },
-    onError: () => toast.error('Failed to restore version'),
+  const {
+    hasDraft,
+    draftVersion,
+    promoteMutation,
+    deleteDraftMutation,
+    showEmptyPublishWarning,
+    setShowEmptyPublishWarning,
+    handlePublishWithCheck,
+  } = usePublishFlow({
+    entryId,
+    versionNum,
+    versions,
+    localEntry: editor.localEntry,
+    handlePublish: mutations.handlePublish,
   });
-
-  const deleteDraftMutation = useMutation({
-    mutationFn: () => entryService.deleteDraft(entryId!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
-      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
-      toast.success('Draft deleted, reverted to published version');
-      navigate(`/entry/${entryId}`);
-    },
-    onError: () => toast.error('Failed to delete draft'),
-  });
-
-  // ── Empty-content publish warning ──
-  const [showEmptyPublishWarning, setShowEmptyPublishWarning] = useState(false);
-  const handlePublishWithCheck = useCallback(() => {
-    if (!hasDraft) return;
-    if (!editor.localEntry?.title?.trim()) {
-      toast.error('Title is required to publish');
-      return;
-    }
-    const allEmpty = editor.localEntry?.prompts?.every((p) => !p.content?.trim());
-    if (allEmpty) {
-      setShowEmptyPublishWarning(true);
-    } else {
-      mutations.handlePublish();
-    }
-  }, [hasDraft, editor.localEntry, mutations]);
 
   useEditorKeyboardShortcuts({
     isReadOnly,
@@ -189,65 +161,11 @@ const EntryEditorPage = () => {
   }, [isAiRunningEarly]);
 
   // ── Favorite toggle ──
-  const isFavorited = entryData?.isFavorited ?? false;
-
-  const favoriteMutation = useMutation({
-    mutationFn: (currentlyFavorited: boolean) =>
-      currentlyFavorited
-        ? favoriteService.unfavoriteEntry(entryId!)
-        : favoriteService.favoriteEntry(entryId!),
-    onMutate: async (currentlyFavorited) => {
-      await queryClient.cancelQueries({ queryKey: ['entry', entryId] });
-      const previous = queryClient.getQueryData(['entry', entryId]);
-      queryClient.setQueryData(['entry', entryId], (old: typeof entryData) =>
-        old ? { ...old, isFavorited: !currentlyFavorited } : old
-      );
-      return { previous };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(['entry', entryId], context.previous);
-      }
-      toast.error('Failed to update favorite');
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-    },
-  });
-
-  const handleToggleFavorite = useCallback(() => {
-    favoriteMutation.mutate(isFavorited);
-  }, [favoriteMutation, isFavorited]);
-
-  // ── Evaluation ──
-  const [isEvaluating, setIsEvaluating] = useState(false);
-  const handleEvaluate = useCallback(async () => {
-    const entry = editor.localEntryRef.current;
-    if (!entry || !entryId || entry.prompts.length === 0) return;
-    setIsEvaluating(true);
-    try {
-      const result = await wizardService.evaluateEntry(
-        entry.systemMessage,
-        entry.prompts.map((p, i) => ({ content: p.content, sortOrder: i })),
-        entry.title || undefined
-      );
-      setPendingEvaluation(result);
-
-      // Persist evaluation immediately (don't wait for content save)
-      await entryService.updateEntry(entryId, {}, { evaluation: result.dimensions });
-      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
-      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
-      setPendingEvaluation(null);
-
-      toast.success('Evaluation complete');
-    } catch (err) {
-      handleApiError(err, { title: 'Evaluation failed' });
-    } finally {
-      setIsEvaluating(false);
-    }
-  }, [editor.localEntryRef, entryId, queryClient]);
+  const {
+    isFavorited,
+    handleToggleFavorite,
+    isPending: isFavoritePending,
+  } = useFavoriteMutation(entryId, entryData?.isFavorited ?? false);
 
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);
@@ -272,55 +190,8 @@ const EntryEditorPage = () => {
     : 'Root';
 
   // ── Loading / error ──
-  if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-        <AlertTriangle className="size-10 text-destructive" />
-        <h2 className="text-lg font-semibold">Failed to load entry</h2>
-        <p className="text-sm text-foreground-muted">
-          The entry may have been deleted or you may not have access.
-        </p>
-        <Button asChild variant="outline">
-          <Link to="/library">Back to Library</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  if (isLoading || !editor.localEntry) {
-    if (isMobile) {
-      return (
-        <div className="p-4 space-y-4">
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-6 w-32 rounded" />
-          <Skeleton className="h-[400px] w-full rounded-xl" />
-        </div>
-      );
-    }
-    return (
-      <div className="grid h-full grid-cols-[minmax(0,1fr)_360px] gap-0">
-        <div className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-6 w-20 rounded" />
-            </div>
-            <Skeleton className="size-8 rounded" />
-          </div>
-          <Skeleton className="h-[500px] w-full rounded-xl" />
-        </div>
-        <div className="bg-surface border-l border-border-subtle p-4 space-y-4">
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-px w-full" />
-          <Skeleton className="h-6 w-24 rounded" />
-          <Skeleton className="h-48 w-full rounded-xl" />
-          <Skeleton className="h-px w-full" />
-          <Skeleton className="h-6 w-20 rounded" />
-          <Skeleton className="h-64 w-full rounded-xl" />
-        </div>
-      </div>
-    );
-  }
+  if (isError) return <EditorError />;
+  if (isLoading || !editor.localEntry) return <EditorSkeleton isMobile={isMobile} />;
 
   const localEntry = editor.localEntry;
 
@@ -429,7 +300,7 @@ const EntryEditorPage = () => {
                 className="size-9 shrink-0"
                 aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                 onClick={handleToggleFavorite}
-                disabled={favoriteMutation.isPending}
+                disabled={isFavoritePending}
               >
                 <Star
                   className={`size-5 transition-colors ${isFavorited ? 'fill-yellow-500 text-yellow-500' : 'text-foreground-muted hover:text-yellow-500'}`}
@@ -444,10 +315,7 @@ const EntryEditorPage = () => {
       </div>
       {readOnlyBanner}
       {isSoftLocked && activeEditor && (
-        <SoftLockBanner
-          activeEditor={activeEditor}
-          onOverride={() => setSoftLockOverride(true)}
-        />
+        <SoftLockBanner activeEditor={activeEditor} onOverride={() => setSoftLockOverride(true)} />
       )}
       {editor.showEditNotice && (
         <div className="rounded-md bg-primary/10 px-3 py-2 text-xs text-primary">
@@ -517,42 +385,38 @@ const EntryEditorPage = () => {
       : 'Evaluating prompt…';
 
   const dialogs = (
-    <>
-      <FolderPickerDialog
-        open={folderPickerOpen}
-        onOpenChange={setFolderPickerOpen}
-        onSelect={(folderId) => {
-          mutations.moveMutation.mutate({ folderId });
-          setFolderPickerOpen(false);
-        }}
-      />
-      <VersionDiffDialog
-        entryId={entryId!}
-        versions={versions}
-        currentVersion={versionNum}
-        open={diffOpen}
-        onOpenChange={setDiffOpen}
-      />
-      <ShareDialog entryId={entryId!} open={shareDialogOpen} onOpenChange={setShareDialogOpen} />
-      <FolderPickerDialog
-        open={dupFolderPickerState.open}
-        onOpenChange={(open) => {
-          if (!open) cancelDuplicate();
-        }}
-        onSelect={confirmDuplicate}
-      />
-      {mutations.conflictState && (
-        <ConflictResolutionDialog
-          open={!!mutations.conflictState}
-          onOpenChange={(open) => {
-            if (!open) mutations.handleDismissConflict();
-          }}
-          localEntry={mutations.conflictState.localEntry}
-          serverEntry={mutations.conflictState.serverEntry}
-          onResolve={mutations.handleResolveConflict}
-        />
-      )}
-    </>
+    <EditorDialogs
+      entryId={entryId!}
+      versions={versions}
+      versionNum={versionNum}
+      folderPickerOpen={folderPickerOpen}
+      onFolderPickerOpenChange={setFolderPickerOpen}
+      onFolderSelect={(folderId) => {
+        mutations.moveMutation.mutate({ folderId });
+        setFolderPickerOpen(false);
+      }}
+      diffOpen={diffOpen}
+      onDiffOpenChange={setDiffOpen}
+      shareDialogOpen={shareDialogOpen}
+      onShareDialogOpenChange={setShareDialogOpen}
+      dupFolderPickerOpen={dupFolderPickerState.open}
+      onDupFolderPickerOpenChange={(open) => {
+        if (!open) cancelDuplicate();
+      }}
+      onDupFolderSelect={confirmDuplicate}
+      conflictState={mutations.conflictState}
+      onDismissConflict={mutations.handleDismissConflict}
+      onResolveConflict={mutations.handleResolveConflict}
+      showEmptyPublishWarning={showEmptyPublishWarning}
+      onEmptyPublishWarningChange={setShowEmptyPublishWarning}
+      onPublishAnyway={() => {
+        setShowEmptyPublishWarning(false);
+        mutations.handlePublish();
+      }}
+      blockerState={blocker.state}
+      onBlockerReset={blocker.reset}
+      onBlockerProceed={blocker.proceed}
+    />
   );
 
   // ── Mobile layout ──
@@ -618,45 +482,6 @@ const EntryEditorPage = () => {
       </div>
 
       {dialogs}
-
-      {/* Empty-content publish warning */}
-      <AlertDialog open={showEmptyPublishWarning} onOpenChange={setShowEmptyPublishWarning}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Publish empty entry?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This entry has no prompt content. Are you sure you want to publish it?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowEmptyPublishWarning(false);
-                mutations.handlePublish();
-              }}
-            >
-              Publish anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Unsaved changes navigation guard */}
-      <AlertDialog open={blocker.state === 'blocked'}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes that will be lost if you leave.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => blocker.reset?.()}>Stay</AlertDialogCancel>
-            <AlertDialogAction onClick={() => blocker.proceed?.()}>Leave</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
