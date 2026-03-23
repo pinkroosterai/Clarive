@@ -1,22 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import PlaygroundHistorySidebar from '@/components/playground/PlaygroundHistorySidebar';
+import {
+  PlaygroundError,
+  PlaygroundSkeleton,
+} from '@/components/playground/PlaygroundLoadingStates';
 import PlaygroundResultsArea from '@/components/playground/PlaygroundResultsArea';
 import PlaygroundToolbar from '@/components/playground/PlaygroundToolbar';
 import QueueStrip from '@/components/playground/QueueStrip';
-import {
-  type QueuedModel,
-  type PlaygroundModelState,
-  type PlaygroundRunState,
-  type PlaygroundToolState,
-  type PlaygroundStreamingState,
-  type PlaygroundComparisonState,
-  type PlaygroundTemplateState,
-  type PlaygroundJudgeState,
-} from '@/components/playground/utils';
+import { type QueuedModel } from '@/components/playground/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,24 +22,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useAiEnabled } from '@/hooks/useAiEnabled';
 import { usePlaygroundBatchOrchestration } from '@/hooks/usePlaygroundBatchOrchestration';
 import { usePlaygroundComparison } from '@/hooks/usePlaygroundComparison';
 import { usePlaygroundKeyboardShortcuts } from '@/hooks/usePlaygroundKeyboardShortcuts';
 import { usePlaygroundModelSelection } from '@/hooks/usePlaygroundModelSelection';
 import { usePlaygroundQueueManager } from '@/hooks/usePlaygroundQueueManager';
+import { usePlaygroundState } from '@/hooks/usePlaygroundState';
 import { usePlaygroundStreaming } from '@/hooks/usePlaygroundStreaming';
 import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
+import { usePlaygroundTools } from '@/hooks/usePlaygroundTools';
 import { parseTemplateTags } from '@/lib/templateParser';
-import { entryService, mcpServerService, toolService } from '@/services';
+import { entryService } from '@/services';
 import {
   getTestRuns,
   getEnrichedModels,
   fillTemplateFields,
   type TestRunResponse,
-  type EnrichedModel,
 } from '@/services/api/playgroundService';
 import type { TemplateField } from '@/types';
 
@@ -123,50 +117,12 @@ const PlaygroundPage = () => {
 
   const { fieldValues, setFieldValues } = usePlaygroundTemplateFields(templateFields, storageKey);
 
-  // ── MCP tool state ──
-  const [enabledServerIds, setEnabledServerIds] = useState<string[]>([]);
-  const [excludedToolNames, setExcludedToolNames] = useState<string[]>([]);
-
-  const { data: mcpServers = [] } = useQuery({
-    queryKey: ['mcp-servers'],
-    queryFn: mcpServerService.list,
-  });
-  const { data: allTools = [] } = useQuery({
-    queryKey: ['tools'],
-    queryFn: toolService.getToolsList,
-  });
-
-  // Enable all active MCP servers by default on first load
-  const didInitServers = useRef(false);
-  useEffect(() => {
-    if (!didInitServers.current && mcpServers.length > 0) {
-      didInitServers.current = true;
-      setEnabledServerIds(mcpServers.filter((s) => s.isActive).map((s) => s.id));
-    }
-  }, [mcpServers]);
+  // ── MCP tool state (extracted hook) ──
+  const tools = usePlaygroundTools();
+  const { enabledServerIds, excludedToolNames } = tools;
 
   // ── Streaming (delegated to hook) ──
-  const {
-    isStreaming,
-    firstTokenReceived,
-    segments,
-    error,
-    wasStopped,
-    rateLimitCountdown,
-    elapsedSeconds,
-    approxOutputTokens,
-    lastTokens,
-    lastRunId,
-    lastJudgeScores,
-    lastVersionLabel,
-    isJudging,
-    hasResponses,
-    responseCount,
-    handleRun,
-    handleAbort,
-    clearCurrentRun,
-    responseAreaRef,
-  } = usePlaygroundStreaming({
+  const streaming = usePlaygroundStreaming({
     entryId,
     model: selectedModel?.modelId ?? '',
     temperature,
@@ -179,6 +135,20 @@ const PlaygroundPage = () => {
     mcpServerIds: enabledServerIds.length > 0 ? enabledServerIds : undefined,
     excludedToolNames: excludedToolNames.length > 0 ? excludedToolNames : undefined,
   });
+  const {
+    isStreaming,
+    lastRunId,
+    error,
+    wasStopped,
+    rateLimitCountdown,
+    elapsedSeconds,
+    lastJudgeScores,
+    lastVersionLabel,
+    isJudging,
+    handleRun,
+    handleAbort,
+    clearCurrentRun,
+  } = streaming;
 
   // ── Response display ──
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -308,196 +278,59 @@ const PlaygroundPage = () => {
     return () => window.removeEventListener('beforeunload', handler);
   }, [isStreaming, executionQueue.length]);
 
-  const modelsByProvider = useMemo(
-    () =>
-      enrichedModels.reduce<Record<string, EnrichedModel[]>>((acc, m) => {
-        (acc[m.providerName] ??= []).push(m);
-        return acc;
-      }, {}),
-    [enrichedModels]
-  );
-
-  // ── Grouped prop objects for PlaygroundToolbar ──
-  const modelState = useMemo<PlaygroundModelState>(
-    () => ({
-      selectedModel,
-      model,
-      modelsByProvider,
-      modelsError,
-      temperature,
-      setTemperature,
-      maxTokens,
-      setMaxTokens,
-      reasoningEffort,
-      setReasoningEffort,
-      showReasoning,
-      setShowReasoning,
-      onModelChange: handleModelChange,
-    }),
-    [
-      selectedModel,
-      model,
-      modelsByProvider,
-      modelsError,
-      temperature,
-      setTemperature,
-      maxTokens,
-      setMaxTokens,
-      reasoningEffort,
-      setReasoningEffort,
-      showReasoning,
-      setShowReasoning,
-      handleModelChange,
-    ]
-  );
-
-  const runState = useMemo<PlaygroundRunState>(
-    () => ({
-      isStreaming,
-      hasValidationErrors,
-      handleRun,
-      handleAbort: isBatchRunning ? handleBatchAbort : handleAbort,
-      onEnqueue: handleEnqueue,
-      queueLength: queuedModels.length,
-      isBatchRunning,
-      batchCurrent,
-      batchTotal,
-    }),
-    [
-      isStreaming,
-      hasValidationErrors,
-      handleRun,
-      handleAbort,
-      isBatchRunning,
-      handleBatchAbort,
-      handleEnqueue,
-      queuedModels.length,
-      batchCurrent,
-      batchTotal,
-    ]
-  );
-
-  const toolState = useMemo<PlaygroundToolState>(
-    () => ({
-      enabledServerIds,
-      setEnabledServerIds,
-      excludedToolNames,
-      setExcludedToolNames,
-      mcpServers,
-      allTools,
-    }),
-    [
-      enabledServerIds,
-      setEnabledServerIds,
-      excludedToolNames,
-      setExcludedToolNames,
-      mcpServers,
-      allTools,
-    ]
-  );
-
-  const streamingState = useMemo<PlaygroundStreamingState>(
-    () => ({
-      isStreaming,
-      firstTokenReceived,
-      segments,
-      error,
-      wasStopped,
-      rateLimitCountdown,
-      elapsedSeconds,
-      approxOutputTokens,
-      lastTokens,
-      hasResponses,
-      responseCount,
-      responseAreaRef,
-    }),
-    [
-      isStreaming,
-      firstTokenReceived,
-      segments,
-      error,
-      wasStopped,
-      rateLimitCountdown,
-      elapsedSeconds,
-      approxOutputTokens,
-      lastTokens,
-      hasResponses,
-      responseCount,
-      responseAreaRef,
-    ]
-  );
-
-  const comparisonState = useMemo<PlaygroundComparisonState>(
-    () => ({
-      pinnedRuns,
-      onUnpin: removePin,
-      onClearAllPins: clearAllPins,
-      activeCarouselIndex,
-      setActiveCarouselIndex,
-      onClearCurrentRun: clearCurrentRun,
-    }),
-    [
-      pinnedRuns,
-      removePin,
-      clearAllPins,
-      activeCarouselIndex,
-      setActiveCarouselIndex,
-      clearCurrentRun,
-    ]
-  );
-
-  const templateState = useMemo<PlaygroundTemplateState>(
-    () => ({
-      templateFields,
-      fieldValues,
-      setFieldValues,
-      onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
-      isFillingTemplateFields,
-    }),
-    [templateFields, fieldValues, setFieldValues, handleFillTemplateFields, isFillingTemplateFields]
-  );
-
-  const judgeState = useMemo<PlaygroundJudgeState>(
-    () => ({ currentJudgeScores: lastJudgeScores, isJudging }),
-    [lastJudgeScores, isJudging]
-  );
+  // ── Grouped prop objects (extracted hook) ──
+  const {
+    modelState,
+    runState,
+    toolState,
+    streamingState,
+    comparisonState,
+    templateState,
+    judgeState,
+  } = usePlaygroundState({
+    selectedModel,
+    model,
+    enrichedModels,
+    modelsError,
+    temperature,
+    setTemperature,
+    maxTokens,
+    setMaxTokens,
+    reasoningEffort,
+    setReasoningEffort,
+    showReasoning,
+    setShowReasoning,
+    handleModelChange,
+    hasValidationErrors,
+    handleRun,
+    handleAbort,
+    handleBatchAbort,
+    handleEnqueue,
+    queueLength: queuedModels.length,
+    isBatchRunning,
+    batchCurrent,
+    batchTotal,
+    tools,
+    streaming,
+    pinnedRuns,
+    removePin,
+    clearAllPins,
+    activeCarouselIndex,
+    setActiveCarouselIndex,
+    clearCurrentRun,
+    templateFields,
+    fieldValues,
+    setFieldValues,
+    handleFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
+    isFillingTemplateFields,
+    lastJudgeScores,
+    isJudging,
+  });
 
   if (!aiEnabled) return null;
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col h-full">
-        {/* Toolbar skeleton */}
-        <div className="flex items-center gap-3 border-b border-border-subtle px-4 h-14">
-          <Skeleton className="size-8 rounded" />
-          <Skeleton className="h-5 w-40 rounded" />
-          <div className="ml-auto flex items-center gap-2">
-            <Skeleton className="h-8 w-32 rounded-lg" />
-            <Skeleton className="h-8 w-20 rounded-lg" />
-            <Skeleton className="h-8 w-20 rounded-lg" />
-          </div>
-        </div>
-        {/* Content skeleton */}
-        <div className="flex-1 p-6 space-y-4">
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-10 w-3/4 rounded-lg" />
-          <Skeleton className="mt-6 h-[300px] w-full rounded-xl" />
-        </div>
-      </div>
-    );
-  }
-
-  if (isError || !entry) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
-        <p className="text-foreground-muted">Entry not found.</p>
-        <Button variant="outline" asChild>
-          <Link to="/">Back to Dashboard</Link>
-        </Button>
-      </div>
-    );
-  }
+  if (isLoading) return <PlaygroundSkeleton />;
+  if (isError || !entry) return <PlaygroundError />;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
