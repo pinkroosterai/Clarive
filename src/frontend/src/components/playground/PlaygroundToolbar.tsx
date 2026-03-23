@@ -14,6 +14,8 @@ import { useNavigate } from 'react-router-dom';
 
 import type { PlaygroundModelState, PlaygroundRunState, PlaygroundToolState } from './utils';
 
+import { HelpLink } from '@/components/common/HelpLink';
+import { HelpPopover } from '@/components/common/HelpPopover';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -184,6 +186,7 @@ export default function PlaygroundToolbar({
         </Button>
         <Separator orientation="vertical" className="h-5 hidden sm:block" />
         <span className="text-sm font-medium truncate max-w-[6rem] sm:max-w-xs">{entryTitle}</span>
+        <HelpLink section="playground" />
         {isChain && (
           <span className="text-xs text-foreground-muted hidden sm:inline">
             {promptsCount} prompts
@@ -208,6 +211,7 @@ export default function PlaygroundToolbar({
             <ListPlus className="size-3 mr-1.5" />
             <span className="hidden sm:inline">Enqueue</span>
           </Button>
+          <HelpPopover content="Saves the current model and parameter combination to the comparison queue. Run the queue to compare responses side by side." section="playground" />
 
           {/* Run / Stop */}
           {isStreaming ? (
@@ -262,6 +266,7 @@ export default function PlaygroundToolbar({
         {!selectedModel?.isReasoning && (
           <div className="flex items-center gap-2">
             <Label className="text-xs text-foreground-muted shrink-0">Temp</Label>
+            <HelpPopover content="Controls randomness. 0 = deterministic, 2 = very creative. Lower values for factual tasks, higher for brainstorming." section="playground" />
             <div className="flex items-center gap-2">
               <Slider
                 value={[temperature]}
@@ -283,6 +288,7 @@ export default function PlaygroundToolbar({
           <>
             <div className="flex items-center gap-2">
               <Label className="text-xs text-foreground-muted shrink-0">Reasoning</Label>
+              <HelpPopover content="Controls how much effort the model spends reasoning. Higher effort may produce better answers for complex tasks." section="playground" />
               <Select value={reasoningEffort} onValueChange={setReasoningEffort}>
                 <SelectTrigger className="w-28 h-8 text-xs">
                   <SelectValue />
@@ -318,6 +324,7 @@ export default function PlaygroundToolbar({
         {/* Max tokens */}
         <div className="flex items-center gap-2">
           <Label className="text-xs text-foreground-muted shrink-0">Tokens</Label>
+          <HelpPopover content="Maximum number of tokens in the response. Higher values allow longer outputs but cost more." section="playground" />
           <Input
             type="number"
             value={maxTokens}

@@ -18,6 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { FirstUseHint } from '@/components/common/FirstUseHint';
+import { HelpLink } from '@/components/common/HelpLink';
 import { Button } from '@/components/ui/button';
 import type { PromptEntry } from '@/types';
 
@@ -87,12 +89,22 @@ export function WizardContent({ mode, existingEntry, onClose }: WizardContentPro
         <div className="flex items-center justify-between border-b border-border-subtle px-6 py-2.5">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold tracking-tight whitespace-nowrap">AI Wizard</h1>
+            <HelpLink section="ai-wizard" />
             <StepProgress currentStep={displayStep} totalSteps={totalSteps} labels={stepLabels} />
             <span className="text-xs text-foreground-muted hidden lg:inline">{stepHint}</span>
           </div>
           <Button variant="ghost" size="icon" onClick={requestClose}>
             <X className="size-4" />
           </Button>
+        </div>
+
+        <div className="px-6 pt-2">
+          <FirstUseHint
+            hintId="wizard"
+            title="Welcome to the AI Wizard"
+            description="Describe what you need and the AI will generate a prompt for you. The more detail you provide, the better the result."
+            section="ai-wizard"
+          />
         </div>
 
         {/* Content */}

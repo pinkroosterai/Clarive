@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { FirstUseHint } from '@/components/common/FirstUseHint';
 import PlaygroundHistorySidebar from '@/components/playground/PlaygroundHistorySidebar';
 import {
   PlaygroundError,
@@ -346,6 +347,15 @@ const PlaygroundPage = () => {
         showHistory={showHistory}
         setShowHistory={setShowHistory}
       />
+
+      <div className="px-3 sm:px-6 pt-2">
+        <FirstUseHint
+          hintId="playground"
+          title="Welcome to the Playground"
+          description="Test your prompts against live AI models. Pick a model, adjust parameters, and click Run. Compare multiple models with the batch queue."
+          section="playground"
+        />
+      </div>
 
       {/* ── Queue strip ── */}
       {(queuedModels.length > 0 || isBatchRunning) && (

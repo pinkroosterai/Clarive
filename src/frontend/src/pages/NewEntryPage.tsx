@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -83,7 +84,10 @@ const NewEntryPage = () => {
             <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/15">
               <PenLine className="size-6 text-primary" />
             </div>
-            <h1 className="text-xl font-semibold text-foreground">Create New Entry</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-xl font-semibold text-foreground">Create New Entry</h1>
+              <HelpLink section="getting-started" />
+            </div>
             <p className="mt-1.5 text-sm text-foreground-muted">
               Start from scratch or let AI generate a prompt for you
             </p>

@@ -3,6 +3,7 @@ import { Copy, Trash2, RefreshCw, Link, Eye, EyeOff } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -97,6 +98,7 @@ export function ShareDialog({ entryId, open, onOpenChange }: ShareDialogProps) {
           <DialogTitle className="flex items-center gap-2">
             <Link className="h-4 w-4" />
             {hasLink ? 'Manage Share Link' : 'Share Link'}
+            <HelpLink section="share-links" />
           </DialogTitle>
         </DialogHeader>
 

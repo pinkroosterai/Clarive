@@ -3,6 +3,7 @@ import { Loader2, Check, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { AnvilIcon } from '@/components/icons/AnvilIcon';
 import { handleApiError } from '@/lib/handleApiError';
 import { getActiveWorkspaceId } from '@/services/api/apiClient';
@@ -54,9 +55,12 @@ const WorkspaceSelectorPage = () => {
         <div className="bg-surface/80 backdrop-blur-xl border border-white/[0.08] rounded-2xl elevation-3 p-8">
           <div className="text-center space-y-2 mb-6">
             <AnvilIcon className="mx-auto mb-3 size-16" />
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Choose a workspace
-            </h1>
+            <div className="inline-flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                Choose a workspace
+              </h1>
+              <HelpLink section="workspaces" />
+            </div>
             <p className="text-foreground-muted text-sm">
               Select which workspace you'd like to open
             </p>

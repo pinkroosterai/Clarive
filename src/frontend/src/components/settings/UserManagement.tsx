@@ -5,6 +5,7 @@ import { InviteUserDialog } from './InviteUserDialog';
 import { MembersTable } from './MembersTable';
 import { TransferOwnershipDialog } from './TransferOwnershipDialog';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleApiError } from '@/lib/handleApiError';
@@ -92,12 +93,15 @@ export default function UserManagement() {
     <div className="space-y-4 pt-2">
       {/* Header actions */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-foreground-muted">
-          {activeMembers.length} member{activeMembers.length !== 1 ? 's' : ''}
-          {pendingMembers.length > 0 && (
-            <span className="ml-1 text-warning-text">({pendingMembers.length} pending)</span>
-          )}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-foreground-muted">
+            {activeMembers.length} member{activeMembers.length !== 1 ? 's' : ''}
+            {pendingMembers.length > 0 && (
+              <span className="ml-1 text-warning-text">({pendingMembers.length} pending)</span>
+            )}
+          </p>
+          <HelpLink section="workspaces" />
+        </div>
 
         <div className="flex gap-2">
           {isAdmin && (

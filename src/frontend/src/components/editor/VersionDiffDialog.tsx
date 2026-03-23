@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { DiffBlock } from './DiffBlock';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import {
   AlertDialog,
@@ -152,7 +153,10 @@ export function VersionDiffDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Compare Versions</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Compare Versions
+              <HelpLink section="entry-editor" />
+            </DialogTitle>
           </DialogHeader>
 
           <div className="flex items-center gap-3 pt-2">

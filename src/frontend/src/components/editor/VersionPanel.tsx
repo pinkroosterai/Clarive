@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { GitCompareArrows } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { HelpPopover } from '@/components/common/HelpPopover';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -52,9 +53,12 @@ export function VersionPanel({
 
   return (
     <div className="space-y-3" data-tour="version-panel">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-        Version History
-      </h3>
+      <div className="flex items-center gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+          Version History
+        </h3>
+        <HelpPopover content="Every publish creates a new version. Compare any two versions side-by-side or restore a historical version as a new draft." section="entry-editor" />
+      </div>
 
       <div className="relative ml-3 border-l-2 border-border-subtle pl-5 space-y-1">
         {versions.map((v) => {

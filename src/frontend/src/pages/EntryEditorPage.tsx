@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { FirstUseHint } from '@/components/common/FirstUseHint';
+import { HelpLink } from '@/components/common/HelpLink';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
 import { EditorAiOverlay } from '@/components/editor/EditorAiOverlay';
 import { EditorDialogs } from '@/components/editor/EditorDialogs';
@@ -277,6 +279,12 @@ const EntryEditorPage = () => {
 
   const editorContent = (
     <div className="space-y-4">
+      <FirstUseHint
+        hintId="editor"
+        title="Welcome to the Editor"
+        description="Your entry has a title, system message, and prompt cards. Use the right sidebar for actions, details, and version history."
+        section="entry-editor"
+      />
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           {versionBadge}
@@ -311,6 +319,7 @@ const EntryEditorPage = () => {
               {isFavorited ? 'Remove from favorites' : 'Add to favorites'}
             </TooltipContent>
           </Tooltip>
+          <HelpLink section="entry-editor" />
         </div>
       </div>
       {readOnlyBanner}

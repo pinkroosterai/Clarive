@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Folder, FolderOpen, Home } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -135,7 +136,10 @@ export function FolderPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Move to…</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Move to…
+            <HelpLink section="folders" />
+          </DialogTitle>
           <DialogDescription>Select a destination folder.</DialogDescription>
         </DialogHeader>
 

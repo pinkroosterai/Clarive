@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Globe, Loader2, Server, Sparkles, Mail, Wand
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { HelpPopover } from '@/components/common/HelpPopover';
 import { ToolParamSummary } from '@/components/tools/ToolParamSummary';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -134,6 +135,7 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
             <h2 className="text-lg font-semibold text-foreground">
               What would you like to create?
             </h2>
+            <HelpPopover content="Describe the purpose of the prompt you want. The more specific you are, the better the AI-generated result." section="ai-wizard" />
           </div>
           <p className="text-sm text-foreground-muted max-w-md">
             Describe your idea and the AI will generate a structured, high-quality prompt for you.
@@ -220,6 +222,7 @@ export function DescribeStep({ onGenerate, isGenerating }: DescribeStepProps) {
               <Label htmlFor="sw-web" className="flex items-center gap-2">
                 <Globe className="size-4 text-primary" />
                 Enable web research
+                <HelpPopover content="When enabled, the AI searches the web for context before generating your prompt, improving accuracy for specialized topics." section="ai-wizard" />
               </Label>
               <p className="text-xs text-foreground-muted mt-0.5">
                 Searches the web for context to improve accuracy

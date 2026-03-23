@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { HelpLink } from '@/components/common/HelpLink';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -117,7 +118,10 @@ export default function McpServersPanel() {
   return (
     <div className="space-y-4 mt-8">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold tracking-tight">MCP Servers</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-semibold tracking-tight">MCP Servers</h3>
+          <HelpLink section="tools" />
+        </div>
         <Dialog
           open={addOpen}
           onOpenChange={(open) => {

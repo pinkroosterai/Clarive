@@ -3,6 +3,7 @@ import { Download, Upload, X, CheckCircle2, Loader2, FolderOpen } from 'lucide-r
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { FolderPickerDialog } from '@/components/library/FolderPickerDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,7 +102,10 @@ export default function ImportExportPanel() {
       {/* Export */}
       <Card className="bg-surface elevation-1 border-border-subtle rounded-xl">
         <CardHeader>
-          <CardTitle className="text-lg">Export Entries</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">Export Entries</CardTitle>
+            <HelpLink section="api-keys" />
+          </div>
           <CardDescription>Download your prompt entries as a YAML file.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">

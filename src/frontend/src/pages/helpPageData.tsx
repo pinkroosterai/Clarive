@@ -45,6 +45,9 @@ export interface Section {
   icon: React.ElementType;
   title: string;
   searchText: string;
+  plainTextContent: string;
+  searchAliases?: string[];
+  relatedSections?: string[];
   content: React.ReactNode;
 }
 
@@ -63,6 +66,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Getting Started',
         searchText:
           'dashboard entry count published prompts recently edited activity new entry ai wizard title system message draft publish versioned snapshot guided tour onboarding',
+        plainTextContent:
+          'Your Dashboard. The dashboard shows your entry count, published prompts, recently edited entries, and a feed of workspace activity. Creating Your First Entry. Click New Entry in the sidebar to start from scratch. Want AI to draft it for you? Click New Entry, then Use AI Wizard. Add a title, optionally set a system message, and write your prompt in the editor. Save as a draft or publish when ready. Publishing creates a versioned snapshot automatically. Guided Tour. New accounts see an interactive guided tour on first login that walks through the dashboard, sidebar navigation, entry editor, and key features.',
+        searchAliases: ['how to create a prompt', 'first steps', 'new to clarive', 'get started'],
+        relatedSections: ['entry-editor', 'ai-wizard'],
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Your Dashboard</h4>
@@ -102,6 +109,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Sidebar & Navigation',
         searchText:
           'sidebar resize drag width collapse expand toggle keyboard shortcut ctrl b workspace switcher folder tree new entry trash notifications',
+        plainTextContent:
+          'The sidebar is your main navigation hub — it holds the workspace switcher, folder tree, and quick-access links to create entries, view trash, and check notifications. Resizing. Drag the right edge of the sidebar to adjust its width. Your preferred width is saved automatically. Collapsing. Collapse the sidebar to icon-only mode using the toggle at the top, or press Ctrl+B. The collapsed state is remembered across sessions. On mobile, the sidebar opens as a slide-over sheet.',
+        searchAliases: ['how to navigate', 'collapse sidebar', 'resize sidebar'],
+        relatedSections: ['folders', 'keyboard-shortcuts'],
         content: (
           <div className="space-y-3">
             <p>
@@ -130,8 +141,18 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Entry Editor',
         searchText:
           'title system message prompt cards rich-text editor sidebar tabs actions details versions prompt chains follow-up bold italic headings bubble menu draft published historical versioning diff restore delete draft ai enhance generate system message decompose chain test prompt playground',
+        plainTextContent:
+          'Editor Layout. Each entry has a title, an optional system message, and one or more prompt cards in the rich-text editor. The right sidebar has three tabs: Actions, Details, and Versions. Prompt Chains. An entry can hold multiple prompts as a chain. Click Add follow-up prompt to add a new card. Rich-Text Editing. Bold, italic, headings H1-H3, bullet and numbered lists, inline code, and code blocks. Select text for the bubble menu. Entry States. Draft — work in progress. Published — current active version. Historical — previous version kept for reference. Versioning. Every publish creates a new version. Browse past versions, compare side-by-side with diff view, or restore a historical version as a new draft. AI Tools. AI Enhance, Generate System Message, Decompose to Chain, Test Prompt.',
+        searchAliases: ['how to edit a prompt', 'save draft', 'publish entry', 'version history'],
+        relatedSections: ['playground', 'templates', 'ai-wizard', 'share-links'],
         content: (
           <div className="space-y-3">
+            <img
+              src="/static/help/help-editor.png"
+              alt="Entry Editor layout showing title, system message, prompt card with template variables, and sidebar tabs"
+              className="rounded-lg border border-border-subtle mb-4 w-full"
+              loading="lazy"
+            />
             <h4 className="text-sm font-semibold text-foreground">Editor Layout</h4>
             <p>
               Each entry has a <strong>title</strong>, an optional <strong>system message</strong>{' '}
@@ -200,8 +221,18 @@ export const sectionGroups: SectionGroup[] = [
         title: 'AI Wizard',
         searchText:
           'ai wizard generate prompts description polish refine wand system message template variables prompt chain web research review quality scores clarity effectiveness completeness faithfulness clarification enhancement save enhance existing entries',
+        plainTextContent:
+          'The AI Wizard generates prompts from a description. It works in three steps: Describe — Tell the wizard what you need. Polish — click the wand button to refine your description. Options include system message, template variables, prompt chain, web research. Review — see the generated prompt with quality scores across clarity, effectiveness, completeness, and faithfulness. Select enhancement suggestions and regenerate. Save — save the result as a new entry. Enhancing Existing Entries. Open any entry and click AI Enhance to analyze your current prompt and refine it.',
+        searchAliases: ['generate prompt with AI', 'ai create prompt', 'wizard generate'],
+        relatedSections: ['entry-editor', 'templates'],
         content: (
           <div className="space-y-3">
+            <img
+              src="/static/help/help-wizard.png"
+              alt="AI Wizard Describe step showing text area, configuration toggles, and 3-step progress bar"
+              className="rounded-lg border border-border-subtle mb-4 w-full"
+              loading="lazy"
+            />
             <p>The AI Wizard generates prompts from a description. It works in three steps:</p>
             <ol className="list-decimal list-inside space-y-2">
               <li>
@@ -258,8 +289,18 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Playground',
         searchText:
           'playground test prompt model temperature max tokens reasoning effort show thinking run stop streaming token count history comparison pin rerun copy response chain step ctrl enter escape batch queue compare models judge evaluation scoring accuracy helpfulness relevance coherence safety tool calls',
+        plainTextContent:
+          'Testing Your Prompts. The Playground lets you run any published entry against a live AI model and see the response in real time. Toolbar Controls. Model — pick from available models grouped by provider. Temperature — controls randomness 0 deterministic 2 very creative. Max Tokens — limits response length. Reasoning Effort — Low, Medium, High, Extra High for reasoning models. Show Thinking — display model reasoning process. Running a Test. Click Run or Ctrl+Enter. Response streams token by token with elapsed time and token estimate. Press Esc or Stop to abort. Template variables show a form to fill values before running. Batch Model Comparison. Compare responses from multiple models side by side. Add to Queue captures model and parameter combination. Run Queue executes all in sequence. Judge Evaluation. AI judge scores each response on Accuracy, Helpfulness, Relevance, Coherence, Safety 0-10. Tool Calls. Tool calls and results rendered inline in chronological order. History and Comparison. Past test runs with model, temperature, timestamp. Pin for side-by-side comparison, rerun to execute again.',
+        searchAliases: ['how to test a prompt', 'compare models', 'run prompt against AI', 'batch comparison'],
+        relatedSections: ['entry-editor', 'tools'],
         content: (
           <div className="space-y-3">
+            <img
+              src="/static/help/help-playground.png"
+              alt="Playground showing toolbar with model selector, parameters, template variable inputs, and Run button"
+              className="rounded-lg border border-border-subtle mb-4 w-full"
+              loading="lazy"
+            />
             <h4 className="text-sm font-semibold text-foreground">Testing Your Prompts</h4>
             <p>
               The Playground lets you run any published entry against a live AI model and see the
@@ -345,6 +386,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Templates & Variables',
         searchText:
           'template variables curly braces placeholder type string int float enum constraints default value description popover insert variable syntax form preview rendered output',
+        plainTextContent:
+          'What Are Template Variables? Variables turn prompts into reusable templates. Wrap any word in double curly braces and it becomes a placeholder. Adding and Editing Variables. Type variables directly or click the button to insert one. Click any highlighted variable to set name, type, constraints, default value, and description. Variable Types. string — text input. int — integer with min/max range. float — decimal with min/max. enum — dropdown with fixed options. Defaults and Descriptions. Variables can carry a default value and description. Full Syntax: name|type:constraints:default:description. Template Form. A Template Variables section appears below the editor with form fields for each variable. Preview shows rendered output with values substituted.',
+        searchAliases: ['how to use variables', 'template syntax', 'dynamic placeholders'],
+        relatedSections: ['entry-editor', 'playground'],
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">What Are Template Variables?</h4>
@@ -436,6 +481,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Library & Search',
         searchText:
           'library browse grid search filter status draft published sort recent alphabetical oldest tags any all pagination 50 entries per page',
+        plainTextContent:
+          'Browsing Your Library. The library shows all entries as a responsive grid. Searching. Type in the search bar to filter entries by title. Results update as you type. Filtering and Sorting. Status — All, Draft, or Published. Sort — Recent, Alphabetical, or Oldest. Tags — select one or more tags. Toggle between Any and All matching. Pagination. 50 entries per page with Previous/Next buttons.',
+        searchAliases: ['how to find prompts', 'search entries', 'filter by tag'],
+        relatedSections: ['folders', 'favorites'],
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Browsing Your Library</h4>
@@ -476,6 +525,10 @@ export const sectionGroups: SectionGroup[] = [
         icon: Star,
         title: 'Favorites',
         searchText: 'star favorite entry card dashboard timestamp unstar',
+        plainTextContent:
+          'Starring Entries. Click the star icon on any entry card to mark it as a favorite. Click again to remove it. Starred entries appear in the Favorites section on your dashboard. Where Favorites Appear. The dashboard shows a dedicated Favorites panel. Each favorite is a clickable link. You can also unstar entries from the dashboard.',
+        searchAliases: ['how to bookmark prompts', 'star entries', 'quick access'],
+        relatedSections: ['library'],
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Starring Entries</h4>
@@ -500,8 +553,18 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Folders & Organization',
         searchText:
           'folder tree sidebar new folder subfolder rename delete nest drag drop entries reorganize search breadcrumb color undo',
+        plainTextContent:
+          'Use the folder tree in the sidebar to organize entries. Managing Folders. Click New folder to create a root-level folder. Hover and click three-dot menu for subfolder, rename, delete, or set a color. Nest folders as deep as you need. Folder Colors. Assign a color from six presets. Appears as a dot next to the folder name. Search and Breadcrumbs. Search box filters folders by name. Breadcrumb trail shows full path. Drag and Drop. Drag entries between folders. Drag folders to reorganize. Undo notification appears for mistakes.',
+        searchAliases: ['how to organize prompts', 'create folder', 'move entries'],
+        relatedSections: ['library'],
         content: (
           <div className="space-y-3">
+            <img
+              src="/static/help/help-folders.png"
+              alt="Library view showing folder tree in sidebar with colored folders and entry cards in grid layout"
+              className="rounded-lg border border-border-subtle mb-4 w-full"
+              loading="lazy"
+            />
             <p>Use the folder tree in the sidebar to organize your entries.</p>
             <h4 className="text-sm font-semibold text-foreground">Managing Folders</h4>
             <ul className="list-disc list-inside space-y-1">
@@ -545,6 +608,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Share Links',
         searchText:
           'share link public read-only access password protect expiration copy revoke regenerate manage share link viewer token',
+        plainTextContent:
+          'Share a read-only view of any published prompt with anyone — no account required. Creating a Share Link. Optionally set an expiration date. Optionally add a password minimum 12 characters. Click Create Share Link to generate the URL. Managing an Existing Link. Copy Link, Regenerate (new URL, old stops working), Revoke (permanently remove). What Visitors See. Clean read-only page with prompt title, version number, system message, and all prompt content. Copy to clipboard with one click.',
+        searchAliases: ['how to share a prompt', 'create public link', 'share with password'],
+        relatedSections: ['entry-editor'],
         content: (
           <div className="space-y-3">
             <p>
@@ -605,6 +672,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Workspaces & Teams',
         searchText:
           'personal shared workspace team collaboration workspace switcher invite members email admin editor viewer roles leave revoke invitation bell notification',
+        plainTextContent:
+          'Personal vs Shared Workspaces. Every account starts with a personal workspace. You can be invited to shared workspaces for team collaboration. Each workspace has its own entries, folders, and settings. Switching Workspaces. Use the workspace switcher at the top of the sidebar. Inviting Members. Admins can invite from Settings > Users. Invitations go by email. Accepting Invitations. Badge on bell icon. Click to accept or decline. Roles. Admin — full control. Editor — create, edit, publish. Viewer — read-only. Leaving a Workspace. Leave from Settings > Users.',
+        searchAliases: ['how to invite team members', 'switch workspace', 'team collaboration'],
+        relatedSections: ['account-settings'],
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Personal vs Shared Workspaces</h4>
@@ -655,6 +726,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Tools & MCP',
         searchText:
           'tool descriptions external functions ai model name identifier add tool edit delete mcp model context protocol server import bearer token sync manage servers playground',
+        plainTextContent:
+          'What Are Tool Descriptions? Tool descriptions define external tools or functions that an AI model can call. Each has a name, identifier, and description. Managing Tools. Go to Settings > Tools. Add Tool with display name, identifier, description. Edit with pencil icon. Delete with trash icon. MCP Servers. Connect to MCP Model Context Protocol servers to automatically sync tool definitions. Add Server with name, URL, optional bearer token. Sync to refresh tool definitions. Remove server also removes synced tools. MCP One-Off Import. Import tools from MCP server without registering it. Tools in the Playground. Toolbar dropdown to enable or disable MCP servers and tools per run.',
+        searchAliases: ['how to add tools', 'mcp server setup', 'connect mcp'],
+        relatedSections: ['playground'],
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">What Are Tool Descriptions?</h4>
@@ -722,6 +797,9 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Super Admin',
         searchText:
           'super admin dashboard usage analytics users ai providers models settings logs maintenance mode system configuration email smtp resend google oauth',
+        plainTextContent:
+          'Super Admins have access to a dedicated administration area. Dashboard. Overview of platform health: total users, entries, AI sessions with 7-day deltas. Usage. AI usage analytics with date filtering, charts, and detailed log grid. Users. Manage all platform users, reset passwords, delete accounts. AI Configuration. Configure external AI providers like OpenAI, Anthropic, or any OpenAI-compatible endpoint. Add providers, fetch models, assign to actions. Settings. Email provider, Google OAuth, registration toggle, maintenance mode. Logs. Application logs with level filtering and search. Jobs. Background job status and history.',
+        searchAliases: ['admin settings', 'manage users', 'configure AI providers'],
         content: (
           <div className="space-y-3">
             <p>
@@ -771,6 +849,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'API Keys',
         searchText:
           'api key programmatic rest api admin create copy store x-api-key header revoke regenerate cl_',
+        plainTextContent:
+          'API keys let you access Clarive programmatically through the REST API. Only workspace admins can create and manage them. Creating a Key. Go to Settings > API Keys and click Create API Key. The full key is shown only once — copy it and store it somewhere safe. Using Your Key. Pass the key in the X-Api-Key header. Revoking Keys. Revoke any key from the API Keys settings tab. It stops working immediately. Keys cannot be regenerated — create a new one instead.',
+        searchAliases: ['create api key', 'api authentication', 'programmatic access'],
+        relatedSections: ['public-api', 'sdks'],
         content: (
           <div className="space-y-3">
             <p>
@@ -804,6 +886,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'Public API',
         searchText:
           'public api fetch render published prompts get post entries generate template fields validation authentication x-api-key curl json error 401 404 422 429 rate limit list search tags pagination openapi',
+        plainTextContent:
+          'Public API for fetching and rendering published prompts. Authentication via X-Api-Key header. Endpoints: List entries with search, tags, and pagination. Get single entry by ID. Generate AI response using entry prompt with template field values. Render entry with template field values substituted. Error codes: 401 Unauthorized, 404 Not Found, 422 Validation Error, 429 Rate Limited. OpenAPI spec available. Curl examples for fetching and generating.',
+        searchAliases: ['rest api endpoints', 'api documentation', 'curl examples'],
+        relatedSections: ['api-keys', 'sdks'],
         content: (
           <div className="space-y-3">
             <p>
@@ -1117,6 +1203,10 @@ export const sectionGroups: SectionGroup[] = [
         title: 'SDKs',
         searchText:
           'sdk client library csharp python typescript npm nuget pypi install dotnet pip package retry circuit breaker error handling',
+        plainTextContent:
+          'Official SDK client libraries for TypeScript, Python, and C#. TypeScript SDK via npm. Python SDK via pip. C# SDK via NuGet. Each SDK provides typed clients for all API endpoints, automatic retry with circuit breaker pattern, and error handling. Installation and usage examples for each language.',
+        searchAliases: ['client library', 'npm package', 'python sdk', 'csharp sdk'],
+        relatedSections: ['api-keys', 'public-api'],
         content: (
           <div className="space-y-3">
             <p>
@@ -1212,6 +1302,10 @@ const entry = await client.getEntry(entryId);`}
         title: 'Keyboard Shortcuts',
         searchText:
           'keyboard shortcuts save draft ctrl s publish enter undo redo bold italic strikethrough inline code cmd mac sidebar toggle playground run stop escape',
+        plainTextContent:
+          'Keyboard Shortcuts. Editor: Ctrl+S save draft. Ctrl+Shift+Enter publish. Ctrl+Z undo. Ctrl+Shift+Z redo. Formatting: Ctrl+B bold. Ctrl+I italic. Ctrl+Shift+X strikethrough. Ctrl+E inline code. Navigation: Ctrl+B toggle sidebar. Playground: Ctrl+Enter run prompt. Escape stop streaming. Cmd replaces Ctrl on macOS.',
+        searchAliases: ['keyboard shortcuts', 'hotkeys', 'key bindings'],
+        relatedSections: ['entry-editor', 'playground'],
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Editor</h4>
@@ -1307,6 +1401,9 @@ const entry = await client.getEntry(entryId);`}
         title: 'Trash & Recovery',
         searchText:
           'trash delete 30 days permanently removed restore original folder bulk restore admin permanent deletion',
+        plainTextContent:
+          'Deleted entries go to trash and are kept for 30 days before permanent removal. Restoring. Click Restore to move entry back to its original folder. If the folder was deleted, entry goes to the root. Bulk restore multiple entries. Permanent Deletion. Admins can permanently delete entries from trash immediately. Permanent deletion cannot be undone.',
+        searchAliases: ['recover deleted entry', 'restore from trash', 'permanently delete'],
         content: (
           <div className="space-y-3">
             <p>
@@ -1332,6 +1429,10 @@ const entry = await client.getEntry(entryId);`}
         title: 'Account & Settings',
         searchText:
           'profile display name email password avatar google sign-in sessions browser os ip address revoke import export yaml backup audit log events created updated published trashed restored deleted 30 days appearance theme light dark system account deletion',
+        plainTextContent:
+          'Profile. Update your display name, email, or avatar from the Profile tab. Change your password with minimum 12 characters. Google Sign-In users have name and email managed by Google. Active Sessions. View all active sessions showing browser, OS, IP address. Revoke any session except your current one. Import and Export. Export all entries or a folder as YAML. Import YAML files with duplicate handling. Audit Log. Chronological log of events: created, updated, published, trashed, restored, deleted. Filterable and retained for 30 days. Appearance. Choose light, dark, or system theme. Account Deletion. Permanently delete your account from the Profile tab.',
+        searchAliases: ['change password', 'update profile', 'delete account', 'theme'],
+        relatedSections: ['workspaces'],
         content: (
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Profile</h4>

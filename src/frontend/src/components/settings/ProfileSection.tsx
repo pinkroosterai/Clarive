@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { PasswordStrengthBar } from '@/components/common/PasswordStrengthBar';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import { Button } from '@/components/ui/button';
@@ -202,7 +203,10 @@ export default function ProfileSection() {
 
       {/* Profile Details */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Profile</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">Profile</h2>
+          <HelpLink section="account-settings" />
+        </div>
         {isGoogleUser && (
           <p className="text-sm text-foreground-muted">
             Your name and email are managed by your Google account and cannot be changed here.

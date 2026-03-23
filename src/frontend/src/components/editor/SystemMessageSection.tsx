@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, MessageSquare, Plus, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { HelpPopover } from '@/components/common/HelpPopover';
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -68,6 +69,7 @@ export function SystemMessageSection({
                   <span className="text-xs font-normal text-foreground-muted">(optional)</span>
                 )}
               </CollapsibleTrigger>
+              <HelpPopover content="Instructions for the AI that apply before the main prompt. Use this to set the AI's role, tone, or constraints." section="entry-editor" />
               {!isReadOnly && (
                 <Button
                   variant="ghost"

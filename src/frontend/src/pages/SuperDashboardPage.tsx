@@ -25,6 +25,7 @@ import LogsTab from '@/components/super/LogsTab';
 import SettingsTab from '@/components/super/SettingsTab';
 import UsersTable from '@/components/super/UsersTable';
 import { ErrorBoundary, PageErrorFallback } from '@/components/common/ErrorBoundary';
+import { HelpLink } from '@/components/common/HelpLink';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -177,7 +178,10 @@ const SuperDashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Super Admin</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold tracking-tight">Super Admin</h1>
+        <HelpLink section="super-admin" />
+      </div>
 
       {/* Restart Banner */}
       {restartKeys.length > 0 && (
