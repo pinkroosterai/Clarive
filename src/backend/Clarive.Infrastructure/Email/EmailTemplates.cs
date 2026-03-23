@@ -222,4 +222,24 @@ public static class EmailTemplates
             body
         );
     }
+
+    public static string TestEmail()
+    {
+        var body = $"""
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:{TextColor};margin:0 0 16px;">
+              Test Email
+            </p>
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:{TextColor};margin:0 0 8px;">
+              This is a test email from Clarive. If you received this, your email configuration is working correctly.
+            </p>
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:{MutedColor};margin:16px 0 0;">
+              No action is required — this email was sent from the Super Admin settings panel.
+            </p>
+            """;
+        return WrapInLayout(
+            "Clarive Test Email",
+            "Your Clarive email configuration is working correctly.",
+            body
+        );
+    }
 }

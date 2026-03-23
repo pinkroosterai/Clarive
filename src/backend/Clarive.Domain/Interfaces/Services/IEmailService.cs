@@ -42,4 +42,8 @@ public interface IEmailService
         string loginUrl,
         CancellationToken ct = default
     );
+    Task SendTestEmailAsync(
+        string toEmail,
+        CancellationToken ct = default
+    );
 }

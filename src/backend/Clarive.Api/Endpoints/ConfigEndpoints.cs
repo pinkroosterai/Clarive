@@ -22,6 +22,7 @@ public static class ConfigEndpoints
         group.MapGet("/", HandleGetAll);
         group.MapPut("/{key}", HandleSetValue);
         group.MapDelete("/{key}", HandleDeleteValue);
+        group.MapPost("/test-email", HandleSendTestEmail);
 
         // Public setup-status endpoint (no auth required)
         app.MapGet("/api/super/setup-status", HandleSetupStatus)
@@ -252,5 +253,33 @@ public static class ConfigEndpoints
         }
 
         return Results.Ok(new { key, reset = true });
+    }
+
+    private static async Task<IResult> HandleSendTestEmail(
+        HttpContext ctx,
+        IUserRepository userRepo,
+        IEmailService emailService,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
+        if (user is null)
+            return Results.NotFound(new { error = new { code = "USER_NOT_FOUND", message = "Could not find user." } });
+
+        try
+        {
+            await emailService.SendTestEmailAsync(user.Email, ct);
+            return Results.Ok(new { email = user.Email });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+        }
     }
 }

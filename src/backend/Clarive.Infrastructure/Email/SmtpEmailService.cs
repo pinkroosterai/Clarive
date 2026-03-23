@@ -120,6 +120,12 @@ public class SmtpEmailService(
         logger.LogInformation("Workspace invite email sent to {Email}", toEmail);
     }
 
+    public async Task SendTestEmailAsync(string toEmail, CancellationToken ct = default)
+    {
+        await SendAsync(toEmail, "Clarive Test Email", EmailTemplates.TestEmail(), ct);
+        logger.LogInformation("Test email sent to {Email}", toEmail);
+    }
+
     private async Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct)
     {
         var host = configuration["Email:SmtpHost"] ?? "";

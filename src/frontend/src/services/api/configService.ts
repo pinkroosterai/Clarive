@@ -68,3 +68,11 @@ export interface SetupStatus {
 export async function getSetupStatus(): Promise<SetupStatus> {
   return api.get<SetupStatus>('/api/super/setup-status');
 }
+
+export interface SendTestEmailResult {
+  email: string;
+}
+
+export async function sendTestEmail(): Promise<SendTestEmailResult> {
+  return api.post<SendTestEmailResult>('/api/super/config/test-email', {});
+}

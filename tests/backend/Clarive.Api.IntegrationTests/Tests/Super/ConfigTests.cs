@@ -129,4 +129,31 @@ public class ConfigTests : IntegrationTestBase
         var response = await Client.DeleteAsync("/api/super/config/NonExistentKey");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task SendTestEmail_AsSuperUser_Returns200()
+    {
+        var token = await AuthHelper.GetAdminTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var response = await Client.PostAsync("/api/super/config/test-email", JsonContent.Create(new { }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.ReadJsonAsync();
+        body.GetProperty("email").GetString().Should().NotBeNullOrEmpty();
+
+        var sentEmails = TestEmailService.GetSentTestEmails();
+        sentEmails.Should().Contain(e => e.Subject == "Clarive Test Email");
+    }
+
+    [Fact]
+    public async Task SendTestEmail_AsNonSuperUser_Returns403()
+    {
+        var token = await AuthHelper.GetEditorTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var response = await Client.PostAsync("/api/super/config/test-email", JsonContent.Create(new { }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
 }

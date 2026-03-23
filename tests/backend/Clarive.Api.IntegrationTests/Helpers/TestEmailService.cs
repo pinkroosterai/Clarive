@@ -11,6 +11,11 @@ namespace Clarive.Api.IntegrationTests.Helpers;
 public class TestEmailService : IEmailService
 {
     private static readonly ConcurrentDictionary<string, string> InvitationAcceptUrls = new();
+    private static readonly ConcurrentBag<(string Email, string Subject)> SentTestEmails = new();
+
+    /// <summary>Gets all test emails that were sent.</summary>
+    public static IReadOnlyList<(string Email, string Subject)> GetSentTestEmails() =>
+        SentTestEmails.ToArray();
 
     /// <summary>Gets the invitation accept URL that was sent to the given email.</summary>
     public static string? GetInvitationUrl(string email)
@@ -27,8 +32,12 @@ public class TestEmailService : IEmailService
         return query["token"];
     }
 
-    /// <summary>Clears all captured invitation URLs. Call between tests if needed.</summary>
-    public static void Reset() => InvitationAcceptUrls.Clear();
+    /// <summary>Clears all captured data. Call between tests if needed.</summary>
+    public static void Reset()
+    {
+        InvitationAcceptUrls.Clear();
+        SentTestEmails.Clear();
+    }
 
     public Task SendInvitationEmailAsync(
         string toEmail,
@@ -79,4 +88,10 @@ public class TestEmailService : IEmailService
         string loginUrl,
         CancellationToken ct = default
     ) => Task.CompletedTask;
+
+    public Task SendTestEmailAsync(string toEmail, CancellationToken ct = default)
+    {
+        SentTestEmails.Add((toEmail, "Clarive Test Email"));
+        return Task.CompletedTask;
+    }
 }

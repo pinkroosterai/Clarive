@@ -108,4 +108,10 @@ public class ConsoleEmailService(ILogger<ConsoleEmailService> logger) : IEmailSe
         );
         return Task.CompletedTask;
     }
+
+    public Task SendTestEmailAsync(string toEmail, CancellationToken ct = default)
+    {
+        logger.LogInformation("[EMAIL] Test Email → {Email}", toEmail);
+        return Task.CompletedTask;
+    }
 }

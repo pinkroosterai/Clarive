@@ -1,6 +1,6 @@
-import { ChevronDown, Search, X } from 'lucide-react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ChevronDown, Loader2, Search, Send, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import ConfigSectionForm from './ConfigSectionForm';
 
@@ -9,7 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { handleApiError } from '@/lib/handleApiError';
 import type { ConfigSetting } from '@/services/api/configService';
+import { sendTestEmail } from '@/services/api/configService';
 
 interface SettingsTabProps {
   settingsBySection: Record<string, ConfigSetting[]>;
@@ -35,6 +38,7 @@ export default function SettingsTab({
   );
   const [search, setSearch] = useState('');
   const [dirtySections, setDirtySections] = useState<Set<string>>(new Set());
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
 
   const handleDirtyChange = useCallback((sectionKey: string, isDirty: boolean) => {
     setDirtySections((prev) => {
@@ -43,6 +47,26 @@ export default function SettingsTab({
       else next.delete(sectionKey);
       return next;
     });
+  }, []);
+
+  const emailProviderValue = useMemo(() => {
+    const emailSettings = settingsBySection['email'] ?? [];
+    const provider = emailSettings.find((s) => s.key === 'Email:Provider');
+    return provider?.value ?? 'none';
+  }, [settingsBySection]);
+
+  const isEmailProviderConfigured = emailProviderValue !== 'none';
+
+  const handleSendTestEmail = useCallback(async () => {
+    setSendingTestEmail(true);
+    try {
+      const result = await sendTestEmail();
+      toast.success(`Test email sent to ${result.email}`);
+    } catch (err) {
+      handleApiError(err, { title: 'Failed to send test email' });
+    } finally {
+      setSendingTestEmail(false);
+    }
   }, []);
 
   const toggleSection = (key: string) => {
@@ -155,6 +179,32 @@ export default function SettingsTab({
                 onSaved={onSaved}
                 onDirtyChange={(isDirty) => handleDirtyChange(key, isDirty)}
               />
+              {key === 'email' && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-block">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!isEmailProviderConfigured || sendingTestEmail}
+                          onClick={handleSendTestEmail}
+                        >
+                          {sendingTestEmail ? (
+                            <Loader2 className="size-4 mr-1.5 animate-spin" />
+                          ) : (
+                            <Send className="size-4 mr-1.5" />
+                          )}
+                          {sendingTestEmail ? 'Sending...' : 'Send Test Email'}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!isEmailProviderConfigured && (
+                      <TooltipContent>Configure an email provider first</TooltipContent>
+                    )}
+                  </Tooltip>
+                </div>
+              )}
             </CollapsibleContent>
           </Collapsible>
         );

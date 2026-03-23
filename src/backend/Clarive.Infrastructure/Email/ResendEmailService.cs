@@ -122,4 +122,16 @@ public class ResendEmailService(
         await resend.EmailSendAsync(message, ct);
         logger.LogInformation("Workspace invite email sent to {Email}", toEmail);
     }
+
+    public async Task SendTestEmailAsync(string toEmail, CancellationToken ct = default)
+    {
+        var message = new EmailMessage();
+        message.From = $"{settings.Value.FromName} <{settings.Value.FromAddress}>";
+        message.To.Add(toEmail);
+        message.Subject = "Clarive Test Email";
+        message.HtmlBody = EmailTemplates.TestEmail();
+
+        await resend.EmailSendAsync(message, ct);
+        logger.LogInformation("Test email sent to {Email}", toEmail);
+    }
 }
