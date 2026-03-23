@@ -276,8 +276,8 @@ public static class ConfigEndpoints
         }
         catch (Exception ex)
         {
-            return Results.Problem(
-                detail: ex.Message,
+            return Results.Json(
+                new { error = new { code = "EMAIL_SEND_FAILED", message = ex.Message } },
                 statusCode: StatusCodes.Status500InternalServerError
             );
         }
