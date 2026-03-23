@@ -1,6 +1,6 @@
 import { Slot } from '@radix-ui/react-slot';
 import { VariantProps, cva } from 'class-variance-authority';
-import { PanelLeft } from 'lucide-react';
+import { GripVertical, PanelLeft } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -257,7 +257,7 @@ const Sidebar = React.forwardRef<
           {/* Resize handle */}
           {state === 'expanded' && (
             <div
-              className="absolute top-0 bottom-0 right-0 w-1 cursor-col-resize bg-transparent hover:bg-primary/20 active:bg-primary/30 transition-colors z-20"
+              className="absolute top-0 bottom-0 right-0 w-2 cursor-col-resize bg-transparent hover:bg-primary/20 active:bg-primary/30 transition-colors z-20 flex items-center justify-center"
               onPointerDown={(e) => {
                 e.preventDefault();
                 const target = e.currentTarget;
@@ -289,7 +289,9 @@ const Sidebar = React.forwardRef<
                 target.addEventListener('pointermove', onPointerMove);
                 target.addEventListener('pointerup', onPointerUp);
               }}
-            />
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground/50 hover:text-muted-foreground transition-colors pointer-events-none" />
+            </div>
           )}
         </div>
       </div>
