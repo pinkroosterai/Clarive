@@ -2,6 +2,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 
+import {
+  createStreamEventHandler,
+  type StreamSegment,
+  type UsePlaygroundStreamingOptions,
+} from './streamingTypes';
 import { usePlaygroundAutoScroll } from './usePlaygroundAutoScroll';
 
 import { mapPlaygroundError, isRateLimitError } from '@/lib/playgroundErrors';
@@ -9,22 +14,13 @@ import {
   testEntry,
   type Evaluation,
   type ConversationMessage,
-  type ConversationStreamEvent,
 } from '@/services/api/playgroundService';
-import type { TemplateField } from '@/types';
 
-// ── Streaming status thresholds ──
+// Re-export types for backward compatibility
+export type { StreamSegment, UsePlaygroundStreamingOptions } from './streamingTypes';
+export { getStreamingStatusMessage } from './streamingTypes';
 
-const STATUS_THRESHOLDS = {
-  STILL_GENERATING: 15,
-  TAKING_A_WHILE: 30,
-} as const;
-
-export function getStreamingStatusMessage(seconds: number): string {
-  if (seconds >= STATUS_THRESHOLDS.TAKING_A_WHILE) return 'This is taking a while...';
-  if (seconds >= STATUS_THRESHOLDS.STILL_GENERATING) return 'Still generating...';
-  return 'Generating...';
-}
+// ── Constants ──
 
 const CHARS_PER_TOKEN_ESTIMATE = 4;
 
@@ -76,7 +72,14 @@ function useStreamingTimer() {
     };
   }, []);
 
-  return { elapsedSeconds, approxOutputTokens, startTimer, stopTimer, addStreamedChars, resetTimer };
+  return {
+    elapsedSeconds,
+    approxOutputTokens,
+    startTimer,
+    stopTimer,
+    addStreamedChars,
+    resetTimer,
+  };
 }
 
 // ── Sub-hook: Rate limit countdown ──
@@ -117,27 +120,7 @@ function useRateLimitCountdown() {
   return { rateLimitCountdown, startCountdown, resetCountdown };
 }
 
-// ── Hook interface ──
-
-export type StreamSegment =
-  | { type: 'reasoning'; text: string; promptIndex: number }
-  | { type: 'tool_call'; callId: string; toolName: string; arguments?: string | null; promptIndex: number }
-  | { type: 'tool_result'; callId: string; response?: string | null; error?: string | null; durationMs?: number | null; promptIndex: number }
-  | { type: 'response'; text: string; promptIndex: number };
-
-export interface UsePlaygroundStreamingOptions {
-  entryId: string | undefined;
-  model: string;
-  temperature: number;
-  maxTokens: number;
-  templateFields: TemplateField[];
-  fieldValues: Record<string, string>;
-  reasoningEffort: string;
-  showReasoning: boolean;
-  isReasoning: boolean;
-  mcpServerIds?: string[];
-  excludedToolNames?: string[];
-}
+// ── Main hook ──
 
 export function usePlaygroundStreaming({
   entryId,
@@ -165,8 +148,12 @@ export function usePlaygroundStreaming({
 
   // ── Composed sub-hooks ──
   const {
-    elapsedSeconds, approxOutputTokens,
-    startTimer, stopTimer, addStreamedChars, resetTimer,
+    elapsedSeconds,
+    approxOutputTokens,
+    startTimer,
+    stopTimer,
+    addStreamedChars,
+    resetTimer,
   } = useStreamingTimer();
   const { rateLimitCountdown, startCountdown, resetCountdown } = useRateLimitCountdown();
 
@@ -226,6 +213,14 @@ export function usePlaygroundStreaming({
     const controller = new AbortController();
     abortRef.current = controller;
 
+    const onStreamEvent = createStreamEventHandler({
+      firstTokenRef,
+      setFirstTokenReceived,
+      setIsJudging,
+      setSegments,
+      addStreamedChars,
+    });
+
     try {
       const result = await testEntry(
         entryId,
@@ -239,61 +234,7 @@ export function usePlaygroundStreaming({
           mcpServerIds: mcpServerIds?.length ? mcpServerIds : undefined,
           excludedToolNames: excludedToolNames?.length ? excludedToolNames : undefined,
         },
-        (evt: ConversationStreamEvent) => {
-          if (!firstTokenRef.current) {
-            firstTokenRef.current = true;
-            setFirstTokenReceived(true);
-          }
-
-          if (evt.type === 'judging') {
-            setIsJudging(true);
-            return;
-          }
-
-          const pi = evt.promptIndex ?? 0;
-
-          if (evt.type === 'reasoning' && evt.text) {
-            setSegments((prev) => {
-              const last = prev[prev.length - 1];
-              if (last?.type === 'reasoning' && last.promptIndex === pi) {
-                return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
-              }
-              return [...prev, { type: 'reasoning', text: evt.text!, promptIndex: pi }];
-            });
-          } else if (evt.type === 'text' && evt.text) {
-            addStreamedChars(evt.text.length);
-            setSegments((prev) => {
-              const last = prev[prev.length - 1];
-              if (last?.type === 'response' && last.promptIndex === pi) {
-                return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
-              }
-              return [...prev, { type: 'response', text: evt.text!, promptIndex: pi }];
-            });
-          } else if (evt.type === 'tool_start' && evt.callId) {
-            setSegments((prev) => [
-              ...prev,
-              {
-                type: 'tool_call',
-                callId: evt.callId!,
-                toolName: evt.toolName ?? 'Unknown',
-                arguments: evt.arguments,
-                promptIndex: pi,
-              },
-            ]);
-          } else if (evt.type === 'tool_end' && evt.callId) {
-            setSegments((prev) => [
-              ...prev,
-              {
-                type: 'tool_result',
-                callId: evt.callId!,
-                response: evt.result,
-                error: evt.error,
-                durationMs: evt.durationMs,
-                promptIndex: pi,
-              },
-            ]);
-          }
-        },
+        onStreamEvent,
         controller.signal
       );
 
