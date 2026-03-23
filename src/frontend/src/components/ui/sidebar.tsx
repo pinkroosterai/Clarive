@@ -250,14 +250,14 @@ const Sidebar = React.forwardRef<
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            className="flex h-full min-w-0 flex-1 flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
           >
             {children}
           </div>
           {/* Resize handle */}
           {state === 'expanded' && (
             <div
-              className="absolute top-0 bottom-0 right-0 w-2 cursor-col-resize bg-transparent hover:bg-primary/20 active:bg-primary/30 transition-colors z-20 flex items-center justify-center"
+              className="shrink-0 w-2 cursor-col-resize bg-transparent hover:bg-primary/20 active:bg-primary/30 transition-colors z-20 flex items-center justify-center"
               onPointerDown={(e) => {
                 e.preventDefault();
                 const target = e.currentTarget;
