@@ -2,13 +2,13 @@ import { test, expect, Page } from '@playwright/test';
 import { loginViaUI, waitForAppShell, expectToast } from './helpers/pages';
 
 /**
- * Tab-Scoped Operations tests: save, publish, and AI tools.
+ * Tab-Scoped Operations tests: save and publish.
  *
  * Prerequisites:
  * - Spec 06 published v1/v2 of "E2E Test Entry v2"
  * - Spec 06b created/deleted tabs (entry should have only Main tab + Published)
- * - Specs 02 + 13 configured AI providers (for AI tests)
  *
+ * AI tests are in 13b-entry-tab-ai.spec.ts (runs after spec 13).
  * Collaboration tests are in 12b-entry-tab-collaboration.spec.ts (runs after spec 11).
  */
 
@@ -184,73 +184,4 @@ test.describe('Tab-Scoped Save & Publish', () => {
   });
 });
 
-// ════════════════════════════════════════════════════════════════
-// Phase 2: Tab-Scoped AI Tools
-// ════════════════════════════════════════════════════════════════
-
-test.describe('Tab-Scoped AI Tools', () => {
-  test.skip(!process.env.GROQ_API_KEY, 'GROQ_API_KEY required');
-  test.describe.configure({ mode: 'serial' });
-  test.setTimeout(120_000);
-
-  test('generate system message on tab only affects that tab', async ({ page }) => {
-    await loginAndNavigate(page);
-
-    // Check if AI is configured by looking at the Generate System Message button
-    await page.getByRole('tab', { name: /actions/i }).click();
-    await page.waitForTimeout(500);
-    const generateBtn = page.getByRole('button', { name: /generate system message/i });
-    const btnVisible = await generateBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-    const btnEnabled = btnVisible && await generateBtn.isEnabled().catch(() => false);
-    if (!btnEnabled) {
-      test.skip(true, 'AI not configured — run from snapshot (includes spec 13) or after spec 13');
-    }
-
-    // Check if Main has a system message already
-    const mainHasSystemMsg =
-      await page.locator('[data-tour="system-message"]').isVisible().catch(() => false);
-
-    // Create Tab C for this test
-    await createTabC(page);
-
-    // Ensure we're on Tab C
-    await page.getByText(TAB_C_NAME).click();
-    await page.waitForTimeout(500);
-
-    // Ensure Tab C has no system message (remove if present)
-    const sysMsgSection = page.locator('[data-tour="system-message"]');
-    if (await sysMsgSection.isVisible().catch(() => false)) {
-      await sysMsgSection.locator('button').filter({ has: page.locator('.lucide-x') }).click();
-      await page.waitForTimeout(300);
-    }
-
-    // Button is already located from the skip check above — click it
-    await generateBtn.click();
-
-    // Wait for generation to complete — button text changes to "Generating…"
-    // then system message section appears
-    await expect(page.locator('[data-tour="system-message"]')).toBeVisible({ timeout: 60_000 });
-
-    // Verify system message has content
-    const systemEditor = page.locator('[data-tour="system-message"] .tiptap');
-    await expect(systemEditor).toBeVisible({ timeout: 5_000 });
-    const systemMsgContent = await systemEditor.textContent();
-    expect(systemMsgContent!.length).toBeGreaterThan(0);
-
-    // Save Tab C with the generated system message
-    await page.getByRole('button', { name: /^save$/i }).click();
-    await expectToast(page, 'Saved');
-
-    // Switch to Main tab — system message state should be unchanged
-    await page.getByText('Main', { exact: true }).click();
-    await page.waitForTimeout(500);
-
-    const mainSysMsgNow =
-      await page.locator('[data-tour="system-message"]').isVisible().catch(() => false);
-    expect(mainSysMsgNow).toBe(mainHasSystemMsg);
-
-    // Clean up Tab C
-    await deleteTabC(page);
-  });
-});
 
