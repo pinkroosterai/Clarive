@@ -11,6 +11,9 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
 {
     public async Task InvokeAsync(HttpContext context)
     {
+        // Enable buffering so the request body can be re-read in error handlers
+        context.Request.EnableBuffering();
+
         try
         {
             await next(context);
@@ -78,7 +81,25 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             {
                 var entryRepo = context.RequestServices.GetRequiredService<IEntryRepository>();
                 var entry = await entryRepo.GetByIdAsync(tenantId, entryId);
-                var version = await entryRepo.GetMainTabAsync(tenantId, entryId);
+
+                // Try to read TabId from the request body to fetch the specific tab
+                Guid? tabId = null;
+                try
+                {
+                    context.Request.Body.Position = 0;
+                    using var doc = await JsonDocument.ParseAsync(context.Request.Body);
+                    if (doc.RootElement.TryGetProperty("tabId", out var tabIdProp)
+                        && tabIdProp.ValueKind == JsonValueKind.String
+                        && Guid.TryParse(tabIdProp.GetString(), out var parsedTabId))
+                    {
+                        tabId = parsedTabId;
+                    }
+                }
+                catch { /* best-effort body parsing */ }
+
+                var version = tabId.HasValue
+                    ? await entryRepo.GetVersionByIdAsync(tenantId, tabId.Value)
+                    : await entryRepo.GetMainTabAsync(tenantId, entryId);
 
                 if (entry != null && version != null)
                 {
@@ -92,6 +113,7 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
                         version = version.Version,
                         versionState = version.VersionState.ToString().ToLower(),
                         rowVersion = entry.RowVersion,
+                        tabRowVersion = version.RowVersion,
                     };
                 }
             }

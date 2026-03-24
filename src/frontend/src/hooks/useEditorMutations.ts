@@ -70,6 +70,7 @@ export function useEditorMutations({
             version: (serverData.version as number) ?? local.version,
             versionState: (serverData.versionState as PromptEntry['versionState']) ?? local.versionState,
             rowVersion: (serverData.rowVersion as number) ?? local.rowVersion,
+            tabRowVersion: (serverData.tabRowVersion as number) ?? local.tabRowVersion,
           } as PromptEntry;
 
           // Auto-resolve if content is identical (metadata-only conflict)
@@ -181,9 +182,12 @@ export function useEditorMutations({
 
   const handleResolveConflict = useCallback(
     (resolved: Partial<PromptEntry>) => {
-      // Include the server's rowVersion so the next save won't trigger another conflict
+      // Include the server's version tokens so the next save won't trigger another conflict
       if (conflictState?.serverEntry.rowVersion != null) {
         resolved.rowVersion = conflictState.serverEntry.rowVersion;
+      }
+      if (conflictState?.serverEntry.tabRowVersion != null) {
+        resolved.tabRowVersion = conflictState.serverEntry.tabRowVersion;
       }
       handleChange(resolved, { force: true });
       setConflictState(null);

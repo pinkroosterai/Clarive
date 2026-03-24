@@ -10,5 +10,6 @@ public record UpdateEntryRequest(
     List<PromptInput>? Prompts,
     Dictionary<string, PromptEvaluationEntry>? Evaluation = null,
     uint? RowVersion = null,
-    Guid? TabId = null
+    Guid? TabId = null,
+    uint? TabRowVersion = null
 );

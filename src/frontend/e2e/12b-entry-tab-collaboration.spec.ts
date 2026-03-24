@@ -124,9 +124,7 @@ test.describe('Multi-User Tab Collaboration', () => {
     entryUrl = new URL(page.url()).pathname;
   });
 
-  // Skipped: entry-level rowVersion means different-tab saves still trigger conflicts.
-  // This is a known limitation — the concurrency token is on PromptEntry, not PromptEntryVersion.
-  test.skip('two users editing different tabs — no conflict', async ({ browser }) => {
+  test('two users editing different tabs — no conflict', async ({ browser }) => {
     // Both users open the entry
     const admin = await openEntryAs(browser, ADMIN);
     const editor = await openEntryAs(browser, EDITOR);
@@ -157,24 +155,16 @@ test.describe('Multi-User Tab Collaboration', () => {
     await expectToast(admin.page, 'Saved');
 
     // Editor edits Tab C prompt content and saves
-    // Note: rowVersion is entry-level, so this WILL trigger a conflict on the entry.
-    // But the conflict auto-resolves if only content differs (metadata-only conflict).
+    // With tab-level concurrency, different-tab saves should NOT conflict
     const editorEditor = editor.page.locator('.tiptap').last();
     await editorEditor.click();
     await editorEditor.pressSequentially(' — editor tab-c edit', { delay: 10 });
     await editor.page.waitForTimeout(500);
     await editor.page.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(editor.page, 'Saved');
 
-    // A conflict may trigger due to entry-level rowVersion, but it should auto-resolve
-    // because the content changes are on different tabs (no overlapping fields)
-    const conflictVisible = await editor.page.getByText('Resolve conflict').isVisible({ timeout: 5_000 }).catch(() => false);
-    if (conflictVisible) {
-      // Auto-resolve: keep mine (default) and save
-      await editor.page.getByRole('button', { name: /save resolved/i }).click();
-      await expectToast(editor.page, 'Conflict resolved');
-    } else {
-      await expectToast(editor.page, 'Saved');
-    }
+    // Verify no conflict overlay appeared
+    await expect(editor.page.getByText('Resolve conflict')).not.toBeVisible({ timeout: 3_000 });
 
     await admin.context.close();
     await editor.context.close();

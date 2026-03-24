@@ -116,6 +116,7 @@ export async function updateEntry(
     }));
   if (options?.evaluation !== undefined) body.evaluation = options.evaluation;
   if (data.rowVersion !== undefined) body.rowVersion = data.rowVersion;
+  if (data.tabRowVersion !== undefined) body.tabRowVersion = data.tabRowVersion;
   if (options?.tabId !== undefined) body.tabId = options.tabId;
   return api.put<PromptEntry>(`/api/entries/${id}`, body);
 }

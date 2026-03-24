@@ -38,6 +38,7 @@ export interface PromptEntry {
   evaluationAverageScore?: number | null;
   evaluatedAt?: string | null;
   rowVersion?: number;
+  tabRowVersion?: number;
 }
 
 export interface Folder {

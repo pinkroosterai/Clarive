@@ -101,7 +101,15 @@ public class EntryService(
         if (tab is null || tab.VersionState != VersionState.Tab)
             return DomainErrors.VersionNotFound;
 
-        // Detect concurrency conflicts for sequential saves
+        // Concurrency conflict detection at two levels:
+        // 1. Tab-level: catches same-tab content conflicts (systemMessage, prompts).
+        //    Different-tab saves have independent tab xmin values → no false conflicts.
+        if (request.TabRowVersion.HasValue && tab.RowVersion != request.TabRowVersion.Value)
+            throw new DbUpdateConcurrencyException(
+                "The tab was modified by another user since you loaded it.");
+        // 2. Entry-level: catches title/metadata conflicts.
+        //    Only checked when entry.xmin actually changed AND the title differs
+        //    (tab-only saves don't modify the entry row → entry.xmin unchanged).
         if (request.RowVersion.HasValue && entry.RowVersion != request.RowVersion.Value)
             throw new DbUpdateConcurrencyException(
                 "The entry was modified by another user since you loaded it.");
@@ -110,9 +118,13 @@ public class EntryService(
             async () =>
             {
                 var now = DateTime.UtcNow;
+                var entryModified = false;
 
-                if (request.Title is not null)
+                if (request.Title is not null && request.Title.Trim() != entry.Title)
+                {
                     entry.Title = request.Title.Trim();
+                    entryModified = true;
+                }
                 if (request.SystemMessage is not null)
                     tab.SystemMessage = request.SystemMessage;
                 if (request.Prompts is not null)
@@ -124,8 +136,13 @@ public class EntryService(
                 if (request.Evaluation is not null)
                     MapEvaluationToVersion(tab, request.Evaluation);
 
-                entry.UpdatedAt = now;
-                await entryRepo.UpdateAsync(entry, ct);
+                // Only update the entry row when entry-level fields changed,
+                // so tab-only saves don't bump entry.xmin (preventing false conflicts)
+                if (entryModified)
+                {
+                    entry.UpdatedAt = now;
+                    await entryRepo.UpdateAsync(entry, ct);
+                }
                 await entryRepo.UpdateVersionAsync(tab, ct);
 
                 return (entry, tab);
@@ -494,6 +511,7 @@ public class EntryService(
             version.EvaluationAverageScore,
             version.EvaluatedAt,
             RowVersion = entry.RowVersion,
+            TabRowVersion = version.RowVersion,
         };
     }
 
