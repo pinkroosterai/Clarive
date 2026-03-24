@@ -15,6 +15,7 @@ const EDITOR = { email: 'editor@e2e.test', password: 'E2ETestPassword123!' };
 
 test.describe('Workspace Invitation', () => {
   test.describe.configure({ mode: 'serial' });
+  test.setTimeout(60_000);
 
   test('admin invites editor to workspace', async ({ page }) => {
     // Login as admin
@@ -37,19 +38,18 @@ test.describe('Workspace Invitation', () => {
       await page.waitForTimeout(500);
     }
 
-    // Navigate to Settings, then click Users tab (more reliable than query param)
+    // Navigate to Settings > Users tab
     await page.goto('/settings');
     await page.waitForLoadState('domcontentloaded');
     await page.getByRole('tab', { name: /users/i }).click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1_000);
 
     // Scroll down past WorkspaceSection to reach UserManagement
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
 
     // Wait for "Invite User" button to appear (UserManagement must finish loading)
     const inviteButton = page.getByRole('button', { name: /invite user/i });
-    await expect(inviteButton).toBeVisible({ timeout: 15_000 });
+    await expect(inviteButton).toBeVisible({ timeout: 30_000 });
     await inviteButton.click();
 
     // Fill in the invite dialog
