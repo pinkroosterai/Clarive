@@ -21,7 +21,7 @@ import {
 import { getDatasets } from '@/services/api/testDatasetService';
 import type { TemplateField } from '@/types';
 
-export function Component() {
+function TestMatrixPage() {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
 
@@ -197,4 +197,4 @@ export function Component() {
   );
 }
 
-Component.displayName = 'TestMatrixPage';
+export default TestMatrixPage;
