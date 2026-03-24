@@ -127,9 +127,11 @@ export async function refinePrompt(
 
 export async function enhanceEntry(
   entryId: string,
+  tabId?: string,
   onProgress?: (event: ProgressEvent) => void
 ): Promise<WizardResult> {
-  const body = { entryId };
+  const body: Record<string, unknown> = { entryId };
+  if (tabId) body.tabId = tabId;
   const res = onProgress
     ? await api.postSSE<GenerateApiResponse>('/api/ai/enhance', body, onProgress)
     : await api.post<GenerateApiResponse>('/api/ai/enhance', body);
@@ -138,11 +140,14 @@ export async function enhanceEntry(
 
 export async function generateSystemMessage(
   entryId: string,
+  tabId?: string,
   options?: { signal?: AbortSignal }
 ): Promise<string> {
+  const body: Record<string, unknown> = { entryId };
+  if (tabId) body.tabId = tabId;
   const res = await api.post<{ systemMessage: string }>(
     '/api/ai/generate-system-message',
-    { entryId },
+    body,
     options
   );
   return res.systemMessage;
@@ -150,11 +155,14 @@ export async function generateSystemMessage(
 
 export async function decomposeToChain(
   entryId: string,
+  tabId?: string,
   options?: { signal?: AbortSignal }
 ): Promise<Prompt[]> {
+  const body: Record<string, unknown> = { entryId };
+  if (tabId) body.tabId = tabId;
   const res = await api.post<{
     prompts: Array<{ content: string }>;
-  }>('/api/ai/decompose', { entryId }, options);
+  }>('/api/ai/decompose', body, options);
 
   return res.prompts.map((p, i) => ({
     id: `decomposed-${i}`,

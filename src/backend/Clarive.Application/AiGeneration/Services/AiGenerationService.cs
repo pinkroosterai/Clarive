@@ -127,11 +127,12 @@ public class AiGenerationService(
         Guid tenantId,
         Guid userId,
         Guid entryId,
+        Guid? tabId,
         CancellationToken ct,
         Func<ProgressEvent, Task>? onProgress = null
     )
     {
-        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, ct);
+        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, tabId, ct);
         if (workingResult.IsError)
             return workingResult.Errors;
 
@@ -178,10 +179,11 @@ public class AiGenerationService(
         Guid tenantId,
         Guid userId,
         Guid entryId,
+        Guid? tabId,
         CancellationToken ct
     )
     {
-        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, ct);
+        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, tabId, ct);
         if (workingResult.IsError)
             return workingResult.Errors;
 
@@ -216,10 +218,11 @@ public class AiGenerationService(
         Guid tenantId,
         Guid userId,
         Guid entryId,
+        Guid? tabId,
         CancellationToken ct
     )
     {
-        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, ct);
+        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, tabId, ct);
         if (workingResult.IsError)
             return workingResult.Errors;
 
@@ -257,10 +260,11 @@ public class AiGenerationService(
         Guid tenantId,
         Guid userId,
         Guid entryId,
+        Guid? tabId,
         CancellationToken ct
     )
     {
-        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, ct);
+        var workingResult = await GetValidatedWorkingVersionAsync(tenantId, entryId, tabId, ct);
         if (workingResult.IsError)
             return workingResult.Errors;
 
@@ -527,6 +531,7 @@ public class AiGenerationService(
     private async Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion Working)>> GetValidatedWorkingVersionAsync(
         Guid tenantId,
         Guid entryId,
+        Guid? tabId,
         CancellationToken ct
     )
     {
@@ -534,8 +539,10 @@ public class AiGenerationService(
         if (entry is null || entry.IsTrashed)
             return DomainErrors.EntryNotFound;
 
-        var version = await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
-                     ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        var version = tabId.HasValue
+            ? await entryRepo.GetVersionByIdAsync(tenantId, tabId.Value, ct)
+            : await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
+              ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
         if (version is null)
             return DomainErrors.VersionNotFoundForEntry;
 

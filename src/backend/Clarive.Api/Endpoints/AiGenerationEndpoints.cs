@@ -198,7 +198,7 @@ public static class AiGenerationEndpoints
 
         if (!WantsSse(ctx))
         {
-            var result = await aiService.EnhanceAsync(tenantId, userId, request.EntryId, ct);
+            var result = await aiService.EnhanceAsync(tenantId, userId, request.EntryId, request.TabId, ct);
 
             if (result.IsError)
                 return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
@@ -216,6 +216,7 @@ public static class AiGenerationEndpoints
                 tenantId,
                 userId,
                 request.EntryId,
+                request.TabId,
                 ct,
                 progress => sse.WriteProgressAsync(progress, ct)
             );
@@ -265,6 +266,7 @@ public static class AiGenerationEndpoints
             tenantId,
             userId,
             request.EntryId,
+            request.TabId,
             ct
         );
         if (result.IsError)
@@ -285,7 +287,7 @@ public static class AiGenerationEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await aiService.DecomposeAsync(tenantId, userId, request.EntryId, ct);
+        var result = await aiService.DecomposeAsync(tenantId, userId, request.EntryId, request.TabId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
@@ -304,7 +306,7 @@ public static class AiGenerationEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await aiService.FillTemplateFieldsAsync(tenantId, userId, request.EntryId, ct);
+        var result = await aiService.FillTemplateFieldsAsync(tenantId, userId, request.EntryId, request.TabId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 

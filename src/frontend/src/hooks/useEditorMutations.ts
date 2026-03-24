@@ -145,7 +145,7 @@ export function useEditorMutations({
     aiAbortControllerRef.current = controller;
     setIsGeneratingSystemMessage(true);
     try {
-      const result = await wizardService.generateSystemMessage(entryId, {
+      const result = await wizardService.generateSystemMessage(entryId, activeTabId, {
         signal: controller.signal,
       });
       handleChange({ systemMessage: result }, { force: true });
@@ -157,7 +157,7 @@ export function useEditorMutations({
       aiAbortControllerRef.current = null;
       setIsGeneratingSystemMessage(false);
     }
-  }, [entryId, handleChange, localEntryRef]);
+  }, [entryId, activeTabId, handleChange, localEntryRef]);
 
   const handleDecomposeToChain = useCallback(async () => {
     if (!entryId || !localEntryRef.current?.prompts[0]) return;
@@ -165,7 +165,7 @@ export function useEditorMutations({
     aiAbortControllerRef.current = controller;
     setIsDecomposing(true);
     try {
-      const result = await wizardService.decomposeToChain(entryId, {
+      const result = await wizardService.decomposeToChain(entryId, activeTabId, {
         signal: controller.signal,
       });
       handleChange({ prompts: result }, { force: true });
@@ -177,7 +177,7 @@ export function useEditorMutations({
       aiAbortControllerRef.current = null;
       setIsDecomposing(false);
     }
-  }, [entryId, handleChange, localEntryRef]);
+  }, [entryId, activeTabId, handleChange, localEntryRef]);
 
   const handleResolveConflict = useCallback(
     (resolved: Partial<PromptEntry>) => {

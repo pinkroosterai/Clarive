@@ -39,6 +39,7 @@ public interface IAiGenerationService
         Guid tenantId,
         Guid userId,
         Guid entryId,
+        Guid? tabId = null,
         CancellationToken ct = default,
         Func<ProgressEvent, Task>? onProgress = null
     );
@@ -51,6 +52,7 @@ public interface IAiGenerationService
         Guid tenantId,
         Guid userId,
         Guid entryId,
+        Guid? tabId = null,
         CancellationToken ct = default
     );
 
@@ -62,6 +64,7 @@ public interface IAiGenerationService
         Guid tenantId,
         Guid userId,
         Guid entryId,
+        Guid? tabId = null,
         CancellationToken ct = default
     );
 
@@ -73,6 +76,7 @@ public interface IAiGenerationService
         Guid tenantId,
         Guid userId,
         Guid entryId,
+        Guid? tabId = null,
         CancellationToken ct = default
     );
 

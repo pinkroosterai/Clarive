@@ -204,7 +204,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
@@ -217,7 +217,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, IsTrashed = true });
 
-        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
@@ -233,7 +233,7 @@ public class AiGenerationServiceTests
             .GetMainTabAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("VERSION_NOT_FOUND");
@@ -248,7 +248,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
@@ -270,7 +270,7 @@ public class AiGenerationServiceTests
                 }
             );
 
-        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ALREADY_EXISTS");
@@ -295,7 +295,7 @@ public class AiGenerationServiceTests
             .GenerateSystemMessageAsync(Arg.Any<List<PromptInput>>(), Arg.Any<CancellationToken>())
             .Returns(new AgentResult<string>("Generated system message"));
 
-        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.GenerateSystemMessageAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeFalse();
         result.Value.Should().Be("Generated system message");
@@ -310,7 +310,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
@@ -335,7 +335,7 @@ public class AiGenerationServiceTests
                 }
             );
 
-        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ALREADY_CHAIN");
@@ -381,7 +381,7 @@ public class AiGenerationServiceTests
                 )
             );
 
-        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, default);
+        var result = await _sut.DecomposeAsync(TenantId, UserId, EntryId, null, default);
 
         result.IsError.Should().BeFalse();
         result.Value.Should().HaveCount(3);
