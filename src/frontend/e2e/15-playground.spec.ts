@@ -52,8 +52,8 @@ test.describe('Test Matrix — Core Happy Path', () => {
     await page.waitForURL(/\/entry\/[a-f0-9-]+\/test$/, { timeout: 10_000 });
 
     // Verify toolbar loaded with Add Version, Add Model, and Run All
-    await expect(page.getByText('Add Version')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText('Add Model')).toBeVisible();
+    await expect(page.getByRole('combobox').filter({ hasText: 'Add Version' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('combobox').filter({ hasText: 'Add Model' })).toBeVisible();
     await expect(page.getByRole('button', { name: /run all/i })).toBeVisible();
 
     // Verify template variables section is visible with 2 required fields
