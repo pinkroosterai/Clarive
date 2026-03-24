@@ -24,10 +24,14 @@ test.describe('Sharing & Profile', () => {
 
     await page.waitForTimeout(1_000); // Actions panel load
 
-    // Open share dialog from the Actions tab
-    const shareBtn = page.getByRole('button', { name: /share link/i });
-    await expect(shareBtn).toBeVisible({ timeout: 5_000 });
-    await shareBtn.click();
+    // Open share dialog from the "More actions" dropdown
+    const moreActionsBtn = page.getByRole('button', { name: /more actions/i });
+    await expect(moreActionsBtn).toBeVisible({ timeout: 5_000 });
+    await moreActionsBtn.click();
+
+    const shareItem = page.getByRole('menuitem', { name: /share link/i });
+    await expect(shareItem).toBeVisible({ timeout: 3_000 });
+    await shareItem.click();
 
     const dialog = page.getByRole('dialog');
     await dialog.waitFor({ state: 'visible' });
@@ -70,8 +74,12 @@ test.describe('Sharing & Profile', () => {
     await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
     await page.waitForTimeout(1_000);
 
-    const shareBtn = page.getByRole('button', { name: /share link|manage share/i });
-    await shareBtn.click();
+    const moreActionsBtn2 = page.getByRole('button', { name: /more actions/i });
+    await moreActionsBtn2.click();
+
+    const shareItem2 = page.getByRole('menuitem', { name: /share link|manage share/i });
+    await expect(shareItem2).toBeVisible({ timeout: 3_000 });
+    await shareItem2.click();
 
     const dialog = page.getByRole('dialog');
     await dialog.waitFor({ state: 'visible' });

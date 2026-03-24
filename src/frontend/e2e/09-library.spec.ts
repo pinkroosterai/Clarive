@@ -87,9 +87,14 @@ test.describe('Library Search, Filter & Sort', () => {
     await expect(title).toBeVisible({ timeout: 5_000 });
     const originalTitle = await title.inputValue();
 
-    const duplicateBtn = page.getByRole('button', { name: /duplicate/i });
-    await expect(duplicateBtn).toBeVisible({ timeout: 5_000 });
-    await duplicateBtn.click();
+    // Duplicate is inside the "More actions" dropdown
+    const moreActionsBtn = page.getByRole('button', { name: /more actions/i });
+    await expect(moreActionsBtn).toBeVisible({ timeout: 5_000 });
+    await moreActionsBtn.click();
+
+    const duplicateItem = page.getByRole('menuitem', { name: /duplicate/i });
+    await expect(duplicateItem).toBeVisible({ timeout: 3_000 });
+    await duplicateItem.click();
 
     const dialog = page.getByRole('dialog');
     if (await dialog.isVisible({ timeout: 3_000 }).catch(() => false)) {
