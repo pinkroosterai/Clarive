@@ -10,5 +10,6 @@ public record TestEntryRequest(
     [property: StringLength(20)] string? ReasoningEffort = null,
     bool? ShowReasoning = null,
     List<Guid>? McpServerIds = null,
-    List<string>? ExcludedToolNames = null
+    List<string>? ExcludedToolNames = null,
+    Guid? TabId = null
 );

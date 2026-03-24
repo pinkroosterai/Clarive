@@ -129,7 +129,7 @@ export function useMatrixExecution({
             maxTokens: model.maxTokens,
             reasoningEffort: model.isReasoning ? model.reasoningEffort : undefined,
             showReasoning: model.isReasoning,
-            // TODO: pass versionId/tabId to backend when version-specific test API is available
+            tabId: versionId,
           },
           handler,
           controller.signal,

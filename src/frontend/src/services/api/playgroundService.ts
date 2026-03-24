@@ -74,6 +74,7 @@ export interface TestEntryParams {
   showReasoning?: boolean;
   mcpServerIds?: string[];
   excludedToolNames?: string[];
+  tabId?: string;
 }
 
 export async function testEntry(
@@ -91,6 +92,7 @@ export async function testEntry(
     showReasoning: params.showReasoning,
     mcpServerIds: params.mcpServerIds,
     excludedToolNames: params.excludedToolNames,
+    tabId: params.tabId,
   };
 
   if (onEvent) {

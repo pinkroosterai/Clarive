@@ -75,7 +75,7 @@ public static class PlaygroundEndpoints
 
         if (!WantsSse(ctx))
         {
-            var result = await playground.TestEntryAsync(tenantId, userId, entryId, request, ct);
+            var result = await playground.TestEntryAsync(tenantId, userId, entryId, request, ct, versionId: request.TabId);
 
             if (result.IsError)
                 return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
@@ -108,7 +108,8 @@ public static class PlaygroundEndpoints
                 entryId,
                 request,
                 ct,
-                evt => sse.WriteChunkAsync(evt, ct)
+                evt => sse.WriteChunkAsync(evt, ct),
+                versionId: request.TabId
             );
 
             if (result.IsError)
