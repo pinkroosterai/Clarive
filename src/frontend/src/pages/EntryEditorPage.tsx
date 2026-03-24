@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
@@ -85,6 +85,8 @@ const EntryEditorPage = () => {
       setActiveTabId(mainTab.id);
     }
   }, [activeTabId, mainTab]);
+
+  const queryClient = useQueryClient();
 
   // ── Hooks ──
   const editor = useEditorState(entryData);
@@ -205,6 +207,7 @@ const EntryEditorPage = () => {
     : undefined;
   const canRestore = viewedVersionState === 'historical' && currentUser?.role !== 'viewer';
   const hasPublished = versions.some((v) => v.versionState === 'published');
+  const publishedVersion = versions.find((v) => v.versionState === 'published');
 
   const readOnlyBanner = isReadOnly && version && (
     <div className="flex items-center gap-3 rounded-md border border-warning-border bg-warning-bg px-4 py-2.5 text-sm">
@@ -257,6 +260,8 @@ const EntryEditorPage = () => {
 
   const handleDeleteTab = (tabId: string) => {
     entryService.deleteTab(entryId!, tabId).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['tabs', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
       toast.success('Tab deleted');
       if (activeTabId === tabId && mainTab) {
         setActiveTabId(mainTab.id);
@@ -278,9 +283,18 @@ const EntryEditorPage = () => {
         <TabBar
           tabs={tabs}
           activeTabId={activeTabId}
-          onTabSelect={setActiveTabId}
+          onTabSelect={(tabId) => {
+            setActiveTabId(tabId);
+          }}
           onCreateTab={() => setCreateTabOpen(true)}
           onDeleteTab={handleDeleteTab}
+          onViewPublished={
+            publishedVersion
+              ? () => navigate(`/entry/${entryId}/version/${publishedVersion.version}`)
+              : undefined
+          }
+          hasPublished={hasPublished}
+          isViewingPublished={false}
           isReadOnly={isReadOnly}
         />
       )}
