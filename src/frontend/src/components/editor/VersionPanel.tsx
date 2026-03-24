@@ -52,13 +52,11 @@ export function VersionPanel({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
-  const { variants, history, publishableVersions } = useMemo(() => {
+  const { variants, history, forkableVersions } = useMemo(() => {
     const vrnts = versions.filter((v) => v.versionState === 'variant');
     const hist = versions.filter((v) => v.versionState !== 'variant');
-    const publishable = hist.filter(
-      (v) => v.versionState === 'published' || v.versionState === 'historical'
-    );
-    return { variants: vrnts, history: hist, publishableVersions: publishable };
+    // Any non-variant version can be forked as a new variant (draft, published, historical)
+    return { variants: vrnts, history: hist, forkableVersions: hist };
   }, [versions]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
@@ -145,7 +143,7 @@ export function VersionPanel({
                   <SelectValue placeholder="Base version" />
                 </SelectTrigger>
                 <SelectContent>
-                  {publishableVersions.map((v) => (
+                  {forkableVersions.map((v) => (
                     <SelectItem key={v.version} value={String(v.version)} className="text-xs">
                       v{v.version} ({v.versionState})
                     </SelectItem>
@@ -241,7 +239,7 @@ export function VersionPanel({
       )}
 
       {/* ── Create variant button (when none exist) ── */}
-      {variants.length === 0 && !showCreateForm && publishableVersions.length > 0 && (
+      {variants.length === 0 && !showCreateForm && forkableVersions.length > 0 && (
         <Button
           variant="outline"
           size="sm"
