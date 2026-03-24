@@ -3,7 +3,7 @@ import { Eye, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { TabInfo, VersionInfo } from '@/types';
+import type { TabInfo } from '@/types';
 
 interface TabBarProps {
   tabs: TabInfo[];
@@ -15,6 +15,8 @@ interface TabBarProps {
   hasPublished?: boolean;
   isViewingPublished?: boolean;
   isReadOnly?: boolean;
+  /** Show unsaved-changes dot on the active tab */
+  isDirty?: boolean;
 }
 
 export function TabBar({
@@ -27,6 +29,7 @@ export function TabBar({
   hasPublished,
   isViewingPublished,
   isReadOnly,
+  isDirty,
 }: TabBarProps) {
   if (tabs.length <= 1 && isReadOnly && !hasPublished) return null;
 
@@ -67,6 +70,14 @@ export function TabBar({
             )}
           >
             <span className="truncate max-w-[120px]">{tab.name}</span>
+            {isActive && isDirty && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="size-2 rounded-full bg-warning-text shrink-0" aria-label="Unsaved changes" />
+                </TooltipTrigger>
+                <TooltipContent>Unsaved changes</TooltipContent>
+              </Tooltip>
+            )}
             {!tab.isMainTab && !isReadOnly && onDeleteTab && (
               <Tooltip>
                 <TooltipTrigger asChild>

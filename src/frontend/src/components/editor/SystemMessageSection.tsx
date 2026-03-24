@@ -6,17 +6,20 @@ import { HelpPopover } from '@/components/common/HelpPopover';
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SystemMessageSectionProps {
   systemMessage: string | null;
   onChange: (value: string | null) => void;
   isReadOnly: boolean;
+  skipEntryAnimation?: boolean;
 }
 
 export function SystemMessageSection({
   systemMessage,
   onChange,
   isReadOnly,
+  skipEntryAnimation,
 }: SystemMessageSectionProps) {
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
 
@@ -31,7 +34,7 @@ export function SystemMessageSection({
         !isReadOnly && (
           <motion.div
             key="add-btn"
-            initial={{ opacity: 0, y: -8 }}
+            initial={skipEntryAnimation ? false : { opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
@@ -54,7 +57,7 @@ export function SystemMessageSection({
       ) : (
         <motion.div
           key="sys-msg"
-          initial={{ opacity: 0, height: 0 }}
+          initial={skipEntryAnimation ? false : { opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -71,14 +74,20 @@ export function SystemMessageSection({
               </CollapsibleTrigger>
               <HelpPopover content="Instructions for the AI that apply before the main prompt. Use this to set the AI's role, tone, or constraints." section="entry-editor" />
               {!isReadOnly && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-6"
-                  onClick={() => onChange(null)}
-                >
-                  <X className="size-3.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6"
+                      aria-label="Remove system message"
+                      onClick={() => onChange(null)}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Remove system message</TooltipContent>
+                </Tooltip>
               )}
             </div>
             <CollapsibleContent className="mt-2">

@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { GitCompareArrows, RotateCcw } from 'lucide-react';
+import { ChevronDown, GitCompareArrows, RotateCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { HelpPopover } from '@/components/common/HelpPopover';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +20,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleApiError } from '@/lib/handleApiError';
-import { restoreVersion } from '@/services/api/entryService';
+import { getVersion, restoreVersion } from '@/services/api/entryService';
 import type { VersionInfo } from '@/types';
 
 interface VersionPanelProps {
@@ -192,36 +194,115 @@ export function VersionPanel({
       </div>
 
       {/* ── Restore Dialog ── */}
-      <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Restore v{restoreTargetVersion}</DialogTitle>
-            <DialogDescription>
-              This will create a new tab with the content from v{restoreTargetVersion}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            <Label htmlFor="restore-tab-name">New tab name</Label>
-            <Input
-              id="restore-tab-name"
-              value={newTabName}
-              onChange={(e) => setNewTabName(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRestoreDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => restoreMutation.mutate()}
-              disabled={restoreMutation.isPending}
-            >
-              {restoreMutation.isPending ? 'Restoring...' : 'Restore'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RestoreDialog
+        entryId={entryId}
+        version={restoreTargetVersion}
+        open={restoreDialogOpen}
+        onOpenChange={setRestoreDialogOpen}
+        tabName={newTabName}
+        onTabNameChange={setNewTabName}
+        onRestore={() => restoreMutation.mutate()}
+        isPending={restoreMutation.isPending}
+      />
     </div>
+  );
+}
+
+/* ── Restore Dialog with Preview ── */
+
+function RestoreDialog({
+  entryId,
+  version,
+  open,
+  onOpenChange,
+  tabName,
+  onTabNameChange,
+  onRestore,
+  isPending,
+}: {
+  entryId: string;
+  version: number | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tabName: string;
+  onTabNameChange: (name: string) => void;
+  onRestore: () => void;
+  isPending: boolean;
+}) {
+  const { data: preview, isLoading: previewLoading } = useQuery({
+    queryKey: ['version-preview', entryId, version],
+    queryFn: () => getVersion(entryId, version!),
+    enabled: open && version !== null,
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Restore v{version}</DialogTitle>
+          <DialogDescription>
+            This will create a new tab with the content from v{version}.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Preview section */}
+        <Collapsible defaultOpen>
+          <CollapsibleTrigger className="flex items-center gap-1.5 text-xs font-medium text-foreground-muted hover:text-foreground transition-colors [&[data-state=open]>svg]:rotate-180">
+            <ChevronDown className="size-3.5 transition-transform duration-200" />
+            Preview
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2">
+            <ScrollArea className="max-h-[200px] rounded-md border border-border bg-elevated p-3">
+              {previewLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+              ) : preview ? (
+                <div className="space-y-2 text-xs text-foreground-muted">
+                  {preview.systemMessage && (
+                    <div>
+                      <span className="font-semibold text-foreground">System:</span>{' '}
+                      <span className="whitespace-pre-wrap">{preview.systemMessage}</span>
+                    </div>
+                  )}
+                  {preview.prompts?.map((p, i) => (
+                    <div key={p.id || i}>
+                      <span className="font-semibold text-foreground">
+                        Prompt {preview.prompts.length > 1 ? `#${i + 1}` : ''}:
+                      </span>{' '}
+                      <span className="whitespace-pre-wrap">
+                        {p.content || '(empty)'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-foreground-muted">Unable to load preview.</p>
+              )}
+            </ScrollArea>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <div className="space-y-2 py-1">
+          <Label htmlFor="restore-tab-name">New tab name</Label>
+          <Input
+            id="restore-tab-name"
+            value={tabName}
+            onChange={(e) => onTabNameChange(e.target.value)}
+            autoFocus
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={onRestore} disabled={isPending}>
+            {isPending ? 'Restoring...' : 'Restore'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

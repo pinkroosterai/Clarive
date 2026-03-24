@@ -15,13 +15,20 @@ interface PromptEditorProps {
   onChange: (updated: Partial<PromptEntry>, options?: { force?: boolean }) => void;
   isReadOnly: boolean;
   hideTitleInput?: boolean;
+  skipEntryAnimation?: boolean;
 }
 
 function generateLocalId() {
   return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export function PromptEditor({ entry, onChange, isReadOnly, hideTitleInput }: PromptEditorProps) {
+export function PromptEditor({
+  entry,
+  onChange,
+  isReadOnly,
+  hideTitleInput,
+  skipEntryAnimation,
+}: PromptEditorProps) {
   const sortedPrompts = useMemo(
     () => [...entry.prompts].sort((a, b) => a.order - b.order),
     [entry.prompts]
@@ -92,6 +99,7 @@ export function PromptEditor({ entry, onChange, isReadOnly, hideTitleInput }: Pr
           onChange({ systemMessage: value }, isStructural ? { force: true } : undefined);
         }}
         isReadOnly={isReadOnly}
+        skipEntryAnimation={skipEntryAnimation}
       />
 
       <div className="space-y-4">
@@ -104,6 +112,7 @@ export function PromptEditor({ entry, onChange, isReadOnly, hideTitleInput }: Pr
               isOnly={sortedPrompts.length === 1}
               isLast={i === sortedPrompts.length - 1}
               isReadOnly={isReadOnly}
+              skipEntryAnimation={skipEntryAnimation}
               onUpdate={updatePrompt}
               onDelete={() => deletePrompt(prompt.id)}
               onMoveUp={() => movePrompt(prompt.id, -1)}

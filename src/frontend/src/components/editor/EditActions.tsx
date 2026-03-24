@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Save, RotateCcw, Undo2, Redo2, Check } from 'lucide-react';
+import { Save, RotateCcw, Check } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 import {
@@ -20,10 +20,6 @@ interface EditActionsProps {
   isDirty: boolean;
   onSave: () => void;
   onDiscard: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
   isSaving: boolean;
   hasEmptyTitle?: boolean;
 }
@@ -32,10 +28,6 @@ export function EditActions({
   isDirty,
   onSave,
   onDiscard,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
   isSaving,
   hasEmptyTitle,
 }: EditActionsProps) {
@@ -53,43 +45,6 @@ export function EditActions({
 
   return (
     <>
-      <div className="inline-flex items-center gap-0.5 rounded-md border border-border-subtle p-0.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onUndo}
-              disabled={!canUndo}
-              className="size-10 md:size-8"
-              aria-label="Undo"
-            >
-              <Undo2 className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            Undo <kbd className="ml-1 text-xs opacity-60">Ctrl+Z</kbd>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onRedo}
-              disabled={!canRedo}
-              className="size-10 md:size-8"
-              aria-label="Redo"
-            >
-              <Redo2 className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            Redo <kbd className="ml-1 text-xs opacity-60">Ctrl+Shift+Z</kbd>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -119,7 +74,7 @@ export function EditActions({
                 </motion.span>
               )}
             </AnimatePresence>
-            {showSaveSuccess ? 'Saved!' : isSaving ? 'Saving\u2026' : 'Save'}
+            {showSaveSuccess ? 'Saved!' : isSaving ? 'Saving…' : 'Save'}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left">

@@ -1,7 +1,7 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { AlertTriangle, Star } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AlertTriangle, Redo2, Star, Undo2 } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -50,6 +50,8 @@ const EntryEditorPage = () => {
   const [activeTabId, setActiveTabId] = useState<string | undefined>(undefined);
   const [viewingPublished, setViewingPublished] = useState(false);
   const [createTabOpen, setCreateTabOpen] = useState(false);
+  const isInitialLoad = useRef(true);
+  const prefersReducedMotion = useReducedMotion();
 
   // ── Data fetching ──
 
@@ -141,6 +143,17 @@ const EntryEditorPage = () => {
     folderPickerState: dupFolderPickerState,
     isDuplicating,
   } = useDuplicateEntry();
+
+  const trashMutation = useMutation({
+    mutationFn: () => entryService.trashEntry(entryId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      toast.success('Entry moved to trash');
+      navigate('/library');
+    },
+    onError: () => toast.error('Failed to move entry to trash'),
+  });
+
   const isSoftLocked = !!activeEditor && !softLockOverride;
   const isReadOnly = !!version || viewingPublished || currentUser?.role === 'viewer' || isSoftLocked;
 
@@ -216,6 +229,12 @@ const EntryEditorPage = () => {
   if (isError) return <EditorError />;
   if (isLoading || !editor.localEntry) return <EditorSkeleton isMobile={isMobile} />;
 
+  // Capture before flipping — first render gets true (play animations), all subsequent get false
+  const showEntryAnimation = isInitialLoad.current;
+  if (isInitialLoad.current) {
+    isInitialLoad.current = false;
+  }
+
   const localEntry = editor.localEntry;
 
   // ── Shared elements ──
@@ -255,15 +274,34 @@ const EntryEditorPage = () => {
     </div>
   );
 
-  const versionBadge = hasPublished ? (
-    <Badge variant="published" className="text-xs">
-      Published
-    </Badge>
-  ) : (
-    <Badge variant="historical" className="text-xs">
-      Unpublished
-    </Badge>
-  );
+  const versionBadge = (() => {
+    if (version) {
+      // Viewing a historical version — show version number
+      const state = versions.find((v) => v.version === versionNum)?.versionState;
+      return (
+        <Badge variant={state === 'published' ? 'published' : 'historical'} className="text-xs">
+          v{versionNum} — {state === 'published' ? 'Published' : 'Historical'}
+        </Badge>
+      );
+    }
+    if (viewingPublished) {
+      return (
+        <Badge variant="published" className="text-xs">
+          Published
+        </Badge>
+      );
+    }
+    // On a working tab: only show badge if entry has never been published
+    // (the Published tab in the tab bar already signals published status)
+    if (!hasPublished) {
+      return (
+        <Badge variant="historical" className="text-xs">
+          Unpublished
+        </Badge>
+      );
+    }
+    return null;
+  })();
 
   const versionPanel = (
     <VersionPanel
@@ -310,14 +348,17 @@ const EntryEditorPage = () => {
           hasPublished={hasPublished}
           isViewingPublished={viewingPublished}
           isReadOnly={isReadOnly}
+          isDirty={editor.isDirty}
         />
       )}
 
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          {versionBadge}
-          {unsavedIndicator}
-        </div>
+        {(versionBadge || unsavedIndicator) && (
+          <div className="flex items-center gap-2">
+            {versionBadge}
+            {unsavedIndicator}
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <div className="flex-1 min-w-0">
             <Input
@@ -328,6 +369,44 @@ const EntryEditorPage = () => {
               className="text-xl md:text-2xl font-bold h-12 md:h-14 border-transparent bg-transparent px-0 shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-primary/40 rounded-none transition-colors"
             />
           </div>
+          {!isReadOnly && (
+            <div className="inline-flex items-center gap-0.5 rounded-md border border-border-subtle p-0.5 shrink-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={editor.handleUndo}
+                    disabled={!editor.canUndo}
+                    className="size-8"
+                    aria-label="Undo"
+                  >
+                    <Undo2 className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Undo <kbd className="ml-1 text-xs opacity-60">Ctrl+Z</kbd>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={editor.handleRedo}
+                    disabled={!editor.canRedo}
+                    className="size-8"
+                    aria-label="Redo"
+                  >
+                    <Redo2 className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Redo <kbd className="ml-1 text-xs opacity-60">Ctrl+Shift+Z</kbd>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -354,13 +433,24 @@ const EntryEditorPage = () => {
       {isSoftLocked && activeEditor && (
         <SoftLockBanner activeEditor={activeEditor} onOverride={() => setSoftLockOverride(true)} />
       )}
-      <PromptEditor
-        key={editor.discardVersion}
-        entry={localEntry}
-        onChange={editor.handleChange}
-        isReadOnly={isReadOnly}
-        hideTitleInput
-      />
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={viewingPublished ? 'published' : (activeTabId ?? 'default')}
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+          transition={{ duration: 0.15 }}
+        >
+          <PromptEditor
+            key={editor.discardVersion}
+            entry={localEntry}
+            onChange={editor.handleChange}
+            isReadOnly={isReadOnly}
+            hideTitleInput
+            skipEntryAnimation={!showEntryAnimation}
+          />
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 
@@ -370,10 +460,6 @@ const EntryEditorPage = () => {
     isReadOnly,
     onSave: mutations.handleSave,
     onDiscard: editor.handleDiscard,
-    onUndo: editor.handleUndo,
-    onRedo: editor.handleRedo,
-    canUndo: editor.canUndo,
-    canRedo: editor.canRedo,
     onPublish: handlePublishWithCheck,
     onEnhance: () => navigate(`/entry/${entryId}/enhance`),
     isSaving: mutations.saveMutation.isPending,
@@ -405,6 +491,8 @@ const EntryEditorPage = () => {
     presenceUsers,
     onDuplicate: !isReadOnly ? () => startDuplicate(localEntry) : undefined,
     isDuplicating,
+    onMoveToTrash: !isReadOnly && currentUser?.role !== 'viewer' ? () => trashMutation.mutate() : undefined,
+    isMovingToTrash: trashMutation.isPending,
   } as const;
 
   const isAiRunning =

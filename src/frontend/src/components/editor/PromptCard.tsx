@@ -62,6 +62,7 @@ interface PromptCardProps {
   isOnly: boolean;
   isLast: boolean;
   isReadOnly: boolean;
+  skipEntryAnimation?: boolean;
   onUpdate: (updated: Prompt) => void;
   onDelete: () => void;
   onMoveUp: () => void;
@@ -74,6 +75,7 @@ export const PromptCard = memo(function PromptCard({
   isOnly,
   isLast,
   isReadOnly,
+  skipEntryAnimation,
   onUpdate,
   onDelete,
   onMoveUp,
@@ -96,7 +98,7 @@ export const PromptCard = memo(function PromptCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 16 }}
+      initial={skipEntryAnimation ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12, scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 350, damping: 30 }}
@@ -145,7 +147,7 @@ export const PromptCard = memo(function PromptCard({
             content={prompt.content}
             onContentChange={(md) => onUpdate({ ...prompt, content: md })}
             editable={!isReadOnly}
-            placeholder="Enter your prompt…"
+            placeholder="Write your prompt here — describe the task, role, or instructions for the AI. Use {{variable}} for dynamic fields."
             templateHighlight={true}
             minHeightClass="min-h-[120px]"
           />

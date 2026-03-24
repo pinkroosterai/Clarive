@@ -17,10 +17,6 @@ export interface EditorActionPanelProps {
   isReadOnly: boolean;
   onSave: () => void;
   onDiscard: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
   onPublish: () => void;
   onEnhance: () => void;
   isSaving: boolean;
@@ -46,6 +42,8 @@ export interface EditorActionPanelProps {
   presenceUsers?: PresenceUser[];
   onDuplicate?: () => void;
   isDuplicating?: boolean;
+  onMoveToTrash?: () => void;
+  isMovingToTrash?: boolean;
 }
 
 export function EditorActionPanel({
@@ -54,10 +52,6 @@ export function EditorActionPanel({
   isReadOnly,
   onSave,
   onDiscard,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
   onPublish,
   onEnhance,
   isSaving,
@@ -83,6 +77,8 @@ export function EditorActionPanel({
   presenceUsers,
   onDuplicate,
   isDuplicating,
+  onMoveToTrash,
+  isMovingToTrash,
 }: EditorActionPanelProps) {
   const [activeTab, setActiveTab] = useState('actions');
 
@@ -147,10 +143,6 @@ export function EditorActionPanel({
                 isReadOnly={isReadOnly}
                 onSave={onSave}
                 onDiscard={onDiscard}
-                onUndo={onUndo}
-                onRedo={onRedo}
-                canUndo={canUndo}
-                canRedo={canRedo}
                 onPublish={onPublish}
                 onEnhance={onEnhance}
                 isSaving={isSaving}
@@ -170,6 +162,8 @@ export function EditorActionPanel({
                 hasEmptyTitle={hasEmptyTitle}
                 onDuplicate={onDuplicate}
                 isDuplicating={isDuplicating}
+                onMoveToTrash={onMoveToTrash}
+                isMovingToTrash={isMovingToTrash}
               />
             </div>
           </ScrollArea>

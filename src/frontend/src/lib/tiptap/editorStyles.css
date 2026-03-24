@@ -55,8 +55,13 @@
 
 /* Placeholder */
 .ProseMirror p.is-editor-empty:first-child::before {
-  @apply pointer-events-none float-left h-0 text-foreground-muted;
+  @apply pointer-events-none float-left h-0;
   content: attr(data-placeholder);
+  color: hsl(240 8% 38%);
+}
+
+:is(.dark) .ProseMirror p.is-editor-empty:first-child::before {
+  color: hsl(240 14% 52%);
 }
 
 /* Template tag decoration */
