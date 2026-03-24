@@ -76,7 +76,7 @@ export function SaveStep({ draft, mode, evaluation, onSave, onBack, isSaving }: 
 
       <div className="text-center space-y-4">
         <p className="text-sm text-foreground-muted">
-          {mode === 'new' ? 'Save as new draft entry?' : 'Apply enhanced version to current entry?'}
+          {mode === 'new' ? 'Save as new entry?' : 'Apply enhanced version to current entry?'}
         </p>
 
         {mode === 'new' && (

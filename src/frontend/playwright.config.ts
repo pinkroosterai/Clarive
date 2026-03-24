@@ -8,6 +8,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 0,
   workers: 1,
+  maxFailures: 1,
   reporter: process.env.CI ? 'list' : 'html',
 
   use: {

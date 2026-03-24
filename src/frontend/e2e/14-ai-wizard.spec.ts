@@ -61,7 +61,7 @@ test.describe('AI Wizard — New Entry Generation', () => {
     await page.getByRole('button', { name: /^accept$/i }).click({ force: true });
 
     // === Step 3: Save ===
-    await expect(page.getByText('Save as new draft entry?')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Save as new entry?')).toBeVisible({ timeout: 10_000 });
 
     // Click Save
     await page.getByRole('button', { name: /^save$/i }).click();

@@ -30,7 +30,6 @@ test.describe('Sharing & Profile', () => {
     await page.getByText('E2E Test Entry v2', { exact: true }).first().click();
     await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
 
-    // If this entry is a draft (from the copy), scroll down to check
     // The share button only appears for published entries
     // Wait for the Actions panel to load
     await page.waitForTimeout(1_000);
