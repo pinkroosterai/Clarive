@@ -19,6 +19,10 @@ public class TestDatasetService(
 ) : ITestDatasetService
 {
     private const int MaxDatasetsPerEntry = 20;
+    private const int MaxRowsPerDataset = 1000;
+    private const int MaxRowKeys = 50;
+    private const int MaxKeyLength = 100;
+    private const int MaxValueLength = 10_000;
 
     public async Task<ErrorOr<List<TestDatasetResponse>>> ListAsync(
         Guid tenantId, Guid entryId, CancellationToken ct = default)
@@ -29,15 +33,12 @@ public class TestDatasetService(
 
         var datasets = await datasetRepo.GetByEntryIdAsync(tenantId, entryId, ct);
 
-        // Get row counts by loading rows for each dataset
-        var result = new List<TestDatasetResponse>();
-        foreach (var d in datasets)
-        {
-            var rows = await datasetRepo.GetRowsByDatasetIdAsync(d.Id, ct);
-            result.Add(new TestDatasetResponse(d.Id, d.Name, rows.Count, d.CreatedAt, d.UpdatedAt));
-        }
+        var rowCounts = await datasetRepo.GetRowCountsByDatasetIdsAsync(
+            datasets.Select(d => d.Id).ToList(), ct);
 
-        return result;
+        return datasets.Select(d => new TestDatasetResponse(
+            d.Id, d.Name, rowCounts.GetValueOrDefault(d.Id, 0), d.CreatedAt, d.UpdatedAt
+        )).ToList();
     }
 
     public async Task<ErrorOr<TestDatasetDetailResponse>> GetAsync(
@@ -121,6 +122,13 @@ public class TestDatasetService(
         if (dataset is null)
             return DomainErrors.TestDatasetNotFound;
 
+        if (dataset.Rows.Count >= MaxRowsPerDataset)
+            return DomainErrors.TestDatasetRowLimitExceeded;
+
+        var valErr = ValidateRowValues(request.Values);
+        if (valErr is not null)
+            return valErr.Value;
+
         var row = new TestDatasetRow
         {
             Id = Guid.NewGuid(),
@@ -141,6 +149,10 @@ public class TestDatasetService(
         var dataset = await GetDatasetWithOwnershipCheckAsync(tenantId, entryId, datasetId, ct);
         if (dataset is null)
             return DomainErrors.TestDatasetNotFound;
+
+        var valErr = ValidateRowValues(request.Values);
+        if (valErr is not null)
+            return valErr.Value;
 
         var row = dataset.Rows.FirstOrDefault(r => r.Id == rowId);
         if (row is null)
@@ -181,6 +193,9 @@ public class TestDatasetService(
         var dataset = await GetDatasetWithOwnershipCheckAsync(tenantId, entryId, datasetId, ct);
         if (dataset is null)
             return DomainErrors.TestDatasetNotFound;
+
+        if (dataset.Rows.Count + request.Count > MaxRowsPerDataset)
+            return DomainErrors.TestDatasetRowLimitExceeded;
 
         // Get entry's template fields
         var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
@@ -252,6 +267,22 @@ public class TestDatasetService(
             uniqueRows.Count, datasetId, request.Count);
 
         return uniqueRows.Select(r => new TestDatasetRowResponse(r.Id, r.Values, r.CreatedAt)).ToList();
+    }
+
+    private static Error? ValidateRowValues(Dictionary<string, string> values)
+    {
+        if (values.Count > MaxRowKeys)
+            return DomainErrors.TestDatasetRowValuesInvalid;
+
+        foreach (var (key, value) in values)
+        {
+            if (key.Length > MaxKeyLength)
+                return DomainErrors.TestDatasetRowValuesInvalid;
+            if (value is not null && value.Length > MaxValueLength)
+                return DomainErrors.TestDatasetRowValuesInvalid;
+        }
+
+        return null;
     }
 
     /// <summary>

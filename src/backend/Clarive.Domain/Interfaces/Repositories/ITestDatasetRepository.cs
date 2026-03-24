@@ -18,4 +18,5 @@ public interface ITestDatasetRepository
     Task<TestDatasetRow> UpdateRowAsync(TestDatasetRow row, CancellationToken ct = default);
     Task<bool> DeleteRowAsync(Guid datasetId, Guid rowId, CancellationToken ct = default);
     Task<List<TestDatasetRow>> GetRowsByDatasetIdAsync(Guid datasetId, CancellationToken ct = default);
+    Task<Dictionary<Guid, int>> GetRowCountsByDatasetIdsAsync(List<Guid> datasetIds, CancellationToken ct = default);
 }

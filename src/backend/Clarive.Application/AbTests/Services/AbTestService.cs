@@ -170,38 +170,33 @@ public class AbTestService(
                 var row = dataset.Rows[i];
                 ct.ThrowIfCancellationRequested();
 
-                // Run Version A
                 if (onProgress is not null)
-                    await onProgress(new AbTestProgressEvent("running_version_a", i + 1, dataset.Rows.Count, $"v{request.VersionANumber}", $"Testing Version A on input {i + 1}/{dataset.Rows.Count}"));
+                    await onProgress(new AbTestProgressEvent("running", i + 1, dataset.Rows.Count, $"v{request.VersionANumber} & v{request.VersionBNumber}", $"Testing input {i + 1}/{dataset.Rows.Count}"));
 
-                var testRequestA = new TestEntryRequest(
+                // Run both versions in parallel
+                var testRequest = new TestEntryRequest(
                     Model: request.Model,
                     Temperature: request.Temperature,
                     MaxTokens: request.MaxTokens,
                     TemplateFields: row.Values
                 );
-                var resultA = await playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequestA with { }, ct);
+
+                var taskA = playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequest, ct);
+                var taskB = playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequest, ct);
+                await Task.WhenAll(taskA, taskB);
+
+                var resultA = taskA.Result;
+                var resultB = taskB.Result;
+
                 var outputA = resultA.IsError ? null : ExtractAssistantOutput(resultA.Value.ConversationLog);
                 var scoresA = resultA.IsError ? null : resultA.Value.JudgeScores;
-
-                // Run Version B
-                if (onProgress is not null)
-                    await onProgress(new AbTestProgressEvent("running_version_b", i + 1, dataset.Rows.Count, $"v{request.VersionBNumber}", $"Testing Version B on input {i + 1}/{dataset.Rows.Count}"));
-
-                var testRequestB = new TestEntryRequest(
-                    Model: request.Model,
-                    Temperature: request.Temperature,
-                    MaxTokens: request.MaxTokens,
-                    TemplateFields: row.Values
-                );
-                var resultB = await playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequestB, ct);
                 var outputB = resultB.IsError ? null : ExtractAssistantOutput(resultB.Value.ConversationLog);
                 var scoresB = resultB.IsError ? null : resultB.Value.JudgeScores;
 
                 if (onProgress is not null)
                     await onProgress(new AbTestProgressEvent("judging", i + 1, dataset.Rows.Count, null, $"Scored input {i + 1}/{dataset.Rows.Count}"));
 
-                var abResult = new ABTestResult
+                results.Add(new ABTestResult
                 {
                     Id = Guid.NewGuid(),
                     RunId = run.Id,
@@ -212,11 +207,12 @@ public class AbTestService(
                     VersionBScores = scoresB?.Dimensions,
                     VersionAAvgScore = scoresA?.AverageScore,
                     VersionBAvgScore = scoresB?.AverageScore,
-                };
-
-                await abTestRepo.AddResultAsync(abResult, ct);
-                results.Add(abResult);
+                });
             }
+
+            // Batch insert all results at once
+            if (results.Count > 0)
+                await abTestRepo.AddResultsAsync(results, ct);
 
             await abTestRepo.UpdateStatusAsync(run.Id, ABTestStatus.Completed, DateTime.UtcNow, ct);
             run.Status = ABTestStatus.Completed;

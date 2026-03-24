@@ -95,6 +95,12 @@ public static class DomainErrors
     public static Error TestDatasetLimitExceeded =>
         Error.Validation("TEST_DATASET_LIMIT_EXCEEDED", "Maximum 20 test datasets per entry.");
 
+    public static Error TestDatasetRowLimitExceeded =>
+        Error.Validation("TEST_DATASET_ROW_LIMIT_EXCEEDED", "Maximum 1000 rows per dataset.");
+
+    public static Error TestDatasetRowValuesInvalid =>
+        Error.Validation("TEST_DATASET_ROW_VALUES_INVALID", "Row values exceed size limits (max 50 keys, 100 chars per key, 10000 chars per value).");
+
     // ── A/B Test ──
 
     public static Error AbTestRunNotFound =>

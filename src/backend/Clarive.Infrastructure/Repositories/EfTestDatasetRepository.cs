@@ -118,4 +118,17 @@ public class EfTestDatasetRepository(ClariveDbContext db) : ITestDatasetReposito
             .OrderBy(r => r.CreatedAt)
             .ToListAsync(ct);
     }
+
+    public async Task<Dictionary<Guid, int>> GetRowCountsByDatasetIdsAsync(List<Guid> datasetIds, CancellationToken ct = default)
+    {
+        if (datasetIds.Count == 0)
+            return new Dictionary<Guid, int>();
+
+        return await db.TestDatasetRows
+            .AsNoTracking()
+            .Where(r => datasetIds.Contains(r.DatasetId))
+            .GroupBy(r => r.DatasetId)
+            .Select(g => new { DatasetId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.DatasetId, x => x.Count, ct);
+    }
 }
