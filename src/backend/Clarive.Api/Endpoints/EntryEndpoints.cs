@@ -47,6 +47,7 @@ public static partial class EntryEndpoints
 
         // Tabs
         group.MapGet("/{entryId:guid}/tabs", HandleListTabs);
+        group.MapGet("/{entryId:guid}/tabs/{tabId:guid}", HandleGetTab);
         group.MapPost("/{entryId:guid}/tabs", HandleCreateTab).RequireAuthorization("EditorOrAdmin");
         group
             .MapPatch("/{entryId:guid}/tabs/{tabId:guid}", HandleRenameTab)
@@ -544,6 +545,31 @@ public static partial class EntryEndpoints
         return result.IsError
             ? result.Errors.ToHttpResult(ctx)
             : Results.Ok(result.Value);
+    }
+
+    private static async Task<IResult> HandleGetTab(
+        Guid entryId,
+        Guid tabId,
+        HttpContext ctx,
+        IEntryService entryService,
+        IEntryRepository entryRepo,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return ctx.ErrorResult(404, "ENTRY_NOT_FOUND", "Entry not found.");
+
+        var tab = await entryRepo.GetVersionByIdAsync(tenantId, tabId, ct);
+        if (tab is null || tab.EntryId != entryId || tab.VersionState != VersionState.Tab)
+            return ctx.ErrorResult(404, "TAB_NOT_FOUND", "Tab not found.");
+
+        var responseResult = await entryService.BuildEntryResponseAsync(entry, tab, tenantId, false, ct);
+        return responseResult.IsError
+            ? responseResult.Errors.ToHttpResult(ctx)
+            : Results.Ok(responseResult.Value);
     }
 
     private static async Task<IResult> HandleCreateTab(

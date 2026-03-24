@@ -180,6 +180,10 @@ export async function addTags(entryId: string, tags: string[]): Promise<string[]
 
 // ── Tabs ──
 
+export async function getTab(entryId: string, tabId: string): Promise<PromptEntry> {
+  return api.get<PromptEntry>(`/api/entries/${entryId}/tabs/${tabId}`);
+}
+
 export async function listTabs(entryId: string): Promise<TabInfo[]> {
   return api.get<TabInfo[]>(`/api/entries/${entryId}/tabs`);
 }

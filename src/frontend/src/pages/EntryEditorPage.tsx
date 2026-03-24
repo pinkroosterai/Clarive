@@ -48,34 +48,16 @@ const EntryEditorPage = () => {
   const versionNum = version ? parseInt(version, 10) : undefined;
   const [softLockOverride, setSoftLockOverride] = useState(false);
   const [activeTabId, setActiveTabId] = useState<string | undefined>(undefined);
+  const [viewingPublished, setViewingPublished] = useState(false);
   const [createTabOpen, setCreateTabOpen] = useState(false);
 
   // ── Data fetching ──
-  const {
-    data: entryData,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ['entry', entryId],
-    queryFn: () => entryService.getEntry(entryId!),
-    enabled: !!entryId,
-  });
 
-  const { data: versions = [], isLoading: versionsLoading } = useQuery({
-    queryKey: ['versions', entryId],
-    queryFn: () => entryService.getVersionHistory(entryId!),
-    enabled: !!entryId,
-  });
-
+  // Fetch tab list first to resolve Main tab
   const { data: tabs = [] } = useQuery({
     queryKey: ['tabs', entryId],
     queryFn: () => entryService.listTabs(entryId!),
     enabled: !!entryId,
-  });
-
-  const { data: folders = [] } = useQuery({
-    queryKey: ['folders'],
-    queryFn: folderService.getFoldersTree,
   });
 
   // Set active tab to Main tab on initial load
@@ -85,6 +67,41 @@ const EntryEditorPage = () => {
       setActiveTabId(mainTab.id);
     }
   }, [activeTabId, mainTab]);
+
+  // Fetch active tab content (or main entry for version view / published view)
+  const {
+    data: entryData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: viewingPublished
+      ? ['entry', entryId, 'published']
+      : activeTabId
+        ? ['entry', entryId, 'tab', activeTabId]
+        : ['entry', entryId],
+    queryFn: () => {
+      if (viewingPublished) {
+        // Fetch published version — find version number from versions list
+        const pubVersion = versions.find((v) => v.versionState === 'published');
+        if (pubVersion) return entryService.getVersion(entryId!, pubVersion.version);
+        return entryService.getEntry(entryId!);
+      }
+      if (activeTabId) return entryService.getTab(entryId!, activeTabId);
+      return entryService.getEntry(entryId!);
+    },
+    enabled: !!entryId && (!viewingPublished || versions.length > 0),
+  });
+
+  const { data: versions = [], isLoading: versionsLoading } = useQuery({
+    queryKey: ['versions', entryId],
+    queryFn: () => entryService.getVersionHistory(entryId!),
+    enabled: !!entryId,
+  });
+
+  const { data: folders = [] } = useQuery({
+    queryKey: ['folders'],
+    queryFn: folderService.getFoldersTree,
+  });
 
   const queryClient = useQueryClient();
 
@@ -125,7 +142,7 @@ const EntryEditorPage = () => {
     isDuplicating,
   } = useDuplicateEntry();
   const isSoftLocked = !!activeEditor && !softLockOverride;
-  const isReadOnly = !!version || currentUser?.role === 'viewer' || isSoftLocked;
+  const isReadOnly = !!version || viewingPublished || currentUser?.role === 'viewer' || isSoftLocked;
 
   // Reset soft lock override when navigating to a different entry
   useEffect(() => {
@@ -284,17 +301,14 @@ const EntryEditorPage = () => {
           tabs={tabs}
           activeTabId={activeTabId}
           onTabSelect={(tabId) => {
+            setViewingPublished(false);
             setActiveTabId(tabId);
           }}
           onCreateTab={() => setCreateTabOpen(true)}
           onDeleteTab={handleDeleteTab}
-          onViewPublished={
-            publishedVersion
-              ? () => navigate(`/entry/${entryId}/version/${publishedVersion.version}`)
-              : undefined
-          }
+          onViewPublished={hasPublished ? () => setViewingPublished(true) : undefined}
           hasPublished={hasPublished}
-          isViewingPublished={false}
+          isViewingPublished={viewingPublished}
           isReadOnly={isReadOnly}
         />
       )}
