@@ -255,12 +255,13 @@ test-e2e-down: ## Tear down E2E test stack and destroy volumes
 E2E_SNAPSHOT := $(DEPLOY)/e2e-snapshot.sql
 E2E_AUTH_DIR := $(FE_DIR)/e2e/.auth
 
-test-e2e-snapshot: _require-sdk ## Run specs 01-06 and save DB snapshot for fast restores
-	@printf "$(C_CYAN)Running foundation specs (01-06) to build snapshot state...$(C_RESET)\n"
+test-e2e-snapshot: _require-sdk ## Run foundation specs and save DB snapshot for fast restores
+	@printf "$(C_CYAN)Running foundation specs (01-06 + 13) to build snapshot state...$(C_RESET)\n"
 	@cd $(FE_DIR) && BASE_URL=http://localhost:8081 PLAYWRIGHT_DOCKER=1 \
 		npx playwright test e2e/01-registration.spec.ts e2e/02-setup-wizard.spec.ts \
 		e2e/03-onboarding.spec.ts e2e/04-onboarding-tour.spec.ts \
-		e2e/05-entry-editing.spec.ts e2e/06-entry-versions.spec.ts
+		e2e/05-entry-editing.spec.ts e2e/06-entry-versions.spec.ts \
+		e2e/13-ai-model-config.spec.ts
 	@printf "$(C_CYAN)Taking database snapshot...$(C_RESET)\n"
 	@$(E2E_COMPOSE) exec -T postgres pg_dump -U clarive -d clarive --clean --if-exists > $(E2E_SNAPSHOT)
 	@cp -r $(E2E_AUTH_DIR) $(DEPLOY)/e2e-auth-snapshot
