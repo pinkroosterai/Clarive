@@ -139,12 +139,12 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
     await page.getByText('Published').first().click();
     await page.waitForTimeout(500);
 
-    // Read-only banner should be visible (shows "Viewing v{N} (read-only)")
-    await expect(page.getByText(/viewing v\d+.*read-only/i)).toBeVisible({
+    // Read-only mode indicator should be visible in sidebar
+    await expect(page.getByText(/read-only mode/i)).toBeVisible({
       timeout: 5_000,
     });
 
-    // Title input should be disabled
+    // Title input should be disabled (read-only)
     const titleInput = page.locator('input[placeholder="Entry title"]');
     await expect(titleInput).toBeDisabled();
 
@@ -223,7 +223,7 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
     await expect(page.getByText(TAB_B_NAME)).not.toBeVisible({ timeout: 5_000 });
 
     // Should have redirected to Main tab — verify editor is still functional
-    await expect(page.getByText('Prompt #1')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText('Prompt #1').first()).toBeVisible({ timeout: 5_000 });
   });
 
   // ── Restore to Tab ──
