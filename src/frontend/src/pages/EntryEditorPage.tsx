@@ -365,6 +365,8 @@ const EntryEditorPage = () => {
     showGenerateSystemMessage: !localEntry.systemMessage,
     showDecomposeToChain: localEntry.prompts.length === 1,
     onTest: aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/test`) : undefined,
+    onCompareVersions:
+      aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/ab-test`) : undefined,
     versions,
     onDeleteDraft: () => deleteDraftMutation.mutate(),
     isDeletingDraft: deleteDraftMutation.isPending,

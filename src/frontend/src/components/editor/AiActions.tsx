@@ -1,4 +1,4 @@
-import { Sparkles, Wand2, Workflow, Play } from 'lucide-react';
+import { GitCompareArrows, Play, Sparkles, Wand2, Workflow } from 'lucide-react';
 
 import {
   AlertDialog,
@@ -24,6 +24,7 @@ interface AiActionsProps {
   showGenerateSystemMessage: boolean;
   showDecomposeToChain: boolean;
   onTest?: () => void;
+  onCompareVersions?: () => void;
 }
 
 export function AiActions({
@@ -36,6 +37,7 @@ export function AiActions({
   showGenerateSystemMessage,
   showDecomposeToChain,
   onTest,
+  onCompareVersions,
 }: AiActionsProps) {
   return (
     <>
@@ -129,12 +131,35 @@ export function AiActions({
                 disabled={!aiEnabled}
               >
                 <Play className="size-4" />
-                Test Prompt
+                Run Prompt
               </Button>
             </div>
           </TooltipTrigger>
           <TooltipContent side="left">
             {aiEnabled ? 'Run this prompt in the playground' : 'AI features are not configured'}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {onCompareVersions && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <Button
+                variant="outline"
+                className="w-full gap-2 hover:border-primary/30 transition-all"
+                onClick={onCompareVersions}
+                disabled={!aiEnabled}
+              >
+                <GitCompareArrows className="size-4" />
+                Compare Versions
+              </Button>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            {aiEnabled
+              ? 'A/B test two versions against a test dataset'
+              : 'AI features are not configured'}
           </TooltipContent>
         </Tooltip>
       )}

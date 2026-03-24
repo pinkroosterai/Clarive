@@ -53,6 +53,7 @@ export interface ActionsTabContentProps {
   showGenerateSystemMessage: boolean;
   showDecomposeToChain: boolean;
   onTest?: () => void;
+  onCompareVersions?: () => void;
   versions: VersionInfo[];
   entryVersion: number;
   onDeleteDraft?: () => void;
@@ -84,6 +85,7 @@ export function ActionsTabContent({
   showGenerateSystemMessage,
   showDecomposeToChain,
   onTest,
+  onCompareVersions,
   versions,
   entryVersion,
   onDeleteDraft,
@@ -236,6 +238,7 @@ export function ActionsTabContent({
               showGenerateSystemMessage={showGenerateSystemMessage}
               showDecomposeToChain={showDecomposeToChain}
               onTest={onTest}
+              onCompareVersions={onCompareVersions}
             />
           </ActionGroup>
         </>
