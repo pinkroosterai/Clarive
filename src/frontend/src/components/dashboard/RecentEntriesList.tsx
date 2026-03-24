@@ -11,9 +11,10 @@ interface RecentEntriesListProps {
   entries: RecentEntry[];
 }
 
-const badgeVariant: Record<string, { variant: 'draft' | 'published'; label: string }> = {
-  draft: { variant: 'draft', label: 'Draft' },
+const badgeVariant: Record<string, { variant: 'published' | 'historical'; label: string }> = {
+  tab: { variant: 'historical', label: 'Unpublished' },
   published: { variant: 'published', label: 'Published' },
+  unpublished: { variant: 'historical', label: 'Unpublished' },
 };
 
 export const RecentEntriesList = memo(function RecentEntriesList({
@@ -37,7 +38,7 @@ export const RecentEntriesList = memo(function RecentEntriesList({
         <div className="divide-y divide-border-subtle">
           {entries.map((entry, i) => {
             const badge = badgeVariant[entry.versionState] ?? {
-              variant: 'draft' as const,
+              variant: 'historical' as const,
               label: entry.versionState,
             };
             return (

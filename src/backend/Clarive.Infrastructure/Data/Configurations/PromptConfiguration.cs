@@ -14,7 +14,7 @@ public class PromptConfiguration : IEntityTypeConfiguration<Prompt>
         builder.Property(p => p.Id).HasColumnName("id");
         builder.Property(p => p.VersionId).HasColumnName("version_id").IsRequired();
         builder.Property(p => p.Content).HasColumnName("content").IsRequired();
-        builder.Property(p => p.Order).HasColumnName("\"order\"").IsRequired();
+        builder.Property(p => p.Order).HasColumnName("sort_order").IsRequired();
         builder.Property(p => p.IsTemplate).HasColumnName("is_template").IsRequired();
 
         builder

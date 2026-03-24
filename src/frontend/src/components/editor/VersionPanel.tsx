@@ -1,32 +1,28 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { GitCompareArrows, FlaskConical, Pencil, Plus, Trash2, X, Check } from 'lucide-react';
+import { GitCompareArrows, RotateCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { HelpPopover } from '@/components/common/HelpPopover';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleApiError } from '@/lib/handleApiError';
-import { createVariant, deleteVariant, renameVariant } from '@/services/api/entryService';
+import { restoreVersion } from '@/services/api/entryService';
 import type { VersionInfo } from '@/types';
-
-const versionBadgeVariant: Record<string, 'draft' | 'published' | 'historical'> = {
-  draft: 'draft',
-  published: 'published',
-  historical: 'historical',
-  variant: 'draft',
-};
 
 interface VersionPanelProps {
   entryId: string;
@@ -46,46 +42,31 @@ export function VersionPanel({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newVariantName, setNewVariantName] = useState('');
-  const [baseVersion, setBaseVersion] = useState('');
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [restoreTargetVersion, setRestoreTargetVersion] = useState<number | null>(null);
+  const [newTabName, setNewTabName] = useState('');
 
-  const { variants, history, forkableVersions } = useMemo(() => {
-    const vrnts = versions.filter((v) => v.versionState === 'variant');
-    const hist = versions.filter((v) => v.versionState !== 'variant');
-    // Any non-variant version can be forked as a new variant (draft, published, historical)
-    return { variants: vrnts, history: hist, forkableVersions: hist };
-  }, [versions]);
+  // Only show published + historical in the timeline (tabs are shown in the TabBar)
+  const history = useMemo(
+    () =>
+      versions
+        .filter((v) => v.versionState === 'published' || v.versionState === 'historical')
+        .sort((a, b) => b.version - a.version),
+    [versions]
+  );
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
-
-  const createMutation = useMutation({
-    mutationFn: () => createVariant(entryId, newVariantName, parseInt(baseVersion, 10)),
+  const restoreMutation = useMutation({
+    mutationFn: () => restoreVersion(entryId, restoreTargetVersion!),
     onSuccess: () => {
-      invalidate();
-      setShowCreateForm(false);
-      setNewVariantName('');
-      setBaseVersion('');
+      queryClient.invalidateQueries({ queryKey: ['tabs', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+      toast.success(`Restored v${restoreTargetVersion} to new tab`);
+      setRestoreDialogOpen(false);
+      setNewTabName('');
+      navigate(`/entry/${entryId}`);
     },
-    onError: (err) => handleApiError(err, { title: 'Failed to create variant' }),
-  });
-
-  const renameMutation = useMutation({
-    mutationFn: (args: { variantId: string; newName: string }) =>
-      renameVariant(entryId, args.variantId, args.newName),
-    onSuccess: () => {
-      invalidate();
-      setRenamingId(null);
-    },
-    onError: (err) => handleApiError(err, { title: 'Failed to rename variant' }),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (variantId: string) => deleteVariant(entryId, variantId),
-    onSuccess: invalidate,
-    onError: (err) => handleApiError(err, { title: 'Failed to delete variant' }),
+    onError: (err) => handleApiError(err, { title: 'Failed to restore version' }),
   });
 
   if (isLoading) {
@@ -109,148 +90,6 @@ export function VersionPanel({
 
   return (
     <div className="space-y-4" data-tour="version-panel">
-      {/* ── Variants Section ── */}
-      {(variants.length > 0 || showCreateForm) && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-              Variants
-            </h3>
-            {!showCreateForm && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs gap-1"
-                onClick={() => setShowCreateForm(true)}
-              >
-                <Plus className="size-3" />
-              </Button>
-            )}
-          </div>
-
-          {/* Create form */}
-          {showCreateForm && (
-            <div className="space-y-2 rounded-md border border-border-subtle p-2">
-              <Input
-                placeholder="Variant name"
-                value={newVariantName}
-                onChange={(e) => setNewVariantName(e.target.value)}
-                className="h-7 text-xs"
-                autoFocus
-              />
-              <Select value={baseVersion} onValueChange={setBaseVersion}>
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue placeholder="Base version" />
-                </SelectTrigger>
-                <SelectContent>
-                  {forkableVersions.map((v) => (
-                    <SelectItem key={v.version} value={String(v.version)} className="text-xs">
-                      v{v.version} ({v.versionState})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex gap-1">
-                <Button
-                  size="sm"
-                  className="h-6 text-xs flex-1"
-                  disabled={!newVariantName || !baseVersion || createMutation.isPending}
-                  onClick={() => createMutation.mutate()}
-                >
-                  Create
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs"
-                  onClick={() => setShowCreateForm(false)}
-                >
-                  <X className="size-3" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Variant list */}
-          {variants.map((v) => (
-            <div
-              key={v.id}
-              className="flex items-center justify-between rounded-md px-2 py-1.5 text-xs hover:bg-elevated transition-colors"
-            >
-              {renamingId === v.id ? (
-                <div className="flex items-center gap-1 flex-1 mr-1">
-                  <Input
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    className="h-6 text-xs flex-1"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && renameValue)
-                        renameMutation.mutate({ variantId: v.id, newName: renameValue });
-                      if (e.key === 'Escape') setRenamingId(null);
-                    }}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => renameMutation.mutate({ variantId: v.id, newName: renameValue })}
-                  >
-                    <Check className="size-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <FlaskConical className="size-3 text-foreground-muted shrink-0" />
-                    <span className="font-medium truncate">{v.variantName}</span>
-                    <Badge variant="historical" className="text-[10px] px-1 py-0">
-                      v{v.basedOnVersion}
-                    </Badge>
-                  </div>
-                </div>
-              )}
-              {renamingId !== v.id && (
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => {
-                      setRenamingId(v.id);
-                      setRenameValue(v.variantName ?? '');
-                    }}
-                  >
-                    <Pencil className="size-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 text-destructive"
-                    onClick={() => deleteMutation.mutate(v.id)}
-                  >
-                    <Trash2 className="size-3" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Create variant button (when none exist) ── */}
-      {variants.length === 0 && !showCreateForm && forkableVersions.length > 0 && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-2 text-xs"
-          onClick={() => setShowCreateForm(true)}
-        >
-          <FlaskConical className="size-3" />
-          Create Variant
-        </Button>
-      )}
-
       {/* ── Version History Section ── */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -258,34 +97,35 @@ export function VersionPanel({
             Version History
           </h3>
           <HelpPopover
-            content="Every publish creates a new version. Compare any two versions side-by-side or restore a historical version as a new draft."
+            content="Every publish creates a new version snapshot. Click to view, or restore any version to a new tab."
             section="entry-editor"
           />
         </div>
+
+        {history.length === 0 && (
+          <p className="text-xs text-foreground-muted text-center py-4">
+            No versions published yet. Publish a tab to create v1.
+          </p>
+        )}
 
         <div className="relative ml-3 border-l-2 border-border-subtle pl-5 space-y-1">
           {history.map((v) => {
             const isActive =
               currentVersion !== undefined
                 ? v.version === currentVersion
-                : v.version === history[0]?.version;
-
-            const workingVersion =
-              history.find((ver) => ver.versionState === 'draft') ??
-              history.find((ver) => ver.versionState === 'published');
-            const isEditing = !currentVersion && workingVersion?.version === v.version;
+                : v.versionState === 'published';
 
             return (
               <motion.button
                 key={v.version}
                 whileHover={{ x: 2, backgroundColor: 'hsl(var(--background-elevated))' }}
                 transition={{ duration: 0.15 }}
-                className={`relative w-full text-left rounded-md px-3 py-2 text-sm transition-colors duration-150 ${
+                className={`group relative w-full text-left rounded-md px-3 py-2 text-sm transition-colors duration-150 ${
                   isActive ? 'bg-primary/8' : ''
                 }`}
                 onClick={() => {
-                  if (workingVersion && v.version === workingVersion.version) {
-                    navigate(`/entry/${entryId}`);
+                  if (v.versionState === 'published' && !currentVersion) {
+                    // Already viewing the main tab
                   } else {
                     navigate(`/entry/${entryId}/version/${v.version}`);
                   }
@@ -309,17 +149,28 @@ export function VersionPanel({
                 />
 
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium">
-                    v{v.version}
-                    {isEditing && (
-                      <span className="ml-1.5 italic font-normal text-foreground-muted">
-                        (editing)
-                      </span>
+                  <span className="font-medium">v{v.version}</span>
+                  <div className="flex items-center gap-1">
+                    {v.versionState === 'historical' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRestoreTargetVersion(v.version);
+                          setNewTabName(`Restored v${v.version}`);
+                          setRestoreDialogOpen(true);
+                        }}
+                      >
+                        <RotateCcw className="size-3 mr-0.5" />
+                        Restore
+                      </Button>
                     )}
-                  </span>
-                  <Badge variant={versionBadgeVariant[v.versionState] ?? 'historical'}>
-                    {v.versionState.charAt(0).toUpperCase() + v.versionState.slice(1)}
-                  </Badge>
+                    <Badge variant={v.versionState === 'published' ? 'published' : 'historical'}>
+                      {v.versionState === 'published' ? 'Published' : 'Historical'}
+                    </Badge>
+                  </div>
                 </div>
                 {v.publishedAt && (
                   <p className="text-xs text-foreground-muted mt-0.5">
@@ -332,12 +183,6 @@ export function VersionPanel({
           })}
         </div>
 
-        {history.length === 1 && (
-          <p className="text-xs text-foreground-muted text-center py-2">
-            Version history will grow as you publish.
-          </p>
-        )}
-
         {history.length >= 2 && onCompare && (
           <Button variant="outline" size="sm" className="w-full gap-2" onClick={onCompare}>
             <GitCompareArrows className="size-3.5" />
@@ -345,6 +190,38 @@ export function VersionPanel({
           </Button>
         )}
       </div>
+
+      {/* ── Restore Dialog ── */}
+      <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Restore v{restoreTargetVersion}</DialogTitle>
+            <DialogDescription>
+              This will create a new tab with the content from v{restoreTargetVersion}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="restore-tab-name">New tab name</Label>
+            <Input
+              id="restore-tab-name"
+              value={newTabName}
+              onChange={(e) => setNewTabName(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRestoreDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => restoreMutation.mutate()}
+              disabled={restoreMutation.isPending}
+            >
+              {restoreMutation.isPending ? 'Restoring...' : 'Restore'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

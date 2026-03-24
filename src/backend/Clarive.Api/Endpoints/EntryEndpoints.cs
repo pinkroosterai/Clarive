@@ -1,10 +1,10 @@
 using System.ComponentModel;
 using Clarive.Api.Helpers;
 using Clarive.Application.Entries.Contracts;
+using Clarive.Application.Tabs.Contracts;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Application.Audit.Services;
-using Clarive.Application.Variants.Contracts;
 using Clarive.Domain.ValueObjects;
 
 namespace Clarive.Api.Endpoints;
@@ -36,35 +36,31 @@ public static partial class EntryEndpoints
 
         group.MapPost("/", HandleCreate).RequireAuthorization("EditorOrAdmin");
         group.MapPut("/{entryId:guid}", HandleUpdate).RequireAuthorization("EditorOrAdmin");
-        group
-            .MapPost("/{entryId:guid}/publish", HandlePublish)
-            .RequireAuthorization("EditorOrAdmin");
-        group
-            .MapPost("/{entryId:guid}/versions/{version:int}/promote", HandlePromote)
-            .RequireAuthorization("EditorOrAdmin");
-        group
-            .MapDelete("/{entryId:guid}/draft", HandleDeleteDraft)
-            .RequireAuthorization("EditorOrAdmin");
         group.MapPost("/{entryId:guid}/move", HandleMove).RequireAuthorization("EditorOrAdmin");
         group.MapPost("/{entryId:guid}/trash", HandleTrash).RequireAuthorization("EditorOrAdmin");
         group
-            .MapPost("/{entryId:guid}/restore", HandleRestore)
+            .MapPost("/{entryId:guid}/restore", HandleRestoreFromTrash)
             .RequireAuthorization("EditorOrAdmin");
         group
             .MapDelete("/{entryId:guid}/permanent-delete", HandlePermanentDelete)
             .RequireAuthorization("AdminOnly");
 
-        // Variants
-        group.MapGet("/{entryId:guid}/variants", HandleListVariants);
-        group.MapPost("/{entryId:guid}/variants", HandleCreateVariant).RequireAuthorization("EditorOrAdmin");
+        // Tabs
+        group.MapGet("/{entryId:guid}/tabs", HandleListTabs);
+        group.MapPost("/{entryId:guid}/tabs", HandleCreateTab).RequireAuthorization("EditorOrAdmin");
         group
-            .MapPatch("/{entryId:guid}/variants/{variantId:guid}", HandleRenameVariant)
+            .MapPatch("/{entryId:guid}/tabs/{tabId:guid}", HandleRenameTab)
             .RequireAuthorization("EditorOrAdmin");
         group
-            .MapDelete("/{entryId:guid}/variants/{variantId:guid}", HandleDeleteVariant)
+            .MapDelete("/{entryId:guid}/tabs/{tabId:guid}", HandleDeleteTab)
             .RequireAuthorization("EditorOrAdmin");
         group
-            .MapPost("/{entryId:guid}/variants/{variantId:guid}/publish", HandlePublishVariant)
+            .MapPost("/{entryId:guid}/tabs/{tabId:guid}/publish", HandlePublishTab)
+            .RequireAuthorization("EditorOrAdmin");
+
+        // Version restore
+        group
+            .MapPost("/{entryId:guid}/versions/{version:int}/restore", HandleRestoreVersion)
             .RequireAuthorization("EditorOrAdmin");
 
         return group;
@@ -106,7 +102,7 @@ public static partial class EntryEndpoints
         [Description("Page number (1-based)")] int? page = null,
         [Description("Items per page (max 100)")] int? pageSize = null,
         [Description("Search by title (case-insensitive)")] string? search = null,
-        [Description("Filter by status: 'draft' or 'published'")] string? status = null,
+        [Description("Filter by status: 'unpublished' or 'published'")] string? status = null,
         [Description("Sort order: 'recent', 'alphabetical', or 'oldest'")] string? sortBy = null
     )
     {
@@ -164,7 +160,7 @@ public static partial class EntryEndpoints
         return Results.Ok(new PaginatedResponse<PromptEntryDto>(summaries, totalCount, p, ps));
     }
 
-    // ── Get single entry (working version) ──
+    // ── Get single entry (main tab) ──
     private static async Task<IResult> HandleGet(
         Guid entryId,
         HttpContext ctx,
@@ -256,7 +252,7 @@ public static partial class EntryEndpoints
             : Results.Created($"/api/entries/{entry.Id}", responseResult.Value);
     }
 
-    // ── Update entry (overwrite draft or create draft from published) ──
+    // ── Update entry (saves to specified tab or main tab) ──
     private static async Task<IResult> HandleUpdate(
         Guid entryId,
         HttpContext ctx,
@@ -276,7 +272,7 @@ public static partial class EntryEndpoints
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-        var (entry, working) = result.Value;
+        var (entry, tab) = result.Value;
 
         await auditLogger.SafeLogAsync(
             tenantId,
@@ -286,13 +282,13 @@ public static partial class EntryEndpoints
             "prompt_entry",
             entry.Id,
             entry.Title,
-            $"Updated draft v{working.Version}",
+            $"Updated tab '{tab.TabName}'",
             ct
         );
 
         var responseResult = await entryService.BuildEntryResponseAsync(
             entry,
-            working,
+            tab,
             tenantId,
             false,
             ct
@@ -302,9 +298,10 @@ public static partial class EntryEndpoints
             : Results.Ok(responseResult.Value);
     }
 
-    // ── Publish ──
-    private static async Task<IResult> HandlePublish(
+    // ── Publish tab ──
+    private static async Task<IResult> HandlePublishTab(
         Guid entryId,
+        Guid tabId,
         HttpContext ctx,
         IEntryVersionService versionService,
         IEntryService entryService,
@@ -315,7 +312,7 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await versionService.PublishDraftAsync(tenantId, entryId, userId, ct);
+        var result = await versionService.PublishTabAsync(tenantId, entryId, tabId, userId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
@@ -345,11 +342,12 @@ public static partial class EntryEndpoints
             : Results.Ok(responseResult.Value);
     }
 
-    // ── Promote historical version ──
-    private static async Task<IResult> HandlePromote(
+    // ── Restore version to tab ──
+    private static async Task<IResult> HandleRestoreVersion(
         Guid entryId,
         int version,
         HttpContext ctx,
+        RestoreVersionRequest? request,
         IEntryVersionService versionService,
         IEntryService entryService,
         IAuditLogger auditLogger,
@@ -359,11 +357,12 @@ public static partial class EntryEndpoints
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await versionService.PromoteVersionAsync(tenantId, entryId, version, ct);
+        var result = await versionService.RestoreVersionAsync(
+            tenantId, entryId, version, request?.TargetTabId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
-        var (entry, newDraft) = result.Value;
+        var (entry, restoredTab) = result.Value;
 
         await auditLogger.SafeLogAsync(
             tenantId,
@@ -373,60 +372,13 @@ public static partial class EntryEndpoints
             "prompt_entry",
             entry.Id,
             entry.Title,
-            $"Restored v{version} as new draft v{newDraft.Version}",
+            $"Restored v{version} to tab '{restoredTab.TabName}'",
             ct
         );
 
         var responseResult = await entryService.BuildEntryResponseAsync(
             entry,
-            newDraft,
-            tenantId,
-            false,
-            ct
-        );
-        return responseResult.IsError
-            ? responseResult.Errors.ToHttpResult(ctx)
-            : Results.Ok(responseResult.Value);
-    }
-
-    // ── Delete draft ──
-    private static async Task<IResult> HandleDeleteDraft(
-        Guid entryId,
-        HttpContext ctx,
-        IEntryVersionService versionService,
-        IEntryService entryService,
-        IAuditLogger auditLogger,
-        CancellationToken ct
-    )
-    {
-        var tenantId = ctx.GetTenantId();
-        var userId = ctx.GetUserId();
-
-        var result = await versionService.DeleteDraftAsync(tenantId, entryId, ct);
-        if (result.IsError)
-            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
-
-        var entry = result.Value;
-
-        await auditLogger.SafeLogAsync(
-            tenantId,
-            userId,
-            ctx.GetUserName(),
-            AuditAction.DraftDeleted,
-            "prompt_entry",
-            entry.Id,
-            entry.Title,
-            "Deleted draft, reverted to published version",
-            ct
-        );
-
-        var versionResult = await entryService.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (versionResult.IsError)
-            return versionResult.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
-
-        var responseResult = await entryService.BuildEntryResponseAsync(
-            entry,
-            versionResult.Value,
+            restoredTab,
             tenantId,
             false,
             ct
@@ -453,13 +405,13 @@ public static partial class EntryEndpoints
 
         var entry = result.Value;
 
-        var versionResult = await entryService.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (versionResult.IsError)
-            return versionResult.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
+        var tabResult = await entryService.GetMainTabVersionAsync(tenantId, entryId, ct);
+        if (tabResult.IsError)
+            return tabResult.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
         var responseResult = await entryService.BuildEntryResponseAsync(
             entry,
-            versionResult.Value,
+            tabResult.Value,
             tenantId,
             false,
             ct
@@ -501,8 +453,8 @@ public static partial class EntryEndpoints
         return Results.NoContent();
     }
 
-    // ── Restore ──
-    private static async Task<IResult> HandleRestore(
+    // ── Restore from trash ──
+    private static async Task<IResult> HandleRestoreFromTrash(
         Guid entryId,
         HttpContext ctx,
         IEntryService entryService,
@@ -530,13 +482,13 @@ public static partial class EntryEndpoints
             ct
         );
 
-        var versionResult = await entryService.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (versionResult.IsError)
-            return versionResult.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
+        var tabResult = await entryService.GetMainTabVersionAsync(tenantId, entryId, ct);
+        if (tabResult.IsError)
+            return tabResult.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
 
         var responseResult = await entryService.BuildEntryResponseAsync(
             entry,
-            versionResult.Value,
+            tabResult.Value,
             tenantId,
             false,
             ct
@@ -578,108 +530,68 @@ public static partial class EntryEndpoints
         return Results.NoContent();
     }
 
-    // ── Variant Endpoints ──
+    // ── Tab Endpoints ──
 
-    private static async Task<IResult> HandleListVariants(
+    private static async Task<IResult> HandleListTabs(
         Guid entryId,
         HttpContext ctx,
-        IVariantService variantService,
+        ITabService tabService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var result = await variantService.ListAsync(tenantId, entryId, ct);
+        var result = await tabService.ListAsync(tenantId, entryId, ct);
         return result.IsError
             ? result.Errors.ToHttpResult(ctx)
             : Results.Ok(result.Value);
     }
 
-    private static async Task<IResult> HandleCreateVariant(
+    private static async Task<IResult> HandleCreateTab(
         Guid entryId,
-        CreateVariantRequest request,
+        CreateTabRequest request,
         HttpContext ctx,
-        IVariantService variantService,
+        ITabService tabService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var result = await variantService.CreateAsync(tenantId, entryId, request, ct);
+        var result = await tabService.CreateAsync(tenantId, entryId, request, ct);
         return result.IsError
             ? result.Errors.ToHttpResult(ctx)
             : Results.Ok(result.Value);
     }
 
-    private static async Task<IResult> HandleRenameVariant(
+    private static async Task<IResult> HandleRenameTab(
         Guid entryId,
-        Guid variantId,
-        RenameVariantRequest request,
+        Guid tabId,
+        RenameTabRequest request,
         HttpContext ctx,
-        IVariantService variantService,
+        ITabService tabService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var result = await variantService.RenameAsync(tenantId, entryId, variantId, request, ct);
+        var result = await tabService.RenameAsync(tenantId, entryId, tabId, request, ct);
         return result.IsError
             ? result.Errors.ToHttpResult(ctx)
             : Results.Ok(result.Value);
     }
 
-    private static async Task<IResult> HandleDeleteVariant(
+    private static async Task<IResult> HandleDeleteTab(
         Guid entryId,
-        Guid variantId,
+        Guid tabId,
         HttpContext ctx,
-        IVariantService variantService,
+        ITabService tabService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
-        var result = await variantService.DeleteAsync(tenantId, entryId, variantId, ct);
+        var result = await tabService.DeleteAsync(tenantId, entryId, tabId, ct);
         return result.IsError
             ? result.Errors.ToHttpResult(ctx)
             : Results.NoContent();
     }
-
-    private static async Task<IResult> HandlePublishVariant(
-        Guid entryId,
-        Guid variantId,
-        HttpContext ctx,
-        IEntryVersionService versionService,
-        IEntryService entryService,
-        IAuditLogger auditLogger,
-        CancellationToken ct
-    )
-    {
-        var tenantId = ctx.GetTenantId();
-        var userId = ctx.GetUserId();
-
-        var result = await versionService.PublishVariantAsync(tenantId, entryId, variantId, userId, ct);
-        if (result.IsError)
-            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
-
-        var (entry, published) = result.Value;
-
-        await auditLogger.SafeLogAsync(
-            tenantId,
-            userId,
-            ctx.GetUserName(),
-            AuditAction.EntryPublished,
-            "prompt_entry",
-            entry.Id,
-            entry.Title,
-            $"Published variant as version {published.Version}",
-            ct
-        );
-
-        var responseResult = await entryService.BuildEntryResponseAsync(
-            entry,
-            published,
-            tenantId,
-            false,
-            ct
-        );
-        return responseResult.IsError
-            ? responseResult.Errors.ToHttpResult(ctx)
-            : Results.Ok(responseResult.Value);
-    }
 }
+
+// Request body for restore version endpoint
+public record RestoreVersionRequest(Guid? TargetTabId = null);

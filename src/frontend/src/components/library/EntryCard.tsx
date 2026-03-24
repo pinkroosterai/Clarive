@@ -41,9 +41,9 @@ interface EntryCardProps {
 
 const badgeVariant: Record<
   string,
-  { variant: 'draft' | 'published' | 'historical'; label: string }
+  { variant: 'published' | 'historical'; label: string }
 > = {
-  draft: { variant: 'draft', label: 'Draft' },
+  tab: { variant: 'historical', label: 'Unpublished' },
   published: { variant: 'published', label: 'Published' },
   historical: { variant: 'historical', label: '' },
 };

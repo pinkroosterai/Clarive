@@ -56,8 +56,6 @@ export interface ActionsTabContentProps {
   onCompareVersions?: () => void;
   versions: VersionInfo[];
   entryVersion: number;
-  onDeleteDraft?: () => void;
-  isDeletingDraft?: boolean;
   onShare?: () => void;
   hasShareLink?: boolean;
   hasEmptyTitle?: boolean;
@@ -88,8 +86,6 @@ export function ActionsTabContent({
   onCompareVersions,
   versions,
   entryVersion,
-  onDeleteDraft,
-  isDeletingDraft,
   onShare,
   hasShareLink,
   hasEmptyTitle,
@@ -97,7 +93,6 @@ export function ActionsTabContent({
   isDuplicating,
 }: ActionsTabContentProps) {
   const aiEnabled = useAiEnabled();
-  const hasDraft = versions.some((v) => v.versionState === 'draft');
   const hasPublished = versions.some((v) => v.versionState === 'published');
   const publishedVersion = versions.find((v) => v.versionState === 'published')?.version;
 
@@ -127,10 +122,6 @@ export function ActionsTabContent({
           canRedo={canRedo}
           isSaving={isSaving}
           hasEmptyTitle={hasEmptyTitle}
-          hasDraft={hasDraft}
-          hasPublished={hasPublished}
-          onDeleteDraft={onDeleteDraft}
-          isDeletingDraft={isDeletingDraft}
         />
       </ActionGroup>
 
@@ -144,17 +135,9 @@ export function ActionsTabContent({
                 <Button
                   variant="outline"
                   className="w-full gap-2 hover:border-primary/30 transition-all"
-                  disabled={isPublishing || !hasDraft || hasEmptyTitle}
+                  disabled={isPublishing || hasEmptyTitle}
                 >
-                  {hasDraft && !isDirty ? (
-                    <motion.div
-                      className="size-2.5 rounded-full bg-primary"
-                      animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                  ) : (
-                    <Upload className="size-4" />
-                  )}
+                  <Upload className="size-4" />
                   Publish
                 </Button>
               </TooltipTrigger>
@@ -162,10 +145,8 @@ export function ActionsTabContent({
             <TooltipContent side="left">
               {hasEmptyTitle ? (
                 'Title is required to publish'
-              ) : hasDraft ? (
-                <kbd className="text-xs">Ctrl+Enter</kbd>
               ) : (
-                'No draft to publish'
+                <kbd className="text-xs">Ctrl+Enter</kbd>
               )}
             </TooltipContent>
           </Tooltip>

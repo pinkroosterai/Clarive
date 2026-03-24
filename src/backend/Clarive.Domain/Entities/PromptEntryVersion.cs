@@ -16,9 +16,10 @@ public class PromptEntryVersion
     public Guid? PublishedBy { get; set; }
     public DateTime CreatedAt { get; set; }
 
-    // Variant metadata (null for Published/Historical versions)
-    public string? VariantName { get; set; }
-    public int? BasedOnVersion { get; set; }
+    // Tab metadata (null for Published/Historical versions)
+    public string? TabName { get; set; }
+    public int? ForkedFromVersion { get; set; }
+    public bool IsMainTab { get; set; }
 
     // Quality evaluation (persisted as JSONB)
     public Dictionary<string, PromptEvaluationEntry>? Evaluation { get; set; }

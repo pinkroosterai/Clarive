@@ -37,7 +37,7 @@ import { entryService, folderService } from '@/services';
 import * as favoriteService from '@/services/api/favoriteService';
 import type { PromptEntry } from '@/types';
 
-type StatusFilter = 'all' | 'draft' | 'published';
+type StatusFilter = 'all' | 'unpublished' | 'published';
 type SortBy = 'recent' | 'alphabetical' | 'oldest';
 
 const PAGE_SIZE = 50;
@@ -253,7 +253,7 @@ export default function LibraryPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="unpublished">Unpublished</SelectItem>
                 <SelectItem value="published">Published</SelectItem>
               </SelectContent>
             </Select>

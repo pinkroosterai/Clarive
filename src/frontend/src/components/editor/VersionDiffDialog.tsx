@@ -49,9 +49,7 @@ export function VersionDiffDialog({
   const queryClient = useQueryClient();
 
   // Default selection: right = current working version, left = most recent other
-  const workingVersion =
-    versions.find((v) => v.versionState === 'draft') ??
-    versions.find((v) => v.versionState === 'published');
+  const workingVersion = versions.find((v) => v.versionState === 'published');
 
   const defaultRight = currentVersion ?? workingVersion?.version ?? versions[0]?.version;
   const defaultLeft = versions.find((v) => v.version !== defaultRight)?.version ?? defaultRight;
@@ -72,20 +70,18 @@ export function VersionDiffDialog({
     prevOpenRef.current = open;
   }, [open, currentVersion, versions, workingVersion]);
 
-  const promoteMutation = useMutation({
-    mutationFn: (version: number) => entryService.promoteVersion(entryId, version),
-    onSuccess: (promoted) => {
+  const restoreMutation = useMutation({
+    mutationFn: (version: number) => entryService.restoreVersion(entryId, version),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
-      toast.success('Version restored as new draft');
+      queryClient.invalidateQueries({ queryKey: ['tabs', entryId] });
+      toast.success('Version restored to new tab');
       onOpenChange(false);
-      navigate(`/entry/${promoted.id}`);
+      navigate(`/entry/${entryId}`);
     },
     onError: () => toast.error('Failed to restore version'),
   });
-
-  const hasDraft = versions.some((v) => v.versionState === 'draft');
-  const draftVersion = versions.find((v) => v.versionState === 'draft')?.version;
 
   const leftState = versions.find((v) => v.version === leftVersion)?.versionState;
   const rightState = versions.find((v) => v.version === rightVersion)?.versionState;
@@ -179,7 +175,7 @@ export function VersionDiffDialog({
                   variant="link"
                   size="sm"
                   className="h-auto p-0 text-xs"
-                  disabled={promoteMutation.isPending}
+                  disabled={restoreMutation.isPending}
                   onClick={() => setRestoreVersion(leftVersion)}
                 >
                   Restore v{leftVersion}
@@ -209,7 +205,7 @@ export function VersionDiffDialog({
                   variant="link"
                   size="sm"
                   className="h-auto p-0 text-xs"
-                  disabled={promoteMutation.isPending}
+                  disabled={restoreMutation.isPending}
                   onClick={() => setRestoreVersion(rightVersion)}
                 >
                   Restore v{rightVersion}
@@ -286,15 +282,13 @@ export function VersionDiffDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Restore this version?</AlertDialogTitle>
             <AlertDialogDescription>
-              {hasDraft
-                ? `This will replace your current draft (v${draftVersion}) with the content from v${restoreVersion}. Continue?`
-                : `This will create a new draft based on v${restoreVersion}. You can edit it before publishing.`}
+              This will create a new tab with the content from v{restoreVersion}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => restoreVersion && promoteMutation.mutate(restoreVersion)}
+              onClick={() => restoreVersion && restoreMutation.mutate(restoreVersion)}
             >
               Restore
             </AlertDialogAction>

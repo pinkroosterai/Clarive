@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Save, RotateCcw, Trash2, Undo2, Redo2, Check } from 'lucide-react';
+import { Save, RotateCcw, Undo2, Redo2, Check } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 import {
@@ -26,10 +26,6 @@ interface EditActionsProps {
   canRedo: boolean;
   isSaving: boolean;
   hasEmptyTitle?: boolean;
-  hasDraft: boolean;
-  hasPublished: boolean;
-  onDeleteDraft?: () => void;
-  isDeletingDraft?: boolean;
 }
 
 export function EditActions({
@@ -42,10 +38,6 @@ export function EditActions({
   canRedo,
   isSaving,
   hasEmptyTitle,
-  hasDraft,
-  hasPublished,
-  onDeleteDraft,
-  isDeletingDraft,
 }: EditActionsProps) {
   // Save success feedback
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -127,7 +119,7 @@ export function EditActions({
                 </motion.span>
               )}
             </AnimatePresence>
-            {showSaveSuccess ? 'Saved!' : isSaving ? 'Saving\u2026' : 'Save Draft'}
+            {showSaveSuccess ? 'Saved!' : isSaving ? 'Saving\u2026' : 'Save'}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left">
@@ -135,7 +127,7 @@ export function EditActions({
             'Title is required to save'
           ) : (
             <>
-              Save Draft <kbd className="ml-1 text-xs opacity-60">Ctrl+S</kbd>
+              Save <kbd className="ml-1 text-xs opacity-60">Ctrl+S</kbd>
             </>
           )}
         </TooltipContent>
@@ -168,39 +160,6 @@ export function EditActions({
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Discard
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-
-      {onDeleteDraft && hasDraft && hasPublished && (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full gap-2 text-destructive hover:text-destructive"
-              disabled={isDeletingDraft}
-            >
-              <Trash2 className="size-4" />
-              {isDeletingDraft ? 'Deleting\u2026' : 'Delete Draft'}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete this draft?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete the current draft and revert to the published version.
-                Draft content cannot be recovered.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={onDeleteDraft}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete Draft
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

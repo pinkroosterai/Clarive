@@ -31,9 +31,8 @@ interface ABTestToolbarProps {
   onManageDatasets: () => void;
 }
 
-function getVersionLabel(v: { version: number; versionState: string; variantName?: string | null }) {
-  if (v.versionState === 'variant') return v.variantName ?? 'Variant';
-  if (v.versionState === 'draft') return `v${v.version} (draft)`;
+function getVersionLabel(v: { version: number; versionState: string; tabName?: string | null }) {
+  if (v.versionState === 'tab') return v.tabName ?? 'Tab';
   if (v.versionState === 'published') return `v${v.version} (published)`;
   return `v${v.version}`;
 }
@@ -74,7 +73,7 @@ export default function ABTestToolbar({
   // Group versions into Active (published, draft, variants) and History (historical)
   const { activeVersions, historyVersions } = useMemo(() => {
     const active = versions.filter(
-      (v) => v.versionState === 'published' || v.versionState === 'draft' || v.versionState === 'variant'
+      (v) => v.versionState === 'published' || v.versionState === 'tab'
     );
     const history = versions.filter((v) => v.versionState === 'historical');
     return { activeVersions: active, historyVersions: history };

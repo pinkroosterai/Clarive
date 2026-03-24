@@ -15,7 +15,7 @@ public class EntryCreateTests : IntegrationTestBase
         : base(fixture) { }
 
     [Fact]
-    public async Task Create_AsEditor_Returns201WithDraftV1()
+    public async Task Create_AsEditor_Returns201WithTab()
     {
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
@@ -33,8 +33,8 @@ public class EntryCreateTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         body.GetProperty("title").GetString().Should().Be(title);
-        body.GetProperty("version").GetInt32().Should().Be(1);
-        body.GetProperty("versionState").GetString().Should().Be("draft");
+        body.GetProperty("version").GetInt32().Should().Be(0);
+        body.GetProperty("versionState").GetString().Should().Be("tab");
         body.GetProperty("systemMessage").GetString().Should().Be("You are a helpful assistant.");
     }
 

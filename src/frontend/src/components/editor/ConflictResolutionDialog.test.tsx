@@ -15,7 +15,7 @@ const baseEntry: PromptEntry = {
   ],
   folderId: null,
   version: 1,
-  versionState: 'draft',
+  versionState: 'tab',
   isTrashed: false,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',

@@ -115,7 +115,7 @@ public class AbTestTests : IntegrationTestBase
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        // Create entry
+        // Create entry (has Main tab)
         var (entryResponse, entryBody) = await Client.PostJsonAsync<JsonElement>(
             "/api/entries",
             new
@@ -125,6 +125,20 @@ public class AbTestTests : IntegrationTestBase
             }
         );
         var entryId = entryBody.GetProperty("id").GetString()!;
+
+        // Get Main tab ID for version references
+        var tabsResponse = await Client.GetAsync($"/api/entries/{entryId}/tabs");
+        var tabs = await tabsResponse.ReadJsonAsync();
+        var mainTabId = tabs.EnumerateArray().First(t => t.GetProperty("isMainTab").GetBoolean())
+            .GetProperty("id").GetString()!;
+
+        // Publish to create a version we can reference
+        await Client.PostAsync($"/api/entries/{entryId}/tabs/{mainTabId}/publish", null);
+        var versionsResponse = await Client.GetAsync($"/api/entries/{entryId}/versions");
+        var versions = await versionsResponse.ReadJsonAsync();
+        var versionId = versions.EnumerateArray()
+            .First(v => v.GetProperty("versionState").GetString() == "published")
+            .GetProperty("id").GetString()!;
 
         // Create empty dataset (no rows)
         var (datasetResponse, datasetBody) = await Client.PostJsonAsync<JsonElement>(
@@ -137,8 +151,8 @@ public class AbTestTests : IntegrationTestBase
             $"/api/entries/{entryId}/abtests",
             new
             {
-                versionANumber = 1,
-                versionBNumber = 1,
+                versionAId = versionId,
+                versionBId = versionId,
                 datasetId,
                 model = "test-model",
                 temperature = 1.0,

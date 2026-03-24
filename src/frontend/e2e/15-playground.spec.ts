@@ -65,9 +65,9 @@ test.describe('Prompt Playground — Core Happy Path', () => {
     // Wait for debounce
     await page.waitForTimeout(500);
 
-    // Save draft
-    await page.getByRole('button', { name: /save draft/i }).click();
-    await expectToast(page, 'Draft saved');
+    // Save
+    await page.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(page, 'Saved');
   });
 
   test('navigate to playground and verify model selector', async () => {

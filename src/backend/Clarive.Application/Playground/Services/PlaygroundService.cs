@@ -53,7 +53,8 @@ public class PlaygroundService(
 
         var version = versionId.HasValue
             ? await entryRepo.GetVersionByIdAsync(tenantId, versionId.Value, ct)
-            : await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+            : (await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
+               ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct));
         if (version is null || version.EntryId != entryId)
             return DomainErrors.NoWorkingVersion;
 
@@ -110,7 +111,7 @@ public class PlaygroundService(
 
         // Persist the run
         var versionLabel =
-            version.VersionState == VersionState.Draft ? "Draft" : $"v{version.Version}";
+            version.VersionState == VersionState.Tab ? (version.TabName ?? "Tab") : $"v{version.Version}";
 
         var run = new PlaygroundRun
         {
@@ -167,7 +168,8 @@ public class PlaygroundService(
         if (run is null || run.TenantId != tenantId || run.EntryId != entryId)
             return Error.NotFound("RUN_NOT_FOUND", "Playground run not found.");
 
-        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        var version = await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
+                     ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
         if (version is null)
             return DomainErrors.NoWorkingVersion;
 

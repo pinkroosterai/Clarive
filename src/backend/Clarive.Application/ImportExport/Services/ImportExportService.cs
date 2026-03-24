@@ -103,8 +103,10 @@ public class ImportExportService(
                     {
                         Id = Guid.NewGuid(),
                         EntryId = entry.Id,
-                        Version = 1,
-                        VersionState = VersionState.Draft,
+                        Version = 0,
+                        VersionState = VersionState.Tab,
+                        TabName = "Main",
+                        IsMainTab = true,
                         SystemMessage = systemMessage,
                         Prompts = prompts,
                         CreatedAt = DateTime.UtcNow,

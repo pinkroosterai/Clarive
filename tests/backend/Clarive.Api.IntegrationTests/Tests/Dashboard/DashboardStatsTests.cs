@@ -28,7 +28,7 @@ public class DashboardStatsTests : IntegrationTestBase
         // Verify all top-level properties exist and have correct types
         json.GetProperty("totalEntries").GetInt32().Should().BeGreaterOrEqualTo(0);
         json.GetProperty("publishedEntries").GetInt32().Should().BeGreaterOrEqualTo(0);
-        json.GetProperty("draftEntries").GetInt32().Should().BeGreaterOrEqualTo(0);
+        json.GetProperty("unpublishedEntries").GetInt32().Should().BeGreaterOrEqualTo(0);
         json.GetProperty("totalFolders").GetInt32().Should().BeGreaterOrEqualTo(0);
         json.GetProperty("recentEntries").ValueKind.Should().Be(JsonValueKind.Array);
         json.GetProperty("recentActivity").ValueKind.Should().Be(JsonValueKind.Array);
@@ -54,11 +54,11 @@ public class DashboardStatsTests : IntegrationTestBase
         var published = json.GetProperty("publishedEntries").GetInt32();
         published.Should().BeGreaterOrEqualTo(1);
 
-        var drafts = json.GetProperty("draftEntries").GetInt32();
-        drafts.Should().BeGreaterOrEqualTo(1);
+        var unpublished = json.GetProperty("unpublishedEntries").GetInt32();
+        unpublished.Should().BeGreaterOrEqualTo(1);
 
-        // published + drafts should not exceed total (total may include historical versions)
-        (published + drafts)
+        // published + unpublished should not exceed total (total may include historical versions)
+        (published + unpublished)
             .Should()
             .BeLessThanOrEqualTo(total);
 
@@ -88,7 +88,7 @@ public class DashboardStatsTests : IntegrationTestBase
         {
             entry.GetProperty("id").GetString().Should().NotBeNullOrEmpty();
             entry.GetProperty("title").GetString().Should().NotBeNullOrEmpty();
-            entry.GetProperty("versionState").GetString().Should().BeOneOf("draft", "published");
+            entry.GetProperty("versionState").GetString().Should().BeOneOf("tab", "published", "unpublished");
             entry.GetProperty("updatedAt").GetString().Should().NotBeNullOrEmpty();
         }
 

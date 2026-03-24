@@ -24,8 +24,10 @@ public class CreateEntryTests : EntryServiceTestBase
         entry.CreatedBy.Should().Be(UserId);
         entry.IsTrashed.Should().BeFalse();
 
-        version.Version.Should().Be(1);
-        version.VersionState.Should().Be(VersionState.Draft);
+        version.Version.Should().Be(0);
+        version.VersionState.Should().Be(VersionState.Tab);
+        version.TabName.Should().Be("Main");
+        version.IsMainTab.Should().BeTrue();
         version.Prompts.Should().HaveCount(1);
 
         await EntryRepo

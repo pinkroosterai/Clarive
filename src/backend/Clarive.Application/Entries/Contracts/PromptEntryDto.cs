@@ -37,7 +37,7 @@ public record PromptEntryDto(
             entry.Id,
             entry.Title,
             version?.Version ?? 0,
-            (version?.VersionState ?? Clarive.Domain.Enums.VersionState.Draft).ToString().ToLower(),
+            (version?.VersionState ?? Clarive.Domain.Enums.VersionState.Tab).ToString().ToLower(),
             entry.IsTrashed,
             entry.FolderId,
             HasSystemMessage: !string.IsNullOrEmpty(version?.SystemMessage),

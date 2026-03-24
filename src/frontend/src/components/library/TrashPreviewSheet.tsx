@@ -30,8 +30,8 @@ import { buildFolderMap } from '@/lib/folderUtils';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { entryService, folderService } from '@/services';
 
-const versionBadgeVariant: Record<string, 'draft' | 'published' | 'historical'> = {
-  draft: 'draft',
+const versionBadgeVariant: Record<string, 'published' | 'historical'> = {
+  tab: 'historical',
   published: 'published',
   historical: 'historical',
 };

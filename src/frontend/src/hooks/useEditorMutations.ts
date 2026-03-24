@@ -14,6 +14,7 @@ export interface ConflictState {
 
 interface UseEditorMutationsOptions {
   entryId: string | undefined;
+  activeTabId: string | undefined;
   localEntryRef: RefObject<PromptEntry | null>;
   pendingEvaluationRef: RefObject<Evaluation | null>;
   onSaveSuccess: () => void;
@@ -23,6 +24,7 @@ interface UseEditorMutationsOptions {
 
 export function useEditorMutations({
   entryId,
+  activeTabId,
   localEntryRef,
   pendingEvaluationRef,
   onSaveSuccess,
@@ -45,7 +47,7 @@ export function useEditorMutations({
       onSaveSuccess();
       queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
       queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
-      toast.success('Draft saved');
+      toast.success('Saved');
     },
     onError: (err: unknown) => {
       if (err instanceof ApiError && err.status === 409 && err.code === 'CONCURRENCY_CONFLICT') {
@@ -86,13 +88,14 @@ export function useEditorMutations({
   });
 
   const publishMutation = useMutation({
-    mutationFn: () => entryService.publishEntry(entryId!),
+    mutationFn: () => entryService.publishTab(entryId!, activeTabId!),
     onSuccess: () => {
       onPublishSuccess();
       queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
       queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
+      queryClient.invalidateQueries({ queryKey: ['tabs', entryId] });
       queryClient.invalidateQueries({ queryKey: ['entries'] });
-      toast.success('Entry published');
+      toast.success('Published');
     },
     onError: (err: unknown) => handleApiError(err, { title: 'Failed to publish' }),
   });

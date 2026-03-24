@@ -28,9 +28,9 @@ public class DashboardService(
             tenantId,
             async _ =>
             {
-                var (total, published, drafts) = await entryRepo.GetStatsAsync(tenantId, ct);
+                var (total, published, unpublished) = await entryRepo.GetStatsAsync(tenantId, ct);
                 var folderCount = await folderRepo.GetCountAsync(tenantId, ct);
-                return new DashboardStatsCache(total, published, drafts, folderCount);
+                return new DashboardStatsCache(total, published, unpublished, folderCount);
             },
             TenantCacheKeys.DashboardStatsTtl,
             ct
@@ -69,7 +69,7 @@ public class DashboardService(
         var favoriteEntryIds = userFavorites.Select(f => f.EntryId).ToList();
         var favoriteVersions =
             favoriteEntryIds.Count > 0
-                ? await entryRepo.GetWorkingVersionsBatchAsync(tenantId, favoriteEntryIds, ct)
+                ? await entryRepo.GetMainTabsBatchAsync(tenantId, favoriteEntryIds, ct)
                 : new Dictionary<Guid, PromptEntryVersion>();
 
         // Resolve entry titles and build DTOs (batch fetch to avoid N+1)
@@ -83,7 +83,7 @@ public class DashboardService(
                     continue;
 
                 favoriteVersions.TryGetValue(entryId, out var version);
-                var versionState = (version?.VersionState ?? VersionState.Draft)
+                var versionState = (version?.VersionState ?? VersionState.Tab)
                     .ToString()
                     .ToLower();
                 favoriteEntries.Add(
@@ -95,7 +95,7 @@ public class DashboardService(
         return new DashboardStatsResponse(
             stats.Total,
             stats.Published,
-            stats.Drafts,
+            stats.Unpublished,
             stats.FolderCount,
             recentEntries,
             recentActivity,
@@ -103,7 +103,7 @@ public class DashboardService(
         );
     }
 
-    private record DashboardStatsCache(int Total, int Published, int Drafts, int FolderCount);
+    private record DashboardStatsCache(int Total, int Published, int Unpublished, int FolderCount);
 
     private record RecentDataCache(List<RecentEntryDto> Entries, List<AuditLogEntry> AuditEntries);
 }

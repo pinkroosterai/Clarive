@@ -1,30 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Star } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { FirstUseHint } from '@/components/common/FirstUseHint';
 import { HelpLink } from '@/components/common/HelpLink';
+import { CreateTabDialog } from '@/components/editor/CreateTabDialog';
 import { EditorActionPanel } from '@/components/editor/EditorActionPanel';
 import { EditorAiOverlay } from '@/components/editor/EditorAiOverlay';
 import { EditorDialogs } from '@/components/editor/EditorDialogs';
 import { EditorError, EditorSkeleton } from '@/components/editor/EditorLoadingStates';
 import { PromptEditor } from '@/components/editor/PromptEditor';
 import { SoftLockBanner } from '@/components/editor/SoftLockBanner';
+import { TabBar } from '@/components/editor/TabBar';
 import { VersionPanel } from '@/components/editor/VersionPanel';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,12 +31,13 @@ import { useEditorState } from '@/hooks/useEditorState';
 import { useEvaluation } from '@/hooks/useEvaluation';
 import { useFavoriteMutation } from '@/hooks/useFavoriteMutation';
 import { usePresence } from '@/hooks/usePresence';
-import { usePublishFlow } from '@/hooks/usePublishFlow';
+import { useTabPublish } from '@/hooks/useTabPublish';
 import { findFolderName } from '@/lib/folderUtils';
 import { entryService, folderService } from '@/services';
 import { ApiError } from '@/services/api/apiClient';
 import { getShareLink } from '@/services/api/shareLinkService';
 import { useAuthStore } from '@/store/authStore';
+import type { TabInfo } from '@/types';
 
 const EntryEditorPage = () => {
   const { entryId, version } = useParams<{ entryId: string; version?: string }>();
@@ -55,6 +47,8 @@ const EntryEditorPage = () => {
 
   const versionNum = version ? parseInt(version, 10) : undefined;
   const [softLockOverride, setSoftLockOverride] = useState(false);
+  const [activeTabId, setActiveTabId] = useState<string | undefined>(undefined);
+  const [createTabOpen, setCreateTabOpen] = useState(false);
 
   // ── Data fetching ──
   const {
@@ -73,10 +67,24 @@ const EntryEditorPage = () => {
     enabled: !!entryId,
   });
 
+  const { data: tabs = [] } = useQuery({
+    queryKey: ['tabs', entryId],
+    queryFn: () => entryService.listTabs(entryId!),
+    enabled: !!entryId,
+  });
+
   const { data: folders = [] } = useQuery({
     queryKey: ['folders'],
     queryFn: folderService.getFoldersTree,
   });
+
+  // Set active tab to Main tab on initial load
+  const mainTab = useMemo(() => tabs.find((t: TabInfo) => t.isMainTab), [tabs]);
+  useEffect(() => {
+    if (!activeTabId && mainTab) {
+      setActiveTabId(mainTab.id);
+    }
+  }, [activeTabId, mainTab]);
 
   // ── Hooks ──
   const editor = useEditorState(entryData);
@@ -90,6 +98,7 @@ const EntryEditorPage = () => {
 
   const mutations = useEditorMutations({
     entryId,
+    activeTabId,
     localEntryRef: editor.localEntryRef,
     pendingEvaluationRef,
     onSaveSuccess: () => {
@@ -127,17 +136,10 @@ const EntryEditorPage = () => {
   };
 
   const {
-    hasDraft,
-    draftVersion,
-    promoteMutation,
-    deleteDraftMutation,
     showEmptyPublishWarning,
     setShowEmptyPublishWarning,
     handlePublishWithCheck,
-  } = usePublishFlow({
-    entryId,
-    versionNum,
-    versions,
+  } = useTabPublish({
     localEntry: editor.localEntry,
     handlePublish: mutations.handlePublish,
   });
@@ -202,40 +204,26 @@ const EntryEditorPage = () => {
     ? versions.find((v) => v.version === versionNum)?.versionState
     : undefined;
   const canRestore = viewedVersionState === 'historical' && currentUser?.role !== 'viewer';
+  const hasPublished = versions.some((v) => v.versionState === 'published');
 
   const readOnlyBanner = isReadOnly && version && (
     <div className="flex items-center gap-3 rounded-md border border-warning-border bg-warning-bg px-4 py-2.5 text-sm">
       <AlertTriangle className="size-4 text-warning-text shrink-0" />
       <span className="flex-1 text-warning-text">Viewing v{version} (read-only)</span>
       {canRestore && (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              disabled={promoteMutation.isPending}
-            >
-              {promoteMutation.isPending ? 'Restoring…' : 'Restore as draft'}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Restore this version?</AlertDialogTitle>
-              <AlertDialogDescription>
-                {hasDraft
-                  ? `This will replace your current draft (v${draftVersion}) with the content from v${version}. Continue?`
-                  : `This will create a new draft based on v${version}. You can edit it before publishing.`}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => promoteMutation.mutate()}>
-                Restore
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={() => {
+            entryService.restoreVersion(entryId!, parseInt(version, 10)).then(() => {
+              navigate(`/entry/${entryId}`);
+              toast.success(`Restored v${version} to new tab`);
+            });
+          }}
+        >
+          Restore to tab
+        </Button>
       )}
     </div>
   );
@@ -247,23 +235,13 @@ const EntryEditorPage = () => {
     </div>
   );
 
-  const versionBadge = (
-    <Badge
-      variant={
-        localEntry.versionState === 'draft'
-          ? 'draft'
-          : localEntry.versionState === 'published'
-            ? 'published'
-            : 'historical'
-      }
-      className="text-xs"
-    >
-      {localEntry.versionState === 'draft'
-        ? 'Draft'
-        : localEntry.versionState === 'published'
-          ? 'Published'
-          : 'Historical'}{' '}
-      v{localEntry.version}
+  const versionBadge = hasPublished ? (
+    <Badge variant="published" className="text-xs">
+      Published
+    </Badge>
+  ) : (
+    <Badge variant="historical" className="text-xs">
+      Unpublished
     </Badge>
   );
 
@@ -277,6 +255,15 @@ const EntryEditorPage = () => {
     />
   );
 
+  const handleDeleteTab = (tabId: string) => {
+    entryService.deleteTab(entryId!, tabId).then(() => {
+      toast.success('Tab deleted');
+      if (activeTabId === tabId && mainTab) {
+        setActiveTabId(mainTab.id);
+      }
+    });
+  };
+
   const editorContent = (
     <div className="space-y-4">
       <FirstUseHint
@@ -285,6 +272,19 @@ const EntryEditorPage = () => {
         description="Your entry has a title, system message, and prompt cards. Use the right sidebar for actions, details, and version history."
         section="entry-editor"
       />
+
+      {/* Tab bar */}
+      {!version && tabs.length > 0 && (
+        <TabBar
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onTabSelect={setActiveTabId}
+          onCreateTab={() => setCreateTabOpen(true)}
+          onDeleteTab={handleDeleteTab}
+          isReadOnly={isReadOnly}
+        />
+      )}
+
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           {versionBadge}
@@ -326,12 +326,6 @@ const EntryEditorPage = () => {
       {isSoftLocked && activeEditor && (
         <SoftLockBanner activeEditor={activeEditor} onOverride={() => setSoftLockOverride(true)} />
       )}
-      {editor.showEditNotice && (
-        <div className="rounded-md bg-primary/10 px-3 py-2 text-xs text-primary">
-          Editing will create a new draft (v{(entryData?.version ?? 0) + 1}). Your published version
-          remains active until you publish the draft.
-        </div>
-      )}
       <PromptEditor
         key={editor.discardVersion}
         entry={localEntry}
@@ -368,8 +362,6 @@ const EntryEditorPage = () => {
     onCompareVersions:
       aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/ab-test`) : undefined,
     versions,
-    onDeleteDraft: () => deleteDraftMutation.mutate(),
-    isDeletingDraft: deleteDraftMutation.isPending,
     onShare:
       !isReadOnly && currentUser?.role !== 'viewer'
         ? () => {
@@ -396,38 +388,47 @@ const EntryEditorPage = () => {
       : 'Evaluating prompt…';
 
   const dialogs = (
-    <EditorDialogs
-      entryId={entryId!}
-      versions={versions}
-      versionNum={versionNum}
-      folderPickerOpen={folderPickerOpen}
-      onFolderPickerOpenChange={setFolderPickerOpen}
-      onFolderSelect={(folderId) => {
-        mutations.moveMutation.mutate({ folderId });
-        setFolderPickerOpen(false);
-      }}
-      diffOpen={diffOpen}
-      onDiffOpenChange={setDiffOpen}
-      shareDialogOpen={shareDialogOpen}
-      onShareDialogOpenChange={setShareDialogOpen}
-      dupFolderPickerOpen={dupFolderPickerState.open}
-      onDupFolderPickerOpenChange={(open) => {
-        if (!open) cancelDuplicate();
-      }}
-      onDupFolderSelect={confirmDuplicate}
-      conflictState={mutations.conflictState}
-      onDismissConflict={mutations.handleDismissConflict}
-      onResolveConflict={mutations.handleResolveConflict}
-      showEmptyPublishWarning={showEmptyPublishWarning}
-      onEmptyPublishWarningChange={setShowEmptyPublishWarning}
-      onPublishAnyway={() => {
-        setShowEmptyPublishWarning(false);
-        mutations.handlePublish();
-      }}
-      blockerState={blocker.state}
-      onBlockerReset={blocker.reset}
-      onBlockerProceed={blocker.proceed}
-    />
+    <>
+      <EditorDialogs
+        entryId={entryId!}
+        versions={versions}
+        versionNum={versionNum}
+        folderPickerOpen={folderPickerOpen}
+        onFolderPickerOpenChange={setFolderPickerOpen}
+        onFolderSelect={(folderId) => {
+          mutations.moveMutation.mutate({ folderId });
+          setFolderPickerOpen(false);
+        }}
+        diffOpen={diffOpen}
+        onDiffOpenChange={setDiffOpen}
+        shareDialogOpen={shareDialogOpen}
+        onShareDialogOpenChange={setShareDialogOpen}
+        dupFolderPickerOpen={dupFolderPickerState.open}
+        onDupFolderPickerOpenChange={(open) => {
+          if (!open) cancelDuplicate();
+        }}
+        onDupFolderSelect={confirmDuplicate}
+        conflictState={mutations.conflictState}
+        onDismissConflict={mutations.handleDismissConflict}
+        onResolveConflict={mutations.handleResolveConflict}
+        showEmptyPublishWarning={showEmptyPublishWarning}
+        onEmptyPublishWarningChange={setShowEmptyPublishWarning}
+        onPublishAnyway={() => {
+          setShowEmptyPublishWarning(false);
+          mutations.handlePublish();
+        }}
+        blockerState={blocker.state}
+        onBlockerReset={blocker.reset}
+        onBlockerProceed={blocker.proceed}
+      />
+      <CreateTabDialog
+        entryId={entryId!}
+        versions={versions}
+        open={createTabOpen}
+        onOpenChange={setCreateTabOpen}
+        onCreated={(tabId) => setActiveTabId(tabId)}
+      />
+    </>
   );
 
   // ── Mobile layout ──

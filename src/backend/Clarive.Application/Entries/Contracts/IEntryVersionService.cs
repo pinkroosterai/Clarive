@@ -5,31 +5,19 @@ namespace Clarive.Application.Entries.Contracts;
 
 public interface IEntryVersionService
 {
-    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> PublishDraftAsync(
+    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> PublishTabAsync(
         Guid tenantId,
         Guid entryId,
+        Guid tabId,
         Guid userId,
         CancellationToken ct = default
     );
 
-    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> PublishVariantAsync(
-        Guid tenantId,
-        Guid entryId,
-        Guid variantId,
-        Guid userId,
-        CancellationToken ct = default
-    );
-
-    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion NewDraft)>> PromoteVersionAsync(
+    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion RestoredTab)>> RestoreVersionAsync(
         Guid tenantId,
         Guid entryId,
         int version,
-        CancellationToken ct = default
-    );
-
-    Task<ErrorOr<PromptEntry>> DeleteDraftAsync(
-        Guid tenantId,
-        Guid entryId,
+        Guid? targetTabId = null,
         CancellationToken ct = default
     );
 

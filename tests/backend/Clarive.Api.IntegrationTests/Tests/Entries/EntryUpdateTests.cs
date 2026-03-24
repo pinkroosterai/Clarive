@@ -15,12 +15,12 @@ public class EntryUpdateTests : IntegrationTestBase
         : base(fixture) { }
 
     [Fact]
-    public async Task Update_DraftEntry_OverwritesKeepsV1()
+    public async Task Update_TabEntry_OverwritesInPlace()
     {
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        // Create a fresh draft entry
+        // Create a fresh tab entry
         var (_, created) = await Client.PostJsonAsync<JsonElement>(
             "/api/entries",
             new
@@ -32,7 +32,7 @@ public class EntryUpdateTests : IntegrationTestBase
         );
         var entryId = created.GetProperty("id").GetString();
 
-        // Update the draft
+        // Update the tab
         var content = JsonContent.Create(
             new
             {
@@ -48,40 +48,37 @@ public class EntryUpdateTests : IntegrationTestBase
         var json = await response.ReadJsonAsync();
         json.GetProperty("title").GetString().Should().Be("Updated Title");
         json.GetProperty("systemMessage").GetString().Should().Be("Updated system message");
-        json.GetProperty("version").GetInt32().Should().Be(1); // still v1
-        json.GetProperty("versionState").GetString().Should().Be("draft");
+        json.GetProperty("version").GetInt32().Should().Be(0); // still v0 tab
+        json.GetProperty("versionState").GetString().Should().Be("tab");
     }
 
     [Fact]
-    public async Task Update_PublishedEntry_CreatesNewDraftVersion()
+    public async Task Update_Tab_UpdatesInPlace()
     {
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        // Create + publish
+        // Create entry (has Main tab)
         var (_, created) = await Client.PostJsonAsync<JsonElement>(
             "/api/entries",
             new
             {
                 title = TestData.UniqueEntryTitle(),
-                prompts = new[] { new { content = "V1 prompt" } },
+                prompts = new[] { new { content = "Original prompt" } },
             }
         );
         var entryId = created.GetProperty("id").GetString();
 
-        await Client.PostAsync($"/api/entries/{entryId}/publish", null);
-
-        // Update the now-published entry
+        // Update the tab directly (no auto-draft creation)
         var content = JsonContent.Create(
-            new { title = "V2 Title", prompts = new[] { new { content = "V2 prompt" } } }
+            new { title = "Updated Title", prompts = new[] { new { content = "Updated prompt" } } }
         );
         var response = await Client.PutAsync($"/api/entries/{entryId}", content);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var json = await response.ReadJsonAsync();
-        json.GetProperty("version").GetInt32().Should().Be(2); // new draft v2
-        json.GetProperty("versionState").GetString().Should().Be("draft");
-        json.GetProperty("title").GetString().Should().Be("V2 Title");
+        json.GetProperty("versionState").GetString().Should().Be("tab");
+        json.GetProperty("title").GetString().Should().Be("Updated Title");
     }
 }

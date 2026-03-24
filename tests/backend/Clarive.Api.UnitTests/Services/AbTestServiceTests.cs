@@ -172,12 +172,10 @@ public class AbTestServiceTests
     {
         var published = new PromptEntryVersion { Version = 3, VersionState = VersionState.Published };
         var historical = new PromptEntryVersion { Version = 2, VersionState = VersionState.Historical };
-        var draft = new PromptEntryVersion { Version = 4, VersionState = VersionState.Draft };
-        var variant = new PromptEntryVersion { Version = 0, VersionState = VersionState.Variant, VariantName = "concise-style" };
+        var tab = new PromptEntryVersion { Version = 0, VersionState = VersionState.Tab, TabName = "concise-style" };
 
         AbTestService.ComputeVersionLabel(published).Should().Be("v3 (published)");
         AbTestService.ComputeVersionLabel(historical).Should().Be("v2");
-        AbTestService.ComputeVersionLabel(draft).Should().Be("Draft");
-        AbTestService.ComputeVersionLabel(variant).Should().Be("concise-style");
+        AbTestService.ComputeVersionLabel(tab).Should().Be("concise-style");
     }
 }

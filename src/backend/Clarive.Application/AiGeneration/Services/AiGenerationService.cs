@@ -534,11 +534,12 @@ public class AiGenerationService(
         if (entry is null || entry.IsTrashed)
             return DomainErrors.EntryNotFound;
 
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
+        var version = await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
+                     ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        if (version is null)
             return DomainErrors.VersionNotFoundForEntry;
 
-        return (entry, working);
+        return (entry, version);
     }
 
     private Task LogUsageAsync(

@@ -21,7 +21,7 @@ export interface PromptEntry {
   prompts: Prompt[];
   folderId: string | null;
   version: number;
-  versionState: 'draft' | 'published' | 'historical' | 'variant';
+  versionState: 'tab' | 'published' | 'historical';
   isTrashed: boolean;
   createdAt: string;
   updatedAt: string;
@@ -136,20 +136,22 @@ export interface AuditLogEntry {
 export interface VersionInfo {
   id: string;
   version: number;
-  versionState: 'draft' | 'published' | 'historical' | 'variant';
+  versionState: 'tab' | 'published' | 'historical';
   publishedAt: string | null;
   publishedBy: string | null;
-  variantName?: string | null;
-  basedOnVersion?: number | null;
+  tabName?: string | null;
+  forkedFromVersion?: number | null;
+  isMainTab?: boolean;
   evaluation?: Evaluation | null;
   evaluationAverageScore?: number | null;
   evaluatedAt?: string | null;
 }
 
-export interface VariantInfo {
+export interface TabInfo {
   id: string;
   name: string;
-  basedOnVersion: number;
+  forkedFromVersion: number | null;
+  isMainTab: boolean;
   createdAt: string;
 }
 
@@ -236,7 +238,7 @@ export interface TagSummary {
 export interface FavoriteEntry {
   id: string;
   title: string;
-  versionState: 'draft' | 'published' | 'historical' | 'variant';
+  versionState: 'tab' | 'published' | 'historical';
   favoritedAt: string;
 }
 
@@ -259,7 +261,7 @@ export interface EntryActivityResponse {
 export interface DashboardStats {
   totalEntries: number;
   publishedEntries: number;
-  draftEntries: number;
+  unpublishedEntries: number;
   totalFolders: number;
   recentEntries: RecentEntry[];
   recentActivity: RecentActivity[];
@@ -269,7 +271,7 @@ export interface DashboardStats {
 export interface RecentEntry {
   id: string;
   title: string;
-  versionState: 'draft' | 'published' | 'historical' | 'variant';
+  versionState: 'tab' | 'published' | 'historical';
   updatedAt: string;
 }
 

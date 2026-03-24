@@ -8,8 +8,9 @@ public record VersionInfo(
     string VersionState,
     DateTime? PublishedAt,
     string? PublishedBy,
-    string? VariantName = null,
-    int? BasedOnVersion = null,
+    string? TabName = null,
+    int? ForkedFromVersion = null,
+    bool IsMainTab = false,
     VersionEvaluationInfo? Evaluation = null,
     double? EvaluationAverageScore = null,
     DateTime? EvaluatedAt = null

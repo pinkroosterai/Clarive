@@ -58,14 +58,14 @@ test.describe('Library Search, Filter & Sort', () => {
     const statusTrigger = page.locator('button[role="combobox"]').first();
     await statusTrigger.click();
 
-    // Select "Draft" (to filter differently from the default "All")
-    await page.getByRole('option', { name: 'Draft' }).click();
+    // Select "Unpublished" (to filter differently from the default "All")
+    await page.getByRole('option', { name: 'Unpublished' }).click();
     await page.waitForTimeout(500);
 
-    // Verify the dropdown now shows "Draft"
-    await expect(statusTrigger).toContainText('Draft');
+    // Verify the dropdown now shows "Unpublished"
+    await expect(statusTrigger).toContainText('Unpublished');
 
-    // Since all entries are published, draft filter should show no results or empty state
+    // Since all entries are published, unpublished filter should show no results or empty state
     // Switch to "Published" to verify positive results
     await statusTrigger.click();
     await page.getByRole('option', { name: 'Published' }).click();

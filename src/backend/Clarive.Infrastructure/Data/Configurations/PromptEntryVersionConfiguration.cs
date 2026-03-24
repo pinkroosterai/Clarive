@@ -28,9 +28,10 @@ public class PromptEntryVersionConfiguration : IEntityTypeConfiguration<PromptEn
         builder.Property(v => v.PublishedBy).HasColumnName("published_by");
         builder.Property(v => v.CreatedAt).HasColumnName("created_at").IsRequired();
 
-        // Variant metadata
-        builder.Property(v => v.VariantName).HasColumnName("variant_name").HasMaxLength(100);
-        builder.Property(v => v.BasedOnVersion).HasColumnName("based_on_version");
+        // Tab metadata
+        builder.Property(v => v.TabName).HasColumnName("tab_name").HasMaxLength(100);
+        builder.Property(v => v.ForkedFromVersion).HasColumnName("forked_from_version");
+        builder.Property(v => v.IsMainTab).HasColumnName("is_main_tab").HasDefaultValue(false);
 
         builder
             .Property(v => v.Evaluation)
@@ -69,11 +70,12 @@ public class PromptEntryVersionConfiguration : IEntityTypeConfiguration<PromptEn
         builder
             .HasIndex(v => new { v.EntryId, v.Version })
             .IsUnique()
+            .HasFilter("version_state != 'Tab'")
             .HasDatabaseName("uq_prompt_entry_versions_entry_version");
         builder
-            .HasIndex(v => new { v.EntryId, v.VariantName })
+            .HasIndex(v => new { v.EntryId, v.TabName })
             .IsUnique()
-            .HasFilter("variant_name IS NOT NULL")
-            .HasDatabaseName("uq_prompt_entry_versions_entry_variant_name");
+            .HasFilter("tab_name IS NOT NULL")
+            .HasDatabaseName("uq_prompt_entry_versions_entry_tab_name");
     }
 }

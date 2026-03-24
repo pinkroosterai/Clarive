@@ -47,10 +47,10 @@ test.describe('Entry Editing Lifecycle', () => {
       timeout: 5_000,
     });
     await expect(page.getByText('Prompt #1')).toBeVisible();
-    await expect(page.getByText('Draft v1')).toBeVisible();
+    await expect(page.getByText('Unpublished')).toBeVisible();
   });
 
-  test('write prompt content and save draft', async ({ page }) => {
+  test('write prompt content and save', async ({ page }) => {
     await navigateToEntry(page);
 
     // Type content into the Tiptap editor
@@ -64,11 +64,11 @@ test.describe('Entry Editing Lifecycle', () => {
     // Verify unsaved indicator appears
     await expect(page.getByText('Unsaved changes')).toBeVisible({ timeout: 3_000 });
 
-    // Click Save Draft
-    await page.getByRole('button', { name: /save draft/i }).click();
+    // Click Save
+    await page.getByRole('button', { name: /^save$/i }).click();
 
     // Verify save toast
-    await expectToast(page, 'Draft saved');
+    await expectToast(page, 'Saved');
 
     // Verify button shows "Saved!" briefly
     await expect(page.getByRole('button', { name: /saved!/i })).toBeVisible();

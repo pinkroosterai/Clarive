@@ -15,12 +15,12 @@ public class EntryPublishTests : IntegrationTestBase
         : base(fixture) { }
 
     [Fact]
-    public async Task Publish_DraftEntry_BecomesPublished()
+    public async Task PublishTab_NewEntry_CreatesV1()
     {
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        // Create a draft entry
+        // Create entry (has Main tab)
         var (_, created) = await Client.PostJsonAsync<JsonElement>(
             "/api/entries",
             new
@@ -31,8 +31,15 @@ public class EntryPublishTests : IntegrationTestBase
         );
         var entryId = created.GetProperty("id").GetString();
 
-        // Publish
-        var response = await Client.PostAsync($"/api/entries/{entryId}/publish", null);
+        // Get tabs to find Main tab ID
+        var tabsResponse = await Client.GetAsync($"/api/entries/{entryId}/tabs");
+        var tabs = await tabsResponse.ReadJsonAsync();
+        var mainTabId = tabs.EnumerateArray().First(t => t.GetProperty("isMainTab").GetBoolean())
+            .GetProperty("id").GetString();
+
+        // Publish the Main tab
+        var response = await Client.PostAsync(
+            $"/api/entries/{entryId}/tabs/{mainTabId}/publish", null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -42,27 +49,46 @@ public class EntryPublishTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Publish_AlreadyPublishedNoDraft_Returns409()
+    public async Task PublishTab_Republish_ArchivesOldVersion()
     {
         var token = await AuthHelper.GetEditorTokenAsync(Client);
         Client.WithBearerToken(token);
 
-        // Create + publish
+        // Create + publish v1
         var (_, created) = await Client.PostJsonAsync<JsonElement>(
             "/api/entries",
             new
             {
                 title = TestData.UniqueEntryTitle(),
-                prompts = new[] { new { content = "Prompt" } },
+                prompts = new[] { new { content = "V1" } },
             }
         );
         var entryId = created.GetProperty("id").GetString();
 
-        await Client.PostAsync($"/api/entries/{entryId}/publish", null);
+        var tabsResponse = await Client.GetAsync($"/api/entries/{entryId}/tabs");
+        var tabs = await tabsResponse.ReadJsonAsync();
+        var mainTabId = tabs.EnumerateArray().First(t => t.GetProperty("isMainTab").GetBoolean())
+            .GetProperty("id").GetString();
 
-        // Try to publish again without a new draft
-        var response = await Client.PostAsync($"/api/entries/{entryId}/publish", null);
+        await Client.PostAsync($"/api/entries/{entryId}/tabs/{mainTabId}/publish", null);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        // Update tab content and publish v2
+        await Client.PutAsync(
+            $"/api/entries/{entryId}",
+            JsonContent.Create(new { prompts = new[] { new { content = "V2" } } })
+        );
+
+        var response = await Client.PostAsync(
+            $"/api/entries/{entryId}/tabs/{mainTabId}/publish", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.ReadJsonAsync();
+        json.GetProperty("version").GetInt32().Should().Be(2);
+
+        // Verify v1 is now historical
+        var versionsResponse = await Client.GetAsync($"/api/entries/{entryId}/versions");
+        var versions = await versionsResponse.ReadJsonAsync();
+        var v1 = versions.EnumerateArray().First(v => v.GetProperty("version").GetInt32() == 1);
+        v1.GetProperty("versionState").GetString().Should().Be("historical");
     }
 }

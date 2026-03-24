@@ -50,7 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IApiKeyService, ApiKeyService>();
         services.AddScoped<ITestDatasetService, TestDatasetService>();
         services.AddScoped<IAbTestService, AbTestService>();
-        services.AddScoped<IVariantService, VariantService>();
+        services.AddScoped<ITabService, TabService>();
         services.Configure<AvatarSettings>(configuration.GetSection("Avatar"));
         services.AddScoped<IAvatarService, AvatarService>();
         services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();

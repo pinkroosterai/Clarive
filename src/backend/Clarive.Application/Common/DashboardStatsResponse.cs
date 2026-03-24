@@ -5,7 +5,7 @@ namespace Clarive.Application.Common;
 public record DashboardStatsResponse(
     int TotalEntries,
     int PublishedEntries,
-    int DraftEntries,
+    int UnpublishedEntries,
     int TotalFolders,
     List<RecentEntryDto> RecentEntries,
     List<RecentActivityDto> RecentActivity,

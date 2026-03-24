@@ -2,8 +2,7 @@ namespace Clarive.Domain.Enums;
 
 public enum VersionState
 {
-    Draft,
+    Tab,
     Published,
     Historical,
-    Variant,
 }

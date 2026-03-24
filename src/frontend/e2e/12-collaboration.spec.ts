@@ -108,9 +108,9 @@ test.describe('Multi-User Collaboration', () => {
     await tiptapEditor.pressSequentially('Collaboration test prompt content.', { delay: 10 });
     await page.waitForTimeout(500);
 
-    // Save draft
-    await page.getByRole('button', { name: /save draft/i }).click();
-    await expectToast(page, 'Draft saved');
+    // Save
+    await page.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(page, 'Saved');
   });
 
   // ── Presence Indicators ──
@@ -279,14 +279,14 @@ test.describe('Multi-User Collaboration', () => {
     const adminTitle = adminPage.locator('input[placeholder="Entry title"]');
     await adminTitle.fill('Admin Conflict Title');
     await adminPage.waitForTimeout(300);
-    await adminPage.getByRole('button', { name: /save draft/i }).click();
-    await expectToast(adminPage, 'Draft saved');
+    await adminPage.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(adminPage, 'Saved');
 
     // Editor changes the title and tries to save — should trigger conflict
     const editorTitle = editorPage.locator('input[placeholder="Entry title"]');
     await editorTitle.fill('Editor Conflict Title');
     await editorPage.waitForTimeout(300);
-    await editorPage.getByRole('button', { name: /save draft/i }).click();
+    await editorPage.getByRole('button', { name: /^save$/i }).click();
 
     // Conflict resolution overlay should appear
     await expect(editorPage.getByText('Resolve conflict')).toBeVisible({ timeout: 10_000 });
@@ -329,13 +329,13 @@ test.describe('Multi-User Collaboration', () => {
     // Admin saves a title change
     await adminPage.locator('input[placeholder="Entry title"]').fill('Admin Title KeepMine');
     await adminPage.waitForTimeout(300);
-    await adminPage.getByRole('button', { name: /save draft/i }).click();
-    await expectToast(adminPage, 'Draft saved');
+    await adminPage.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(adminPage, 'Saved');
 
     // Editor saves a different title — triggers conflict
     await editorPage.locator('input[placeholder="Entry title"]').fill('Editor Title KeepMine');
     await editorPage.waitForTimeout(300);
-    await editorPage.getByRole('button', { name: /save draft/i }).click();
+    await editorPage.getByRole('button', { name: /^save$/i }).click();
 
     // Wait for conflict resolution overlay
     await expect(editorPage.getByText('Resolve conflict')).toBeVisible({ timeout: 10_000 });
@@ -351,8 +351,8 @@ test.describe('Multi-User Collaboration', () => {
     await expect(editorTitle).toHaveValue('Editor Title KeepMine', { timeout: 5_000 });
 
     // Save the resolved changes — this verifies the rowVersion was updated correctly
-    await editorPage.getByRole('button', { name: /save draft/i }).click();
-    await expectToast(editorPage, 'Draft saved');
+    await editorPage.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(editorPage, 'Saved');
 
     // Reload and verify the save persisted
     await editorPage.reload();
@@ -385,13 +385,13 @@ test.describe('Multi-User Collaboration', () => {
     // Admin saves a title change
     await adminPage.locator('input[placeholder="Entry title"]').fill('Admin Title KeepTheirs');
     await adminPage.waitForTimeout(300);
-    await adminPage.getByRole('button', { name: /save draft/i }).click();
-    await expectToast(adminPage, 'Draft saved');
+    await adminPage.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(adminPage, 'Saved');
 
     // Editor saves a different title — triggers conflict
     await editorPage.locator('input[placeholder="Entry title"]').fill('Editor Title KeepTheirs');
     await editorPage.waitForTimeout(300);
-    await editorPage.getByRole('button', { name: /save draft/i }).click();
+    await editorPage.getByRole('button', { name: /^save$/i }).click();
 
     // Wait for conflict resolution overlay
     await expect(editorPage.getByText('Resolve conflict')).toBeVisible({ timeout: 10_000 });
@@ -411,8 +411,8 @@ test.describe('Multi-User Collaboration', () => {
     await expect(editorTitle).toHaveValue('Admin Title KeepTheirs', { timeout: 5_000 });
 
     // Save the resolved changes — this verifies the rowVersion was updated correctly
-    await editorPage.getByRole('button', { name: /save draft/i }).click();
-    await expectToast(editorPage, 'Draft saved');
+    await editorPage.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(editorPage, 'Saved');
 
     // Reload and verify the save persisted
     await editorPage.reload();

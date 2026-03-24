@@ -78,7 +78,7 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             {
                 var entryRepo = context.RequestServices.GetRequiredService<IEntryRepository>();
                 var entry = await entryRepo.GetByIdAsync(tenantId, entryId);
-                var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId);
+                var version = await entryRepo.GetMainTabAsync(tenantId, entryId);
 
                 if (entry != null && version != null)
                 {

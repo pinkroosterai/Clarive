@@ -61,8 +61,10 @@ public class EntryService(
                     {
                         Id = Guid.NewGuid(),
                         EntryId = entry.Id,
-                        Version = 1,
-                        VersionState = VersionState.Draft,
+                        Version = 0,
+                        VersionState = VersionState.Tab,
+                        TabName = "Main",
+                        IsMainTab = true,
                         SystemMessage = request.SystemMessage,
                         Prompts = prompts,
                         CreatedAt = now,
@@ -92,13 +94,14 @@ public class EntryService(
         if (entry is null)
             return DomainErrors.EntryNotFound;
 
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null)
+        // Load the specified tab (or fall back to Main tab)
+        var tab = request.TabId.HasValue
+            ? await entryRepo.GetVersionByIdAsync(tenantId, request.TabId.Value, ct)
+            : await entryRepo.GetMainTabAsync(tenantId, entryId, ct);
+        if (tab is null || tab.VersionState != VersionState.Tab)
             return DomainErrors.VersionNotFound;
 
-        // Detect concurrency conflicts for sequential saves: if the client sent
-        // the rowVersion (xmin) it had when it loaded the entry, compare it against
-        // the current DB value. If they differ, another user saved in between.
+        // Detect concurrency conflicts for sequential saves
         if (request.RowVersion.HasValue && entry.RowVersion != request.RowVersion.Value)
             throw new DbUpdateConcurrencyException(
                 "The entry was modified by another user since you loaded it.");
@@ -108,56 +111,24 @@ public class EntryService(
             {
                 var now = DateTime.UtcNow;
 
-                if (working.VersionState == VersionState.Draft)
-                {
-                    if (request.Title is not null)
-                        entry.Title = request.Title.Trim();
-                    if (request.SystemMessage is not null)
-                        working.SystemMessage = request.SystemMessage;
-                    if (request.Prompts is not null)
-                        await entryRepo.ReplacePromptsAsync(
-                            working,
-                            BuildPrompts(request.Prompts),
-                            ct
-                        );
-                    if (request.Evaluation is not null)
-                        MapEvaluationToVersion(working, request.Evaluation);
-
-                    entry.UpdatedAt = now;
-                    await entryRepo.UpdateAsync(entry, ct);
-                    await entryRepo.UpdateVersionAsync(working, ct);
-                }
-                else
-                {
-                    var maxVersion = await entryRepo.GetMaxVersionNumberAsync(
-                        tenantId,
-                        entryId,
+                if (request.Title is not null)
+                    entry.Title = request.Title.Trim();
+                if (request.SystemMessage is not null)
+                    tab.SystemMessage = request.SystemMessage;
+                if (request.Prompts is not null)
+                    await entryRepo.ReplacePromptsAsync(
+                        tab,
+                        BuildPrompts(request.Prompts),
                         ct
                     );
-                    if (request.Title is not null)
-                        entry.Title = request.Title.Trim();
-                    entry.UpdatedAt = now;
-                    await entryRepo.UpdateAsync(entry, ct);
+                if (request.Evaluation is not null)
+                    MapEvaluationToVersion(tab, request.Evaluation);
 
-                    var newVersion = new PromptEntryVersion
-                    {
-                        Id = Guid.NewGuid(),
-                        EntryId = entryId,
-                        Version = maxVersion + 1,
-                        VersionState = VersionState.Draft,
-                        SystemMessage = request.SystemMessage ?? working.SystemMessage,
-                        Prompts = request.Prompts is not null
-                            ? BuildPrompts(request.Prompts)
-                            : working.Prompts,
-                        CreatedAt = now,
-                    };
-                    if (request.Evaluation is not null)
-                        MapEvaluationToVersion(newVersion, request.Evaluation);
+                entry.UpdatedAt = now;
+                await entryRepo.UpdateAsync(entry, ct);
+                await entryRepo.UpdateVersionAsync(tab, ct);
 
-                    working = await entryRepo.CreateVersionAsync(newVersion, ct);
-                }
-
-                return (entry, working);
+                return (entry, tab);
             },
             ct
         );
@@ -376,7 +347,9 @@ public class EntryService(
         if (entry is null)
             return DomainErrors.EntryNotFound;
 
-        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        // Prefer Main tab; fall back to published version (for entries without tabs, e.g. seed data)
+        var version = await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
+                      ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
         if (version is null)
             return DomainErrors.VersionNotFound;
 
@@ -413,13 +386,14 @@ public class EntryService(
         return await BuildFullResponseAsync(entry, version, tenantId, isFavorited, ct);
     }
 
-    public async Task<ErrorOr<PromptEntryVersion>> GetWorkingVersionAsync(
+    public async Task<ErrorOr<PromptEntryVersion>> GetMainTabVersionAsync(
         Guid tenantId,
         Guid entryId,
         CancellationToken ct
     )
     {
-        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        var version = await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
+                      ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
         if (version is null)
             return DomainErrors.VersionNotFound;
         return version;
@@ -433,7 +407,7 @@ public class EntryService(
     )
     {
         var entryIds = entries.Select(e => e.Id).ToList();
-        var workingVersions = await entryRepo.GetWorkingVersionsBatchAsync(tenantId, entryIds, ct);
+        var workingVersions = await entryRepo.GetMainTabsBatchAsync(tenantId, entryIds, ct);
         var tagsByEntry = await tagRepo.GetByEntryIdsBatchAsync(tenantId, entryIds, ct);
         var favoritedIds = await favoriteRepo.GetFavoritedEntryIdsAsync(
             tenantId,

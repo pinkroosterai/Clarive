@@ -29,12 +29,12 @@ public class UpdateEntryTests : EntryServiceTestBase
     }
 
     [Fact]
-    public async Task Update_WorkingVersionNotFound_ReturnsNotFoundError()
+    public async Task Update_MainTabNotFound_ReturnsNotFoundError()
     {
         var entry = MakeEntry();
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
         EntryRepo
-            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .GetMainTabAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
         var result = await Sut.UpdateEntryAsync(
@@ -49,15 +49,15 @@ public class UpdateEntryTests : EntryServiceTestBase
     }
 
     [Fact]
-    public async Task Update_DraftState_UpdatesInPlace()
+    public async Task Update_Tab_UpdatesInPlace()
     {
         var entry = MakeEntry();
-        var draft = MakeVersion(entry.Id, version: 1, state: VersionState.Draft);
+        var tab = MakeVersion(entry.Id, version: 0, state: VersionState.Tab);
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
         EntryRepo
-            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(draft);
+            .GetMainTabAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
+            .Returns(tab);
 
         var request = new UpdateEntryRequest("New Title", "New system msg", null);
 
@@ -73,39 +73,28 @@ public class UpdateEntryTests : EntryServiceTestBase
 
         resultEntry.Title.Should().Be("New Title");
         resultVersion.SystemMessage.Should().Be("New system msg");
-        resultVersion.Version.Should().Be(1); // same version
+        resultVersion.VersionState.Should().Be(VersionState.Tab);
 
         await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
-        await EntryRepo.Received(1).UpdateVersionAsync(draft, Arg.Any<CancellationToken>());
+        await EntryRepo.Received(1).UpdateVersionAsync(tab, Arg.Any<CancellationToken>());
+        // No new version created — tabs are updated in place
         await EntryRepo
             .DidNotReceive()
             .CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Update_PublishedState_CreatesNewDraftVersion()
+    public async Task Update_WithTabId_UpdatesSpecificTab()
     {
         var entry = MakeEntry();
-        var published = MakeVersion(
-            entry.Id,
-            version: 1,
-            state: VersionState.Published,
-            systemMessage: "Original system"
-        );
+        var specificTab = MakeVersion(entry.Id, version: 0, state: VersionState.Tab);
 
         EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
         EntryRepo
-            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(published);
-        EntryRepo
-            .GetMaxVersionNumberAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(1);
+            .GetVersionByIdAsync(TenantId, specificTab.Id, Arg.Any<CancellationToken>())
+            .Returns(specificTab);
 
-        var request = new UpdateEntryRequest(
-            "New Title",
-            "New system",
-            [new PromptInput("Updated prompt")]
-        );
+        var request = new UpdateEntryRequest("Title", "Updated system", null, TabId: specificTab.Id);
 
         var result = await Sut.UpdateEntryAsync(
             TenantId,
@@ -115,47 +104,6 @@ public class UpdateEntryTests : EntryServiceTestBase
         );
 
         result.IsError.Should().BeFalse();
-        var (_, resultVersion) = result.Value;
-
-        resultVersion.Version.Should().Be(2);
-        resultVersion.VersionState.Should().Be(VersionState.Draft);
-        resultVersion.SystemMessage.Should().Be("New system");
-
-        await EntryRepo.Received(1).UpdateAsync(entry, Arg.Any<CancellationToken>());
-        await EntryRepo
-            .Received(1)
-            .CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Update_PublishedState_PreservesSystemMessageWhenNotProvided()
-    {
-        var entry = MakeEntry();
-        var published = MakeVersion(
-            entry.Id,
-            version: 1,
-            state: VersionState.Published,
-            systemMessage: "Keep this"
-        );
-
-        EntryRepo.GetByIdAsync(TenantId, entry.Id, Arg.Any<CancellationToken>()).Returns(entry);
-        EntryRepo
-            .GetWorkingVersionAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(published);
-        EntryRepo
-            .GetMaxVersionNumberAsync(TenantId, entry.Id, Arg.Any<CancellationToken>())
-            .Returns(1);
-
-        var request = new UpdateEntryRequest("Title", null, null); // systemMessage = null
-
-        var result = await Sut.UpdateEntryAsync(
-            TenantId,
-            entry.Id,
-            request,
-            CancellationToken.None
-        );
-
-        result.IsError.Should().BeFalse();
-        result.Value.WorkingVersion.SystemMessage.Should().Be("Keep this");
+        result.Value.WorkingVersion.SystemMessage.Should().Be("Updated system");
     }
 }

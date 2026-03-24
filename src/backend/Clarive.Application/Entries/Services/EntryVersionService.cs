@@ -1,4 +1,5 @@
 using Clarive.Application.Entries.Contracts;
+using Clarive.Application.Tabs.Contracts;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Errors;
@@ -19,60 +20,15 @@ public class EntryVersionService(
 {
     public async Task<
         ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>
-    > PublishDraftAsync(Guid tenantId, Guid entryId, Guid userId, CancellationToken ct)
+    > PublishTabAsync(Guid tenantId, Guid entryId, Guid tabId, Guid userId, CancellationToken ct)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
             return DomainErrors.EntryNotFound;
 
-        var draft = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (draft is null || draft.VersionState != VersionState.Draft)
-            return Error.Conflict("NO_DRAFT", "No draft version to publish.");
-
-        return await unitOfWork.ExecuteInTransactionAsync(
-            async () =>
-            {
-                var now = DateTime.UtcNow;
-
-                var currentPublished = await entryRepo.GetPublishedVersionAsync(
-                    tenantId,
-                    entryId,
-                    ct
-                );
-                if (currentPublished is not null)
-                {
-                    currentPublished.VersionState = VersionState.Historical;
-                    await entryRepo.UpdateVersionAsync(currentPublished, ct);
-                }
-
-                draft.VersionState = VersionState.Published;
-                draft.PublishedAt = now;
-                draft.PublishedBy = userId;
-                await entryRepo.UpdateVersionAsync(draft, ct);
-
-                entry.UpdatedAt = now;
-                await entryRepo.UpdateAsync(entry, ct);
-
-                await TenantCacheKeys.EvictEntryData(cache, tenantId);
-                await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
-
-                return (entry, draft);
-            },
-            ct
-        );
-    }
-
-    public async Task<
-        ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>
-    > PublishVariantAsync(Guid tenantId, Guid entryId, Guid variantId, Guid userId, CancellationToken ct)
-    {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null)
-            return DomainErrors.EntryNotFound;
-
-        var variant = await entryRepo.GetVersionByIdAsync(tenantId, variantId, ct);
-        if (variant is null || variant.EntryId != entryId || variant.VersionState != VersionState.Variant)
-            return DomainErrors.VariantNotFound;
+        var tab = await entryRepo.GetVersionByIdAsync(tenantId, tabId, ct);
+        if (tab is null || tab.EntryId != entryId || tab.VersionState != VersionState.Tab)
+            return DomainErrors.TabNotFound;
 
         return await unitOfWork.ExecuteInTransactionAsync(
             async () =>
@@ -80,20 +36,30 @@ public class EntryVersionService(
                 var now = DateTime.UtcNow;
                 var maxVersion = await entryRepo.GetMaxVersionNumberAsync(tenantId, entryId, ct);
 
-                var currentPublished = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+                // Archive current published version
+                var currentPublished = await entryRepo.GetPublishedVersionAsync(
+                    tenantId, entryId, ct);
                 if (currentPublished is not null)
                 {
                     currentPublished.VersionState = VersionState.Historical;
                     await entryRepo.UpdateVersionAsync(currentPublished, ct);
                 }
 
-                variant.Version = maxVersion + 1;
-                variant.VersionState = VersionState.Published;
-                variant.VariantName = null;
-                variant.BasedOnVersion = null;
-                variant.PublishedAt = now;
-                variant.PublishedBy = userId;
-                await entryRepo.UpdateVersionAsync(variant, ct);
+                // Create a snapshot of the tab's content as a new published version
+                var snapshotId = Guid.NewGuid();
+                var snapshot = new PromptEntryVersion
+                {
+                    Id = snapshotId,
+                    EntryId = entryId,
+                    Version = maxVersion + 1,
+                    VersionState = VersionState.Published,
+                    SystemMessage = tab.SystemMessage,
+                    Prompts = Common.PromptCloner.ClonePrompts(tab.Prompts, snapshotId),
+                    PublishedAt = now,
+                    PublishedBy = userId,
+                    CreatedAt = now,
+                };
+                await entryRepo.CreateVersionAsync(snapshot, ct);
 
                 entry.UpdatedAt = now;
                 await entryRepo.UpdateAsync(entry, ct);
@@ -101,15 +67,15 @@ public class EntryVersionService(
                 await TenantCacheKeys.EvictEntryData(cache, tenantId);
                 await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
 
-                return (entry, variant);
+                return (entry, snapshot);
             },
             ct
         );
     }
 
     public async Task<
-        ErrorOr<(PromptEntry Entry, PromptEntryVersion NewDraft)>
-    > PromoteVersionAsync(Guid tenantId, Guid entryId, int version, CancellationToken ct)
+        ErrorOr<(PromptEntry Entry, PromptEntryVersion RestoredTab)>
+    > RestoreVersionAsync(Guid tenantId, Guid entryId, int version, Guid? targetTabId, CancellationToken ct)
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
@@ -123,70 +89,54 @@ public class EntryVersionService(
             async () =>
             {
                 var now = DateTime.UtcNow;
-                var maxVersion = await entryRepo.GetMaxVersionNumberAsync(tenantId, entryId, ct);
 
-                var workingVersion = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-                if (workingVersion?.VersionState == VersionState.Draft)
-                    await entryRepo.DeleteVersionAsync(workingVersion, ct);
+                if (targetTabId.HasValue)
+                {
+                    // Load content into an existing tab
+                    var targetTab = await entryRepo.GetVersionByIdAsync(tenantId, targetTabId.Value, ct);
+                    if (targetTab is null || targetTab.EntryId != entryId || targetTab.VersionState != VersionState.Tab)
+                        return (ErrorOr<(PromptEntry, PromptEntryVersion)>)DomainErrors.TabNotFound;
 
-                var newDraftId = Guid.NewGuid();
-                var clonedPrompts = Common.PromptCloner.ClonePrompts(historical.Prompts, newDraftId);
+                    targetTab.SystemMessage = historical.SystemMessage;
+                    targetTab.ForkedFromVersion = version;
+                    await entryRepo.ReplacePromptsAsync(
+                        targetTab,
+                        Common.PromptCloner.ClonePrompts(historical.Prompts, targetTab.Id),
+                        ct
+                    );
+                    await entryRepo.UpdateVersionAsync(targetTab, ct);
 
-                var newDraft = await entryRepo.CreateVersionAsync(
-                    new PromptEntryVersion
-                    {
-                        Id = newDraftId,
-                        EntryId = entryId,
-                        Version = maxVersion + 1,
-                        VersionState = VersionState.Draft,
-                        SystemMessage = historical.SystemMessage,
-                        Prompts = clonedPrompts,
-                        PublishedAt = null,
-                        PublishedBy = null,
-                        CreatedAt = now,
-                    },
-                    ct
-                );
+                    entry.UpdatedAt = now;
+                    await entryRepo.UpdateAsync(entry, ct);
 
-                entry.UpdatedAt = now;
-                await entryRepo.UpdateAsync(entry, ct);
+                    return (entry, targetTab);
+                }
+                else
+                {
+                    // Create a new tab with the historical content
+                    var newTabId = Guid.NewGuid();
+                    var newTab = await entryRepo.CreateVersionAsync(
+                        new PromptEntryVersion
+                        {
+                            Id = newTabId,
+                            EntryId = entryId,
+                            Version = 0,
+                            VersionState = VersionState.Tab,
+                            TabName = $"Restored v{version}",
+                            ForkedFromVersion = version,
+                            IsMainTab = false,
+                            SystemMessage = historical.SystemMessage,
+                            Prompts = Common.PromptCloner.ClonePrompts(historical.Prompts, newTabId),
+                            CreatedAt = now,
+                        },
+                        ct
+                    );
 
-                return (entry, newDraft);
-            },
-            ct
-        );
-    }
+                    entry.UpdatedAt = now;
+                    await entryRepo.UpdateAsync(entry, ct);
 
-    public async Task<ErrorOr<PromptEntry>> DeleteDraftAsync(
-        Guid tenantId,
-        Guid entryId,
-        CancellationToken ct
-    )
-    {
-        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
-        if (entry is null)
-            return DomainErrors.EntryNotFound;
-
-        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (working is null || working.VersionState != VersionState.Draft)
-            return Error.Validation("NO_DRAFT", "No draft version exists for this entry.");
-
-        var published = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
-        if (published is null)
-            return Error.Validation(
-                "NO_PUBLISHED_VERSION",
-                "Cannot delete the only version. A published version must exist to fall back to."
-            );
-
-        return await unitOfWork.ExecuteInTransactionAsync(
-            async () =>
-            {
-                await entryRepo.DeleteVersionAsync(working, ct);
-
-                entry.UpdatedAt = DateTime.UtcNow;
-                await entryRepo.UpdateAsync(entry, ct);
-
-                return entry;
+                    return (entry, newTab);
+                }
             },
             ct
         );
@@ -210,12 +160,12 @@ public class EntryVersionService(
             .Distinct();
         var publisherMap = await userRepo.GetByIdsAsync(tenantId, publisherIds, ct);
 
-        // Put variants first (sorted by CreatedAt DESC), then published/historical (sorted by Version DESC)
+        // Tabs first (sorted by CreatedAt DESC), then published/historical (sorted by Version DESC)
         var sorted = versions
-            .Where(v => v.VersionState == VersionState.Variant)
+            .Where(v => v.VersionState == VersionState.Tab)
             .OrderByDescending(v => v.CreatedAt)
             .Concat(versions
-                .Where(v => v.VersionState != VersionState.Variant)
+                .Where(v => v.VersionState != VersionState.Tab)
                 .OrderByDescending(v => v.Version));
 
         var versionInfos = sorted
@@ -227,8 +177,9 @@ public class EntryVersionService(
                 v.PublishedBy.HasValue && publisherMap.TryGetValue(v.PublishedBy.Value, out var pub)
                     ? pub.Name
                     : null,
-                v.VariantName,
-                v.BasedOnVersion,
+                v.TabName,
+                v.ForkedFromVersion,
+                v.IsMainTab,
                 v.Evaluation != null ? new VersionEvaluationInfo(v.Evaluation) : null,
                 v.EvaluationAverageScore,
                 v.EvaluatedAt

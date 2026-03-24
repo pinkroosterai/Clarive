@@ -276,8 +276,7 @@ public class AbTestService(
         {
             VersionState.Published => $"v{version.Version} (published)",
             VersionState.Historical => $"v{version.Version}",
-            VersionState.Draft => "Draft",
-            VersionState.Variant => version.VariantName ?? "Variant",
+            VersionState.Tab => version.TabName ?? "Tab",
             _ => $"v{version.Version}"
         };
     }

@@ -22,9 +22,9 @@ function getGreeting(name: string): string {
   return `Good ${timeOfDay}, ${firstName}`;
 }
 
-function getSubtitle(drafts: number, published: number): string {
-  if (drafts === 0 && published === 0) return 'Create your first entry to get started.';
-  if (drafts > 0) return `You have ${drafts} draft${drafts > 1 ? 's' : ''} pending review.`;
+function getSubtitle(unpublished: number, published: number): string {
+  if (unpublished === 0 && published === 0) return 'Create your first entry to get started.';
+  if (unpublished > 0) return `You have ${unpublished} unpublished entr${unpublished > 1 ? 'ies' : 'y'}.`;
   return 'All entries are published.';
 }
 
@@ -101,13 +101,13 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <GreetingHero
         name={currentUser?.name}
-        subtitle={getSubtitle(stats.draftEntries, stats.publishedEntries)}
+        subtitle={getSubtitle(stats.unpublishedEntries, stats.publishedEntries)}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="dashboard-stats">
         <StatCard icon={FileText} label="Entries" value={stats.totalEntries} index={0} to="/library" />
         <StatCard icon={Globe} label="Published" value={stats.publishedEntries} index={1} to="/library?status=published" />
-        <StatCard icon={PenLine} label="Drafts" value={stats.draftEntries} index={2} to="/library?status=draft" />
+        <StatCard icon={PenLine} label="Unpublished" value={stats.unpublishedEntries} index={2} to="/library?status=unpublished" />
         <StatCard icon={FolderOpen} label="Folders" value={stats.totalFolders} index={3} to="/library" />
       </div>
 

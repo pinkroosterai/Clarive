@@ -112,17 +112,20 @@ public static class DomainErrors
     public static Error AbTestVersionNotFound =>
         Error.NotFound("AB_TEST_VERSION_NOT_FOUND", "One or both versions not found for this entry.");
 
-    // ── Variants ──
+    // ── Tabs ──
 
-    public static Error VariantNotFound =>
-        Error.NotFound("VARIANT_NOT_FOUND", "Variant not found.");
+    public static Error TabNotFound =>
+        Error.NotFound("TAB_NOT_FOUND", "Tab not found.");
 
-    public static Error DuplicateVariantName =>
-        Error.Conflict("DUPLICATE_VARIANT_NAME", "A variant with this name already exists for this entry.");
+    public static Error DuplicateTabName =>
+        Error.Conflict("DUPLICATE_TAB_NAME", "A tab with this name already exists for this entry.");
 
-    public static Error MaxVariantsExceeded =>
-        Error.Validation("MAX_VARIANTS_EXCEEDED", "Maximum 20 variants per entry.");
+    public static Error MaxTabsExceeded =>
+        Error.Validation("MAX_TABS_EXCEEDED", "Maximum 20 tabs per entry.");
 
-    public static Error VariantNameRequired =>
-        Error.Validation("VARIANT_NAME_REQUIRED", "Variant name is required.");
+    public static Error TabNameRequired =>
+        Error.Validation("TAB_NAME_REQUIRED", "Tab name is required.");
+
+    public static Error CannotDeleteMainTab =>
+        Error.Validation("CANNOT_DELETE_MAIN_TAB", "The Main tab cannot be deleted.");
 }

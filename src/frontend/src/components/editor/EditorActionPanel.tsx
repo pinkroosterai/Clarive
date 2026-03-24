@@ -37,8 +37,6 @@ export interface EditorActionPanelProps {
   onCompareVersions?: () => void;
   versions: VersionInfo[];
   versionPanel?: ReactNode;
-  onDeleteDraft?: () => void;
-  isDeletingDraft?: boolean;
   onShare?: () => void;
   hasShareLink?: boolean;
   hasEmptyTitle?: boolean;
@@ -76,8 +74,6 @@ export function EditorActionPanel({
   onCompareVersions,
   versions,
   versionPanel,
-  onDeleteDraft,
-  isDeletingDraft,
   onShare,
   hasShareLink,
   hasEmptyTitle,
@@ -90,7 +86,6 @@ export function EditorActionPanel({
 }: EditorActionPanelProps) {
   const [activeTab, setActiveTab] = useState('actions');
 
-  const hasDraft = versions.some((v) => v.versionState === 'draft');
   const tagCount = entry.tags?.length ?? 0;
 
   return (
@@ -170,8 +165,6 @@ export function EditorActionPanel({
                 onCompareVersions={onCompareVersions}
                 versions={versions}
                 entryVersion={entry.version}
-                onDeleteDraft={onDeleteDraft}
-                isDeletingDraft={isDeletingDraft}
                 onShare={onShare}
                 hasShareLink={hasShareLink}
                 hasEmptyTitle={hasEmptyTitle}

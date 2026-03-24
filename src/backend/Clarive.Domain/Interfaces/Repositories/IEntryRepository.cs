@@ -33,17 +33,19 @@ public interface IEntryRepository
     Task<PromptEntry> UpdateAsync(PromptEntry entry, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid tenantId, Guid entryId, CancellationToken ct = default);
 
-    // Version management
-    Task<PromptEntryVersion?> GetWorkingVersionAsync(
+    // Tab management
+    Task<PromptEntryVersion?> GetMainTabAsync(
         Guid tenantId,
         Guid entryId,
         CancellationToken ct = default
     );
-    Task<Dictionary<Guid, PromptEntryVersion>> GetWorkingVersionsBatchAsync(
+    Task<Dictionary<Guid, PromptEntryVersion>> GetMainTabsBatchAsync(
         Guid tenantId,
         List<Guid> entryIds,
         CancellationToken ct = default
     );
+
+    // Version management
     Task<PromptEntryVersion?> GetVersionAsync(
         Guid tenantId,
         Guid entryId,
@@ -86,16 +88,16 @@ public interface IEntryRepository
         CancellationToken ct = default
     );
 
-    // Variant management
-    Task<List<PromptEntryVersion>> GetVariantsAsync(
+    // Tab queries
+    Task<List<PromptEntryVersion>> GetTabsAsync(
         Guid tenantId,
         Guid entryId,
         CancellationToken ct = default
     );
-    Task<PromptEntryVersion?> GetVariantByNameAsync(
+    Task<PromptEntryVersion?> GetTabByNameAsync(
         Guid tenantId,
         Guid entryId,
-        string variantName,
+        string tabName,
         CancellationToken ct = default
     );
     Task<PromptEntryVersion?> GetVersionByIdAsync(
@@ -111,7 +113,7 @@ public interface IEntryRepository
     );
 
     // Dashboard
-    Task<(int Total, int Published, int Drafts)> GetStatsAsync(
+    Task<(int Total, int Published, int Unpublished)> GetStatsAsync(
         Guid tenantId,
         CancellationToken ct = default
     );

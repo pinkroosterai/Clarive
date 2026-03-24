@@ -142,7 +142,7 @@ public class EntryEvaluationPersistenceTests : IntegrationTestBase
         versionsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var versions = await versionsResponse.ReadJsonAsync();
 
-        var draftVersion = versions.EnumerateArray().First(v => v.GetProperty("versionState").GetString() == "draft");
-        draftVersion.GetProperty("evaluationAverageScore").GetDouble().Should().BeGreaterThan(0);
+        var tabVersion = versions.EnumerateArray().First(v => v.GetProperty("versionState").GetString() == "tab");
+        tabVersion.GetProperty("evaluationAverageScore").GetDouble().Should().BeGreaterThan(0);
     }
 }

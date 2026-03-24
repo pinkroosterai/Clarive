@@ -30,7 +30,7 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
             query = query.Where(e => options.FilteredEntryIds.Contains(e.Id));
         if (!string.IsNullOrWhiteSpace(options.Search))
             query = query.Where(e => EF.Functions.ILike(e.Title, $"%{options.Search}%"));
-        if (string.Equals(options.Status, "draft", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(options.Status, "unpublished", StringComparison.OrdinalIgnoreCase))
         {
             // Cached set of published entry IDs (5-min TTL) — avoids subquery on every browse
             var publishedIds = await GetPublishedEntryIdsAsync(tenantId, ct);
@@ -161,25 +161,17 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
     private IQueryable<PromptEntryVersion> TenantVersionsReadOnly(Guid tenantId) =>
         TenantVersions(tenantId).AsNoTracking();
 
-    public async Task<PromptEntryVersion?> GetWorkingVersionAsync(
+    public async Task<PromptEntryVersion?> GetMainTabAsync(
         Guid tenantId,
         Guid entryId,
         CancellationToken ct = default
     )
     {
-        // Prefer draft; fall back to published. OrderBy ensures Draft (0) comes before Published (1).
         return await TenantVersions(tenantId)
-            .Where(v =>
-                v.EntryId == entryId
-                && (
-                    v.VersionState == VersionState.Draft || v.VersionState == VersionState.Published
-                )
-            )
-            .OrderBy(v => v.VersionState)
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefaultAsync(v => v.EntryId == entryId && v.IsMainTab, ct);
     }
 
-    public async Task<Dictionary<Guid, PromptEntryVersion>> GetWorkingVersionsBatchAsync(
+    public async Task<Dictionary<Guid, PromptEntryVersion>> GetMainTabsBatchAsync(
         Guid tenantId,
         List<Guid> entryIds,
         CancellationToken ct = default
@@ -188,24 +180,18 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
         if (entryIds.Count == 0)
             return [];
 
-        // Single query: get all draft/published versions for the given entries
+        // Prefer Main tab; fall back to Published version for entries without tabs
         var versions = await TenantVersionsReadOnly(tenantId)
-            .Where(v =>
-                entryIds.Contains(v.EntryId)
-                && (
-                    v.VersionState == VersionState.Draft || v.VersionState == VersionState.Published
-                )
-            )
+            .Where(v => entryIds.Contains(v.EntryId)
+                        && (v.IsMainTab || v.VersionState == VersionState.Published))
             .ToListAsync(ct);
 
-        // Group by entry, prefer draft over published
         return versions
             .GroupBy(v => v.EntryId)
             .ToDictionary(
                 g => g.Key,
-                g =>
-                    g.FirstOrDefault(v => v.VersionState == VersionState.Draft)
-                    ?? g.First(v => v.VersionState == VersionState.Published)
+                g => g.FirstOrDefault(v => v.IsMainTab)
+                     ?? g.First(v => v.VersionState == VersionState.Published)
             );
     }
 
@@ -352,7 +338,7 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
 
     // ── Dashboard ──
 
-    public async Task<(int Total, int Published, int Drafts)> GetStatsAsync(
+    public async Task<(int Total, int Published, int Unpublished)> GetStatsAsync(
         Guid tenantId,
         CancellationToken ct = default
     )
@@ -394,65 +380,50 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
         if (entries.Count == 0)
             return [];
 
-        // Batch-fetch working versions for version state
+        // Check which entries have a published version
         var entryIds = entries.Select(e => e.Id).ToList();
-        var versions = await db
+        var publishedEntryIds = await db
             .PromptEntryVersions.AsNoTracking()
-            .Where(v =>
-                entryIds.Contains(v.EntryId)
-                && (
-                    v.VersionState == VersionState.Draft || v.VersionState == VersionState.Published
-                )
-            )
-            .ToListAsync(ct);
-
-        var versionMap = versions
-            .GroupBy(v => v.EntryId)
-            .ToDictionary(
-                g => g.Key,
-                g =>
-                    g.FirstOrDefault(v => v.VersionState == VersionState.Draft)
-                    ?? g.First(v => v.VersionState == VersionState.Published)
-            );
+            .Where(v => entryIds.Contains(v.EntryId) && v.VersionState == VersionState.Published)
+            .Select(v => v.EntryId)
+            .ToHashSetAsync(ct);
 
         return entries
             .Select(e =>
             {
-                var state = versionMap.TryGetValue(e.Id, out var v)
-                    ? v.VersionState.ToString().ToLower()
-                    : "draft";
+                var state = publishedEntryIds.Contains(e.Id) ? "published" : "unpublished";
                 return new RecentEntryDto(e.Id, e.Title, state, e.UpdatedAt);
             })
             .ToList();
     }
 
-    // ── Variant management ──
+    // ── Tab queries ──
 
-    public async Task<List<PromptEntryVersion>> GetVariantsAsync(
+    public async Task<List<PromptEntryVersion>> GetTabsAsync(
         Guid tenantId,
         Guid entryId,
         CancellationToken ct = default
     )
     {
-        // Lightweight query — only metadata needed for variant listing, no Prompts/TemplateFields
+        // Lightweight query — only metadata needed for tab listing, no Prompts/TemplateFields
         return await db.PromptEntryVersions.AsNoTracking()
-            .Where(v => v.Entry.TenantId == tenantId && v.EntryId == entryId && v.VersionState == VersionState.Variant)
+            .Where(v => v.Entry.TenantId == tenantId && v.EntryId == entryId && v.VersionState == VersionState.Tab)
             .OrderByDescending(v => v.CreatedAt)
             .ToListAsync(ct);
     }
 
-    public async Task<PromptEntryVersion?> GetVariantByNameAsync(
+    public async Task<PromptEntryVersion?> GetTabByNameAsync(
         Guid tenantId,
         Guid entryId,
-        string variantName,
+        string tabName,
         CancellationToken ct = default
     )
     {
         return await TenantVersionsReadOnly(tenantId)
             .FirstOrDefaultAsync(
                 v => v.EntryId == entryId
-                     && v.VersionState == VersionState.Variant
-                     && v.VariantName == variantName,
+                     && v.VersionState == VersionState.Tab
+                     && v.TabName == tabName,
                 ct
             );
     }

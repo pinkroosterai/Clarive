@@ -1,12 +1,12 @@
 import { api } from './apiClient';
 
-import type { PromptEntry, PaginatedResponse, VersionInfo, VariantInfo, EvaluationEntry } from '@/types';
+import type { PromptEntry, PaginatedResponse, VersionInfo, TabInfo, EvaluationEntry } from '@/types';
 
 interface EntrySummary {
   id: string;
   title: string;
   version: number;
-  versionState: 'draft' | 'published' | 'historical' | 'variant';
+  versionState: 'tab' | 'published' | 'historical';
   isTrashed: boolean;
   folderId: string | null;
   hasSystemMessage: boolean;
@@ -119,16 +119,19 @@ export async function updateEntry(
   return api.put<PromptEntry>(`/api/entries/${id}`, body);
 }
 
-export async function publishEntry(id: string): Promise<PromptEntry> {
-  return api.post<PromptEntry>(`/api/entries/${id}/publish`);
+export async function publishTab(entryId: string, tabId: string): Promise<PromptEntry> {
+  return api.post<PromptEntry>(`/api/entries/${entryId}/tabs/${tabId}/publish`);
 }
 
-export async function promoteVersion(entryId: string, version: number): Promise<PromptEntry> {
-  return api.post<PromptEntry>(`/api/entries/${entryId}/versions/${version}/promote`);
-}
-
-export async function deleteDraft(entryId: string): Promise<PromptEntry> {
-  return api.delete<PromptEntry>(`/api/entries/${entryId}/draft`);
+export async function restoreVersion(
+  entryId: string,
+  version: number,
+  targetTabId?: string
+): Promise<PromptEntry> {
+  return api.post<PromptEntry>(
+    `/api/entries/${entryId}/versions/${version}/restore`,
+    targetTabId ? { targetTabId } : {}
+  );
 }
 
 export async function getVersion(entryId: string, version: number): Promise<PromptEntry> {
@@ -175,32 +178,28 @@ export async function addTags(entryId: string, tags: string[]): Promise<string[]
   return api.post<string[]>(`/api/entries/${entryId}/tags`, { tags });
 }
 
-// ── Variants ──
+// ── Tabs ──
 
-export async function createVariant(
+export async function listTabs(entryId: string): Promise<TabInfo[]> {
+  return api.get<TabInfo[]>(`/api/entries/${entryId}/tabs`);
+}
+
+export async function createTab(
   entryId: string,
   name: string,
-  basedOnVersion: number
-): Promise<VariantInfo> {
-  return api.post<VariantInfo>(`/api/entries/${entryId}/variants`, { name, basedOnVersion });
+  forkedFromVersion: number
+): Promise<TabInfo> {
+  return api.post<TabInfo>(`/api/entries/${entryId}/tabs`, { name, forkedFromVersion });
 }
 
-export async function listVariants(entryId: string): Promise<VariantInfo[]> {
-  return api.get<VariantInfo[]>(`/api/entries/${entryId}/variants`);
-}
-
-export async function renameVariant(
+export async function renameTab(
   entryId: string,
-  variantId: string,
+  tabId: string,
   newName: string
-): Promise<VariantInfo> {
-  return api.patch<VariantInfo>(`/api/entries/${entryId}/variants/${variantId}`, { newName });
+): Promise<TabInfo> {
+  return api.patch<TabInfo>(`/api/entries/${entryId}/tabs/${tabId}`, { newName });
 }
 
-export async function deleteVariant(entryId: string, variantId: string): Promise<void> {
-  return api.delete(`/api/entries/${entryId}/variants/${variantId}`);
-}
-
-export async function publishVariant(entryId: string, variantId: string): Promise<PromptEntry> {
-  return api.post<PromptEntry>(`/api/entries/${entryId}/variants/${variantId}/publish`);
+export async function deleteTab(entryId: string, tabId: string): Promise<void> {
+  return api.delete(`/api/entries/${entryId}/tabs/${tabId}`);
 }

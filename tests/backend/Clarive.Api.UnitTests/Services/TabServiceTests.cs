@@ -1,5 +1,5 @@
-using Clarive.Application.Variants.Contracts;
-using Clarive.Application.Variants.Services;
+using Clarive.Application.Tabs.Contracts;
+using Clarive.Application.Tabs.Services;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
@@ -10,21 +10,20 @@ using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
 
-public class VariantServiceTests
+public class TabServiceTests
 {
     private readonly IEntryRepository _entryRepo = Substitute.For<IEntryRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly ILogger<VariantService> _logger = Substitute.For<ILogger<VariantService>>();
-    private readonly VariantService _sut;
+    private readonly ILogger<TabService> _logger = Substitute.For<ILogger<TabService>>();
+    private readonly TabService _sut;
 
     private static readonly Guid TenantId = Guid.NewGuid();
     private static readonly Guid EntryId = Guid.NewGuid();
 
-    public VariantServiceTests()
+    public TabServiceTests()
     {
-        _sut = new VariantService(_entryRepo, _unitOfWork, _logger);
+        _sut = new TabService(_entryRepo, _unitOfWork, _logger);
 
-        // Default: ExecuteInTransactionAsync just runs the delegate
         _unitOfWork.ExecuteInTransactionAsync(
             Arg.Any<Func<Task>>(), Arg.Any<CancellationToken>()
         ).Returns(ci =>
@@ -47,25 +46,37 @@ public class VariantServiceTests
         CreatedAt = DateTime.UtcNow,
     };
 
+    private PromptEntryVersion MakeTab(string name, bool isMain = false) => new()
+    {
+        Id = Guid.NewGuid(),
+        EntryId = EntryId,
+        Version = 0,
+        VersionState = VersionState.Tab,
+        TabName = name,
+        IsMainTab = isMain,
+        CreatedAt = DateTime.UtcNow,
+    };
+
     [Fact]
-    public async Task CreateAsync_Success_ReturnsVariantInfo()
+    public async Task CreateAsync_Success_ReturnsTabInfo()
     {
         var entry = MakeEntry();
         var baseVersion = MakePublishedVersion();
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>()).Returns(entry);
         _entryRepo.GetVersionAsync(TenantId, EntryId, 1, Arg.Any<CancellationToken>()).Returns(baseVersion);
-        _entryRepo.GetVariantByNameAsync(TenantId, EntryId, "test-variant", Arg.Any<CancellationToken>())
+        _entryRepo.GetTabByNameAsync(TenantId, EntryId, "test-tab", Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
-        _entryRepo.GetVariantsAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo.GetTabsAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new List<PromptEntryVersion>());
         _entryRepo.CreateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.ArgAt<PromptEntryVersion>(0));
 
-        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateVariantRequest("test-variant", 1));
+        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateTabRequest("test-tab", 1));
 
         result.IsError.Should().BeFalse();
-        result.Value.Name.Should().Be("test-variant");
-        result.Value.BasedOnVersion.Should().Be(1);
+        result.Value.Name.Should().Be("test-tab");
+        result.Value.ForkedFromVersion.Should().Be(1);
+        result.Value.IsMainTab.Should().BeFalse();
     }
 
     [Fact]
@@ -74,7 +85,7 @@ public class VariantServiceTests
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns((PromptEntry?)null);
 
-        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateVariantRequest("test", 1));
+        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateTabRequest("test", 1));
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("ENTRY_NOT_FOUND");
@@ -87,7 +98,7 @@ public class VariantServiceTests
         _entryRepo.GetVersionAsync(TenantId, EntryId, 99, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateVariantRequest("test", 99));
+        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateTabRequest("test", 99));
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("VERSION_NOT_FOUND");
@@ -100,68 +111,66 @@ public class VariantServiceTests
         var baseVersion = MakePublishedVersion();
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>()).Returns(entry);
         _entryRepo.GetVersionAsync(TenantId, EntryId, 1, Arg.Any<CancellationToken>()).Returns(baseVersion);
-        _entryRepo.GetVariantByNameAsync(TenantId, EntryId, "duplicate", Arg.Any<CancellationToken>())
-            .Returns(new PromptEntryVersion { Id = Guid.NewGuid(), VariantName = "duplicate" });
+        _entryRepo.GetTabByNameAsync(TenantId, EntryId, "duplicate", Arg.Any<CancellationToken>())
+            .Returns(MakeTab("duplicate"));
 
-        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateVariantRequest("duplicate", 1));
+        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateTabRequest("duplicate", 1));
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("DUPLICATE_VARIANT_NAME");
+        result.FirstError.Code.Should().Be("DUPLICATE_TAB_NAME");
     }
 
     [Fact]
-    public async Task CreateAsync_MaxVariantsExceeded_ReturnsError()
+    public async Task CreateAsync_MaxTabsExceeded_ReturnsError()
     {
         var entry = MakeEntry();
         var baseVersion = MakePublishedVersion();
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>()).Returns(entry);
         _entryRepo.GetVersionAsync(TenantId, EntryId, 1, Arg.Any<CancellationToken>()).Returns(baseVersion);
-        _entryRepo.GetVariantByNameAsync(TenantId, EntryId, "new-one", Arg.Any<CancellationToken>())
+        _entryRepo.GetTabByNameAsync(TenantId, EntryId, "new-one", Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
-        var twentyVariants = Enumerable.Range(0, 20)
-            .Select(i => new PromptEntryVersion { Id = Guid.NewGuid(), VariantName = $"v{i}" })
+        var twentyTabs = Enumerable.Range(0, 20)
+            .Select(i => MakeTab($"tab-{i}"))
             .ToList();
-        _entryRepo.GetVariantsAsync(TenantId, EntryId, Arg.Any<CancellationToken>()).Returns(twentyVariants);
+        _entryRepo.GetTabsAsync(TenantId, EntryId, Arg.Any<CancellationToken>()).Returns(twentyTabs);
 
-        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateVariantRequest("new-one", 1));
+        var result = await _sut.CreateAsync(TenantId, EntryId, new CreateTabRequest("new-one", 1));
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("MAX_VARIANTS_EXCEEDED");
+        result.FirstError.Code.Should().Be("MAX_TABS_EXCEEDED");
     }
 
     [Fact]
-    public async Task ListAsync_ReturnsVariants()
+    public async Task ListAsync_ReturnsTabs()
     {
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>()).Returns(MakeEntry());
-        _entryRepo.GetVariantsAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+        _entryRepo.GetTabsAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new List<PromptEntryVersion>
             {
-                new() { Id = Guid.NewGuid(), VariantName = "alpha", BasedOnVersion = 1, CreatedAt = DateTime.UtcNow, VersionState = VersionState.Variant },
-                new() { Id = Guid.NewGuid(), VariantName = "beta", BasedOnVersion = 2, CreatedAt = DateTime.UtcNow, VersionState = VersionState.Variant },
+                MakeTab("Main", isMain: true),
+                MakeTab("Experiment"),
             });
 
         var result = await _sut.ListAsync(TenantId, EntryId);
 
         result.IsError.Should().BeFalse();
         result.Value.Should().HaveCount(2);
-        result.Value[0].Name.Should().Be("alpha");
+        result.Value[0].Name.Should().Be("Main");
+        result.Value[0].IsMainTab.Should().BeTrue();
     }
 
     [Fact]
     public async Task RenameAsync_Success()
     {
-        var variantId = Guid.NewGuid();
-        var variant = new PromptEntryVersion
-        {
-            Id = variantId, EntryId = EntryId, VersionState = VersionState.Variant,
-            VariantName = "old-name", BasedOnVersion = 1, CreatedAt = DateTime.UtcNow,
-        };
-        _entryRepo.GetVersionByIdAsync(TenantId, variantId, Arg.Any<CancellationToken>()).Returns(variant);
-        _entryRepo.GetVariantByNameAsync(TenantId, EntryId, "new-name", Arg.Any<CancellationToken>())
+        var tab = MakeTab("old-name");
+        _entryRepo.GetVersionByIdAsync(TenantId, tab.Id, Arg.Any<CancellationToken>()).Returns(tab);
+        _entryRepo.GetTabByNameAsync(TenantId, EntryId, "new-name", Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
+        _entryRepo.UpdateVersionAsync(Arg.Any<PromptEntryVersion>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.ArgAt<PromptEntryVersion>(0));
 
-        var result = await _sut.RenameAsync(TenantId, EntryId, variantId, new RenameVariantRequest("new-name"));
+        var result = await _sut.RenameAsync(TenantId, EntryId, tab.Id, new RenameTabRequest("new-name"));
 
         result.IsError.Should().BeFalse();
         result.Value.Name.Should().Be("new-name");
@@ -170,33 +179,39 @@ public class VariantServiceTests
     [Fact]
     public async Task DeleteAsync_Success()
     {
-        var variantId = Guid.NewGuid();
-        var variant = new PromptEntryVersion
-        {
-            Id = variantId, EntryId = EntryId, VersionState = VersionState.Variant,
-            VariantName = "to-delete", BasedOnVersion = 1,
-        };
-        _entryRepo.GetVersionByIdAsync(TenantId, variantId, Arg.Any<CancellationToken>()).Returns(variant);
+        var tab = MakeTab("to-delete");
+        _entryRepo.GetVersionByIdAsync(TenantId, tab.Id, Arg.Any<CancellationToken>()).Returns(tab);
 
-        var result = await _sut.DeleteAsync(TenantId, EntryId, variantId);
+        var result = await _sut.DeleteAsync(TenantId, EntryId, tab.Id);
 
         result.IsError.Should().BeFalse();
-        await _entryRepo.Received(1).DeleteVersionAsync(variant, Arg.Any<CancellationToken>());
+        await _entryRepo.Received(1).DeleteVersionAsync(tab, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task DeleteAsync_NonVariant_ReturnsError()
+    public async Task DeleteAsync_MainTab_ReturnsError()
     {
-        var versionId = Guid.NewGuid();
-        var published = new PromptEntryVersion
-        {
-            Id = versionId, EntryId = EntryId, VersionState = VersionState.Published,
-        };
-        _entryRepo.GetVersionByIdAsync(TenantId, versionId, Arg.Any<CancellationToken>()).Returns(published);
+        var mainTab = MakeTab("Main", isMain: true);
+        _entryRepo.GetVersionByIdAsync(TenantId, mainTab.Id, Arg.Any<CancellationToken>()).Returns(mainTab);
 
-        var result = await _sut.DeleteAsync(TenantId, EntryId, versionId);
+        var result = await _sut.DeleteAsync(TenantId, EntryId, mainTab.Id);
 
         result.IsError.Should().BeTrue();
-        result.FirstError.Code.Should().Be("VARIANT_NOT_FOUND");
+        result.FirstError.Code.Should().Be("CANNOT_DELETE_MAIN_TAB");
+    }
+
+    [Fact]
+    public async Task DeleteAsync_NonTab_ReturnsError()
+    {
+        var published = new PromptEntryVersion
+        {
+            Id = Guid.NewGuid(), EntryId = EntryId, VersionState = VersionState.Published,
+        };
+        _entryRepo.GetVersionByIdAsync(TenantId, published.Id, Arg.Any<CancellationToken>()).Returns(published);
+
+        var result = await _sut.DeleteAsync(TenantId, EntryId, published.Id);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("TAB_NOT_FOUND");
     }
 }

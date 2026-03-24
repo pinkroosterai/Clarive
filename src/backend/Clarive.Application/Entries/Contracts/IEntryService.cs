@@ -53,7 +53,7 @@ public interface IEntryService
         CancellationToken ct = default
     );
 
-    Task<ErrorOr<PromptEntryVersion>> GetWorkingVersionAsync(
+    Task<ErrorOr<PromptEntryVersion>> GetMainTabVersionAsync(
         Guid tenantId,
         Guid entryId,
         CancellationToken ct = default

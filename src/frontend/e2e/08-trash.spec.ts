@@ -30,8 +30,8 @@ test.describe('Trash & Recovery', () => {
     await editor.click();
     await editor.pressSequentially('Temporary content for trash test.', { delay: 10 });
     await page.waitForTimeout(500);
-    await page.getByRole('button', { name: /save draft/i }).click();
-    await expectToast(page, 'Draft saved');
+    await page.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(page, 'Saved');
 
     // Go to library
     await page.goto('/library');

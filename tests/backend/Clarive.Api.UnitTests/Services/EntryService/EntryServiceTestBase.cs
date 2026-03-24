@@ -121,7 +121,7 @@ public abstract class EntryServiceTestBase : IDisposable
     protected static PromptEntryVersion MakeVersion(
         Guid entryId,
         int version = 1,
-        VersionState state = VersionState.Draft,
+        VersionState state = VersionState.Tab,
         string? systemMessage = "You are helpful."
     )
     {

@@ -62,7 +62,7 @@ function apiDraftToEntry(draft: ApiDraft): PromptEntry {
     })),
     folderId: draft.folderId,
     version: 1,
-    versionState: 'draft',
+    versionState: 'tab',
     isTrashed: false,
     createdAt: now,
     updatedAt: now,
