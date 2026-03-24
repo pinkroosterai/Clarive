@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo, useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { MatrixDetailDrawer } from '@/components/matrix/MatrixDetailDrawer';
 import { MatrixGrid } from '@/components/matrix/MatrixGrid';
@@ -7,9 +9,12 @@ import { MatrixToolbar } from '@/components/matrix/MatrixToolbar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMatrixExecution } from '@/hooks/useMatrixExecution';
 import { useMatrixState } from '@/hooks/useMatrixState';
+import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
+import { parseTemplateTags } from '@/lib/templateParser';
 import { entryService } from '@/services';
-import { getEnrichedModels } from '@/services/api/playgroundService';
+import { getEnrichedModels, fillTemplateFields } from '@/services/api/playgroundService';
 import { getDatasets } from '@/services/api/testDatasetService';
+import type { TemplateField } from '@/types';
 
 export function Component() {
   const { entryId } = useParams<{ entryId: string }>();
@@ -45,6 +50,40 @@ export function Component() {
     enabled: !!entryId,
   });
 
+  // ── Template fields ──
+  const templateFields = useMemo<TemplateField[]>(() => {
+    if (!entry) return [];
+    const seen = new Set<string>();
+    const fields: TemplateField[] = [];
+    for (const prompt of entry.prompts) {
+      for (const f of parseTemplateTags(prompt.content)) {
+        if (!seen.has(f.name)) {
+          seen.add(f.name);
+          fields.push(f);
+        }
+      }
+    }
+    return fields;
+  }, [entry]);
+
+  const storageKey = `matrix_${entryId}`;
+  const { fieldValues, setFieldValues } = usePlaygroundTemplateFields(templateFields, storageKey);
+
+  const [isFillingTemplateFields, setIsFillingTemplateFields] = useState(false);
+  const handleFillTemplateFields = useCallback(async () => {
+    if (!entryId) return;
+    setIsFillingTemplateFields(true);
+    try {
+      const values = await fillTemplateFields(entryId);
+      setFieldValues((prev) => ({ ...prev, ...values }));
+      toast.success('Template fields filled');
+    } catch {
+      toast.error('Failed to fill template fields');
+    } finally {
+      setIsFillingTemplateFields(false);
+    }
+  }, [entryId, setFieldValues]);
+
   // ── Matrix state ──
   const {
     state,
@@ -65,6 +104,7 @@ export function Component() {
   const execution = useMatrixExecution({
     entryId,
     state,
+    templateFieldValues: fieldValues,
     updateCellStatus,
     setCellSegments,
     setCellResult,
@@ -88,6 +128,13 @@ export function Component() {
           datasets={datasets}
           selectedDatasetId={state.datasetId}
           onDatasetChange={setDataset}
+          template={{
+            templateFields,
+            fieldValues,
+            setFieldValues,
+            onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
+            isFillingTemplateFields,
+          }}
           onAddVersion={addVersion}
           onAddModel={addModel}
           onRunAll={execution.runAll}

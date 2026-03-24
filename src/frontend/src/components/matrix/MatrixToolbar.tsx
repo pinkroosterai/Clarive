@@ -2,6 +2,8 @@ import { ArrowLeft, Play, Plus, Square } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { TemplateVariablesSection } from '@/components/playground/TemplateVariablesSection';
+import type { PlaygroundTemplateState } from '@/components/playground/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -30,6 +32,7 @@ interface MatrixToolbarProps {
   datasets: TestDataset[];
   selectedDatasetId: string | null;
   onDatasetChange: (datasetId: string | null) => void;
+  template: PlaygroundTemplateState;
   onAddVersion: (version: MatrixVersion) => void;
   onAddModel: (model: MatrixModel) => void;
   onRunAll: () => void;
@@ -57,6 +60,7 @@ export function MatrixToolbar({
   datasets,
   selectedDatasetId,
   onDatasetChange,
+  template,
   onAddVersion,
   onAddModel,
   onRunAll,
@@ -226,6 +230,7 @@ export function MatrixToolbar({
           </Button>
         )}
       </div>
+      <TemplateVariablesSection template={template} />
     </div>
   );
 }

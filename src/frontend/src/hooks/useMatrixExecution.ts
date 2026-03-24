@@ -9,6 +9,7 @@ import { cellKey } from '@/types/matrix';
 interface UseMatrixExecutionOptions {
   entryId: string | undefined;
   state: MatrixState;
+  templateFieldValues?: Record<string, string>;
   updateCellStatus: (versionId: string, modelId: string, status: CellStatus) => void;
   setCellSegments: (versionId: string, modelId: string, segments: StreamSegment[]) => void;
   setCellResult: (
@@ -28,6 +29,7 @@ interface UseMatrixExecutionOptions {
 export function useMatrixExecution({
   entryId,
   state,
+  templateFieldValues,
   updateCellStatus,
   setCellSegments,
   setCellResult,
@@ -129,6 +131,7 @@ export function useMatrixExecution({
             maxTokens: model.maxTokens,
             reasoningEffort: model.isReasoning ? model.reasoningEffort : undefined,
             showReasoning: model.isReasoning,
+            templateFields: templateFieldValues,
             tabId: versionId,
           },
           handler,
@@ -158,7 +161,7 @@ export function useMatrixExecution({
         abortControllersRef.current.delete(key);
       }
     },
-    [entryId, state.models, updateCellStatus, selectCell, startStreamSync, stopStreamSync, setCellSegments, setCellResult, setCellError],
+    [entryId, state.models, templateFieldValues, updateCellStatus, selectCell, startStreamSync, stopStreamSync, setCellSegments, setCellResult, setCellError],
   );
 
   // Shared batch runner — eliminates duplication across runAll/runRow/runColumn
