@@ -48,6 +48,8 @@ public static class DependencyInjection
         services.AddScoped<IShareLinkService, ShareLinkService>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<IApiKeyService, ApiKeyService>();
+        services.AddScoped<ITestDatasetService, TestDatasetService>();
+        services.AddScoped<IAbTestService, AbTestService>();
         services.Configure<AvatarSettings>(configuration.GetSection("Avatar"));
         services.AddScoped<IAvatarService, AvatarService>();
         services.AddScoped<IOnboardingSeeder, OnboardingSeeder>();

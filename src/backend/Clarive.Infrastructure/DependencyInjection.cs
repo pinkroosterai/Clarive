@@ -100,6 +100,8 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingRepository, EfOnboardingRepository>();
         services.AddScoped<IAccountPurgeRepository, EfAccountPurgeRepository>();
         services.AddScoped<IJobExecutionHistoryRepository, EfJobExecutionHistoryRepository>();
+        services.AddScoped<ITestDatasetRepository, EfTestDatasetRepository>();
+        services.AddScoped<IAbTestRepository, EfAbTestRepository>();
 
         // ── Presence (ephemeral, in-memory) ──
         services.AddSingleton<Clarive.Domain.Interfaces.Services.IPresenceTracker, InMemoryPresenceTracker>();

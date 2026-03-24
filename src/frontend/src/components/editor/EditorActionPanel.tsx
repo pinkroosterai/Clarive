@@ -1,14 +1,17 @@
 import { motion } from 'framer-motion';
+import { Database } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { ActionsTabContent } from '@/components/editor/ActionsTabContent';
+import { DatasetsTabContent } from '@/components/editor/DatasetsTabContent';
 import { DetailsTabContent } from '@/components/editor/DetailsTabContent';
 import { PresenceIndicators } from '@/components/editor/PresenceIndicators';
 import { QualityTabContent } from '@/components/editor/QualityTabContent';
 import { VersionsTabContent } from '@/components/editor/VersionsTabContent';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { parseTemplateTags } from '@/lib/templateParser';
 import type { Evaluation, PresenceUser, PromptEntry, VersionInfo } from '@/types';
 
 export interface EditorActionPanelProps {
@@ -91,6 +94,11 @@ export function EditorActionPanel({
   const hasDraft = versions.some((v) => v.versionState === 'draft');
   const tagCount = entry.tags?.length ?? 0;
 
+  const templateFields = useMemo(() => {
+    const allContent = entry.prompts.map((p) => p.content).join('\n');
+    return parseTemplateTags(allContent);
+  }, [entry.prompts]);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 12 }}
@@ -139,6 +147,10 @@ export function EditorActionPanel({
                 {tagCount}
               </span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="datasets" className="flex-1 gap-1.5 text-xs">
+            <Database className="size-3" />
+            Data
           </TabsTrigger>
         </TabsList>
 
@@ -217,6 +229,14 @@ export function EditorActionPanel({
                 onMoveFolder={onMoveFolder}
                 isReadOnly={isReadOnly}
               />
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="datasets" className="flex-1 overflow-hidden pt-4">
+          <ScrollArea className="h-full">
+            <div className="pr-3">
+              <DatasetsTabContent entryId={entry.id} templateFields={templateFields} />
             </div>
           </ScrollArea>
         </TabsContent>

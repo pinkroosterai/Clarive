@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Clarive.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Clarive.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ClariveDbContext))]
-    partial class ClariveDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260323215033_AddTestDatasets")]
+    partial class AddTestDatasets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,127 +25,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestResult", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("DatasetRowId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("dataset_row_id");
-
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("run_id");
-
-                    b.Property<double?>("VersionAAvgScore")
-                        .HasColumnType("double precision")
-                        .HasColumnName("version_a_avg_score");
-
-                    b.Property<string>("VersionAOutput")
-                        .HasColumnType("text")
-                        .HasColumnName("version_a_output");
-
-                    b.Property<string>("VersionAScores")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("version_a_scores");
-
-                    b.Property<double?>("VersionBAvgScore")
-                        .HasColumnType("double precision")
-                        .HasColumnName("version_b_avg_score");
-
-                    b.Property<string>("VersionBOutput")
-                        .HasColumnType("text")
-                        .HasColumnName("version_b_output");
-
-                    b.Property<string>("VersionBScores")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("version_b_scores");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RunId")
-                        .HasDatabaseName("ix_ab_test_results_run");
-
-                    b.ToTable("ab_test_results", (string)null);
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestRun", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("completed_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid?>("DatasetId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("dataset_id");
-
-                    b.Property<Guid>("EntryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("entry_id");
-
-                    b.Property<int>("MaxTokens")
-                        .HasColumnType("integer")
-                        .HasColumnName("max_tokens");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("model");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("status");
-
-                    b.Property<float>("Temperature")
-                        .HasColumnType("real")
-                        .HasColumnName("temperature");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("VersionANumber")
-                        .HasColumnType("integer")
-                        .HasColumnName("version_a_number");
-
-                    b.Property<int>("VersionBNumber")
-                        .HasColumnType("integer")
-                        .HasColumnName("version_b_number");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DatasetId");
-
-                    b.HasIndex("EntryId")
-                        .HasDatabaseName("ix_ab_test_runs_entry");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("TenantId", "EntryId")
-                        .HasDatabaseName("ix_ab_test_runs_tenant_entry");
-
-                    b.ToTable("ab_test_runs", (string)null);
-                });
 
             modelBuilder.Entity("Clarive.Domain.Entities.AiProvider", b =>
                 {
@@ -1793,46 +1675,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestResult", b =>
-                {
-                    b.HasOne("Clarive.Domain.Entities.ABTestRun", "Run")
-                        .WithMany("Results")
-                        .HasForeignKey("RunId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Run");
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestRun", b =>
-                {
-                    b.HasOne("Clarive.Domain.Entities.TestDataset", "Dataset")
-                        .WithMany()
-                        .HasForeignKey("DatasetId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Clarive.Domain.Entities.PromptEntry", "Entry")
-                        .WithMany()
-                        .HasForeignKey("EntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Clarive.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Dataset");
-
-                    b.Navigation("Entry");
-                });
-
             modelBuilder.Entity("Clarive.Domain.Entities.AiProviderModel", b =>
                 {
                     b.HasOne("Clarive.Domain.Entities.AiProvider", "Provider")
@@ -2172,11 +2014,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestRun", b =>
-                {
-                    b.Navigation("Results");
                 });
 
             modelBuilder.Entity("Clarive.Domain.Entities.AiProvider", b =>

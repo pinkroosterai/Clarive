@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   CircleHelp,
   Library,
+  GitCompareArrows,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,6 +34,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const navLinks = [
   { title: 'Dashboard', icon: LayoutDashboard, url: '/' },
+  { title: 'A/B Tests', icon: GitCompareArrows, url: '/ab-tests' },
   { title: 'Trash', icon: Trash2, url: '/trash' },
 ];
 

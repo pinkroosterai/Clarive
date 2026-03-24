@@ -39,6 +39,8 @@ public static class EndpointRegistration
         app.MapShareLinkEndpoints();
         app.MapPublicShareEndpoints();
         app.MapSystemLogEndpoints();
+        app.MapTestDatasetEndpoints();
+        app.MapAbTestEndpoints();
 
         return app;
     }
