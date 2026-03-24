@@ -6,7 +6,7 @@ import { radixClick } from './helpers/radix';
  * Multi-user collaboration tests: presence indicators, soft edit locking,
  * and conflict detection/resolution.
  *
- * Prerequisite: spec 07 invited the editor into the admin's workspace.
+ * Prerequisite: spec 11 invited the editor into the admin's workspace.
  * Both users share the same workspace so they can view the same entries.
  *
  * Uses two separate browser contexts (admin + editor) to simulate concurrent

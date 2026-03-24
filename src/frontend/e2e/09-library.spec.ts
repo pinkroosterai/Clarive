@@ -68,7 +68,7 @@ test.describe('Library Search, Filter & Sort', () => {
     // Since all entries are published, unpublished filter should show no results or empty state
     // Switch to "Published" to verify positive results
     await statusTrigger.click();
-    await page.getByRole('option', { name: 'Published' }).click();
+    await page.getByRole('option', { name: 'Published', exact: true }).click();
     await page.waitForTimeout(500);
 
     // At least one entry card should be visible

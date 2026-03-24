@@ -9,14 +9,24 @@ const EDITOR = {
 const ENTRY_TITLE = 'E2E Test Entry';
 const V2_TITLE = 'E2E Test Entry v2';
 
-/** Login, dismiss tour, and navigate to the entry on the dashboard. */
+// Captured in first test, used by subsequent tests to avoid dashboard title lookup
+let entryUrl: string;
+
+/** Login and navigate to the entry (by URL if available, otherwise by dashboard title). */
 async function loginAndNavigate(page: import('@playwright/test').Page, title: string) {
   await loginViaUI(page, EDITOR.email, EDITOR.password);
   await page.waitForURL(/\/$/, { timeout: 15_000 });
   await waitForAppShell(page);
-  await page.getByText(title).first().click();
-  await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
-  await expect(page.getByText('Prompt #1')).toBeVisible({ timeout: 5_000 });
+
+  if (entryUrl) {
+    await page.goto(entryUrl);
+    await page.waitForLoadState('networkidle');
+  } else {
+    await page.getByText(title).first().click();
+    await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
+    entryUrl = new URL(page.url()).pathname;
+  }
+  await expect(page.getByText('Prompt #1').first()).toBeVisible({ timeout: 5_000 });
 }
 
 test.describe('Entry Versioning & History', () => {
@@ -47,9 +57,11 @@ test.describe('Entry Versioning & History', () => {
   test('edit published entry — save updates tab', async ({ page }) => {
     await loginAndNavigate(page, ENTRY_TITLE);
 
-    // Modify the title
+    // Modify the title — clear first, then type to ensure React onChange fires
     const titleInput = page.locator('input[placeholder="Entry title"]');
-    await titleInput.fill(V2_TITLE);
+    await titleInput.click();
+    await titleInput.fill('');
+    await titleInput.pressSequentially(V2_TITLE, { delay: 10 });
 
     // Wait for local state to sync before saving
     await page.waitForTimeout(500);

@@ -1,18 +1,17 @@
-import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { loginViaUI, waitForAppShell, expectToast } from './helpers/pages';
-import { radixClick } from './helpers/radix';
 
 /**
- * Tab-Scoped Operations tests: save, publish, AI tools, and collaboration.
+ * Tab-Scoped Operations tests: save, publish, and AI tools.
  *
  * Prerequisites:
  * - Spec 06 published v1/v2 of "E2E Test Entry v2"
  * - Spec 06b created/deleted tabs (entry should have only Main tab + Published)
  * - Specs 02 + 13 configured AI providers (for AI tests)
- * - Spec 11 invited editor into admin's workspace (for collaboration tests)
+ *
+ * Collaboration tests are in 12b-entry-tab-collaboration.spec.ts (runs after spec 11).
  */
 
-const ADMIN = { email: 'admin@e2e.test', password: 'E2ETestPassword123!' };
 const EDITOR = { email: 'editor@e2e.test', password: 'E2ETestPassword123!' };
 const ENTRY_TITLE = 'E2E Test Entry v2';
 const TAB_C_NAME = 'Tab C';
@@ -197,6 +196,16 @@ test.describe('Tab-Scoped AI Tools', () => {
   test('generate system message on tab only affects that tab', async ({ page }) => {
     await loginAndNavigate(page);
 
+    // Check if AI is configured by looking at the Generate System Message button
+    await page.getByRole('tab', { name: /actions/i }).click();
+    await page.waitForTimeout(500);
+    const generateBtn = page.getByRole('button', { name: /generate system message/i });
+    const btnVisible = await generateBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+    const btnEnabled = btnVisible && await generateBtn.isEnabled().catch(() => false);
+    if (!btnEnabled) {
+      test.skip(true, 'AI not configured — run from snapshot (includes spec 13) or after spec 13');
+    }
+
     // Check if Main has a system message already
     const mainHasSystemMsg =
       await page.locator('[data-tour="system-message"]').isVisible().catch(() => false);
@@ -215,12 +224,7 @@ test.describe('Tab-Scoped AI Tools', () => {
       await page.waitForTimeout(300);
     }
 
-    // Navigate to Actions tab and click Generate System Message
-    await page.getByRole('tab', { name: /actions/i }).click();
-    await page.waitForTimeout(500);
-
-    const generateBtn = page.getByRole('button', { name: /generate system message/i });
-    await expect(generateBtn).toBeVisible({ timeout: 5_000 });
+    // Button is already located from the skip check above — click it
     await generateBtn.click();
 
     // Wait for generation to complete — button text changes to "Generating…"
@@ -250,164 +254,3 @@ test.describe('Tab-Scoped AI Tools', () => {
   });
 });
 
-// ════════════════════════════════════════════════════════════════
-// Phase 3: Multi-User Tab Collaboration
-// ════════════════════════════════════════════════════════════════
-
-test.describe('Multi-User Tab Collaboration', () => {
-  // These tests require workspace sharing (spec 11) which can't be included in the
-  // snapshot without side effects. Run as part of the full suite only.
-  test.skip(true, 'Requires workspace sharing from spec 11 — run full suite');
-  test.describe.configure({ mode: 'serial' });
-  test.setTimeout(60_000);
-
-  // Shared entry URL — captured once, reused by collaboration tests
-  let entryUrl: string;
-
-  /** Open the entry as a specific user in a new browser context. */
-  async function openEntryAs(
-    browser: Browser,
-    user: { email: string; password: string }
-  ): Promise<{ context: BrowserContext; page: Page }> {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    await loginViaUI(page, user.email, user.password);
-    await page.waitForURL(/\/$/, { timeout: 15_000 });
-
-    // Complete onboarding to prevent tour
-    await page.evaluate(() =>
-      fetch('/api/profile/complete-onboarding', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('cl_token')}` },
-      })
-    );
-
-    await waitForAppShell(page);
-
-    const tourClose = page.locator('.driver-popover-close-btn');
-    if (await tourClose.isVisible({ timeout: 1_000 }).catch(() => false)) {
-      await tourClose.click();
-      await page.waitForTimeout(500);
-    }
-
-    await page.goto(entryUrl);
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('input[placeholder="Entry title"]')).toBeVisible({
-      timeout: 10_000,
-    });
-
-    return { context, page };
-  }
-
-  test('capture entry URL for collaboration tests', async ({ page }) => {
-    await loginAndNavigate(page);
-    entryUrl = new URL(page.url()).pathname;
-
-    // Also ensure Tab C exists for cross-tab test
-    await createTabC(page);
-  });
-
-  test('two users editing different tabs — no conflict', async ({ browser }) => {
-    // Admin opens entry on Main tab
-    const admin = await openEntryAs(browser, ADMIN);
-    await admin.page.waitForTimeout(1_000);
-
-    // Editor opens entry and switches to Tab C
-    const editor = await openEntryAs(browser, EDITOR);
-    await editor.page.waitForTimeout(1_000);
-
-    // Override soft lock if present for editor
-    const editAnywayBtn = editor.page.getByRole('button', { name: /edit anyway/i });
-    if (await editAnywayBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await radixClick(editAnywayBtn);
-      const alertDialog = editor.page.getByRole('alertdialog');
-      await alertDialog.waitFor({ state: 'visible' });
-      await radixClick(alertDialog.getByRole('button', { name: /edit anyway/i }));
-      await editor.page.waitForTimeout(500);
-    }
-
-    // Editor switches to Tab C
-    await editor.page.getByText(TAB_C_NAME).click();
-    await editor.page.waitForTimeout(500);
-
-    // Admin edits Main tab title
-    await admin.page.locator('input[placeholder="Entry title"]').fill('Admin Cross-Tab Edit');
-    await admin.page.waitForTimeout(300);
-    await admin.page.getByRole('button', { name: /^save$/i }).click();
-    await expectToast(admin.page, 'Saved');
-
-    // Editor edits Tab C content
-    const editorEditor = editor.page.locator('.tiptap').last();
-    await editorEditor.click();
-    await editorEditor.pressSequentially(' — editor cross-tab edit', { delay: 10 });
-    await editor.page.waitForTimeout(300);
-
-    // Editor saves Tab C — should NOT trigger conflict (different tabs)
-    await editor.page.getByRole('button', { name: /^save$/i }).click();
-    await expectToast(editor.page, 'Saved');
-
-    // Verify no conflict overlay appeared
-    await expect(editor.page.getByText('Resolve conflict')).not.toBeVisible({ timeout: 3_000 });
-
-    // Restore admin's title
-    await admin.page.locator('input[placeholder="Entry title"]').fill(ENTRY_TITLE);
-    await admin.page.waitForTimeout(300);
-    await admin.page.getByRole('button', { name: /^save$/i }).click();
-    await expectToast(admin.page, 'Saved');
-
-    await admin.context.close();
-    await editor.context.close();
-  });
-
-  test('two users editing same tab — conflict triggers', async ({ browser }) => {
-    // Both open entry on Main tab
-    const admin = await openEntryAs(browser, ADMIN);
-    const editor = await openEntryAs(browser, EDITOR);
-    await editor.page.waitForTimeout(2_000);
-
-    // Override soft lock if present for editor
-    const editAnywayBtn = editor.page.getByRole('button', { name: /edit anyway/i });
-    if (await editAnywayBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await radixClick(editAnywayBtn);
-      const alertDialog = editor.page.getByRole('alertdialog');
-      await alertDialog.waitFor({ state: 'visible' });
-      await radixClick(alertDialog.getByRole('button', { name: /edit anyway/i }));
-      await editor.page.waitForTimeout(500);
-    }
-
-    // Admin edits Main title and saves
-    await admin.page.locator('input[placeholder="Entry title"]').fill('Admin Same-Tab Title');
-    await admin.page.waitForTimeout(300);
-    await admin.page.getByRole('button', { name: /^save$/i }).click();
-    await expectToast(admin.page, 'Saved');
-
-    // Editor edits Main title and saves — should trigger conflict
-    await editor.page.locator('input[placeholder="Entry title"]').fill('Editor Same-Tab Title');
-    await editor.page.waitForTimeout(300);
-    await editor.page.getByRole('button', { name: /^save$/i }).click();
-
-    // Conflict overlay should appear
-    await expect(editor.page.getByText('Resolve conflict')).toBeVisible({ timeout: 10_000 });
-    await expect(editor.page.getByText('Your changes')).toBeVisible();
-    await expect(editor.page.getByText('Server version')).toBeVisible();
-
-    // Resolve with "Keep mine"
-    await editor.page.getByRole('button', { name: /save resolved/i }).click();
-    await expectToast(editor.page, 'Conflict resolved');
-
-    // Restore original title
-    await editor.page.locator('input[placeholder="Entry title"]').fill(ENTRY_TITLE);
-    await editor.page.waitForTimeout(300);
-    await editor.page.getByRole('button', { name: /^save$/i }).click();
-    await expectToast(editor.page, 'Saved');
-
-    await admin.context.close();
-    await editor.context.close();
-  });
-
-  test('clean up Tab C after collaboration tests', async ({ page }) => {
-    await loginAndNavigate(page);
-    await deleteTabC(page);
-  });
-});
