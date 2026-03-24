@@ -8,6 +8,7 @@ import {
 import { markdownLookBack } from '@llm-ui/markdown';
 import { useLLMOutput, type LLMOutputFallbackBlock } from '@llm-ui/react';
 import type { BlockMatch } from '@llm-ui/react';
+import DOMPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createHighlighter } from 'shiki';
@@ -76,10 +77,15 @@ function CodeBlockComponent({ blockMatch }: { blockMatch: BlockMatch }) {
     );
   }
 
+  const sanitized = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['div', 'pre', 'code', 'span', 'br', 'p', 'table', 'thead', 'tbody', 'tr', 'td', 'th'],
+    ALLOWED_ATTR: ['class', 'style'],
+  });
+
   return (
     <div
       className="my-2 rounded-md overflow-hidden border border-border-subtle [&_pre]:!p-3 [&_pre]:!text-xs [&_pre]:!rounded-md [&_code]:!text-xs"
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: sanitized }}
     />
   );
 }
