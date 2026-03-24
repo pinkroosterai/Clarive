@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils';
 import type { StreamSegment } from '@/hooks/streamingTypes';
+import type { TestRunResponse } from '@/services/api/playgroundService';
 import type { MatrixCell, MatrixState } from '@/types/matrix';
 import { cellKey, getCell } from '@/types/matrix';
 
@@ -16,12 +17,14 @@ interface MatrixDetailDrawerProps {
   state: MatrixState;
   activeStreamSegments: StreamSegment[];
   activeStreamKey: string;
+  historyRun?: TestRunResponse | null;
 }
 
 export function MatrixDetailDrawer({
   state,
   activeStreamSegments,
   activeStreamKey,
+  historyRun,
 }: MatrixDetailDrawerProps) {
   const { selectedCell, versions, models } = state;
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -36,6 +39,55 @@ export function MatrixDetailDrawer({
       toast.error('Failed to copy');
     }
   }, []);
+
+  // Show history run if selected
+  if (historyRun) {
+    const responseText = historyRun.conversationLog
+      ?.filter((m) => m.role === 'assistant')
+      .map((m) => m.content)
+      .join('\n\n');
+    const avgScore = historyRun.judgeScores?.averageScore ?? null;
+
+    return (
+      <div className="flex flex-col h-full">
+        <div className="p-4 border-b border-border-subtle space-y-1 shrink-0">
+          <div className="text-sm font-medium">History Run</div>
+          <div className="flex items-center gap-3 text-xs text-foreground-muted">
+            <span>{historyRun.model}</span>
+            <span>
+              {new Date(historyRun.createdAt).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          </div>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-4">
+            {responseText ? (
+              <div className="rounded-lg border border-border-subtle bg-surface p-4 text-sm whitespace-pre-wrap">
+                {responseText}
+              </div>
+            ) : (
+              <p className="text-sm text-foreground-muted">No response content</p>
+            )}
+          </div>
+        </ScrollArea>
+        {avgScore != null && (
+          <div className="p-4 border-t border-border-subtle shrink-0">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-foreground-muted">Score</span>
+              <span className={cn('text-lg font-bold tabular-nums', scoreColor(avgScore).text)}>
+                {avgScore.toFixed(1)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (!selectedCell) {
     return (

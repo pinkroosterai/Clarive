@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { MatrixDetailDrawer } from '@/components/matrix/MatrixDetailDrawer';
 import { MatrixGrid } from '@/components/matrix/MatrixGrid';
+import { MatrixHistoryPanel } from '@/components/matrix/MatrixHistoryPanel';
 import { MatrixToolbar } from '@/components/matrix/MatrixToolbar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMatrixExecution } from '@/hooks/useMatrixExecution';
@@ -12,7 +13,11 @@ import { useMatrixState } from '@/hooks/useMatrixState';
 import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { entryService } from '@/services';
-import { getEnrichedModels, fillTemplateFields } from '@/services/api/playgroundService';
+import {
+  getEnrichedModels,
+  fillTemplateFields,
+  type TestRunResponse,
+} from '@/services/api/playgroundService';
 import { getDatasets } from '@/services/api/testDatasetService';
 import type { TemplateField } from '@/types';
 
@@ -84,6 +89,10 @@ export function Component() {
     }
   }, [entryId, setFieldValues]);
 
+  // ── History ──
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedHistoryRun, setSelectedHistoryRun] = useState<TestRunResponse | null>(null);
+
   // ── Matrix state ──
   const {
     state,
@@ -142,6 +151,8 @@ export function Component() {
           isRunning={execution.isRunning}
           batchProgress={execution.batchProgress}
           matrixHasCells={matrixHasCells}
+          showHistory={showHistory}
+          onToggleHistory={() => setShowHistory((h) => !h)}
         />
       </div>
 
@@ -152,9 +163,24 @@ export function Component() {
           <MatrixGrid
             state={state}
             selectedCell={state.selectedCell}
-            onSelectCell={selectCell}
+            onSelectCell={(cell) => {
+              setSelectedHistoryRun(null);
+              selectCell(cell);
+            }}
             onRunCell={execution.runSingle}
           />
+          {showHistory && (
+            <div className="mt-4 pt-4 border-t border-border-subtle">
+              <MatrixHistoryPanel
+                entryId={entryId}
+                selectedRunId={selectedHistoryRun?.id ?? null}
+                onSelectRun={(run) => {
+                  setSelectedHistoryRun(run);
+                  selectCell(null);
+                }}
+              />
+            </div>
+          )}
         </ScrollArea>
 
         {/* Detail drawer */}
@@ -163,6 +189,7 @@ export function Component() {
             state={state}
             activeStreamSegments={execution.activeStreamSegments}
             activeStreamKey={execution.activeStreamKey}
+            historyRun={selectedHistoryRun}
           />
         </div>
       </div>

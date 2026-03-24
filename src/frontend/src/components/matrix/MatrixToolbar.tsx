@@ -1,4 +1,4 @@
-import { ArrowLeft, Play, Plus, Square } from 'lucide-react';
+import { ArrowLeft, Clock, Play, Plus, Square } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -40,6 +40,8 @@ interface MatrixToolbarProps {
   isRunning: boolean;
   batchProgress: { current: number; total: number } | null;
   matrixHasCells: boolean;
+  showHistory: boolean;
+  onToggleHistory: () => void;
 }
 
 function groupModelsByProvider(models: EnrichedModel[]) {
@@ -68,6 +70,8 @@ export function MatrixToolbar({
   isRunning,
   batchProgress,
   matrixHasCells,
+  showHistory,
+  onToggleHistory,
 }: MatrixToolbarProps) {
   const navigate = useNavigate();
   const providerGroups = useMemo(() => groupModelsByProvider(models), [models]);
@@ -229,6 +233,20 @@ export function MatrixToolbar({
             Run All
           </Button>
         )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={showHistory ? 'secondary' : 'ghost'}
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={onToggleHistory}
+              aria-label="Toggle history"
+            >
+              <Clock className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Test history</TooltipContent>
+        </Tooltip>
       </div>
       <TemplateVariablesSection template={template} />
     </div>
