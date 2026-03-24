@@ -291,3 +291,14 @@ export interface PresenceUser {
   avatarUrl: string | null;
   state: 'viewing' | 'editing';
 }
+
+export type {
+  CellStatus,
+  MatrixCell,
+  MatrixVersion,
+  MatrixModel,
+  MatrixState,
+  CellKey,
+  DatasetCellResult,
+} from './matrix';
+export { cellKey, getCell, createEmptyCell, enrichedModelToMatrixModel } from './matrix';

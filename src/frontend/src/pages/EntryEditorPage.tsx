@@ -474,7 +474,7 @@ const EntryEditorPage = () => {
     showDecomposeToChain: localEntry.prompts.length === 1,
     onTest: aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/test`) : undefined,
     onCompareVersions:
-      aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/ab-test`) : undefined,
+      aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/test`) : undefined,
     versions,
     onShare:
       !isReadOnly && currentUser?.role !== 'viewer'
