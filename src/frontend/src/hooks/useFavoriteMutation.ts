@@ -4,7 +4,11 @@ import { toast } from 'sonner';
 
 import * as favoriteService from '@/services/api/favoriteService';
 
-export function useFavoriteMutation(entryId: string | undefined, isFavorited: boolean) {
+export function useFavoriteMutation(
+  entryId: string | undefined,
+  isFavorited: boolean,
+  activeTabId?: string
+) {
   const queryClient = useQueryClient();
 
   const favoriteMutation = useMutation({
@@ -13,16 +17,19 @@ export function useFavoriteMutation(entryId: string | undefined, isFavorited: bo
         ? favoriteService.unfavoriteEntry(entryId!)
         : favoriteService.favoriteEntry(entryId!),
     onMutate: async (currentlyFavorited) => {
-      await queryClient.cancelQueries({ queryKey: ['entry', entryId] });
-      const previous = queryClient.getQueryData(['entry', entryId]);
-      queryClient.setQueryData(['entry', entryId], (old: Record<string, unknown> | undefined) =>
+      const queryKey = activeTabId
+        ? ['entry', entryId, 'tab', activeTabId]
+        : ['entry', entryId];
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (old: Record<string, unknown> | undefined) =>
         old ? { ...old, isFavorited: !currentlyFavorited } : old
       );
-      return { previous };
+      return { previous, queryKey };
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(['entry', entryId], context.previous);
+        queryClient.setQueryData(context.queryKey, context.previous);
       }
       toast.error('Failed to update favorite');
     },

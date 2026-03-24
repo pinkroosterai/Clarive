@@ -188,7 +188,7 @@ const EntryEditorPage = () => {
     isFavorited,
     handleToggleFavorite,
     isPending: isFavoritePending,
-  } = useFavoriteMutation(entryId, entryData?.isFavorited ?? false);
+  } = useFavoriteMutation(entryId, entryData?.isFavorited ?? false, activeTabId);
 
   // ── Dialog states ──
   const [diffOpen, setDiffOpen] = useState(false);

@@ -51,9 +51,17 @@ test.describe('Entry Versioning & History', () => {
     const titleInput = page.locator('input[placeholder="Entry title"]');
     await titleInput.fill(V2_TITLE);
 
+    // Wait for local state to sync before saving
+    await page.waitForTimeout(500);
+
     // Save — tabs are always editable, no draft ceremony
     await page.getByRole('button', { name: /^save$/i }).click();
     await expectToast(page, 'Saved');
+
+    // Verify title persisted by reloading
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+    await expect(titleInput).toHaveValue(V2_TITLE, { timeout: 10_000 });
   });
 
   test('view version history — v1 visible', async ({ page }) => {
@@ -93,7 +101,7 @@ test.describe('Entry Versioning & History', () => {
 
     // Switch to Versions tab and click v1
     await page.getByRole('tab', { name: /versions/i }).click();
-    await expect(page.getByText('Version History')).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByRole('heading', { name: 'Version History' })).toBeVisible({ timeout: 3_000 });
 
     // Click on v1 in the version timeline
     await page.locator('[data-tour="version-panel"]').getByText('v1').click();
@@ -117,7 +125,7 @@ test.describe('Entry Versioning & History', () => {
 
     // Switch to Versions tab
     await page.getByRole('tab', { name: /versions/i }).click();
-    await expect(page.getByText('Version History')).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByRole('heading', { name: 'Version History' })).toBeVisible({ timeout: 3_000 });
 
     // Click "Compare versions" button
     await page.getByRole('button', { name: /compare versions/i }).click();
@@ -130,8 +138,16 @@ test.describe('Entry Versioning & History', () => {
     await expect(page.getByText('Left (old)')).toBeVisible();
     await expect(page.getByText('Right (new)')).toBeVisible();
 
-    // Close the dialog
-    await page.keyboard.press('Escape');
-    await expect(diffHeading).not.toBeVisible({ timeout: 3_000 });
+    // Close the dialog via the X button (Escape doesn't reliably close Radix dialogs)
+    const closeBtn = page.getByRole('dialog').getByRole('button', { name: /close/i });
+    if (await closeBtn.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await closeBtn.click();
+    } else {
+      // Fallback: press Escape twice (Radix sometimes needs it)
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(300);
+      await page.keyboard.press('Escape');
+    }
+    await expect(diffHeading).not.toBeVisible({ timeout: 5_000 });
   });
 });

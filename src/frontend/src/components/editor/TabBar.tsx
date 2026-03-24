@@ -104,6 +104,7 @@ export function TabBar({
               size="icon"
               className="size-8 shrink-0 ml-1"
               onClick={onCreateTab}
+              aria-label="Create new tab"
             >
               <Plus className="size-3.5" />
             </Button>

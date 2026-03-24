@@ -71,8 +71,8 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
   test('switching tabs changes content correctly', async ({ page }) => {
     await loginAndNavigate(page);
 
-    // Get Main tab content first
-    const editor = page.locator('.tiptap').first();
+    // Get Main tab prompt content (use .last() to skip system message editor)
+    const editor = page.locator('.tiptap').last();
     const mainContent = await editor.textContent();
 
     // Switch to Tab B
@@ -95,39 +95,41 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
   test('edits in one tab do not affect another tab', async ({ page }) => {
     await loginAndNavigate(page);
 
-    // Get Main tab content
-    const editor = page.locator('.tiptap').first();
-    const mainContentBefore = await editor.textContent();
+    // Use the prompt editor (not system message which is .tiptap.first() when visible)
+    // The prompt content area is inside the Prompt #1 card
+    const promptEditor = page.locator('.tiptap').last();
+    const mainContentBefore = await promptEditor.textContent();
 
-    // Switch to Tab B
+    // Switch to Tab B and edit its prompt content
     await page.getByText(TAB_B_NAME).click();
     await page.waitForTimeout(500);
 
-    // Edit Tab B content
-    await editor.click();
-    await editor.pressSequentially(' — Tab B exclusive edit', { delay: 10 });
-    await page.waitForTimeout(300);
+    // Click into the prompt editor and type
+    await promptEditor.click();
+    await promptEditor.pressSequentially(' — Tab B exclusive edit', { delay: 10 });
 
-    // Switch to Main — content should NOT contain the edit
+    // Wait for debounce (150ms) to trigger dirty state
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Unsaved changes')).toBeVisible({ timeout: 3_000 });
+
+    // Save Tab B
+    await page.getByRole('button', { name: /^save$/i }).click();
+    await expectToast(page, 'Saved');
+
+    // Switch to Main — prompt content should NOT contain the edit
     await page.getByText('Main').click();
     await page.waitForTimeout(500);
 
-    const mainContentAfter = await editor.textContent();
+    const mainContentAfter = await promptEditor.textContent();
     expect(mainContentAfter).toBe(mainContentBefore);
     expect(mainContentAfter).not.toContain('Tab B exclusive edit');
 
-    // Switch back to Tab B — edits should be preserved
+    // Switch back to Tab B — saved edits should be there
     await page.getByText(TAB_B_NAME).click();
     await page.waitForTimeout(500);
 
-    const tabBContentAfter = await editor.textContent();
+    const tabBContentAfter = await promptEditor.textContent();
     expect(tabBContentAfter).toContain('Tab B exclusive edit');
-
-    // Discard changes to clean up
-    await page.getByRole('button', { name: /discard changes/i }).click();
-    const dialog = page.getByRole('alertdialog');
-    await dialog.waitFor({ state: 'visible' });
-    await dialog.getByRole('button', { name: /discard/i }).click();
   });
 
   test('published view is read-only with banner', async ({ page }) => {
@@ -137,8 +139,8 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
     await page.getByText('Published').first().click();
     await page.waitForTimeout(500);
 
-    // Read-only banner should be visible
-    await expect(page.getByText(/viewing published version.*read-only/i)).toBeVisible({
+    // Read-only banner should be visible (shows "Viewing v{N} (read-only)")
+    await expect(page.getByText(/viewing v\d+.*read-only/i)).toBeVisible({
       timeout: 5_000,
     });
 
@@ -231,7 +233,7 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
 
     // Navigate to Versions tab
     await page.getByRole('tab', { name: /versions/i }).click();
-    await expect(page.getByText('Version History')).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByRole('heading', { name: 'Version History' })).toBeVisible({ timeout: 3_000 });
 
     // Click on v1 in the version timeline
     await page.locator('[data-tour="version-panel"]').getByText('v1').click();

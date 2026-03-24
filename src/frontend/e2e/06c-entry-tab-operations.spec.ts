@@ -160,7 +160,7 @@ test.describe('Tab-Scoped Save & Publish', () => {
     // Click Published tab — should show read-only content
     await page.getByText('Published').first().click();
     await page.waitForTimeout(500);
-    await expect(page.getByText(/viewing published version.*read-only/i)).toBeVisible({
+    await expect(page.getByText(/viewing v\d+.*read-only/i)).toBeVisible({
       timeout: 5_000,
     });
 

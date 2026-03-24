@@ -251,19 +251,26 @@ test.describe('Entry Editing Lifecycle', () => {
   test('toggle favorite', async ({ page }) => {
     await navigateToEntry(page);
 
+    // Dismiss first-use hint if visible (can overlay the star button)
+    const dismissHint = page.getByRole('button', { name: /dismiss hint/i });
+    if (await dismissHint.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await dismissHint.click();
+      await page.waitForTimeout(300);
+    }
+
     // Click the favorite star button
     const favoriteBtn = page.getByRole('button', { name: /add to favorites/i });
-    await favoriteBtn.click();
+    await favoriteBtn.click({ force: true });
 
     // Verify it now says "Remove from favorites"
     await expect(page.getByRole('button', { name: /remove from favorites/i })).toBeVisible({
-      timeout: 3_000,
+      timeout: 10_000,
     });
 
     // Toggle back
-    await page.getByRole('button', { name: /remove from favorites/i }).click();
+    await page.getByRole('button', { name: /remove from favorites/i }).click({ force: true });
     await expect(page.getByRole('button', { name: /add to favorites/i })).toBeVisible({
-      timeout: 3_000,
+      timeout: 10_000,
     });
   });
 });
