@@ -89,6 +89,8 @@ test.describe('Trash & Recovery', () => {
       await dialog.waitFor({ state: 'visible' });
       await dialog.getByRole('button', { name: /delete/i }).click();
 
+      // Wait for dialog to close before checking entry is gone
+      await dialog.waitFor({ state: 'hidden' });
       await expect(page.getByText(TRASH_ENTRY_TITLE)).not.toBeVisible({ timeout: 5_000 });
     } else {
       await expect(page.getByText(TRASH_ENTRY_TITLE)).toBeVisible();

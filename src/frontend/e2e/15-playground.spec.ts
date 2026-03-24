@@ -29,6 +29,10 @@ test.describe('Prompt Playground — Core Happy Path', () => {
   });
 
   test('create entry with template variables for playground testing', async () => {
+    // Navigate to app first so localStorage is accessible for API helper
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
     // Create entry with template variables via API (faster than UI)
     const result = await createEntryViaAPI(page, {
       title: 'Playground Test Entry',

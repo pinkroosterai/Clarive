@@ -72,7 +72,9 @@ test.describe('Super Admin — AI Model Configuration', () => {
     await page.getByRole('button', { name: /quick setup/i }).click();
 
     await page.getByText(/select model for all actions/i).click();
-    await page.getByPlaceholder('Search models...').fill(GROQ_MODEL_ID);
+    // Scope to Quick Setup dialog — previous model-add combobox may still be in DOM
+    const quickSetupSearch = page.getByPlaceholder('Search models...').last();
+    await quickSetupSearch.fill(GROQ_MODEL_ID);
     await page.waitForTimeout(300); // cmdk search debounce
     await page.locator('[cmdk-item]').filter({ hasText: GROQ_MODEL_ID }).first().click();
 

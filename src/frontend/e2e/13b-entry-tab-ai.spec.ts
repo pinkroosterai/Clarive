@@ -1,18 +1,17 @@
 import { test, expect } from './fixtures';
-import { navigateToEntry } from './helpers/pages';
 import { createTab, deleteTab, switchTab } from './helpers/tabs';
 import { saveEntry } from './helpers/entry-actions';
 import { SYSTEM_MESSAGE_SECTION } from './helpers/locators';
+import { createEntryViaAPI, publishEntryViaAPI } from './helpers/api';
 
 /**
  * Tab-scoped AI tools test: verifies AI operations only affect the active tab.
  *
  * Prerequisites:
- * - Spec 06 published v1/v2 of "E2E Test Entry v2"
  * - Spec 13 configured AI models via Quick Setup
  */
 
-const ENTRY_TITLE = 'E2E Test Entry v2';
+const ENTRY_TITLE = 'AI Tab Test Entry';
 const TAB_C_NAME = 'Tab C';
 
 test.describe('Tab-Scoped AI Tools', () => {
@@ -21,7 +20,15 @@ test.describe('Tab-Scoped AI Tools', () => {
   test.setTimeout(120_000);
 
   test('generate system message on tab only affects that tab', async ({ editorPage: page }) => {
-    await navigateToEntry(page, ENTRY_TITLE);
+    // Create entry via API in the current workspace (editor is in admin's workspace after spec 11)
+    const { entryId, tabId } = await createEntryViaAPI(page, {
+      title: ENTRY_TITLE,
+      content: 'Write a clear explanation of quantum computing.',
+    });
+    await publishEntryViaAPI(page, entryId, tabId);
+    await page.goto(`/entry/${entryId}`);
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Prompt #1')).toBeVisible({ timeout: 10_000 });
 
     // Check if Main has a system message already
     const mainHasSystemMsg = await page
