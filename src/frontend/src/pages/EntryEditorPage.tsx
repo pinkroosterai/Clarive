@@ -60,13 +60,19 @@ const EntryEditorPage = () => {
     enabled: !!entryId,
   });
 
-  // Set active tab to Main tab on initial load
+  // Set active tab to Main tab on initial load (or first available tab)
   const mainTab = useMemo(() => tabs.find((t: TabInfo) => t.isMainTab), [tabs]);
   useEffect(() => {
-    if (!activeTabId && mainTab) {
-      setActiveTabId(mainTab.id);
+    if (!activeTabId && tabs.length > 0) {
+      setActiveTabId(mainTab?.id ?? tabs[0].id);
     }
-  }, [activeTabId, mainTab]);
+  }, [activeTabId, mainTab, tabs]);
+
+  const { data: versions = [], isLoading: versionsLoading } = useQuery({
+    queryKey: ['versions', entryId],
+    queryFn: () => entryService.getVersionHistory(entryId!),
+    enabled: !!entryId,
+  });
 
   // Fetch active tab content (or main entry for version view / published view)
   const {
@@ -90,12 +96,6 @@ const EntryEditorPage = () => {
       return entryService.getEntry(entryId!);
     },
     enabled: !!entryId && (!viewingPublished || versions.length > 0),
-  });
-
-  const { data: versions = [], isLoading: versionsLoading } = useQuery({
-    queryKey: ['versions', entryId],
-    queryFn: () => entryService.getVersionHistory(entryId!),
-    enabled: !!entryId,
   });
 
   const { data: folders = [] } = useQuery({

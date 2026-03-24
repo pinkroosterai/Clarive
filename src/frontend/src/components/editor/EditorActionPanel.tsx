@@ -127,7 +127,7 @@ export function EditorActionPanel({
           </TabsTrigger>
           <TabsTrigger value="versions" className="flex-1 gap-1.5 text-xs">
             Versions
-            <span className="text-[10px] font-medium text-muted-foreground">v{entry.version}</span>
+            <span className="text-[10px] font-medium text-muted-foreground">v{versions?.filter((v) => v.versionState === 'published' || v.versionState === 'historical').length ?? 0}</span>
           </TabsTrigger>
           <TabsTrigger value="details" className="flex-1 gap-1.5 text-xs">
             Details

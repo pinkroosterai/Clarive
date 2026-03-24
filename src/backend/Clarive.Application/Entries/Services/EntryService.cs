@@ -408,6 +408,7 @@ public class EntryService(
     {
         var entryIds = entries.Select(e => e.Id).ToList();
         var workingVersions = await entryRepo.GetMainTabsBatchAsync(tenantId, entryIds, ct);
+        var publishedVersions = await entryRepo.GetPublishedVersionsBatchAsync(tenantId, entryIds, ct);
         var tagsByEntry = await tagRepo.GetByEntryIdsBatchAsync(tenantId, entryIds, ct);
         var favoritedIds = await favoriteRepo.GetFavoritedEntryIdsAsync(
             tenantId,
@@ -421,11 +422,13 @@ public class EntryService(
             {
                 workingVersions.TryGetValue(entry.Id, out var version);
                 tagsByEntry.TryGetValue(entry.Id, out var entryTags);
+                var hasPublished = publishedVersions.ContainsKey(entry.Id);
                 return PromptEntryDto.FromEntryAndVersion(
                     entry,
                     version,
                     entryTags,
-                    favoritedIds.Contains(entry.Id)
+                    favoritedIds.Contains(entry.Id),
+                    hasPublished
                 );
             })
             .ToList();

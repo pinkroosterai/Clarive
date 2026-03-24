@@ -80,7 +80,7 @@ namespace Clarive.Infrastructure.Data.Migrations
                 WHERE pev.version_state = 'Published'
                   AND NOT EXISTS (
                       SELECT 1 FROM prompt_entry_versions t
-                      WHERE t.entry_id = pev.entry_id AND t.version_state = 'Tab'
+                      WHERE t.entry_id = pev.entry_id AND t.is_main_tab = true
                   );
                 """);
 

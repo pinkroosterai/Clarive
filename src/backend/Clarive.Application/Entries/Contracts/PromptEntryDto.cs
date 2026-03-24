@@ -26,18 +26,25 @@ public record PromptEntryDto(
         PromptEntry entry,
         PromptEntryVersion? version,
         List<string>? tags = null,
-        bool isFavorited = false
+        bool isFavorited = false,
+        bool hasPublished = false
     )
     {
         var preview = version?.Prompts.OrderBy(p => p.Order).FirstOrDefault()?.Content;
         if (preview is not null && preview.Length > 100)
             preview = preview[..100] + "...";
 
+        // For library display: show "published" if entry has a published version,
+        // even when the working version is a tab
+        var displayState = hasPublished
+            ? "published"
+            : (version?.VersionState ?? Clarive.Domain.Enums.VersionState.Tab).ToString().ToLower();
+
         return new PromptEntryDto(
             entry.Id,
             entry.Title,
             version?.Version ?? 0,
-            (version?.VersionState ?? Clarive.Domain.Enums.VersionState.Tab).ToString().ToLower(),
+            displayState,
             entry.IsTrashed,
             entry.FolderId,
             HasSystemMessage: !string.IsNullOrEmpty(version?.SystemMessage),

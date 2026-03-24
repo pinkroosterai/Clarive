@@ -105,7 +105,7 @@ export async function createEntry(
 export async function updateEntry(
   id: string,
   data: Partial<PromptEntry>,
-  options?: { evaluation?: Record<string, EvaluationEntry> | null }
+  options?: { evaluation?: Record<string, EvaluationEntry> | null; tabId?: string }
 ): Promise<PromptEntry> {
   const body: Record<string, unknown> = {};
   if (data.title !== undefined) body.title = data.title;
@@ -116,6 +116,7 @@ export async function updateEntry(
     }));
   if (options?.evaluation !== undefined) body.evaluation = options.evaluation;
   if (data.rowVersion !== undefined) body.rowVersion = data.rowVersion;
+  if (options?.tabId !== undefined) body.tabId = options.tabId;
   return api.put<PromptEntry>(`/api/entries/${id}`, body);
 }
 

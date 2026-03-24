@@ -40,12 +40,18 @@ export function useEditorMutations({
       return entryService.updateEntry(
         data.id,
         data,
-        evaluation ? { evaluation: evaluation.dimensions } : undefined
+        {
+          evaluation: evaluation ? evaluation.dimensions : undefined,
+          tabId: activeTabId,
+        }
       );
     },
     onSuccess: () => {
       onSaveSuccess();
       queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
+      if (activeTabId) {
+        queryClient.invalidateQueries({ queryKey: ['entry', entryId, 'tab', activeTabId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['versions', entryId] });
       toast.success('Saved');
     },
