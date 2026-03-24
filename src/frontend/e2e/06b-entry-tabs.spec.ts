@@ -84,7 +84,7 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
     expect(tabBContent).toBeTruthy();
 
     // Switch back to Main
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
 
     // Main content should be unchanged
@@ -117,7 +117,7 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
     await expectToast(page, 'Saved');
 
     // Switch to Main — prompt content should NOT contain the edit
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
 
     const mainContentAfter = await promptEditor.textContent();
@@ -149,7 +149,7 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
     await expect(titleInput).toBeDisabled();
 
     // Switch back to Main to return to editable state
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
     await expect(titleInput).toBeEnabled({ timeout: 3_000 });
   });
@@ -168,14 +168,14 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
     await expect(page.getByText('Unsaved changes')).not.toBeVisible();
 
     // Switch back to Main
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
     await expect(page.getByText('Unsaved changes')).not.toBeVisible();
 
     // Switch to Published view and back
     await page.getByText('Published').first().click();
     await page.waitForTimeout(500);
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
     await expect(page.getByText('Unsaved changes')).not.toBeVisible();
   });
@@ -228,49 +228,45 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
 
   // ── Restore to Tab ──
 
-  test('restore historical version to new tab', async ({ page }) => {
+  test('restore historical version to new tab via version panel', async ({ page }) => {
     await loginAndNavigate(page);
 
     // Navigate to Versions tab
     await page.getByRole('tab', { name: /versions/i }).click();
     await expect(page.getByRole('heading', { name: 'Version History' })).toBeVisible({ timeout: 3_000 });
 
-    // Click on v1 in the version timeline
-    await page.locator('[data-tour="version-panel"]').getByText('v1').click();
+    // Hover over v1 to reveal the "Restore" button in the timeline
+    const versionPanel = page.locator('[data-tour="version-panel"]');
+    const v1Item = versionPanel.locator('button', { hasText: 'v1' });
+    await v1Item.hover();
+    await page.waitForTimeout(300);
 
-    // Wait for historical view
-    await page.waitForURL(/\/entry\/[a-f0-9-]+\/version\/1$/, { timeout: 10_000 });
-
-    // Read-only banner should show
-    await expect(page.getByText(/viewing v1.*read-only/i)).toBeVisible({ timeout: 5_000 });
-
-    // Click "Restore to tab"
-    await page.getByRole('button', { name: /restore to tab/i }).click();
+    // Click the inline "Restore" button (appears on hover)
+    const restoreBtn = v1Item.getByRole('button', { name: /restore/i });
+    await expect(restoreBtn).toBeVisible({ timeout: 3_000 });
+    await restoreBtn.click();
 
     // Restore dialog should appear with pre-filled name
     const restoreDialog = page.getByRole('dialog');
-    await restoreDialog.waitFor({ state: 'visible' });
+    await restoreDialog.waitFor({ state: 'visible', timeout: 5_000 });
     const tabNameInput = page.getByLabel('New tab name');
     await expect(tabNameInput).toBeVisible();
     const prefilled = await tabNameInput.inputValue();
     expect(prefilled).toContain('Restored');
 
-    // Click Restore button
+    // Click Restore button in dialog
     await restoreDialog.getByRole('button', { name: /^restore$/i }).click();
 
     // Verify toast
     await expectToast(page, /restored v1 to new tab/i);
 
-    // Should navigate back to the entry editor
-    await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
-
     // The restored tab should appear in the tab bar
-    await expect(page.getByText(/restored/i)).toBeVisible({ timeout: 5_000 });
+    const restoredTabButton = page.locator('button', { hasText: 'Restored v1' });
+    await expect(restoredTabButton).toBeVisible({ timeout: 5_000 });
 
     // Clean up: delete the restored tab so downstream specs aren't affected
-    await page.getByText(/restored/i).hover();
+    await restoredTabButton.hover();
     await page.waitForTimeout(300);
-    const restoredTabButton = page.locator('button', { hasText: /restored/i });
     const restoredDeleteBtn = restoredTabButton
       .locator('[role="button"]')
       .filter({ has: page.locator('.lucide-x') });

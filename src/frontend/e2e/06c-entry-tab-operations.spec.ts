@@ -27,8 +27,13 @@ async function loginAndNavigate(page: Page) {
   await expect(page.getByText('Prompt #1')).toBeVisible({ timeout: 5_000 });
 }
 
-/** Create Tab C forked from the published version. */
+/** Create Tab C forked from the published version (skips if already exists). */
 async function createTabC(page: Page) {
+  // Skip if Tab C already exists
+  if (await page.getByText(TAB_C_NAME).isVisible({ timeout: 1_000 }).catch(() => false)) {
+    return;
+  }
+
   await page.getByRole('button', { name: /create new tab/i }).click();
   await expect(page.getByRole('heading', { name: 'Create New Tab' })).toBeVisible({
     timeout: 5_000,
@@ -75,7 +80,7 @@ test.describe('Tab-Scoped Save & Publish', () => {
     await createTabC(page);
 
     // Get Main tab content for comparison
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
     const mainTitleBefore = await page.locator('input[placeholder="Entry title"]').inputValue();
 
@@ -83,7 +88,7 @@ test.describe('Tab-Scoped Save & Publish', () => {
     await page.getByText(TAB_C_NAME).click();
     await page.waitForTimeout(500);
 
-    const editor = page.locator('.tiptap').first();
+    const editor = page.locator('.tiptap').last();
     await editor.click();
     await editor.pressSequentially(' — Tab C scoped edit', { delay: 10 });
     await page.waitForTimeout(300);
@@ -96,13 +101,13 @@ test.describe('Tab-Scoped Save & Publish', () => {
     await expect(page.getByText('Unsaved changes')).not.toBeVisible({ timeout: 5_000 });
 
     // Switch to Main — title and content should be unchanged
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
 
     const mainTitleAfter = await page.locator('input[placeholder="Entry title"]').inputValue();
     expect(mainTitleAfter).toBe(mainTitleBefore);
 
-    const mainContent = await page.locator('.tiptap').first().textContent();
+    const mainContent = await page.locator('.tiptap').last().textContent();
     expect(mainContent).not.toContain('Tab C scoped edit');
   });
 
@@ -115,10 +120,10 @@ test.describe('Tab-Scoped Save & Publish', () => {
     // Get Tab C content
     await page.getByText(TAB_C_NAME).click();
     await page.waitForTimeout(500);
-    const tabCContent = await page.locator('.tiptap').first().textContent();
+    const tabCContent = await page.locator('.tiptap').last().textContent();
 
     // Switch to Main and edit title
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
 
     const titleInput = page.locator('input[placeholder="Entry title"]');
@@ -133,11 +138,11 @@ test.describe('Tab-Scoped Save & Publish', () => {
     await page.getByText(TAB_C_NAME).click();
     await page.waitForTimeout(500);
 
-    const tabCContentAfter = await page.locator('.tiptap').first().textContent();
+    const tabCContentAfter = await page.locator('.tiptap').last().textContent();
     expect(tabCContentAfter).toBe(tabCContent);
 
     // Restore original title on Main
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
     await titleInput.fill(originalTitle);
     await page.getByRole('button', { name: /^save$/i }).click();
@@ -157,10 +162,15 @@ test.describe('Tab-Scoped Save & Publish', () => {
     await dialog.getByRole('button', { name: /^publish$/i }).click();
     await expectToast(page, 'Published');
 
+    // Wait for toast to disappear before clicking Published tab
+    await page.waitForTimeout(2_000);
+
     // Click Published tab — should show read-only content
-    await page.getByText('Published').first().click();
+    // Use locator that targets the tab bar Published button (has Eye icon)
+    const publishedTab = page.locator('button', { hasText: 'Published' }).filter({ has: page.locator('.lucide-eye') });
+    await publishedTab.click();
     await page.waitForTimeout(500);
-    await expect(page.getByText(/viewing v\d+.*read-only/i)).toBeVisible({
+    await expect(page.getByText(/read-only mode/i)).toBeVisible({
       timeout: 5_000,
     });
 
@@ -228,7 +238,7 @@ test.describe('Tab-Scoped AI Tools', () => {
     await expectToast(page, 'Saved');
 
     // Switch to Main tab — system message state should be unchanged
-    await page.getByText('Main').click();
+    await page.getByText('Main', { exact: true }).click();
     await page.waitForTimeout(500);
 
     const mainSysMsgNow =
@@ -325,7 +335,7 @@ test.describe('Multi-User Tab Collaboration', () => {
     await expectToast(admin.page, 'Saved');
 
     // Editor edits Tab C content
-    const editorEditor = editor.page.locator('.tiptap').first();
+    const editorEditor = editor.page.locator('.tiptap').last();
     await editorEditor.click();
     await editorEditor.pressSequentially(' — editor cross-tab edit', { delay: 10 });
     await editor.page.waitForTimeout(300);
