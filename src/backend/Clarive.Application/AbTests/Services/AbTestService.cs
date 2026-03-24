@@ -39,8 +39,10 @@ public class AbTestService(
 
         return runs.Select(r => new AbTestRunResponse(
             r.Id,
-            r.VersionANumber,
-            r.VersionBNumber,
+            r.VersionAId,
+            r.VersionBId,
+            r.VersionALabel,
+            r.VersionBLabel,
             r.DatasetId.HasValue && datasetNames.TryGetValue(r.DatasetId.Value, out var name) ? name : null,
             r.Model,
             r.Status.ToString(),
@@ -89,8 +91,10 @@ public class AbTestService(
 
         return new AbTestRunDetailResponse(
             run.Id,
-            run.VersionANumber,
-            run.VersionBNumber,
+            run.VersionAId,
+            run.VersionBId,
+            run.VersionALabel,
+            run.VersionBLabel,
             datasetName,
             run.Model,
             run.Status.ToString(),
@@ -127,10 +131,10 @@ public class AbTestService(
         if (entry is null)
             return DomainErrors.EntryNotFound;
 
-        // Validate both versions exist
-        var versionA = await entryRepo.GetVersionAsync(tenantId, entryId, request.VersionANumber, ct);
-        var versionB = await entryRepo.GetVersionAsync(tenantId, entryId, request.VersionBNumber, ct);
-        if (versionA is null || versionB is null)
+        // Validate both versions exist and belong to this entry
+        var versionA = await entryRepo.GetVersionByIdAsync(tenantId, request.VersionAId, ct);
+        var versionB = await entryRepo.GetVersionByIdAsync(tenantId, request.VersionBId, ct);
+        if (versionA is null || versionB is null || versionA.EntryId != entryId || versionB.EntryId != entryId)
             return DomainErrors.AbTestVersionNotFound;
 
         // Validate dataset has rows and belongs to the entry
@@ -140,6 +144,10 @@ public class AbTestService(
         if (dataset.Rows.Count == 0)
             return DomainErrors.AbTestDatasetEmpty;
 
+        // Compute labels for display
+        var labelA = ComputeVersionLabel(versionA);
+        var labelB = ComputeVersionLabel(versionB);
+
         // Create run entity
         var run = new ABTestRun
         {
@@ -147,8 +155,10 @@ public class AbTestService(
             TenantId = tenantId,
             EntryId = entryId,
             UserId = userId,
-            VersionANumber = request.VersionANumber,
-            VersionBNumber = request.VersionBNumber,
+            VersionAId = versionA.Id,
+            VersionBId = versionB.Id,
+            VersionALabel = labelA,
+            VersionBLabel = labelB,
             DatasetId = request.DatasetId,
             Model = request.Model,
             Temperature = request.Temperature,
@@ -171,7 +181,7 @@ public class AbTestService(
                 ct.ThrowIfCancellationRequested();
 
                 if (onProgress is not null)
-                    await onProgress(new AbTestProgressEvent("running", i + 1, dataset.Rows.Count, $"v{request.VersionANumber} & v{request.VersionBNumber}", $"Testing input {i + 1}/{dataset.Rows.Count}"));
+                    await onProgress(new AbTestProgressEvent("running", i + 1, dataset.Rows.Count, $"{labelA} & {labelB}", $"Testing input {i + 1}/{dataset.Rows.Count}"));
 
                 // Run both versions in parallel
                 var testRequest = new TestEntryRequest(
@@ -182,8 +192,8 @@ public class AbTestService(
                     ReasoningEffort: request.ReasoningEffort
                 );
 
-                var taskA = playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequest, ct);
-                var taskB = playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequest, ct);
+                var taskA = playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequest, ct, versionId: versionA.Id);
+                var taskB = playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequest, ct, versionId: versionB.Id);
                 await Task.WhenAll(taskA, taskB);
 
                 var resultA = taskA.Result;
@@ -252,11 +262,24 @@ public class AbTestService(
         )).ToList();
 
         return new AbTestRunDetailResponse(
-            run.Id, run.VersionANumber, run.VersionBNumber,
+            run.Id, run.VersionAId, run.VersionBId,
+            run.VersionALabel, run.VersionBLabel,
             dataset.Name, run.Model, run.Status.ToString(),
             results.Count, run.CreatedAt, run.CompletedAt,
             resultResponses, summary
         );
+    }
+
+    internal static string ComputeVersionLabel(PromptEntryVersion version)
+    {
+        return version.VersionState switch
+        {
+            VersionState.Published => $"v{version.Version} (published)",
+            VersionState.Historical => $"v{version.Version}",
+            VersionState.Draft => "Draft",
+            VersionState.Variant => version.VariantName ?? "Variant",
+            _ => $"v{version.Version}"
+        };
     }
 
     private static string? ExtractAssistantOutput(List<ConversationMessage> conversationLog)

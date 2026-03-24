@@ -4,6 +4,7 @@ using Clarive.Application.Entries.Contracts;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Application.Audit.Services;
+using Clarive.Application.Variants.Contracts;
 using Clarive.Domain.ValueObjects;
 
 namespace Clarive.Api.Endpoints;
@@ -52,6 +53,19 @@ public static partial class EntryEndpoints
         group
             .MapDelete("/{entryId:guid}/permanent-delete", HandlePermanentDelete)
             .RequireAuthorization("AdminOnly");
+
+        // Variants
+        group.MapGet("/{entryId:guid}/variants", HandleListVariants);
+        group.MapPost("/{entryId:guid}/variants", HandleCreateVariant).RequireAuthorization("EditorOrAdmin");
+        group
+            .MapPatch("/{entryId:guid}/variants/{variantId:guid}", HandleRenameVariant)
+            .RequireAuthorization("EditorOrAdmin");
+        group
+            .MapDelete("/{entryId:guid}/variants/{variantId:guid}", HandleDeleteVariant)
+            .RequireAuthorization("EditorOrAdmin");
+        group
+            .MapPost("/{entryId:guid}/variants/{variantId:guid}/publish", HandlePublishVariant)
+            .RequireAuthorization("EditorOrAdmin");
 
         return group;
     }
@@ -562,5 +576,110 @@ public static partial class EntryEndpoints
         );
 
         return Results.NoContent();
+    }
+
+    // ── Variant Endpoints ──
+
+    private static async Task<IResult> HandleListVariants(
+        Guid entryId,
+        HttpContext ctx,
+        IVariantService variantService,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var result = await variantService.ListAsync(tenantId, entryId, ct);
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.Ok(result.Value);
+    }
+
+    private static async Task<IResult> HandleCreateVariant(
+        Guid entryId,
+        CreateVariantRequest request,
+        HttpContext ctx,
+        IVariantService variantService,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var result = await variantService.CreateAsync(tenantId, entryId, request, ct);
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.Ok(result.Value);
+    }
+
+    private static async Task<IResult> HandleRenameVariant(
+        Guid entryId,
+        Guid variantId,
+        RenameVariantRequest request,
+        HttpContext ctx,
+        IVariantService variantService,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var result = await variantService.RenameAsync(tenantId, entryId, variantId, request, ct);
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.Ok(result.Value);
+    }
+
+    private static async Task<IResult> HandleDeleteVariant(
+        Guid entryId,
+        Guid variantId,
+        HttpContext ctx,
+        IVariantService variantService,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var result = await variantService.DeleteAsync(tenantId, entryId, variantId, ct);
+        return result.IsError
+            ? result.Errors.ToHttpResult(ctx)
+            : Results.NoContent();
+    }
+
+    private static async Task<IResult> HandlePublishVariant(
+        Guid entryId,
+        Guid variantId,
+        HttpContext ctx,
+        IEntryVersionService versionService,
+        IEntryService entryService,
+        IAuditLogger auditLogger,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var result = await versionService.PublishVariantAsync(tenantId, entryId, variantId, userId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx, "Entry", entryId.ToString());
+
+        var (entry, published) = result.Value;
+
+        await auditLogger.SafeLogAsync(
+            tenantId,
+            userId,
+            ctx.GetUserName(),
+            AuditAction.EntryPublished,
+            "prompt_entry",
+            entry.Id,
+            entry.Title,
+            $"Published variant as version {published.Version}",
+            ct
+        );
+
+        var responseResult = await entryService.BuildEntryResponseAsync(
+            entry,
+            published,
+            tenantId,
+            false,
+            ct
+        );
+        return responseResult.IsError
+            ? responseResult.Errors.ToHttpResult(ctx)
+            : Results.Ok(responseResult.Value);
     }
 }

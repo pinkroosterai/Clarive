@@ -36,7 +36,7 @@ export default function ABTestResults({ run }: ABTestResultsProps) {
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">A/B Test Results</h3>
             <p className="text-lg font-semibold">
-              v{run.versionA} vs v{run.versionB}
+              {run.versionALabel} vs {run.versionBLabel}
             </p>
             <p className="text-xs text-muted-foreground">
               {run.datasetName ?? 'Dataset'} &middot; {run.model} &middot; {run.resultCount} inputs
@@ -51,7 +51,7 @@ export default function ABTestResults({ run }: ABTestResultsProps) {
       {/* Score Comparison */}
       <div className="grid grid-cols-3 gap-4">
         <ScoreCard
-          label={`Version A (v${run.versionA})`}
+          label={`Version A (${run.versionALabel})`}
           score={summary.versionAAvg}
           wins={summary.versionAWins}
           total={run.resultCount}
@@ -76,7 +76,7 @@ export default function ABTestResults({ run }: ABTestResultsProps) {
           </p>
         </div>
         <ScoreCard
-          label={`Version B (v${run.versionB})`}
+          label={`Version B (${run.versionBLabel})`}
           score={summary.versionBAvg}
           wins={summary.versionBWins}
           total={run.resultCount}
@@ -91,8 +91,8 @@ export default function ABTestResults({ run }: ABTestResultsProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-xs">Dimension</TableHead>
-                <TableHead className="text-center text-xs">v{run.versionA}</TableHead>
-                <TableHead className="text-center text-xs">v{run.versionB}</TableHead>
+                <TableHead className="text-center text-xs">{run.versionALabel}</TableHead>
+                <TableHead className="text-center text-xs">{run.versionBLabel}</TableHead>
                 <TableHead className="text-center text-xs">Delta</TableHead>
               </TableRow>
             </TableHeader>

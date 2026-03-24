@@ -4,8 +4,10 @@ import { api } from './apiClient';
 
 export interface AbTestRun {
   id: string;
-  versionA: number;
-  versionB: number;
+  versionAId: string | null;
+  versionBId: string | null;
+  versionALabel: string | null;
+  versionBLabel: string | null;
   datasetName: string | null;
   model: string;
   status: string;
@@ -50,8 +52,8 @@ export interface AbTestProgressEvent {
 }
 
 export interface StartAbTestRequest {
-  versionANumber: number;
-  versionBNumber: number;
+  versionAId: string;
+  versionBId: string;
   datasetId: string;
   model: string;
   temperature?: number;

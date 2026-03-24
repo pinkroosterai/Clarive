@@ -12,7 +12,8 @@ public interface IPlaygroundService
         Guid entryId,
         TestEntryRequest request,
         CancellationToken ct,
-        Func<ConversationStreamEvent, Task>? onEvent = null
+        Func<ConversationStreamEvent, Task>? onEvent = null,
+        Guid? versionId = null
     );
 
     Task<ErrorOr<OutputEvaluation>> JudgePlaygroundRunAsync(

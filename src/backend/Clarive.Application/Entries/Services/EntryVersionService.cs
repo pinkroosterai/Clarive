@@ -63,6 +63,51 @@ public class EntryVersionService(
     }
 
     public async Task<
+        ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>
+    > PublishVariantAsync(Guid tenantId, Guid entryId, Guid variantId, Guid userId, CancellationToken ct)
+    {
+        var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
+        if (entry is null)
+            return DomainErrors.EntryNotFound;
+
+        var variant = await entryRepo.GetVersionByIdAsync(tenantId, variantId, ct);
+        if (variant is null || variant.EntryId != entryId || variant.VersionState != VersionState.Variant)
+            return DomainErrors.VariantNotFound;
+
+        return await unitOfWork.ExecuteInTransactionAsync(
+            async () =>
+            {
+                var now = DateTime.UtcNow;
+                var maxVersion = await entryRepo.GetMaxVersionNumberAsync(tenantId, entryId, ct);
+
+                var currentPublished = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+                if (currentPublished is not null)
+                {
+                    currentPublished.VersionState = VersionState.Historical;
+                    await entryRepo.UpdateVersionAsync(currentPublished, ct);
+                }
+
+                variant.Version = maxVersion + 1;
+                variant.VersionState = VersionState.Published;
+                variant.VariantName = null;
+                variant.BasedOnVersion = null;
+                variant.PublishedAt = now;
+                variant.PublishedBy = userId;
+                await entryRepo.UpdateVersionAsync(variant, ct);
+
+                entry.UpdatedAt = now;
+                await entryRepo.UpdateAsync(entry, ct);
+
+                await TenantCacheKeys.EvictEntryData(cache, tenantId);
+                await TenantCacheKeys.EvictPublishedEntryIds(cache, tenantId);
+
+                return (entry, variant);
+            },
+            ct
+        );
+    }
+
+    public async Task<
         ErrorOr<(PromptEntry Entry, PromptEntryVersion NewDraft)>
     > PromoteVersionAsync(Guid tenantId, Guid entryId, int version, CancellationToken ct)
     {
@@ -85,33 +130,7 @@ public class EntryVersionService(
                     await entryRepo.DeleteVersionAsync(workingVersion, ct);
 
                 var newDraftId = Guid.NewGuid();
-                var clonedPrompts = historical
-                    .Prompts.Select(p =>
-                    {
-                        var newPromptId = Guid.NewGuid();
-                        return new Prompt
-                        {
-                            Id = newPromptId,
-                            VersionId = newDraftId,
-                            Content = p.Content,
-                            Order = p.Order,
-                            IsTemplate = p.IsTemplate,
-                            TemplateFields = p
-                                .TemplateFields.Select(tf => new TemplateField
-                                {
-                                    Id = Guid.NewGuid(),
-                                    PromptId = newPromptId,
-                                    Name = tf.Name,
-                                    Type = tf.Type,
-                                    EnumValues = tf.EnumValues,
-                                    DefaultValue = tf.DefaultValue,
-                                    Min = tf.Min,
-                                    Max = tf.Max,
-                                })
-                                .ToList(),
-                        };
-                    })
-                    .ToList();
+                var clonedPrompts = Common.PromptCloner.ClonePrompts(historical.Prompts, newDraftId);
 
                 var newDraft = await entryRepo.CreateVersionAsync(
                     new PromptEntryVersion
@@ -191,14 +210,25 @@ public class EntryVersionService(
             .Distinct();
         var publisherMap = await userRepo.GetByIdsAsync(tenantId, publisherIds, ct);
 
-        var versionInfos = versions
+        // Put variants first (sorted by CreatedAt DESC), then published/historical (sorted by Version DESC)
+        var sorted = versions
+            .Where(v => v.VersionState == VersionState.Variant)
+            .OrderByDescending(v => v.CreatedAt)
+            .Concat(versions
+                .Where(v => v.VersionState != VersionState.Variant)
+                .OrderByDescending(v => v.Version));
+
+        var versionInfos = sorted
             .Select(v => new VersionInfo(
+                v.Id,
                 v.Version,
                 v.VersionState.ToString().ToLower(),
                 v.PublishedAt,
                 v.PublishedBy.HasValue && publisherMap.TryGetValue(v.PublishedBy.Value, out var pub)
                     ? pub.Name
                     : null,
+                v.VariantName,
+                v.BasedOnVersion,
                 v.Evaluation != null ? new VersionEvaluationInfo(v.Evaluation) : null,
                 v.EvaluationAverageScore,
                 v.EvaluatedAt

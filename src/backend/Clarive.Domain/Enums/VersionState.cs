@@ -5,4 +5,5 @@ public enum VersionState
     Draft,
     Published,
     Historical,
+    Variant,
 }

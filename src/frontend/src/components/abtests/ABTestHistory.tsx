@@ -97,7 +97,7 @@ export default function ABTestHistory({ entryId, onSelectRun }: ABTestHistoryPro
                 {formatDistanceToNow(new Date(run.createdAt), { addSuffix: true })}
               </TableCell>
               <TableCell className="text-xs font-medium">
-                v{run.versionA} vs v{run.versionB}
+                {run.versionALabel} vs {run.versionBLabel}
               </TableCell>
               <TableCell className="text-xs">{run.datasetName ?? '—'}</TableCell>
               <TableCell className="text-xs">{run.model}</TableCell>

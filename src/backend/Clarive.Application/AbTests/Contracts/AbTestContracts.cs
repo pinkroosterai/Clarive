@@ -7,11 +7,9 @@ namespace Clarive.Application.AbTests.Contracts;
 
 public record StartAbTestRequest(
     [property: Required(ErrorMessage = "Version A is required.")]
-    [property: Range(1, int.MaxValue, ErrorMessage = "Version A must be a positive integer.")]
-        int VersionANumber,
+        Guid VersionAId,
     [property: Required(ErrorMessage = "Version B is required.")]
-    [property: Range(1, int.MaxValue, ErrorMessage = "Version B must be a positive integer.")]
-        int VersionBNumber,
+        Guid VersionBId,
     [property: Required(ErrorMessage = "Dataset ID is required.")]
         Guid DatasetId,
     [property: Required(ErrorMessage = "Model is required.")]
@@ -29,8 +27,10 @@ public record StartAbTestRequest(
 
 public record AbTestRunResponse(
     Guid Id,
-    int VersionA,
-    int VersionB,
+    Guid? VersionAId,
+    Guid? VersionBId,
+    string? VersionALabel,
+    string? VersionBLabel,
     string? DatasetName,
     string Model,
     string Status,
@@ -41,8 +41,10 @@ public record AbTestRunResponse(
 
 public record AbTestRunDetailResponse(
     Guid Id,
-    int VersionA,
-    int VersionB,
+    Guid? VersionAId,
+    Guid? VersionBId,
+    string? VersionALabel,
+    string? VersionBLabel,
     string? DatasetName,
     string Model,
     string Status,

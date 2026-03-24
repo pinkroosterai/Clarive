@@ -9,8 +9,10 @@ public class ABTestRun : ITenantScoped
     public Guid TenantId { get; set; }
     public Guid EntryId { get; set; }
     public Guid? UserId { get; set; }
-    public int VersionANumber { get; set; }
-    public int VersionBNumber { get; set; }
+    public Guid? VersionAId { get; set; }
+    public Guid? VersionBId { get; set; }
+    public string? VersionALabel { get; set; }
+    public string? VersionBLabel { get; set; }
     public Guid? DatasetId { get; set; }
     public string Model { get; set; } = "";
     public float Temperature { get; set; }

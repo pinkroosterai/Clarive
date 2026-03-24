@@ -16,8 +16,10 @@ public class ABTestRunConfiguration : IEntityTypeConfiguration<ABTestRun>
         builder.Property(r => r.TenantId).HasColumnName("tenant_id").IsRequired();
         builder.Property(r => r.EntryId).HasColumnName("entry_id").IsRequired();
         builder.Property(r => r.UserId).HasColumnName("user_id");
-        builder.Property(r => r.VersionANumber).HasColumnName("version_a_number").IsRequired();
-        builder.Property(r => r.VersionBNumber).HasColumnName("version_b_number").IsRequired();
+        builder.Property(r => r.VersionAId).HasColumnName("version_a_id");
+        builder.Property(r => r.VersionBId).HasColumnName("version_b_id");
+        builder.Property(r => r.VersionALabel).HasColumnName("version_a_label").HasMaxLength(100);
+        builder.Property(r => r.VersionBLabel).HasColumnName("version_b_label").HasMaxLength(100);
         builder.Property(r => r.DatasetId).HasColumnName("dataset_id");
         builder.Property(r => r.Model).HasColumnName("model").HasMaxLength(100).IsRequired();
         builder.Property(r => r.Temperature).HasColumnName("temperature").IsRequired();
@@ -53,6 +55,18 @@ public class ABTestRunConfiguration : IEntityTypeConfiguration<ABTestRun>
             .HasOne<User>()
             .WithMany()
             .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder
+            .HasOne<PromptEntryVersion>()
+            .WithMany()
+            .HasForeignKey(r => r.VersionAId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder
+            .HasOne<PromptEntryVersion>()
+            .WithMany()
+            .HasForeignKey(r => r.VersionBId)
             .OnDelete(DeleteBehavior.SetNull);
 
         builder

@@ -111,4 +111,18 @@ public static class DomainErrors
 
     public static Error AbTestVersionNotFound =>
         Error.NotFound("AB_TEST_VERSION_NOT_FOUND", "One or both versions not found for this entry.");
+
+    // ── Variants ──
+
+    public static Error VariantNotFound =>
+        Error.NotFound("VARIANT_NOT_FOUND", "Variant not found.");
+
+    public static Error DuplicateVariantName =>
+        Error.Conflict("DUPLICATE_VARIANT_NAME", "A variant with this name already exists for this entry.");
+
+    public static Error MaxVariantsExceeded =>
+        Error.Validation("MAX_VARIANTS_EXCEEDED", "Maximum 20 variants per entry.");
+
+    public static Error VariantNameRequired =>
+        Error.Validation("VARIANT_NAME_REQUIRED", "Variant name is required.");
 }

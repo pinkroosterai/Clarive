@@ -22,6 +22,8 @@ public class AbTestServiceTests
     private static readonly Guid UserId = Guid.NewGuid();
     private static readonly Guid EntryId = Guid.NewGuid();
     private static readonly Guid DatasetId = Guid.NewGuid();
+    private static readonly Guid VersionAId = Guid.NewGuid();
+    private static readonly Guid VersionBId = Guid.NewGuid();
 
     public AbTestServiceTests()
     {
@@ -29,7 +31,10 @@ public class AbTestServiceTests
     }
 
     private static StartAbTestRequest ValidRequest() =>
-        new(VersionANumber: 1, VersionBNumber: 2, DatasetId: DatasetId, Model: "test-model");
+        new(VersionAId: VersionAId, VersionBId: VersionBId, DatasetId: DatasetId, Model: "test-model");
+
+    private static PromptEntryVersion MakeVersion(Guid id, int version, VersionState state = VersionState.Published) =>
+        new() { Id = id, EntryId = EntryId, Version = version, VersionState = state, Prompts = [] };
 
     [Fact]
     public async Task RunAsync_EntryNotFound_ReturnsError()
@@ -48,9 +53,9 @@ public class AbTestServiceTests
     {
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, TenantId = TenantId, Title = "Test" });
-        _entryRepo.GetVersionAsync(TenantId, EntryId, 1, Arg.Any<CancellationToken>())
-            .Returns(new PromptEntryVersion { Version = 1 });
-        _entryRepo.GetVersionAsync(TenantId, EntryId, 2, Arg.Any<CancellationToken>())
+        _entryRepo.GetVersionByIdAsync(TenantId, VersionAId, Arg.Any<CancellationToken>())
+            .Returns(MakeVersion(VersionAId, 1));
+        _entryRepo.GetVersionByIdAsync(TenantId, VersionBId, Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
         var result = await _sut.RunAsync(TenantId, UserId, EntryId, ValidRequest());
@@ -64,10 +69,10 @@ public class AbTestServiceTests
     {
         _entryRepo.GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, TenantId = TenantId, Title = "Test" });
-        _entryRepo.GetVersionAsync(TenantId, EntryId, 1, Arg.Any<CancellationToken>())
-            .Returns(new PromptEntryVersion { Version = 1 });
-        _entryRepo.GetVersionAsync(TenantId, EntryId, 2, Arg.Any<CancellationToken>())
-            .Returns(new PromptEntryVersion { Version = 2 });
+        _entryRepo.GetVersionByIdAsync(TenantId, VersionAId, Arg.Any<CancellationToken>())
+            .Returns(MakeVersion(VersionAId, 1));
+        _entryRepo.GetVersionByIdAsync(TenantId, VersionBId, Arg.Any<CancellationToken>())
+            .Returns(MakeVersion(VersionBId, 2));
         _datasetRepo.GetByIdAsync(TenantId, DatasetId, Arg.Any<CancellationToken>())
             .Returns(new TestDataset { Id = DatasetId, TenantId = TenantId, EntryId = EntryId, Name = "Empty", Rows = [] });
 
@@ -160,5 +165,19 @@ public class AbTestServiceTests
         summary.VersionBWins.Should().Be(2);
         summary.VersionAWins.Should().Be(0);
         summary.PerDimension.Should().ContainKey("accuracy");
+    }
+
+    [Fact]
+    public async Task ComputeVersionLabel_ReturnsCorrectLabels()
+    {
+        var published = new PromptEntryVersion { Version = 3, VersionState = VersionState.Published };
+        var historical = new PromptEntryVersion { Version = 2, VersionState = VersionState.Historical };
+        var draft = new PromptEntryVersion { Version = 4, VersionState = VersionState.Draft };
+        var variant = new PromptEntryVersion { Version = 0, VersionState = VersionState.Variant, VariantName = "concise-style" };
+
+        AbTestService.ComputeVersionLabel(published).Should().Be("v3 (published)");
+        AbTestService.ComputeVersionLabel(historical).Should().Be("v2");
+        AbTestService.ComputeVersionLabel(draft).Should().Be("Draft");
+        AbTestService.ComputeVersionLabel(variant).Should().Be("concise-style");
     }
 }

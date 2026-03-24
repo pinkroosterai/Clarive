@@ -31,6 +31,13 @@ interface ABTestToolbarProps {
   onManageDatasets: () => void;
 }
 
+function getVersionLabel(v: { version: number; versionState: string; variantName?: string | null }) {
+  if (v.versionState === 'variant') return v.variantName ?? 'Variant';
+  if (v.versionState === 'draft') return `v${v.version} (draft)`;
+  if (v.versionState === 'published') return `v${v.version} (published)`;
+  return `v${v.version}`;
+}
+
 export default function ABTestToolbar({
   entryId,
   entryTitle,
@@ -64,6 +71,15 @@ export default function ABTestToolbar({
     queryFn: () => getDatasets(entryId),
   });
 
+  // Group versions into Active (published, draft, variants) and History (historical)
+  const { activeVersions, historyVersions } = useMemo(() => {
+    const active = versions.filter(
+      (v) => v.versionState === 'published' || v.versionState === 'draft' || v.versionState === 'variant'
+    );
+    const history = versions.filter((v) => v.versionState === 'historical');
+    return { activeVersions: active, historyVersions: history };
+  }, [versions]);
+
   const modelsByProvider = useMemo(() => {
     const grouped: Record<string, EnrichedModel[]> = {};
     for (const m of enrichedModels) {
@@ -84,8 +100,8 @@ export default function ABTestToolbar({
   function handleRun() {
     if (!canRun) return;
     onRun({
-      versionANumber: parseInt(versionA, 10),
-      versionBNumber: parseInt(versionB, 10),
+      versionAId: versionA,
+      versionBId: versionB,
       datasetId,
       model,
       temperature: selectedModel?.isReasoning ? 1.0 : temperature,
@@ -103,6 +119,36 @@ export default function ABTestToolbar({
       setReasoningEffort(found.defaultReasoningEffort ?? 'medium');
     }
   }
+
+  const VersionSelector = ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) => (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-32 h-8 text-xs">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {activeVersions.length > 0 && (
+          <SelectGroup>
+            <SelectLabel className="text-xs font-semibold text-foreground-muted px-2">Active</SelectLabel>
+            {activeVersions.map((v) => (
+              <SelectItem key={v.id} value={v.id} className="text-xs">
+                {getVersionLabel(v)}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        )}
+        {historyVersions.length > 0 && (
+          <SelectGroup>
+            <SelectLabel className="text-xs font-semibold text-foreground-muted px-2">History</SelectLabel>
+            {historyVersions.map((v) => (
+              <SelectItem key={v.id} value={v.id} className="text-xs">
+                {getVersionLabel(v)}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        )}
+      </SelectContent>
+    </Select>
+  );
 
   return (
     <div className="shrink-0 z-10 bg-surface">
@@ -122,31 +168,9 @@ export default function ABTestToolbar({
 
         <div className="ml-auto flex items-center gap-2">
           {/* Version selectors */}
-          <Select value={versionA} onValueChange={setVersionA}>
-            <SelectTrigger className="w-24 h-8 text-xs">
-              <SelectValue placeholder="v A" />
-            </SelectTrigger>
-            <SelectContent>
-              {versions.map((v) => (
-                <SelectItem key={v.version} value={String(v.version)} className="text-xs">
-                  v{v.version} ({v.versionState})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <VersionSelector value={versionA} onChange={setVersionA} placeholder="Version A" />
           <span className="text-xs text-muted-foreground">vs</span>
-          <Select value={versionB} onValueChange={setVersionB}>
-            <SelectTrigger className="w-24 h-8 text-xs">
-              <SelectValue placeholder="v B" />
-            </SelectTrigger>
-            <SelectContent>
-              {versions.map((v) => (
-                <SelectItem key={v.version} value={String(v.version)} className="text-xs">
-                  v{v.version} ({v.versionState})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <VersionSelector value={versionB} onChange={setVersionB} placeholder="Version B" />
 
           <Separator orientation="vertical" className="h-5 hidden sm:block" />
 
@@ -211,18 +235,10 @@ export default function ABTestToolbar({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low" className="text-xs">
-                  Low
-                </SelectItem>
-                <SelectItem value="medium" className="text-xs">
-                  Medium
-                </SelectItem>
-                <SelectItem value="high" className="text-xs">
-                  High
-                </SelectItem>
-                <SelectItem value="extra-high" className="text-xs">
-                  Extra High
-                </SelectItem>
+                <SelectItem value="low" className="text-xs">Low</SelectItem>
+                <SelectItem value="medium" className="text-xs">Medium</SelectItem>
+                <SelectItem value="high" className="text-xs">High</SelectItem>
+                <SelectItem value="extra-high" className="text-xs">Extra High</SelectItem>
               </SelectContent>
             </Select>
           </div>

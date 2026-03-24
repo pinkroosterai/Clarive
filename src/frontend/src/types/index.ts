@@ -21,7 +21,7 @@ export interface PromptEntry {
   prompts: Prompt[];
   folderId: string | null;
   version: number;
-  versionState: 'draft' | 'published' | 'historical';
+  versionState: 'draft' | 'published' | 'historical' | 'variant';
   isTrashed: boolean;
   createdAt: string;
   updatedAt: string;
@@ -134,13 +134,23 @@ export interface AuditLogEntry {
 }
 
 export interface VersionInfo {
+  id: string;
   version: number;
-  versionState: 'draft' | 'published' | 'historical';
+  versionState: 'draft' | 'published' | 'historical' | 'variant';
   publishedAt: string | null;
   publishedBy: string | null;
+  variantName?: string | null;
+  basedOnVersion?: number | null;
   evaluation?: Evaluation | null;
   evaluationAverageScore?: number | null;
   evaluatedAt?: string | null;
+}
+
+export interface VariantInfo {
+  id: string;
+  name: string;
+  basedOnVersion: number;
+  createdAt: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -226,7 +236,7 @@ export interface TagSummary {
 export interface FavoriteEntry {
   id: string;
   title: string;
-  versionState: 'draft' | 'published' | 'historical';
+  versionState: 'draft' | 'published' | 'historical' | 'variant';
   favoritedAt: string;
 }
 
@@ -259,7 +269,7 @@ export interface DashboardStats {
 export interface RecentEntry {
   id: string;
   title: string;
-  versionState: 'draft' | 'published' | 'historical';
+  versionState: 'draft' | 'published' | 'historical' | 'variant';
   updatedAt: string;
 }
 

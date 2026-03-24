@@ -426,6 +426,47 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
             .ToList();
     }
 
+    // ── Variant management ──
+
+    public async Task<List<PromptEntryVersion>> GetVariantsAsync(
+        Guid tenantId,
+        Guid entryId,
+        CancellationToken ct = default
+    )
+    {
+        // Lightweight query — only metadata needed for variant listing, no Prompts/TemplateFields
+        return await db.PromptEntryVersions.AsNoTracking()
+            .Where(v => v.Entry.TenantId == tenantId && v.EntryId == entryId && v.VersionState == VersionState.Variant)
+            .OrderByDescending(v => v.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<PromptEntryVersion?> GetVariantByNameAsync(
+        Guid tenantId,
+        Guid entryId,
+        string variantName,
+        CancellationToken ct = default
+    )
+    {
+        return await TenantVersionsReadOnly(tenantId)
+            .FirstOrDefaultAsync(
+                v => v.EntryId == entryId
+                     && v.VersionState == VersionState.Variant
+                     && v.VariantName == variantName,
+                ct
+            );
+    }
+
+    public async Task<PromptEntryVersion?> GetVersionByIdAsync(
+        Guid tenantId,
+        Guid versionId,
+        CancellationToken ct = default
+    )
+    {
+        return await TenantVersions(tenantId)
+            .FirstOrDefaultAsync(v => v.Id == versionId, ct);
+    }
+
     /// <summary>
     /// Get cached set of published entry IDs for a tenant.
     /// Uses client-side filtering via HashSet.Contains() instead of SQL subquery.

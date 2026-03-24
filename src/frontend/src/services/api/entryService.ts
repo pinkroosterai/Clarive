@@ -1,12 +1,12 @@
 import { api } from './apiClient';
 
-import type { PromptEntry, PaginatedResponse, VersionInfo, EvaluationEntry } from '@/types';
+import type { PromptEntry, PaginatedResponse, VersionInfo, VariantInfo, EvaluationEntry } from '@/types';
 
 interface EntrySummary {
   id: string;
   title: string;
   version: number;
-  versionState: 'draft' | 'published' | 'historical';
+  versionState: 'draft' | 'published' | 'historical' | 'variant';
   isTrashed: boolean;
   folderId: string | null;
   hasSystemMessage: boolean;
@@ -173,4 +173,34 @@ export async function getTrashedEntries(
 
 export async function addTags(entryId: string, tags: string[]): Promise<string[]> {
   return api.post<string[]>(`/api/entries/${entryId}/tags`, { tags });
+}
+
+// ── Variants ──
+
+export async function createVariant(
+  entryId: string,
+  name: string,
+  basedOnVersion: number
+): Promise<VariantInfo> {
+  return api.post<VariantInfo>(`/api/entries/${entryId}/variants`, { name, basedOnVersion });
+}
+
+export async function listVariants(entryId: string): Promise<VariantInfo[]> {
+  return api.get<VariantInfo[]>(`/api/entries/${entryId}/variants`);
+}
+
+export async function renameVariant(
+  entryId: string,
+  variantId: string,
+  newName: string
+): Promise<VariantInfo> {
+  return api.patch<VariantInfo>(`/api/entries/${entryId}/variants/${variantId}`, { newName });
+}
+
+export async function deleteVariant(entryId: string, variantId: string): Promise<void> {
+  return api.delete(`/api/entries/${entryId}/variants/${variantId}`);
+}
+
+export async function publishVariant(entryId: string, variantId: string): Promise<PromptEntry> {
+  return api.post<PromptEntry>(`/api/entries/${entryId}/variants/${variantId}/publish`);
 }

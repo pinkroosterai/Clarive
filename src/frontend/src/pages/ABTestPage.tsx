@@ -188,8 +188,8 @@ const ABTestPage = () => {
                     key={result.id}
                     result={result}
                     index={i}
-                    versionA={runDetail.versionA}
-                    versionB={runDetail.versionB}
+                    versionALabel={runDetail.versionALabel ?? 'A'}
+                    versionBLabel={runDetail.versionBLabel ?? 'B'}
                   />
                 ))}
               </div>

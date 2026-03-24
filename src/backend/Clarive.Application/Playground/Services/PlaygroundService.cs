@@ -43,15 +43,18 @@ public class PlaygroundService(
         Guid entryId,
         TestEntryRequest request,
         CancellationToken ct,
-        Func<ConversationStreamEvent, Task>? onEvent = null
+        Func<ConversationStreamEvent, Task>? onEvent = null,
+        Guid? versionId = null
     )
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
             return DomainErrors.EntryNotFound;
 
-        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
-        if (version is null)
+        var version = versionId.HasValue
+            ? await entryRepo.GetVersionByIdAsync(tenantId, versionId.Value, ct)
+            : await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct);
+        if (version is null || version.EntryId != entryId)
             return DomainErrors.NoWorkingVersion;
 
         var prompts = version.Prompts.OrderBy(p => p.Order).ToList();

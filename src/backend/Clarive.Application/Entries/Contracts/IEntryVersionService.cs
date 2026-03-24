@@ -12,6 +12,14 @@ public interface IEntryVersionService
         CancellationToken ct = default
     );
 
+    Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion PublishedVersion)>> PublishVariantAsync(
+        Guid tenantId,
+        Guid entryId,
+        Guid variantId,
+        Guid userId,
+        CancellationToken ct = default
+    );
+
     Task<ErrorOr<(PromptEntry Entry, PromptEntryVersion NewDraft)>> PromoteVersionAsync(
         Guid tenantId,
         Guid entryId,

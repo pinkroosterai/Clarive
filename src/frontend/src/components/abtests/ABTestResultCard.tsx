@@ -11,15 +11,15 @@ import type { AbTestResult } from '@/services/api/abTestService';
 interface ABTestResultCardProps {
   result: AbTestResult;
   index: number;
-  versionA: number;
-  versionB: number;
+  versionALabel: string;
+  versionBLabel: string;
 }
 
 export default function ABTestResultCard({
   result,
   index,
-  versionA,
-  versionB,
+  versionALabel,
+  versionBLabel,
 }: ABTestResultCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -77,7 +77,7 @@ export default function ABTestResultCard({
             <div className="grid grid-cols-2 gap-4">
               {/* Version A */}
               <OutputColumn
-                label={`v${versionA}`}
+                label={versionALabel}
                 output={result.versionAOutput}
                 scores={result.versionAScores}
                 avgScore={result.versionAAvgScore}
@@ -85,7 +85,7 @@ export default function ABTestResultCard({
               />
               {/* Version B */}
               <OutputColumn
-                label={`v${versionB}`}
+                label={versionBLabel}
                 output={result.versionBOutput}
                 scores={result.versionBScores}
                 avgScore={result.versionBAvgScore}

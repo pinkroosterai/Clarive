@@ -86,6 +86,24 @@ public interface IEntryRepository
         CancellationToken ct = default
     );
 
+    // Variant management
+    Task<List<PromptEntryVersion>> GetVariantsAsync(
+        Guid tenantId,
+        Guid entryId,
+        CancellationToken ct = default
+    );
+    Task<PromptEntryVersion?> GetVariantByNameAsync(
+        Guid tenantId,
+        Guid entryId,
+        string variantName,
+        CancellationToken ct = default
+    );
+    Task<PromptEntryVersion?> GetVersionByIdAsync(
+        Guid tenantId,
+        Guid versionId,
+        CancellationToken ct = default
+    );
+
     // Tree (minimal projection for sidebar)
     Task<List<(Guid Id, string Title, Guid? FolderId)>> GetTreeAsync(
         Guid tenantId,

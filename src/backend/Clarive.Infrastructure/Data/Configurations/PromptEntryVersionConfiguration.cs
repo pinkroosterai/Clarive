@@ -28,6 +28,10 @@ public class PromptEntryVersionConfiguration : IEntityTypeConfiguration<PromptEn
         builder.Property(v => v.PublishedBy).HasColumnName("published_by");
         builder.Property(v => v.CreatedAt).HasColumnName("created_at").IsRequired();
 
+        // Variant metadata
+        builder.Property(v => v.VariantName).HasColumnName("variant_name").HasMaxLength(100);
+        builder.Property(v => v.BasedOnVersion).HasColumnName("based_on_version");
+
         builder
             .Property(v => v.Evaluation)
             .HasColumnName("evaluation")
@@ -66,5 +70,10 @@ public class PromptEntryVersionConfiguration : IEntityTypeConfiguration<PromptEn
             .HasIndex(v => new { v.EntryId, v.Version })
             .IsUnique()
             .HasDatabaseName("uq_prompt_entry_versions_entry_version");
+        builder
+            .HasIndex(v => new { v.EntryId, v.VariantName })
+            .IsUnique()
+            .HasFilter("variant_name IS NOT NULL")
+            .HasDatabaseName("uq_prompt_entry_versions_entry_variant_name");
     }
 }
