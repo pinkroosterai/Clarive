@@ -29,27 +29,26 @@ test.describe('Super Admin — AI Model Configuration', () => {
     // --- Step 3: Add primary model (GROQ_MODEL_ID) ---
     await page.getByText(/select model to add/i).click();
     await page.getByPlaceholder('Search models...').fill(GROQ_MODEL_ID);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(300); // cmdk search debounce
     await page.locator('[cmdk-item]').filter({ hasText: GROQ_MODEL_ID }).first().click();
     await expect(page.locator('td', { hasText: GROQ_MODEL_ID }).first()).toBeVisible({
       timeout: 5_000,
     });
 
     // --- Step 4: Add secondary model (openai/gpt-oss-20b) ---
-    await page.waitForTimeout(500);
     // Use the combobox button with role selector and click it
     const addModelCombo = page.locator('button[role="combobox"]').first();
     await addModelCombo.click({ force: true });
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(300); // Radix popover open animation
     // If popover didn't open, try dispatching pointer events
     const searchVisible = await page.getByPlaceholder('Search models...').isVisible().catch(() => false);
     if (!searchVisible) {
       await radixClick(addModelCombo);
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(300); // Radix popover open animation
     }
     await expect(page.getByPlaceholder('Search models...')).toBeVisible({ timeout: 5_000 });
     await page.getByPlaceholder('Search models...').fill(EXTRA_MODEL_ID);
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(500); // cmdk search debounce
     await page.locator('[cmdk-item]').filter({ hasText: EXTRA_MODEL_ID }).first().click();
     await expect(page.locator('td', { hasText: EXTRA_MODEL_ID }).first()).toBeVisible({
       timeout: 5_000,
@@ -62,14 +61,11 @@ test.describe('Super Admin — AI Model Configuration', () => {
     const switches = primaryModelRow.locator('[role="switch"]');
     // Toggle function calling (index 1)
     await switches.nth(1).click();
-    await page.waitForTimeout(300);
     // Toggle structured response (index 2)
     await switches.nth(2).click();
-    await page.waitForTimeout(300);
 
     // --- Step 5: Quick Setup — assign primary model to all 8 actions ---
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
 
     const configSection = page.getByText('CONFIGURATION');
     await configSection.scrollIntoViewIfNeeded();
@@ -77,7 +73,7 @@ test.describe('Super Admin — AI Model Configuration', () => {
 
     await page.getByText(/select model for all actions/i).click();
     await page.getByPlaceholder('Search models...').fill(GROQ_MODEL_ID);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(300); // cmdk search debounce
     await page.locator('[cmdk-item]').filter({ hasText: GROQ_MODEL_ID }).first().click();
 
     // --- Step 6: Save changes ---

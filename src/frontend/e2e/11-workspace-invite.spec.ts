@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { loginViaUI, waitForAppShell, expectToast } from './helpers/pages';
+import { test, expect, EDITOR } from './fixtures';
+import { waitForAppShell, expectToast } from './helpers/pages';
 import { radixClick, radixSelect } from './helpers/radix';
 
 /**
@@ -10,111 +10,69 @@ import { radixClick, radixSelect } from './helpers/radix';
  * tests can operate on the same entries.
  */
 
-const ADMIN = { email: 'admin@e2e.test', password: 'E2ETestPassword123!' };
-const EDITOR = { email: 'editor@e2e.test', password: 'E2ETestPassword123!' };
-
 test.describe('Workspace Invitation', () => {
   test.describe.configure({ mode: 'serial' });
   test.setTimeout(60_000);
 
-  test('admin invites editor to workspace', async ({ page }) => {
-    // Login as admin
-    await loginViaUI(page, ADMIN.email, ADMIN.password);
-    await page.waitForURL(/\/$/, { timeout: 15_000 });
-    await waitForAppShell(page);
-
-    // Complete onboarding via API to prevent tour
-    await page.evaluate(() =>
-      fetch('/api/profile/complete-onboarding', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('cl_token')}` },
-      })
-    );
-
-    // Dismiss tour if it appeared
-    const tourClose = page.locator('.driver-popover-close-btn');
-    if (await tourClose.isVisible({ timeout: 1_000 }).catch(() => false)) {
-      await tourClose.click();
-      await page.waitForTimeout(500);
-    }
-
+  test('admin invites editor to workspace', async ({ adminPage: page }) => {
     // Navigate to Settings > Users tab
     await page.goto('/settings');
     await page.waitForLoadState('domcontentloaded');
     await page.getByRole('tab', { name: /users/i }).click();
-    await page.waitForTimeout(1_000);
+    await page.waitForTimeout(1_000); // UserManagement panel load
 
     // Scroll down past WorkspaceSection to reach UserManagement
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
-    // Wait for "Invite User" button to appear (UserManagement must finish loading)
     const inviteButton = page.getByRole('button', { name: /invite user/i });
     await expect(inviteButton).toBeVisible({ timeout: 30_000 });
     await inviteButton.click();
 
-    // Fill in the invite dialog
     const dialog = page.getByRole('dialog');
     await dialog.waitFor({ state: 'visible' });
     await expect(dialog.getByText('Invite User')).toBeVisible();
 
-    // Fill email
     await dialog.getByLabel('Email').fill(EDITOR.email);
 
-    // Role defaults to "Editor" — leave as is
-
-    // Send invitation
     await dialog.getByRole('button', { name: /send invitation/i }).click();
 
-    // Verify success
     await expectToast(page, 'Invitation sent');
 
     // Save auth state
     await page.context().storageState({ path: 'e2e/.auth/admin.json' });
   });
 
-  test('editor accepts invitation and switches workspace', async ({ page }) => {
-    // Login as editor
-    await loginViaUI(page, EDITOR.email, EDITOR.password);
-    await page.waitForURL(/\/$/, { timeout: 15_000 });
-    await waitForAppShell(page);
-
+  test('editor accepts invitation and switches workspace', async ({ editorPage: page }) => {
     // The invitation bell should be visible in the sidebar with pending count
     const bellButton = page.getByText('Invitations').first();
     await expect(bellButton).toBeVisible({ timeout: 10_000 });
 
-    // Click the notification bell to open popover
     await bellButton.click();
 
-    // Should see the pending invitation from admin's workspace
     const popover = page.locator('[data-radix-popper-content-wrapper]');
     await expect(popover.getByText("E2E Admin's workspace")).toBeVisible({ timeout: 5_000 });
 
-    // Accept the invitation
     await popover.getByRole('button', { name: /accept/i }).click();
 
-    // Verify success toast
     await expectToast(page, /joined/i);
 
-    // Close the popover by clicking elsewhere
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(1_000);
+    await page.waitForTimeout(1_000); // Popover close animation
 
-    // Open workspace switcher — click on the current workspace name in sidebar header
+    // Open workspace switcher
     await page.getByText("E2E Editor's workspace").first().click();
 
-    // Should see both workspaces in the dropdown
     const dropdownContent = page.locator('[role="menu"]');
     await expect(dropdownContent).toBeVisible({ timeout: 5_000 });
 
-    // Click on admin's workspace to switch
-    const adminWsItem = dropdownContent.getByRole('menuitem', { name: /E2E Admin's workspace/i });
+    const adminWsItem = dropdownContent.getByRole('menuitem', {
+      name: /E2E Admin's workspace/i,
+    });
     await adminWsItem.click();
 
-    // Should redirect to dashboard with admin's workspace
     await page.waitForURL(/\/$/, { timeout: 15_000 });
     await waitForAppShell(page);
 
-    // Verify we're now in admin's workspace — the sidebar header shows the workspace name
     const sidebarHeader = page.locator('[data-sidebar="menu"]').first();
     await expect(sidebarHeader.getByText("E2E Admin's workspace")).toBeVisible({ timeout: 5_000 });
 

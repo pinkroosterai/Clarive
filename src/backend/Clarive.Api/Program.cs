@@ -462,6 +462,10 @@ try
     app.MapClariveHubs();
     app.MapClariveEndpoints();
 
+    // E2E-only seed endpoints for fast test data creation
+    if (app.Environment.IsEnvironment("E2E"))
+        app.MapE2ESeedEndpoints();
+
     app.MapGet(
             "/api/status",
             async (

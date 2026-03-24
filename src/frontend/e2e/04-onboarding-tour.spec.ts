@@ -72,8 +72,8 @@ test.describe('Onboarding Tour', () => {
     await page.waitForURL(/\/$/, { timeout: 15_000 });
     await waitForAppShell(page);
 
-    // Wait a moment, then verify no tour popover
-    await page.waitForTimeout(2_000);
+    // Verify no tour popover appears (already completed in previous test)
+    await page.waitForTimeout(2_000); // Allow tour init time before asserting absence
     await expect(page.locator('.driver-popover')).not.toBeVisible();
   });
 });

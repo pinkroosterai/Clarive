@@ -1,5 +1,6 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 import { waitForAppShell, expectToast } from './helpers/pages';
+import { createEntryViaAPI } from './helpers/api';
 
 const GROQ_MODEL_ID = process.env.GROQ_MODEL_ID ?? 'openai/gpt-oss-120b';
 
@@ -28,46 +29,14 @@ test.describe('Prompt Playground — Core Happy Path', () => {
   });
 
   test('create entry with template variables for playground testing', async () => {
-    // Navigate to new entry page
-    await page.goto('/entry/new');
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Create New Entry')).toBeVisible({ timeout: 10_000 });
+    // Create entry with template variables via API (faster than UI)
+    const result = await createEntryViaAPI(page, {
+      title: 'Playground Test Entry',
+      content: 'Write a {{tone}} explanation about {{topic}} for beginners.',
+    });
 
-    // Fill title
-    await page.getByLabel('Title').fill('Playground Test Entry');
-
-    // Submit
-    await page.getByRole('button', { name: 'Create Entry' }).click();
-
-    // Should redirect to the editor page
-    await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
-
-    // Extract entryId from URL
-    const url = page.url();
-    entryId = url.split('/entry/')[1];
+    entryId = result.entryId;
     expect(entryId).toBeTruthy();
-
-    // Verify editor loaded
-    await expect(page.locator('input[placeholder="Entry title"]')).toHaveValue(
-      'Playground Test Entry',
-      { timeout: 5_000 }
-    );
-    await expect(page.getByText('Prompt #1')).toBeVisible();
-
-    // Type prompt content with template variables into Tiptap
-    const tiptapEditor = page.locator('.tiptap').first();
-    await tiptapEditor.click();
-    await tiptapEditor.pressSequentially(
-      'Write a {{tone}} explanation about {{topic}} for beginners.',
-      { delay: 10 }
-    );
-
-    // Wait for debounce
-    await page.waitForTimeout(500);
-
-    // Save
-    await page.getByRole('button', { name: /^save$/i }).click();
-    await expectToast(page, 'Saved');
   });
 
   test('navigate to playground and verify model selector', async () => {

@@ -1,5 +1,14 @@
-import { test, expect } from '@playwright/test';
-import { loginViaUI, waitForAppShell, expectToast } from './helpers/pages';
+import { test, expect } from './fixtures';
+import { navigateToEntry, expectToast } from './helpers/pages';
+import { deleteTab, switchTab } from './helpers/tabs';
+import { saveEntry } from './helpers/entry-actions';
+import {
+  promptEditor,
+  titleInput,
+  ENTRY_TITLE_INPUT,
+  COMBOBOX_TRIGGER,
+  VERSION_PANEL,
+} from './helpers/locators';
 
 /**
  * Tab Lifecycle & Content Isolation tests.
@@ -9,244 +18,162 @@ import { loginViaUI, waitForAppShell, expectToast } from './helpers/pages';
  * and restoring historical versions to new tabs.
  */
 
-const EDITOR = {
-  email: 'editor@e2e.test',
-  password: 'E2ETestPassword123!',
-};
-
 const ENTRY_TITLE = 'E2E Test Entry v2';
 const TAB_B_NAME = 'Test Tab B';
-
-/** Login and navigate to the entry editor. */
-async function loginAndNavigate(page: import('@playwright/test').Page) {
-  await loginViaUI(page, EDITOR.email, EDITOR.password);
-  await page.waitForURL(/\/$/, { timeout: 15_000 });
-  await waitForAppShell(page);
-  await page.getByText(ENTRY_TITLE).first().click();
-  await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
-  await expect(page.getByText('Prompt #1')).toBeVisible({ timeout: 5_000 });
-}
 
 test.describe('Tab Lifecycle & Content Isolation', () => {
   test.describe.configure({ mode: 'serial' });
 
   // ── Tab Creation ──
+  // NOTE: This test exercises the create-tab UI flow inline because it IS the SUT.
 
-  test('create a new tab forked from published version', async ({ page }) => {
-    await loginAndNavigate(page);
+  test('create a new tab forked from published version', async ({ editorPage: page }) => {
+    await navigateToEntry(page, ENTRY_TITLE);
 
-    // Click the create tab button (Plus icon with tooltip "Create new tab")
     await page.getByRole('button', { name: /create new tab/i }).click();
-
-    // Dialog should appear
     await expect(page.getByRole('heading', { name: 'Create New Tab' })).toBeVisible({
       timeout: 5_000,
     });
 
-    // Fill tab name
     await page.getByLabel('Tab name').fill(TAB_B_NAME);
 
-    // Select fork version via Radix Select — pick the published version
-    const selectTrigger = page.locator('[role="combobox"]');
+    const selectTrigger = page.locator(COMBOBOX_TRIGGER);
     await selectTrigger.click();
-    // Pick the option containing "published"
     const publishedOption = page.getByRole('option').filter({ hasText: 'published' }).first();
     await publishedOption.waitFor({ state: 'visible' });
     await publishedOption.click();
 
-    // Click Create Tab
     await page.getByRole('button', { name: /create tab/i }).click();
 
-    // Wait for dialog to close and new tab to appear
     await expect(page.getByRole('heading', { name: 'Create New Tab' })).not.toBeVisible({
       timeout: 5_000,
     });
-
-    // Verify the new tab appears in the tab bar
     await expect(page.getByText(TAB_B_NAME)).toBeVisible({ timeout: 5_000 });
   });
 
   // ── Tab Switching & Content Isolation ──
 
-  test('switching tabs changes content correctly', async ({ page }) => {
-    await loginAndNavigate(page);
+  test('switching tabs changes content correctly', async ({ editorPage: page }) => {
+    await navigateToEntry(page, ENTRY_TITLE);
 
-    // Get Main tab prompt content (use .last() to skip system message editor)
-    const editor = page.locator('.tiptap').last();
+    const editor = promptEditor(page);
     const mainContent = await editor.textContent();
 
-    // Switch to Tab B
-    await page.getByText(TAB_B_NAME).click();
-    await page.waitForTimeout(500);
-
-    // Tab B should have content (forked from published version)
+    await switchTab(page, TAB_B_NAME);
     const tabBContent = await editor.textContent();
     expect(tabBContent).toBeTruthy();
 
-    // Switch back to Main
-    await page.getByText('Main', { exact: true }).click();
-    await page.waitForTimeout(500);
-
-    // Main content should be unchanged
+    await switchTab(page, 'Main');
     const mainContentAfter = await editor.textContent();
     expect(mainContentAfter).toBe(mainContent);
   });
 
-  test('edits in one tab do not affect another tab', async ({ page }) => {
-    await loginAndNavigate(page);
+  test('edits in one tab do not affect another tab', async ({ editorPage: page }) => {
+    await navigateToEntry(page, ENTRY_TITLE);
 
-    // Use the prompt editor (not system message which is .tiptap.first() when visible)
-    // The prompt content area is inside the Prompt #1 card
-    const promptEditor = page.locator('.tiptap').last();
-    const mainContentBefore = await promptEditor.textContent();
+    const editor = promptEditor(page);
+    const mainContentBefore = await editor.textContent();
 
-    // Switch to Tab B and edit its prompt content
-    await page.getByText(TAB_B_NAME).click();
-    await page.waitForTimeout(500);
+    await switchTab(page, TAB_B_NAME);
+    await editor.click();
+    await editor.pressSequentially(' — Tab B exclusive edit', { delay: 10 });
 
-    // Click into the prompt editor and type
-    await promptEditor.click();
-    await promptEditor.pressSequentially(' — Tab B exclusive edit', { delay: 10 });
-
-    // Wait for debounce (150ms) to trigger dirty state
-    await page.waitForTimeout(500);
     await expect(page.getByText('Unsaved changes')).toBeVisible({ timeout: 3_000 });
 
-    // Save Tab B
-    await page.getByRole('button', { name: /^save$/i }).click();
-    await expectToast(page, 'Saved');
+    await saveEntry(page);
 
-    // Switch to Main — prompt content should NOT contain the edit
-    await page.getByText('Main', { exact: true }).click();
-    await page.waitForTimeout(500);
-
-    const mainContentAfter = await promptEditor.textContent();
+    await switchTab(page, 'Main');
+    const mainContentAfter = await editor.textContent();
     expect(mainContentAfter).toBe(mainContentBefore);
     expect(mainContentAfter).not.toContain('Tab B exclusive edit');
 
-    // Switch back to Tab B — saved edits should be there
-    await page.getByText(TAB_B_NAME).click();
-    await page.waitForTimeout(500);
-
-    const tabBContentAfter = await promptEditor.textContent();
+    await switchTab(page, TAB_B_NAME);
+    const tabBContentAfter = await editor.textContent();
     expect(tabBContentAfter).toContain('Tab B exclusive edit');
   });
 
-  test('published view is read-only with banner', async ({ page }) => {
-    await loginAndNavigate(page);
+  test('published view is read-only with banner', async ({ editorPage: page }) => {
+    await navigateToEntry(page, ENTRY_TITLE);
 
-    // Click Published tab
     await page.getByText('Published').first().click();
-    await page.waitForTimeout(500);
 
-    // Read-only mode indicator should be visible in sidebar
-    await expect(page.getByText(/read-only mode/i)).toBeVisible({
-      timeout: 5_000,
-    });
+    await expect(page.getByText(/read-only mode/i)).toBeVisible({ timeout: 5_000 });
 
-    // Title input should be disabled (read-only)
-    const titleInput = page.locator('input[placeholder="Entry title"]');
-    await expect(titleInput).toBeDisabled();
+    const title = titleInput(page);
+    await expect(title).toBeDisabled();
 
-    // Switch back to Main to return to editable state
-    await page.getByText('Main', { exact: true }).click();
-    await page.waitForTimeout(500);
-    await expect(titleInput).toBeEnabled({ timeout: 3_000 });
+    await switchTab(page, 'Main');
+    await expect(title).toBeEnabled({ timeout: 3_000 });
   });
 
   // ── False Dirty State Regression ──
 
-  test('switching tabs without edits does not trigger dirty state', async ({ page }) => {
-    await loginAndNavigate(page);
+  test('switching tabs without edits does not trigger dirty state', async ({
+    editorPage: page,
+  }) => {
+    await navigateToEntry(page, ENTRY_TITLE);
 
-    // Ensure clean state
     await expect(page.getByText('Unsaved changes')).not.toBeVisible({ timeout: 3_000 });
 
-    // Switch to Tab B — wait beyond debounce (150ms)
-    await page.getByText(TAB_B_NAME).click();
-    await page.waitForTimeout(500);
+    await switchTab(page, TAB_B_NAME);
     await expect(page.getByText('Unsaved changes')).not.toBeVisible();
 
-    // Switch back to Main
-    await page.getByText('Main', { exact: true }).click();
-    await page.waitForTimeout(500);
+    await switchTab(page, 'Main');
     await expect(page.getByText('Unsaved changes')).not.toBeVisible();
 
-    // Switch to Published view and back
     await page.getByText('Published').first().click();
-    await page.waitForTimeout(500);
-    await page.getByText('Main', { exact: true }).click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(500); // Published tab content load
+    await switchTab(page, 'Main');
     await expect(page.getByText('Unsaved changes')).not.toBeVisible();
   });
 
   // ── Tab Management ──
 
-  test('Main tab has no delete button', async ({ page }) => {
-    await loginAndNavigate(page);
+  test('Main tab has no delete button', async ({ editorPage: page }) => {
+    await navigateToEntry(page, ENTRY_TITLE);
 
-    // Hover over Main tab
     await page.getByText('Main').hover();
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(300); // Hover reveal animation
 
-    // No X icon should appear within the Main tab area
-    // The delete button has tooltip "Delete tab" — verify it's not visible
-    // We check that the lucide-x icon near Main tab is not present
     const mainTabButton = page.locator('button', { hasText: 'Main' }).first();
     const deleteIcon = mainTabButton.locator('.lucide-x');
     await expect(deleteIcon).not.toBeVisible();
   });
 
-  test('delete a non-Main tab redirects to Main tab', async ({ page }) => {
-    await loginAndNavigate(page);
+  test('delete a non-Main tab redirects to Main tab', async ({ editorPage: page }) => {
+    await navigateToEntry(page, ENTRY_TITLE);
 
-    // Verify Tab B exists
     await expect(page.getByText(TAB_B_NAME)).toBeVisible();
 
-    // Switch to Tab B first so we can verify redirect after deletion
-    await page.getByText(TAB_B_NAME).click();
-    await page.waitForTimeout(500);
+    await switchTab(page, TAB_B_NAME);
 
-    // Hover over Tab B to reveal delete button
-    await page.getByText(TAB_B_NAME).hover();
-    await page.waitForTimeout(300);
+    await deleteTab(page, TAB_B_NAME);
 
-    // Click the X button (delete) on Tab B
-    const tabBButton = page.locator('button', { hasText: TAB_B_NAME });
-    const deleteBtn = tabBButton.locator('[role="button"]').filter({ has: page.locator('.lucide-x') });
-    await deleteBtn.click();
-
-    // Verify toast
-    await expectToast(page, 'Tab deleted');
-
-    // Tab B should be gone from the bar
     await expect(page.getByText(TAB_B_NAME)).not.toBeVisible({ timeout: 5_000 });
-
-    // Should have redirected to Main tab — verify editor is still functional
     await expect(page.getByText('Prompt #1').first()).toBeVisible({ timeout: 5_000 });
   });
 
   // ── Restore to Tab ──
 
-  test('restore historical version to new tab via version panel', async ({ page }) => {
-    await loginAndNavigate(page);
+  test('restore historical version to new tab via version panel', async ({
+    editorPage: page,
+  }) => {
+    await navigateToEntry(page, ENTRY_TITLE);
 
-    // Navigate to Versions tab
     await page.getByRole('tab', { name: /versions/i }).click();
-    await expect(page.getByRole('heading', { name: 'Version History' })).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByRole('heading', { name: 'Version History' })).toBeVisible({
+      timeout: 3_000,
+    });
 
-    // Hover over v1 to reveal the "Restore" button in the timeline
-    const versionPanel = page.locator('[data-tour="version-panel"]');
+    const versionPanel = page.locator(VERSION_PANEL);
     const v1Item = versionPanel.locator('button', { hasText: 'v1' });
     await v1Item.hover();
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(300); // Hover reveal animation
 
-    // Click the inline "Restore" button (appears on hover)
     const restoreBtn = v1Item.getByRole('button', { name: /restore/i });
     await expect(restoreBtn).toBeVisible({ timeout: 3_000 });
     await restoreBtn.click();
 
-    // Restore dialog should appear with pre-filled name
     const restoreDialog = page.getByRole('dialog');
     await restoreDialog.waitFor({ state: 'visible', timeout: 5_000 });
     const tabNameInput = page.getByLabel('New tab name');
@@ -254,23 +181,12 @@ test.describe('Tab Lifecycle & Content Isolation', () => {
     const prefilled = await tabNameInput.inputValue();
     expect(prefilled).toContain('Restored');
 
-    // Click Restore button in dialog
     await restoreDialog.getByRole('button', { name: /^restore$/i }).click();
-
-    // Verify toast
     await expectToast(page, /restored v1 to new tab/i);
 
-    // The restored tab should appear in the tab bar
     const restoredTabButton = page.locator('button', { hasText: 'Restored v1' });
     await expect(restoredTabButton).toBeVisible({ timeout: 5_000 });
 
-    // Clean up: delete the restored tab so downstream specs aren't affected
-    await restoredTabButton.hover();
-    await page.waitForTimeout(300);
-    const restoredDeleteBtn = restoredTabButton
-      .locator('[role="button"]')
-      .filter({ has: page.locator('.lucide-x') });
-    await restoredDeleteBtn.click();
-    await expectToast(page, 'Tab deleted');
+    await deleteTab(page, 'Restored v1');
   });
 });

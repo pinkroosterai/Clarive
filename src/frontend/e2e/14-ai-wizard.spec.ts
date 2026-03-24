@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { expectToast } from './helpers/pages';
+import { titleInput } from './helpers/locators';
 
 test.describe('AI Wizard — New Entry Generation', () => {
   test.skip(!process.env.GROQ_API_KEY, 'GROQ_API_KEY required');
@@ -52,10 +53,10 @@ test.describe('AI Wizard — New Entry Generation', () => {
     await page.getByRole('button', { name: /^refine$/i }).click();
 
     // Wait for refine loading to appear then disappear
-    await page.waitForTimeout(2_000); // let loading overlay appear
+    await page.waitForTimeout(2_000); // Loading overlay must appear before waiting for completion
     // Wait until the Refine button reappears (loading done, review step re-rendered)
     await expect(page.getByRole('button', { name: /^refine$/i })).toBeVisible({ timeout: 120_000 });
-    await page.waitForTimeout(1_000); // let motion animations settle
+    await page.waitForTimeout(1_000); // Motion animations settle before Accept click
 
     // Accept the result
     await page.getByRole('button', { name: /^accept$/i }).click({ force: true });
@@ -73,9 +74,9 @@ test.describe('AI Wizard — New Entry Generation', () => {
     await page.waitForURL(/\/entry\/[0-9a-f]{8}-/, { timeout: 10_000 });
 
     // Verify the entry title is populated
-    const titleInput = page.locator("input[placeholder='Entry title']");
-    await expect(titleInput).toBeVisible({ timeout: 5_000 });
-    const titleValue = await titleInput.inputValue();
+    const title = titleInput(page);
+    await expect(title).toBeVisible({ timeout: 5_000 });
+    const titleValue = await title.inputValue();
     expect(titleValue.length).toBeGreaterThan(0);
 
     // Auth state updated — save for future specs

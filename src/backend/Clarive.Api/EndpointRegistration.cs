@@ -11,6 +11,12 @@ public static class EndpointRegistration
         return app;
     }
 
+    public static WebApplication MapE2ESeedEndpoints(this WebApplication app)
+    {
+        app.MapSeedEndpoints();
+        return app;
+    }
+
     public static WebApplication MapClariveEndpoints(this WebApplication app)
     {
         app.MapAuthEndpoints();

@@ -1,19 +1,13 @@
-import { test, expect } from '@playwright/test';
-import { loginViaUI, waitForAppShell } from './helpers/pages';
+import { test, expect } from './fixtures';
+import { titleInput } from './helpers/locators';
 
 /**
  * Library features: search, filter by status, sort, duplicate entry.
  * Uses the editor account. Depends on entries created in specs 05-06.
  */
 
-const EDITOR = { email: 'editor@e2e.test', password: 'E2ETestPassword123!' };
-
-async function navigateToLibrary(page: import('@playwright/test').Page) {
-  await loginViaUI(page, EDITOR.email, EDITOR.password);
-  await page.waitForURL(/\/$/, { timeout: 15_000 });
-  await waitForAppShell(page);
-
-  // Navigate to library
+/** Navigate to library (page is already logged in via fixture). */
+async function goToLibrary(page: import('@playwright/test').Page) {
   await page.goto('/library');
   await page.waitForLoadState('networkidle');
 }
@@ -21,24 +15,18 @@ async function navigateToLibrary(page: import('@playwright/test').Page) {
 test.describe('Library Search, Filter & Sort', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('search entries by title', async ({ page }) => {
-    await navigateToLibrary(page);
+  test('search entries by title', async ({ editorPage: page }) => {
+    await goToLibrary(page);
 
-    // Search for an entry that exists (from spec 05)
     const searchInput = page.getByPlaceholder('Search prompts…');
     await searchInput.fill('E2E Test Entry');
+    await page.waitForTimeout(500); // Search debounce
 
-    // Wait for debounce (300ms) + network
-    await page.waitForTimeout(500);
-
-    // Should show results matching the search
     await expect(page.getByText('E2E Test Entry').first()).toBeVisible({ timeout: 5_000 });
 
-    // Search for something that doesn't exist
     await searchInput.fill('NonExistentEntryXYZ12345');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(500); // Search debounce
 
-    // Should show empty state or "0 results"
     const resultCount = page.getByText(/0 result/i);
     const emptyState = page.getByText(/no entries|no results|nothing found/i);
     const eitherVisible =
@@ -46,95 +34,73 @@ test.describe('Library Search, Filter & Sort', () => {
       (await emptyState.isVisible({ timeout: 1_000 }).catch(() => false));
     expect(eitherVisible).toBe(true);
 
-    // Clear search
     await searchInput.clear();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(500); // Search debounce
   });
 
-  test('filter entries by status', async ({ page }) => {
-    await navigateToLibrary(page);
+  test('filter entries by status', async ({ editorPage: page }) => {
+    await goToLibrary(page);
 
-    // Open the status filter dropdown — first combobox button (130px width)
     const statusTrigger = page.locator('button[role="combobox"]').first();
     await statusTrigger.click();
 
-    // Select "Unpublished" (to filter differently from the default "All")
     await page.getByRole('option', { name: 'Unpublished' }).click();
-    await page.waitForTimeout(500);
 
-    // Verify the dropdown now shows "Unpublished"
     await expect(statusTrigger).toContainText('Unpublished');
 
-    // Since all entries are published, unpublished filter should show no results or empty state
-    // Switch to "Published" to verify positive results
     await statusTrigger.click();
     await page.getByRole('option', { name: 'Published', exact: true }).click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(500); // Filter results load
 
-    // At least one entry card should be visible
     const entryCards = page.locator('[data-tour="entry-card"]');
     await expect(entryCards.first()).toBeVisible({ timeout: 5_000 });
 
-    // Reset filter to "All status"
     await statusTrigger.click();
     await page.getByRole('option', { name: /all status/i }).click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(500); // Filter results load
   });
 
-  test('sort entries alphabetically', async ({ page }) => {
-    await navigateToLibrary(page);
+  test('sort entries alphabetically', async ({ editorPage: page }) => {
+    await goToLibrary(page);
 
-    // Open the sort dropdown — second combobox button
     const sortTrigger = page.locator('button[role="combobox"]').nth(1);
     await sortTrigger.click();
 
-    // Select "Alphabetical"
     await page.getByRole('option', { name: 'Alphabetical' }).click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(500); // Sort results load
 
-    // Wait for results to update
-    await page.waitForTimeout(500);
-
-    // Verify entries are displayed (at least one)
     const cards = page.locator('[data-tour="entry-card"]');
     await expect(cards.first()).toBeVisible({ timeout: 5_000 });
 
-    // Reset sort to "Recent"
     await sortTrigger.click();
     await page.getByRole('option', { name: 'Recent' }).click();
   });
 
-  test('duplicate an entry', async ({ page }) => {
-    await navigateToLibrary(page);
+  test('duplicate an entry', async ({ editorPage: page }) => {
+    await goToLibrary(page);
 
-    // Open the first entry in the library
     const firstCard = page.locator('[data-tour="entry-card"]').first();
     await firstCard.click();
     await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
 
-    // Get the original title
-    const titleInput = page.locator('input[placeholder="Entry title"]');
-    await expect(titleInput).toBeVisible({ timeout: 5_000 });
-    const originalTitle = await titleInput.inputValue();
+    const title = titleInput(page);
+    await expect(title).toBeVisible({ timeout: 5_000 });
+    const originalTitle = await title.inputValue();
 
-    // Click Duplicate in the Actions tab
     const duplicateBtn = page.getByRole('button', { name: /duplicate/i });
     await expect(duplicateBtn).toBeVisible({ timeout: 5_000 });
     await duplicateBtn.click();
 
-    // A folder picker dialog may appear — confirm
     const dialog = page.getByRole('dialog');
     if (await dialog.isVisible({ timeout: 3_000 }).catch(() => false)) {
       await dialog.getByRole('button', { name: /confirm/i }).click();
     }
 
-    // Verify redirected to the duplicated entry editor
     await page.waitForURL(/\/entry\/[a-f0-9-]+$/, { timeout: 10_000 });
 
-    // The duplicated entry should have a title
-    const dupTitleInput = page.locator('input[placeholder="Entry title"]');
-    await expect(dupTitleInput).toBeVisible({ timeout: 5_000 });
-    const dupTitle = await dupTitleInput.inputValue();
-    expect(dupTitle.length).toBeGreaterThan(0);
+    const dupTitle = titleInput(page);
+    await expect(dupTitle).toBeVisible({ timeout: 5_000 });
+    const dupTitleValue = await dupTitle.inputValue();
+    expect(dupTitleValue.length).toBeGreaterThan(0);
   });
 });
