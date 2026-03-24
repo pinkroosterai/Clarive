@@ -94,6 +94,9 @@ export function MarkdownEditor({
 
     if (content !== lastExternalContent.current) {
       lastExternalContent.current = content;
+      // Cancel any pending debounced update from old content — otherwise it may
+      // fire after lastExternalContent is updated, causing a false dirty state
+      debouncedUpdate.cancel();
       const editorMarkdown = editor.getMarkdown();
 
       if (content !== editorMarkdown) {
