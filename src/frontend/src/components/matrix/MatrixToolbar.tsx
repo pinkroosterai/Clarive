@@ -1,5 +1,5 @@
 import { ArrowLeft, Play, Plus, Square } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,8 @@ export function MatrixToolbar({
 }: MatrixToolbarProps) {
   const navigate = useNavigate();
   const providerGroups = useMemo(() => groupModelsByProvider(models), [models]);
+  const [versionSelectKey, setVersionSelectKey] = useState(0);
+  const [modelSelectKey, setModelSelectKey] = useState(0);
 
   const handleAddModel = (modelId: string) => {
     const model = models.find((m) => m.modelId === modelId);
@@ -135,7 +137,7 @@ export function MatrixToolbar({
           <TooltipContent>Back to editor</TooltipContent>
         </Tooltip>
 
-        <Select onValueChange={handleAddVersion}>
+        <Select key={versionSelectKey} onValueChange={(id) => { handleAddVersion(id); setVersionSelectKey((k) => k + 1); }}>
           <SelectTrigger className="w-[180px]">
             <div className="flex items-center gap-1.5">
               <Plus className="size-3.5" />
@@ -160,7 +162,7 @@ export function MatrixToolbar({
           </SelectContent>
         </Select>
 
-        <Select onValueChange={handleAddModel}>
+        <Select key={modelSelectKey} onValueChange={(id) => { handleAddModel(id); setModelSelectKey((k) => k + 1); }}>
           <SelectTrigger className="w-[200px]">
             <div className="flex items-center gap-1.5">
               <Plus className="size-3.5" />
