@@ -178,7 +178,8 @@ public class AbTestService(
                     Model: request.Model,
                     Temperature: request.Temperature,
                     MaxTokens: request.MaxTokens,
-                    TemplateFields: row.Values
+                    TemplateFields: row.Values,
+                    ReasoningEffort: request.ReasoningEffort
                 );
 
                 var taskA = playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequest, ct);

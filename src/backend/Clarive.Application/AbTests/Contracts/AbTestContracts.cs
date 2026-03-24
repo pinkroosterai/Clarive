@@ -20,7 +20,9 @@ public record StartAbTestRequest(
     [property: Range(0.0, 2.0, ErrorMessage = "Temperature must be between 0 and 2.")]
         float Temperature = 1.0f,
     [property: Range(1, int.MaxValue, ErrorMessage = "Max tokens must be positive.")]
-        int MaxTokens = 4096
+        int MaxTokens = 4096,
+    [property: StringLength(20)]
+        string? ReasoningEffort = null
 );
 
 // ── Responses ──

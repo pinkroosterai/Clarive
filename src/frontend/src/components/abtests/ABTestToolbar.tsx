@@ -90,6 +90,7 @@ export default function ABTestToolbar({
       model,
       temperature: selectedModel?.isReasoning ? 1.0 : temperature,
       maxTokens,
+      reasoningEffort: selectedModel?.isReasoning ? reasoningEffort : undefined,
     });
   }
 

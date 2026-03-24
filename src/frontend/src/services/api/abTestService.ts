@@ -56,6 +56,7 @@ export interface StartAbTestRequest {
   model: string;
   temperature?: number;
   maxTokens?: number;
+  reasoningEffort?: string;
 }
 
 // ── API Functions ──

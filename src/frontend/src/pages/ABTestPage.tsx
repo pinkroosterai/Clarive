@@ -11,7 +11,7 @@ import ABTestToolbar from '@/components/abtests/ABTestToolbar';
 import DatasetPanel from '@/components/datasets/DatasetPanel';
 import DatasetRowEditor from '@/components/datasets/DatasetRowEditor';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { handleApiError } from '@/lib/handleApiError';
 import { parseTemplateTags } from '@/lib/templateParser';
