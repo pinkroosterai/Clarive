@@ -58,11 +58,14 @@ test.describe('Super Admin — AI Model Configuration', () => {
     // Quick Setup only shows models with these capabilities enabled.
     // Each model row has 3 switches: [reasoning, functionCalling, structuredResponse]
     const primaryModelRow = page.locator('tr').filter({ hasText: GROQ_MODEL_ID }).first();
-    const switches = primaryModelRow.locator('[role="switch"]');
-    // Toggle function calling (index 1)
-    await switches.nth(1).click();
+    // Toggle function calling (index 1) — wait for state change before next toggle
+    const fcSwitch = primaryModelRow.locator('[role="switch"]').nth(1);
+    await fcSwitch.click();
+    await expect(fcSwitch).toHaveAttribute('data-state', 'checked', { timeout: 3_000 });
     // Toggle structured response (index 2)
-    await switches.nth(2).click();
+    const srSwitch = primaryModelRow.locator('[role="switch"]').nth(2);
+    await srSwitch.click();
+    await expect(srSwitch).toHaveAttribute('data-state', 'checked', { timeout: 3_000 });
 
     // --- Step 5: Quick Setup — assign primary model to all 8 actions ---
     await page.keyboard.press('Escape');
