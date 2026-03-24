@@ -2,7 +2,6 @@ import {
   Copy,
   GitCompareArrows,
   MoreHorizontal,
-  Play,
   Settings2,
   Share2,
   Sparkles,
@@ -55,7 +54,6 @@ export interface ActionsTabContentProps {
   showGenerateSystemMessage: boolean;
   showDecomposeToChain: boolean;
   onTest?: () => void;
-  onCompareVersions?: () => void;
   versions: VersionInfo[];
   entryVersion: number;
   onShare?: () => void;
@@ -83,7 +81,6 @@ export function ActionsTabContent({
   showGenerateSystemMessage,
   showDecomposeToChain,
   onTest,
-  onCompareVersions,
   versions,
   entryVersion,
   onShare,
@@ -194,8 +191,8 @@ export function ActionsTabContent({
                 onClick={onTest}
                 disabled={!aiEnabled}
               >
-                <Play className="size-4" />
-                Run Prompt
+                <GitCompareArrows className="size-4" />
+                Test Matrix
               </Button>
             )}
 
@@ -223,17 +220,6 @@ export function ActionsTabContent({
               </Button>
             )}
 
-            {onCompareVersions && (
-              <Button
-                variant="outline"
-                className="w-full gap-2 hover:border-primary/30 transition-all"
-                onClick={onCompareVersions}
-                disabled={!aiEnabled}
-              >
-                <GitCompareArrows className="size-4" />
-                Compare Versions
-              </Button>
-            )}
           </div>
         </>
       )}

@@ -30,7 +30,6 @@ export interface EditorActionPanelProps {
   showGenerateSystemMessage: boolean;
   showDecomposeToChain: boolean;
   onTest?: () => void;
-  onCompareVersions?: () => void;
   versions: VersionInfo[];
   versionPanel?: ReactNode;
   onShare?: () => void;
@@ -65,8 +64,7 @@ export function EditorActionPanel({
   showGenerateSystemMessage,
   showDecomposeToChain,
   onTest,
-  onCompareVersions,
-  versions,
+    versions,
   versionPanel,
   onShare,
   hasShareLink,
@@ -154,7 +152,6 @@ export function EditorActionPanel({
                 showGenerateSystemMessage={showGenerateSystemMessage}
                 showDecomposeToChain={showDecomposeToChain}
                 onTest={onTest}
-                onCompareVersions={onCompareVersions}
                 versions={versions}
                 entryVersion={entry.version}
                 onShare={onShare}
