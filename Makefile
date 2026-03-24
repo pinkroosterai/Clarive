@@ -252,6 +252,47 @@ test-e2e-down: ## Tear down E2E test stack and destroy volumes
 	@$(E2E_COMPOSE) down -v
 	@printf "$(C_GREEN)E2E test stack removed.$(C_RESET)\n"
 
+E2E_SNAPSHOT := $(DEPLOY)/e2e-snapshot.sql
+E2E_AUTH_DIR := $(FE_DIR)/e2e/.auth
+
+test-e2e-snapshot: _require-sdk ## Run specs 01-06 and save DB snapshot for fast restores
+	@printf "$(C_CYAN)Running foundation specs (01-06) to build snapshot state...$(C_RESET)\n"
+	@cd $(FE_DIR) && BASE_URL=http://localhost:8081 PLAYWRIGHT_DOCKER=1 \
+		npx playwright test e2e/01-registration.spec.ts e2e/02-setup-wizard.spec.ts \
+		e2e/03-onboarding.spec.ts e2e/04-onboarding-tour.spec.ts \
+		e2e/05-entry-editing.spec.ts e2e/06-entry-versions.spec.ts
+	@printf "$(C_CYAN)Taking database snapshot...$(C_RESET)\n"
+	@$(E2E_COMPOSE) exec -T postgres pg_dump -U clarive -d clarive --clean --if-exists > $(E2E_SNAPSHOT)
+	@cp -r $(E2E_AUTH_DIR) $(DEPLOY)/e2e-auth-snapshot
+	@printf "$(C_GREEN)Snapshot saved: $(E2E_SNAPSHOT) + auth state$(C_RESET)\n"
+	@printf "$(C_DIM)  Restore with: make test-e2e-restore$(C_RESET)\n"
+	@printf "$(C_DIM)  Run from spec: make test-e2e-from SPEC=06b$(C_RESET)\n"
+
+test-e2e-restore: ## Restore DB from snapshot (use before test-e2e-from)
+	@if [ ! -f "$(E2E_SNAPSHOT)" ]; then \
+		printf "$(C_RED)No snapshot found. Run: make test-e2e-snapshot$(C_RESET)\n"; \
+		exit 1; \
+	fi
+	@printf "$(C_CYAN)Restoring database from snapshot...$(C_RESET)\n"
+	@$(E2E_COMPOSE) exec -T postgres psql -U clarive -d clarive < $(E2E_SNAPSHOT) > /dev/null 2>&1
+	@cp -r $(DEPLOY)/e2e-auth-snapshot/* $(E2E_AUTH_DIR)/ 2>/dev/null || true
+	@printf "$(C_GREEN)Snapshot restored. Ready to run specs.$(C_RESET)\n"
+
+test-e2e-from: _require-sdk ## Run E2E tests starting from a spec. Usage: make test-e2e-from SPEC=06b
+	@if [ -z "$(SPEC)" ]; then \
+		printf "$(C_RED)Usage: make test-e2e-from SPEC=06b$(C_RESET)\n"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(E2E_SNAPSHOT)" ]; then \
+		printf "$(C_RED)No snapshot found. Run: make test-e2e-snapshot first$(C_RESET)\n"; \
+		exit 1; \
+	fi
+	@printf "$(C_CYAN)Restoring snapshot and running from spec $(SPEC)...$(C_RESET)\n"
+	@$(E2E_COMPOSE) exec -T postgres psql -U clarive -d clarive < $(E2E_SNAPSHOT) > /dev/null 2>&1
+	@cp -r $(DEPLOY)/e2e-auth-snapshot/* $(E2E_AUTH_DIR)/ 2>/dev/null || true
+	@cd $(FE_DIR) && BASE_URL=http://localhost:8081 PLAYWRIGHT_DOCKER=1 \
+		npx playwright test $$(ls e2e/$(SPEC)*.spec.ts 2>/dev/null)
+
 test-e2e-ui: _require-sdk ## Run E2E tests in interactive UI mode
 	@printf "$(C_CYAN)Opening Playwright UI...$(C_RESET)\n"
 	@cd $(FE_DIR) && BASE_URL=http://localhost:8081 PLAYWRIGHT_DOCKER=1 npx playwright test --ui
