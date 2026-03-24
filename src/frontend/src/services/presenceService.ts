@@ -12,6 +12,12 @@ export function getPresenceConnection(): HubConnection {
       .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
       .configureLogging(LogLevel.Warning)
       .build();
+
+    // Server sends keepalives every 15s; client must allow at least 2x that
+    // before declaring a timeout. Default (30s) was too close to the old 30s
+    // keepalive interval, causing spurious disconnects on minor network jitter.
+    connection.serverTimeoutInMilliseconds = 60_000;
+    connection.keepAliveIntervalInMilliseconds = 15_000;
   }
   return connection;
 }

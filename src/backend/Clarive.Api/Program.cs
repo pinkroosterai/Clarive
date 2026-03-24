@@ -253,7 +253,7 @@ try
     builder.Services
         .AddSignalR(options =>
         {
-            options.KeepAliveInterval = TimeSpan.FromSeconds(30);
+            options.KeepAliveInterval = TimeSpan.FromSeconds(15);
             options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
         })
         .AddStackExchangeRedis(valkeyConnectionString, options =>
