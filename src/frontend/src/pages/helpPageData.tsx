@@ -65,16 +65,16 @@ export const sectionGroups: SectionGroup[] = [
         icon: Rocket,
         title: 'Getting Started',
         searchText:
-          'dashboard entry count published prompts recently edited activity new entry ai wizard title system message draft publish versioned snapshot guided tour onboarding',
+          'dashboard entry count published prompts recently edited activity new entry ai wizard title system message tabs publish versioned snapshot guided tour onboarding',
         plainTextContent:
-          'Your Dashboard. When you open Clarive, you land on the dashboard. It shows how many entries you have, which ones you published, what you edited recently, and what your teammates have been up to. Creating Your First Entry. Hit New Entry in the sidebar, give it a title, write your prompt, and save. Publish when you are happy to lock in a versioned snapshot. Or choose Use AI Wizard to let AI generate a prompt from your description. Guided Tour. First time? An interactive tour walks you through the dashboard, sidebar, editor, and key features step by step.',
+          'Your Dashboard. When you open Clarive, you land on the dashboard. It shows how many entries you have, which ones you published, what you edited recently, and what your teammates have been up to. Creating Your First Entry. Hit New Entry in the sidebar, give it a title, write your prompt, and save. Publish when you are happy to take a versioned snapshot. Or choose Use AI Wizard to let AI generate a prompt from your description. Guided Tour. First time? An interactive tour walks you through the dashboard, sidebar, editor, and key features step by step.',
         searchAliases: ['how to create a prompt', 'first steps', 'new to clarive', 'get started'],
         relatedSections: ['entry-editor', 'ai-wizard'],
         content: (
           <div className="space-y-3">
             <img
               src="/static/help/help-dashboard.png"
-              alt="Dashboard showing greeting, stat cards for entries, published, drafts, and folders, plus recent entries list"
+              alt="Dashboard showing greeting, stat cards for entries, published, unpublished, and folders, plus recent entries list"
               className="rounded-lg border border-border-subtle mb-4 w-full"
               loading="lazy"
             />
@@ -87,8 +87,8 @@ export const sectionGroups: SectionGroup[] = [
             <h4 className="text-sm font-semibold text-foreground">Creating Your First Entry</h4>
             <p>
               Hit <strong>New Entry</strong> in the sidebar. Give it a title, write your prompt, and
-              save. That&apos;s it — you&apos;ve got a draft. When you&apos;re happy with it, click{' '}
-              <strong>Publish</strong> to lock in a versioned snapshot.
+              save. Your entry is always editable — just keep writing. When you&apos;re happy
+              with it, click <strong>Publish</strong> to take a versioned snapshot.
             </p>
             <p>
               Don&apos;t want to start from scratch? Choose <strong>Use AI Wizard</strong> instead
@@ -161,16 +161,16 @@ export const sectionGroups: SectionGroup[] = [
         icon: FileText,
         title: 'Entry Editor',
         searchText:
-          'title system message prompt cards rich-text editor sidebar tabs actions details versions prompt chains follow-up bold italic headings bubble menu draft published historical versioning diff restore delete draft ai enhance generate system message decompose chain test prompt playground',
+          'title system message prompt cards rich-text editor sidebar tabs actions details versions prompt chains follow-up bold italic headings bubble menu tabs published historical versioning diff restore ai enhance generate system message decompose chain test prompt playground',
         plainTextContent:
-          'How the Editor Works. Every entry has a title, an optional system message that tells the AI how to behave, and one or more prompt cards. On the right you find tabs for Actions, Details, and Versions. Prompt Chains. Got a complex task? Break it into steps with Add follow-up prompt. Formatting. Bold, italic, headings, lists, inline code, code blocks. Select text for the formatting toolbar. Drafts Published and Historical. Draft is work in progress. Published is the live version. Historical is an older version you can restore. Version History. Every publish saves a new version. Browse, compare side by side, or restore an older one. AI Tools. AI Enhance, Generate System Message, Decompose to Chain, Test Prompt.',
-        searchAliases: ['how to edit a prompt', 'save draft', 'publish entry', 'version history'],
+          'How the Editor Works. Every entry has a title, an optional system message that tells the AI how to behave, and one or more prompt cards. On the right you find panels for Actions, Details, and Versions. Tabs. Every entry has a Main tab that is always editable. Create additional named tabs to experiment with different approaches. Any tab can be published. Published and Historical. Published is the live version served via the API. Historical versions are older snapshots you can view or restore to a new tab. Version History. Every time you publish a tab, Clarive takes a snapshot. Browse versions, compare side by side, or restore any version to a new tab. AI Tools. AI Enhance, Generate System Message, Decompose to Chain, Test Prompt.',
+        searchAliases: ['how to edit a prompt', 'save', 'publish entry', 'version history', 'tabs'],
         relatedSections: ['playground', 'templates', 'ai-wizard', 'share-links'],
         content: (
           <div className="space-y-3">
             <img
               src="/static/help/help-editor.png"
-              alt="Entry Editor showing draft badge, title, system message, prompt card with highlighted template variables, and Add follow-up button"
+              alt="Entry Editor showing tab bar, title, system message, prompt card with highlighted template variables, and Add follow-up button"
               className="rounded-lg border border-border-subtle mb-4 w-full"
               loading="lazy"
             />
@@ -179,7 +179,7 @@ export const sectionGroups: SectionGroup[] = [
               Every entry has three parts: a <strong>title</strong> at the top, an optional{' '}
               <strong>system message</strong> (tells the AI how to behave), and one or more{' '}
               <strong>prompt cards</strong> where you write your actual prompt. On the right
-              you&apos;ll find tabs for <strong>Actions</strong> (save, publish, AI tools),{' '}
+              you&apos;ll find panels for <strong>Actions</strong> (save, publish, AI tools),{' '}
               <strong>Details</strong> (tags, folder, activity), and <strong>Versions</strong>.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Prompt Chains</h4>
@@ -193,27 +193,29 @@ export const sectionGroups: SectionGroup[] = [
               The editor gives you bold, italic, headings, lists, inline code, and code blocks.
               Select any text to see the formatting toolbar, or use keyboard shortcuts if you prefer.
             </p>
-            <h4 className="text-sm font-semibold text-foreground">Drafts, Published, and Historical</h4>
+            <h4 className="text-sm font-semibold text-foreground">Tabs</h4>
+            <p>
+              Every entry has a <strong>Main</strong> tab that&apos;s always editable — no draft
+              ceremony. Want to experiment? Click <strong>+</strong> to create a named tab by
+              forking from any published or historical version. Switch between tabs to compare
+              approaches. Delete any tab except Main when you&apos;re done.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Publishing</h4>
             <ul className="list-disc list-inside space-y-1">
               <li>
-                <strong>Draft</strong> — you&apos;re still working on it. Everyone in your workspace
-                can see it.
+                <strong>Publish</strong> any tab to take a snapshot — the tab stays editable, and
+                the snapshot becomes the live version served via the API.
               </li>
               <li>
-                <strong>Published</strong> — the live version. If you edit a published entry,
-                Clarive creates a new draft while keeping the published version untouched.
-              </li>
-              <li>
-                <strong>Historical</strong> — an older version you can look back at or restore as a
-                new draft.
+                <strong>Historical</strong> — previous snapshots you can view, compare, or restore
+                to a new tab.
               </li>
             </ul>
             <h4 className="text-sm font-semibold text-foreground">Version History</h4>
             <p>
-              Every time you publish, Clarive saves a new version. Open the{' '}
-              <strong>Versions</strong> tab to browse them, compare any two side by side, or restore
-              an older one. Changed your mind about a draft? Delete it to go back to the last
-              published version.
+              Every time you publish, Clarive saves a numbered version. Open the{' '}
+              <strong>Versions</strong> panel to browse them, compare any two side by side, or
+              restore an older version into an existing tab or a new one.
             </p>
             <h4 className="text-sm font-semibold text-foreground">AI Tools</h4>
             <p>You&apos;ll find these in the Actions tab:</p>
@@ -497,9 +499,9 @@ export const sectionGroups: SectionGroup[] = [
         icon: Search,
         title: 'Library & Search',
         searchText:
-          'library browse grid search filter status draft published sort recent alphabetical oldest tags any all pagination 50 entries per page',
+          'library browse grid search filter status unpublished published sort recent alphabetical oldest tags any all pagination 50 entries per page',
         plainTextContent:
-          'Browsing Your Library. The library shows all entries as a responsive grid. Searching. Type in the search bar to filter entries by title. Results update as you type. Filtering and Sorting. Status — All, Draft, or Published. Sort — Recent, Alphabetical, or Oldest. Tags — select one or more tags. Toggle between Any and All matching. Pagination. 50 entries per page with Previous/Next buttons.',
+          'Browsing Your Library. The library shows all entries as a responsive grid. Searching. Type in the search bar to filter entries by title. Results update as you type. Filtering and Sorting. Status — All, Unpublished, or Published. Sort — Recent, Alphabetical, or Oldest. Tags — select one or more tags. Toggle between Any and All matching. Pagination. 50 entries per page with Previous/Next buttons.',
         searchAliases: ['how to find prompts', 'search entries', 'filter by tag'],
         relatedSections: ['folders', 'favorites'],
         content: (
@@ -524,7 +526,7 @@ export const sectionGroups: SectionGroup[] = [
             <h4 className="text-sm font-semibold text-foreground">Filtering & Sorting</h4>
             <ul className="list-disc list-inside space-y-1">
               <li>
-                <strong>Status</strong> — filter by All, Draft, or Published.
+                <strong>Status</strong> — filter by All, Unpublished, or Published.
               </li>
               <li>
                 <strong>Sort</strong> — order by Recent (default), Alphabetical, or Oldest.
@@ -857,7 +859,7 @@ export const sectionGroups: SectionGroup[] = [
             <p>
               Overview of platform health: total users, entries, and AI sessions with 7-day deltas.
               Additional metrics cover verified and onboarded user percentages, workspace counts,
-              shared workspace stats, published vs. draft entry counts, and active API keys.
+              shared workspace stats, published vs. unpublished entry counts, and active API keys.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Usage</h4>
             <p>
@@ -1354,9 +1356,9 @@ const entry = await client.getEntry(entryId);`}
         icon: Keyboard,
         title: 'Keyboard Shortcuts',
         searchText:
-          'keyboard shortcuts save draft ctrl s publish enter undo redo bold italic strikethrough inline code cmd mac sidebar toggle playground run stop escape',
+          'keyboard shortcuts save ctrl s publish enter undo redo bold italic strikethrough inline code cmd mac sidebar toggle playground run stop escape',
         plainTextContent:
-          'Keyboard Shortcuts. Editor: Ctrl+S save draft. Ctrl+Shift+Enter publish. Ctrl+Z undo. Ctrl+Shift+Z redo. Formatting: Ctrl+B bold. Ctrl+I italic. Ctrl+Shift+X strikethrough. Ctrl+E inline code. Navigation: Ctrl+B toggle sidebar. Playground: Ctrl+Enter run prompt. Escape stop streaming. Cmd replaces Ctrl on macOS.',
+          'Keyboard Shortcuts. Editor: Ctrl+S save. Ctrl+Shift+Enter publish. Ctrl+Z undo. Ctrl+Shift+Z redo. Formatting: Ctrl+B bold. Ctrl+I italic. Ctrl+Shift+X strikethrough. Ctrl+E inline code. Navigation: Ctrl+B toggle sidebar. Playground: Ctrl+Enter run prompt. Escape stop streaming. Cmd replaces Ctrl on macOS.',
         searchAliases: ['keyboard shortcuts', 'hotkeys', 'key bindings'],
         relatedSections: ['entry-editor', 'playground'],
         content: (
@@ -1364,7 +1366,7 @@ const entry = await client.getEntry(entryId);`}
             <h4 className="text-sm font-semibold text-foreground">Editor</h4>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span>Save draft</span>
+                <span>Save</span>
                 <span>
                   <Kbd>Ctrl</Kbd> + <Kbd>S</Kbd>
                 </span>
@@ -1499,7 +1501,7 @@ const entry = await client.getEntry(entryId);`}
         searchText:
           'profile display name email password avatar google sign-in sessions browser os ip address revoke import export yaml backup audit log events created updated published trashed restored deleted 30 days appearance theme light dark system account deletion',
         plainTextContent:
-          'Profile. Update your display name, email, or avatar from the Profile tab. Change your password with minimum 12 characters. Google Sign-In users can set a password to enable email-based login. Active Sessions. View all active sessions showing browser, OS, IP address, and creation time. Revoke any session except your current one — revoking a session signs that device out immediately and invalidates its refresh token. Use Revoke All Others to sign out everywhere else. Import and Export. Export all entries or a single folder as YAML. The export includes titles, system messages, prompt content, template variables, and tags. Import creates entries as drafts in the workspace root. Entries with duplicate titles are imported with a numeric suffix. Audit Log. Admins can view a timeline of workspace activity with events: entry_created, entry_updated, entry_published, entry_trashed, entry_restored, entry_deleted. Logs are retained for 30 days, paginated at 20 per page. Appearance. Click the theme icon to cycle between Light, Dark, and System. System follows your OS preference and updates automatically. Account Deletion. Permanently delete your account from the Profile tab with a 30-day grace period during which you can cancel.',
+          'Profile. Update your display name, email, or avatar from the Profile tab. Change your password with minimum 12 characters. Google Sign-In users can set a password to enable email-based login. Active Sessions. View all active sessions showing browser, OS, IP address, and creation time. Revoke any session except your current one — revoking a session signs that device out immediately and invalidates its refresh token. Use Revoke All Others to sign out everywhere else. Import and Export. Export all entries or a single folder as YAML. The export includes titles, system messages, prompt content, template variables, and tags. Import creates entries as unpublished in the workspace root. Entries with duplicate titles are imported with a numeric suffix. Audit Log. Admins can view a timeline of workspace activity with events: entry_created, entry_updated, entry_published, entry_trashed, entry_restored, entry_deleted. Logs are retained for 30 days, paginated at 20 per page. Appearance. Click the theme icon to cycle between Light, Dark, and System. System follows your OS preference and updates automatically. Account Deletion. Permanently delete your account from the Profile tab with a 30-day grace period during which you can cancel.',
         searchAliases: ['change password', 'update profile', 'delete account', 'theme'],
         relatedSections: ['workspaces'],
         content: (
@@ -1546,7 +1548,7 @@ const entry = await client.getEntry(entryId);`}
               </li>
               <li>
                 <strong>Import</strong> — drag and drop a <Code>.yaml</Code> or <Code>.yml</Code>{' '}
-                file, or click to browse. Imported entries are created as <strong>drafts</strong> in
+                file, or click to browse. Imported entries are created as <strong>unpublished</strong> in
                 the workspace root. Entries with duplicate titles are imported with a numeric suffix.
                 The file name and size are shown before you confirm.
               </li>

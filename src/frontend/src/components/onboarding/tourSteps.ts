@@ -111,7 +111,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     popover: {
       title: 'Actions & AI Tools',
       description:
-        'Save drafts, publish versions, or use AI to enhance and decompose your prompts.',
+        'Save, publish, or use AI to enhance and decompose your prompts.',
       side: 'left',
       align: 'start',
     },
@@ -122,7 +122,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     popover: {
       title: 'Version History',
       description:
-        'Every save creates a version. Compare changes with diffs and restore any previous version.',
+        'Every publish creates a version snapshot. Compare changes with diffs or restore any version to a tab.',
       side: 'left',
       align: 'start',
     },
