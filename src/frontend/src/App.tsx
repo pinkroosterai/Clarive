@@ -148,10 +148,7 @@ const router = createBrowserRouter([
               { path: '/entry/:entryId/version/:version', lazy: lazy(() => import('@/pages/EntryEditorPage')) },
               { path: '/settings', lazy: lazy(() => import('@/pages/SettingsPage')) },
               { path: '/trash', lazy: lazy(() => import('@/pages/TrashPage')) },
-              {
-                path: '/entry/:entryId/ab-test',
-                element: <Navigate to="../test" replace />,
-              },
+              { path: '/entry/:entryId/ab-test', lazy: lazy(() => import('@/pages/TestMatrixPage')) },
               { path: '/help', lazy: lazy(() => import('@/pages/HelpPage')) },
             ],
           },
