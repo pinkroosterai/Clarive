@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { AlertTriangle, Circle, Clock, Loader2 } from 'lucide-react';
+import { AlertTriangle, Circle, Clock, Loader2, X } from 'lucide-react';
 import { memo, useCallback } from 'react';
 
 import { scoreColor } from '@/components/wizard/scoreUtils';
@@ -15,6 +15,8 @@ interface MatrixGridProps {
   onSelectCell: (cell: CellKey) => void;
   onSelectModel: (modelId: string | null) => void;
   onSelectVersion: (versionId: string | null) => void;
+  onRemoveModel: (modelId: string) => void;
+  onRemoveVersion: (versionId: string) => void;
   onRunCell?: (versionId: string, modelId: string) => void;
 }
 
@@ -106,7 +108,7 @@ function CellContent({ status, score }: { status: CellStatus; score: number | nu
 
 // ── Grid ──
 
-export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersionId, onSelectCell, onSelectModel, onSelectVersion, onRunCell }: MatrixGridProps) {
+export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersionId, onSelectCell, onSelectModel, onSelectVersion, onRemoveModel, onRemoveVersion, onRunCell }: MatrixGridProps) {
   const { versions, models } = state;
 
   const handleKeyDown = useCallback(
@@ -172,23 +174,36 @@ export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersi
               <th
                 key={model.modelId}
                 className={cn(
-                  'p-0 text-center text-xs font-medium text-foreground-muted min-w-[100px]',
+                  'p-0 text-center text-xs font-medium text-foreground-muted min-w-[100px] group/model',
                   selectedModelId === model.modelId && 'bg-primary/5',
                 )}
               >
-                <button
-                  type="button"
-                  className={cn(
-                    'w-full p-2 cursor-pointer transition-colors hover:bg-muted/50 rounded-sm',
-                    selectedModelId === model.modelId && 'ring-1 ring-primary/30 ring-inset',
-                  )}
-                  onClick={() => onSelectModel(selectedModelId === model.modelId ? null : model.modelId)}
-                >
-                  <div className="truncate">{model.displayName}</div>
-                  <div className="text-[10px] text-foreground-muted/60 font-normal">
-                    {model.providerName}
-                  </div>
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className={cn(
+                      'w-full p-2 cursor-pointer transition-colors hover:bg-muted/50 rounded-sm',
+                      selectedModelId === model.modelId && 'ring-1 ring-primary/30 ring-inset',
+                    )}
+                    onClick={() => onSelectModel(selectedModelId === model.modelId ? null : model.modelId)}
+                  >
+                    <div className="truncate">{model.displayName}</div>
+                    <div className="text-[10px] text-foreground-muted/60 font-normal">
+                      {model.providerName}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${model.displayName}`}
+                    className="absolute top-0.5 right-0.5 p-0.5 rounded opacity-0 group-hover/model:opacity-100 hover:bg-error-bg text-foreground-muted hover:text-error-text transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveModel(model.modelId);
+                    }}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
               </th>
             ))}
           </tr>
@@ -198,23 +213,36 @@ export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersi
             <tr key={version.id} className="border-t border-border-subtle">
               <td
                 className={cn(
-                  'sticky left-0 bg-surface z-10 p-0 text-xs font-medium',
+                  'sticky left-0 bg-surface z-10 p-0 text-xs font-medium group/version',
                   selectedVersionId === version.id && 'bg-primary/5',
                 )}
               >
-                <button
-                  type="button"
-                  className={cn(
-                    'w-full p-2 text-left cursor-pointer transition-colors hover:bg-muted/50 rounded-sm',
-                    selectedVersionId === version.id && 'ring-1 ring-primary/30 ring-inset',
-                  )}
-                  onClick={() => onSelectVersion(selectedVersionId === version.id ? null : version.id)}
-                >
-                  <div className="truncate max-w-[130px]">{version.label}</div>
-                  <div className="text-[10px] text-foreground-muted/60 font-normal capitalize">
-                    {version.type}
-                  </div>
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className={cn(
+                      'w-full p-2 pr-6 text-left cursor-pointer transition-colors hover:bg-muted/50 rounded-sm',
+                      selectedVersionId === version.id && 'ring-1 ring-primary/30 ring-inset',
+                    )}
+                    onClick={() => onSelectVersion(selectedVersionId === version.id ? null : version.id)}
+                  >
+                    <div className="truncate max-w-[110px]">{version.label}</div>
+                    <div className="text-[10px] text-foreground-muted/60 font-normal capitalize">
+                      {version.type}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${version.label}`}
+                    className="absolute top-1 right-0.5 p-0.5 rounded opacity-0 group-hover/version:opacity-100 hover:bg-error-bg text-foreground-muted hover:text-error-text transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveVersion(version.id);
+                    }}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
               </td>
               {models.map((model) => {
                 const cell = getCell(state, version.id, model.modelId);

@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Play, Plus, Square } from 'lucide-react';
+import { ArrowLeft, Clock, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -40,6 +40,7 @@ interface MatrixToolbarProps {
   isRunning: boolean;
   batchProgress: { current: number; total: number } | null;
   matrixHasCells: boolean;
+  onClearMatrix: () => void;
   showHistory: boolean;
   onToggleHistory: () => void;
 }
@@ -70,6 +71,7 @@ export function MatrixToolbar({
   isRunning,
   batchProgress,
   matrixHasCells,
+  onClearMatrix,
   showHistory,
   onToggleHistory,
 }: MatrixToolbarProps) {
@@ -246,6 +248,21 @@ export function MatrixToolbar({
             </Button>
           </TooltipTrigger>
           <TooltipContent>Test history</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={onClearMatrix}
+              disabled={!matrixHasCells}
+              aria-label="Clear grid"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Clear all</TooltipContent>
         </Tooltip>
       </div>
       <TemplateVariablesSection template={template} />

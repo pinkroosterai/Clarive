@@ -95,7 +95,9 @@ function TestMatrixPage() {
   const {
     state,
     addVersion,
+    removeVersion,
     addModel,
+    removeModel,
     selectCell,
     updateCellStatus,
     setCellSegments,
@@ -106,6 +108,7 @@ function TestMatrixPage() {
     selectVersion,
     setComparisonFilter,
     setDataset,
+    clearMatrix,
   } = useMatrixState(entryId);
 
   // ── Matrix execution ──
@@ -169,6 +172,7 @@ function TestMatrixPage() {
           isRunning={execution.isRunning}
           batchProgress={execution.batchProgress}
           matrixHasCells={matrixHasCells}
+          onClearMatrix={clearMatrix}
           showHistory={showHistory}
           onToggleHistory={() => setShowHistory((h) => !h)}
         />
@@ -188,6 +192,8 @@ function TestMatrixPage() {
             }}
             onSelectModel={handleSelectModel}
             onSelectVersion={handleSelectVersion}
+            onRemoveModel={removeModel}
+            onRemoveVersion={removeVersion}
             onRunCell={execution.runSingle}
           />
           {hasResults && (
