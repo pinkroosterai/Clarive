@@ -15,15 +15,6 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { EnrichedModel } from '@/services/api/playgroundService';
@@ -102,7 +93,7 @@ export function MatrixToolbar({
 }: MatrixToolbarProps) {
   const navigate = useNavigate();
   const providerGroups = useMemo(() => groupModelsByProvider(models), [models]);
-  const [versionSelectKey, setVersionSelectKey] = useState(0);
+  const [versionPickerOpen, setVersionPickerOpen] = useState(false);
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
 
   const handleAddModel = (modelId: string) => {
@@ -174,30 +165,47 @@ export function MatrixToolbar({
           <TooltipContent>Back to editor</TooltipContent>
         </Tooltip>
 
-        <Select key={versionSelectKey} onValueChange={(id) => { handleAddVersion(id); setVersionSelectKey((k) => k + 1); }}>
-          <SelectTrigger className="w-[180px]">
-            <div className="flex items-center gap-1.5">
-              <Plus className="size-3.5" />
-              <SelectValue placeholder="Add Version" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {['Tabs', 'Published', 'History'].map((group) => {
-              const items = versionOptions.filter((v) => v.group === group);
-              if (items.length === 0) return null;
-              return (
-                <SelectGroup key={group}>
-                  <SelectLabel>{group}</SelectLabel>
-                  {items.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        <Popover open={versionPickerOpen} onOpenChange={setVersionPickerOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={versionPickerOpen}
+              className="w-[180px] justify-between"
+            >
+              <div className="flex items-center gap-1.5">
+                <Plus className="size-3.5" />
+                Add Version
+              </div>
+              <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[220px] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Search versions..." />
+              <CommandList>
+                <CommandEmpty>{versionOptions.length === 0 ? 'All versions added' : 'No versions found.'}</CommandEmpty>
+                {['Tabs', 'Published', 'History'].map((group) => {
+                  const items = versionOptions.filter((v) => v.group === group);
+                  if (items.length === 0) return null;
+                  return (
+                    <CommandGroup key={group} heading={group}>
+                      {items.map((item) => (
+                        <CommandItem
+                          key={item.id}
+                          value={`${group} ${item.label}`}
+                          onSelect={() => handleAddVersion(item.id)}
+                        >
+                          {item.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  );
+                })}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
 
         <Popover open={modelPickerOpen} onOpenChange={setModelPickerOpen}>
           <PopoverTrigger asChild>
@@ -228,10 +236,7 @@ export function MatrixToolbar({
                         <CommandItem
                           key={m.modelId}
                           value={`${provider} ${m.displayName ?? m.modelId}`}
-                          onSelect={() => {
-                            handleAddModel(m.modelId);
-                            setModelPickerOpen(false);
-                          }}
+                          onSelect={() => handleAddModel(m.modelId)}
                         >
                           {m.displayName ?? m.modelId}
                         </CommandItem>
