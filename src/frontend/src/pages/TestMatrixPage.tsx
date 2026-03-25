@@ -225,32 +225,32 @@ function TestMatrixPage() {
   if (!entryId) return null;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Page header */}
-      <div className="px-4 pt-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Playground</h1>
-          <HelpLink section="playground" />
+    <div className={`grid h-full ${sidebarCollapsed ? 'grid-cols-[minmax(0,1fr)_48px]' : 'grid-cols-[minmax(0,1fr)_360px]'} transition-[grid-template-columns] duration-200`}>
+      {/* Left column: header + action bar + grid */}
+      <div className="flex flex-col min-h-0">
+        {/* Page header */}
+        <div className="px-4 pt-4">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Playground</h1>
+            <HelpLink section="playground" />
+          </div>
         </div>
-      </div>
 
-      {/* Action bar */}
-      <div className="px-4 py-2 border-b border-border-subtle shrink-0">
-        <MatrixToolbar
-          entryId={entryId}
-          onRunAll={execution.runAll}
-          onAbortAll={execution.abortAll}
-          isRunning={execution.isRunning}
-          batchProgress={execution.batchProgress}
-          matrixHasCells={matrixHasCells}
-          onClearMatrix={clearMatrix}
-          showHistory={showHistory}
-          onToggleHistory={() => setShowHistory((h) => !h)}
-        />
-      </div>
+        {/* Action bar */}
+        <div className="px-4 py-2 border-b border-border-subtle shrink-0">
+          <MatrixToolbar
+            entryId={entryId}
+            onRunAll={execution.runAll}
+            onAbortAll={execution.abortAll}
+            isRunning={execution.isRunning}
+            batchProgress={execution.batchProgress}
+            matrixHasCells={matrixHasCells}
+            onClearMatrix={clearMatrix}
+            showHistory={showHistory}
+            onToggleHistory={() => setShowHistory((h) => !h)}
+          />
+        </div>
 
-      {/* Main area: grid + drawer */}
-      <div className="flex-1 flex min-h-0">
         {/* Grid */}
         <ScrollArea className="flex-1 p-4">
           <MatrixGrid
@@ -296,52 +296,52 @@ function TestMatrixPage() {
             </motion.div>
           )}
         </ScrollArea>
+      </div>
 
-        {/* Config sidebar */}
-        <div className={`${sidebarCollapsed ? 'w-12' : 'w-[360px]'} shrink-0 border-l border-border-subtle bg-surface overflow-hidden transition-[width] duration-200`}>
-          <MatrixDetailDrawer
-            entryId={entryId}
-            models={state.models}
-            versions={state.versions}
-            selectedModelId={state.selectedModelId}
-            selectedVersionId={state.selectedVersionId}
-            selectedCell={state.selectedCell}
-            cells={state.cells}
-            versionContent={versionContent ?? undefined}
-            versionContentLoading={versionContentLoading}
-            fieldValues={fieldValues}
-            onSelectModel={handleSelectModel}
-            onParamChange={updateModelParams}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
-            onExpandToSection={handleExpandToSection}
-            setupProps={{
-              models,
-              versions,
-              tabs,
-              datasets,
-              selectedDatasetId: state.datasetId,
-              onDatasetChange: setDataset,
-              template: {
-                templateFields,
-                fieldValues,
-                setFieldValues,
-                onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
-                isFillingTemplateFields,
-              },
-              onAddVersion: addVersion,
-              onAddModel: addModel,
-              mcpServers,
-              allTools,
-              enabledServerIds,
-              setEnabledServerIds,
-              excludedToolNames,
-              setExcludedToolNames,
-              addedVersionIds,
-              addedModelIds,
-            }}
-          />
-        </div>
+      {/* Right column: full-height sidebar */}
+      <div className="bg-surface border-l border-border-subtle h-full overflow-hidden">
+        <MatrixDetailDrawer
+          entryId={entryId}
+          models={state.models}
+          versions={state.versions}
+          selectedModelId={state.selectedModelId}
+          selectedVersionId={state.selectedVersionId}
+          selectedCell={state.selectedCell}
+          cells={state.cells}
+          versionContent={versionContent ?? undefined}
+          versionContentLoading={versionContentLoading}
+          fieldValues={fieldValues}
+          onSelectModel={handleSelectModel}
+          onParamChange={updateModelParams}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
+          onExpandToSection={handleExpandToSection}
+          setupProps={{
+            models,
+            versions,
+            tabs,
+            datasets,
+            selectedDatasetId: state.datasetId,
+            onDatasetChange: setDataset,
+            template: {
+              templateFields,
+              fieldValues,
+              setFieldValues,
+              onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
+              isFillingTemplateFields,
+            },
+            onAddVersion: addVersion,
+            onAddModel: addModel,
+            mcpServers,
+            allTools,
+            enabledServerIds,
+            setEnabledServerIds,
+            excludedToolNames,
+            setExcludedToolNames,
+            addedVersionIds,
+            addedModelIds,
+          }}
+        />
       </div>
     </div>
   );
