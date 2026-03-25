@@ -6,6 +6,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function PlaygroundSkeleton() {
   return (
     <div className="flex flex-col h-full">
+      {/* Page header skeleton */}
+      <div className="px-4 pt-4 space-y-2">
+        <Skeleton className="h-7 w-36 rounded" />
+        <Skeleton className="h-4 w-64 rounded" />
+      </div>
       {/* Toolbar skeleton */}
       <div className="flex items-center gap-3 border-b border-border-subtle px-4 h-14">
         <Skeleton className="size-8 rounded" />

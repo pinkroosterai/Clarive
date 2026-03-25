@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
 
 import { ModelConfigPanel } from '@/components/matrix/ModelConfigPanel';
@@ -103,25 +104,33 @@ export function MatrixDetailDrawer({
     </div>
   );
 
+  const contentAnimation = {
+    initial: { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.25 },
+  };
+
   // ── Version preview mode ──
   if (selectedVersionId && (versionContent || versionContentLoading)) {
     return (
       <div className="flex flex-col h-full">
         {collapseButton}
         <ScrollArea className="flex-1">
-          {versionContentLoading ? (
-            <div className="p-4 space-y-4">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-24 w-full" />
-            </div>
-          ) : versionContent ? (
-            <VersionPromptPreview
-              entryId={entryId}
-              content={versionContent}
-              fieldValues={fieldValues}
-            />
-          ) : null}
+          <motion.div {...contentAnimation}>
+            {versionContentLoading ? (
+              <div className="p-4 space-y-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            ) : versionContent ? (
+              <VersionPromptPreview
+                entryId={entryId}
+                content={versionContent}
+                fieldValues={fieldValues}
+              />
+            ) : null}
+          </motion.div>
         </ScrollArea>
       </div>
     );
@@ -133,10 +142,12 @@ export function MatrixDetailDrawer({
       <div className="flex flex-col h-full">
         {collapseButton}
         <ScrollArea className="flex-1">
-          <ModelConfigPanel
-            model={selectedModel}
-            onParamChange={(params) => onParamChange(selectedModel.modelId, params)}
-          />
+          <motion.div {...contentAnimation}>
+            <ModelConfigPanel
+              model={selectedModel}
+              onParamChange={(params) => onParamChange(selectedModel.modelId, params)}
+            />
+          </motion.div>
         </ScrollArea>
       </div>
     );
@@ -146,21 +157,26 @@ export function MatrixDetailDrawer({
   return (
     <div className="flex flex-col h-full">
       {collapseButton}
-      <div className="p-4 border-b border-border-subtle shrink-0">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <Settings2 className="size-4" />
-          Model Parameters
+      <div className="p-4 border-b border-border-subtle shrink-0 space-y-1">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
+            Model Parameters
+          </h3>
+          <div className="flex-1 border-b border-border" />
         </div>
-        <p className="text-xs text-foreground-muted mt-1">
+        <p className="text-xs text-foreground-muted">
           Click a model row to configure its parameters
         </p>
       </div>
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
+        <motion.div {...contentAnimation} className="p-2 space-y-1">
           {models.length === 0 ? (
-            <p className="text-sm text-foreground-muted text-center py-8">
-              Add models to the grid to configure parameters
-            </p>
+            <div className="rounded-xl border border-border-subtle bg-surface elevation-1 p-8 mx-2 flex flex-col items-center gap-3 text-center">
+              <Settings2 className="size-8 text-foreground-muted" />
+              <p className="text-sm text-foreground-muted">
+                Add models to the grid to configure parameters
+              </p>
+            </div>
           ) : (
             models.map((model) => (
               <button
@@ -178,7 +194,7 @@ export function MatrixDetailDrawer({
               </button>
             ))
           )}
-        </div>
+        </motion.div>
       </ScrollArea>
     </div>
   );

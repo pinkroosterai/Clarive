@@ -37,9 +37,12 @@ export function MatrixHistoryPanel({ entryId, selectedRunId, onSelectRun }: Matr
 
   return (
     <div className="space-y-1">
-      <h3 className="text-xs font-medium text-foreground-muted px-1 mb-2">
-        Test History ({runs.length})
-      </h3>
+      <div className="flex items-center gap-2 mb-2">
+        <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
+          Test History ({runs.length})
+        </h3>
+        <div className="flex-1 border-b border-border" />
+      </div>
       <div className="space-y-1 max-h-[200px] overflow-y-auto">
         {runs.map((run) => {
           const isSelected = selectedRunId === run.id;

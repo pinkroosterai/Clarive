@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { HelpLink } from '@/components/common/HelpLink';
 import { MatrixComparisonPanel } from '@/components/matrix/MatrixComparisonPanel';
 import { MatrixDetailDrawer } from '@/components/matrix/MatrixDetailDrawer';
 import { MatrixGrid } from '@/components/matrix/MatrixGrid';
@@ -222,6 +224,15 @@ function TestMatrixPage() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Page header */}
+      <div className="px-4 pt-4">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">Playground</h1>
+          <HelpLink section="playground" />
+        </div>
+        <p className="text-sm text-foreground-muted mt-1">Test prompts across models and versions</p>
+      </div>
+
       {/* Toolbar */}
       <div className="p-4 border-b border-border-subtle shrink-0">
         <MatrixToolbar
@@ -290,13 +301,18 @@ function TestMatrixPage() {
             />
           )}
           {showHistory && (
-            <div className="mt-4 pt-4 border-t border-border-subtle">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mt-4 pt-4 border-t border-border-subtle"
+            >
               <MatrixHistoryPanel
                 entryId={entryId}
                 selectedRunId={null}
                 onSelectRun={() => {}}
               />
-            </div>
+            </motion.div>
           )}
         </ScrollArea>
 

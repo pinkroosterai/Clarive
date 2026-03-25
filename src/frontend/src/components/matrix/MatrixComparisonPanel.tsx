@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Copy } from 'lucide-react';
 import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -116,7 +117,20 @@ export function MatrixComparisonPanel({
   const needsScroll = colCount > 2;
 
   return (
-    <div className="mt-4 pt-4 border-t border-border-subtle space-y-3">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="mt-4 pt-4 border-t border-border-subtle space-y-3"
+    >
+      {/* Section header */}
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
+          Comparison Results
+        </h3>
+        <div className="flex-1 border-b border-border" />
+      </div>
+
       {/* Tab pills */}
       <div className="flex items-center gap-1.5 flex-wrap">
         {tabs.map((tab, i) => (
@@ -160,7 +174,7 @@ export function MatrixComparisonPanel({
               return (
                 <div
                   key={key}
-                  className="flex flex-col rounded-lg border border-border-subtle bg-surface overflow-hidden"
+                  className="flex flex-col rounded-xl border border-border-subtle bg-surface elevation-1 overflow-hidden"
                 >
                   {/* Column header */}
                   <div className="p-3 border-b border-border-subtle space-y-1">
@@ -221,6 +235,6 @@ export function MatrixComparisonPanel({
           {needsScroll && <ScrollBar orientation="horizontal" />}
         </ScrollArea>
       )}
-    </div>
+    </motion.div>
   );
 }
