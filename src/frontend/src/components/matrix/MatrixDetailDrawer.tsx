@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardCheck, Loader2, Settings2 } from 'lucide-react';
 
+import { CellScorecard } from '@/components/matrix/CellScorecard';
 import { ModelConfigPanel } from '@/components/matrix/ModelConfigPanel';
 import { VersionPromptPreview } from '@/components/matrix/VersionPromptPreview';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +9,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { PromptEntry } from '@/types';
-import type { MatrixModel } from '@/types/matrix';
+import type { CellKey, MatrixCell, MatrixModel, MatrixVersion } from '@/types/matrix';
+import { cellKey } from '@/types/matrix';
 
 interface MatrixConfigSidebarProps {
   entryId: string;
   models: MatrixModel[];
+  versions: MatrixVersion[];
   selectedModelId: string | null;
   selectedVersionId: string | null;
+  selectedCell: CellKey | null;
+  cells: Record<string, MatrixCell>;
   versionContent?: PromptEntry;
   versionContentLoading: boolean;
   fieldValues: Record<string, string>;
@@ -35,8 +40,11 @@ function formatModelParams(model: MatrixModel): string {
 export function MatrixDetailDrawer({
   entryId,
   models,
+  versions,
   selectedModelId,
   selectedVersionId,
+  selectedCell,
+  cells,
   versionContent,
   versionContentLoading,
   fieldValues,
@@ -149,6 +157,56 @@ export function MatrixDetailDrawer({
             />
           </motion.div>
         </ScrollArea>
+      </div>
+    );
+  }
+
+  // ── Cell scorecard mode ──
+  if (selectedCell) {
+    const key = cellKey(selectedCell.versionId, selectedCell.modelId);
+    const cell = cells[key];
+    const model = models.find((m) => m.modelId === selectedCell.modelId);
+    const version = versions.find((v) => v.id === selectedCell.versionId);
+
+    if (cell?.evaluation) {
+      return (
+        <div className="flex flex-col h-full">
+          {collapseButton}
+          <ScrollArea className="flex-1">
+            <motion.div {...contentAnimation}>
+              <CellScorecard
+                modelName={model?.displayName ?? 'Unknown'}
+                versionLabel={version?.label ?? 'Unknown'}
+                evaluation={cell.evaluation}
+                elapsedMs={cell.elapsedMs}
+              />
+            </motion.div>
+          </ScrollArea>
+        </div>
+      );
+    }
+
+    if (cell?.status === 'running') {
+      return (
+        <div className="flex flex-col h-full">
+          {collapseButton}
+          <motion.div {...contentAnimation} className="flex-1 flex flex-col items-center justify-center gap-3 p-4">
+            <Loader2 className="size-8 text-foreground-muted animate-spin" />
+            <p className="text-sm text-foreground-muted">Evaluating...</p>
+          </motion.div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col h-full">
+        {collapseButton}
+        <motion.div {...contentAnimation} className="flex-1 flex items-center justify-center p-4">
+          <div className="rounded-xl border border-border-subtle bg-surface elevation-1 p-8 flex flex-col items-center gap-3 text-center">
+            <ClipboardCheck className="size-8 text-foreground-muted" />
+            <p className="text-sm text-foreground-muted">Not scored yet</p>
+          </div>
+        </motion.div>
       </div>
     );
   }

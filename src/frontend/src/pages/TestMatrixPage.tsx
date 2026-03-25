@@ -206,18 +206,20 @@ function TestMatrixPage() {
     (modelId: string | null) => {
       selectModel(modelId);
       selectVersion(null);
+      selectCell(null);
       setComparisonFilter(modelId ? { type: 'model', modelId } : 'all');
     },
-    [selectModel, selectVersion, setComparisonFilter],
+    [selectModel, selectVersion, selectCell, setComparisonFilter],
   );
 
   const handleSelectVersion = useCallback(
     (versionId: string | null) => {
       selectVersion(versionId);
       selectModel(null);
+      selectCell(null);
       setComparisonFilter(versionId ? { type: 'version', versionId } : 'all');
     },
-    [selectVersion, selectModel, setComparisonFilter],
+    [selectVersion, selectModel, selectCell, setComparisonFilter],
   );
 
   if (!entryId) return null;
@@ -282,6 +284,9 @@ function TestMatrixPage() {
             selectedVersionId={state.selectedVersionId}
             onSelectCell={(cell) => {
               selectCell(cell);
+              selectModel(null);
+              selectVersion(null);
+              setSidebarCollapsed(false);
             }}
             onSelectModel={handleSelectModel}
             onSelectVersion={handleSelectVersion}
@@ -321,8 +326,11 @@ function TestMatrixPage() {
           <MatrixDetailDrawer
             entryId={entryId}
             models={state.models}
+            versions={state.versions}
             selectedModelId={state.selectedModelId}
             selectedVersionId={state.selectedVersionId}
+            selectedCell={state.selectedCell}
+            cells={state.cells}
             versionContent={versionContent ?? undefined}
             versionContentLoading={versionContentLoading}
             fieldValues={fieldValues}
