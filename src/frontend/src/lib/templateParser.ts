@@ -115,20 +115,3 @@ export function buildTagString(field: {
   }
   return `{{${name}}}`;
 }
-
-/**
- * Build the constraint string for a TemplateField.
- */
-export function buildConstraintStr(field: TemplateField): string {
-  if (
-    (field.type === 'int' || field.type === 'float') &&
-    field.min !== null &&
-    field.max !== null
-  ) {
-    return `${field.min}-${field.max}`;
-  }
-  if (field.type === 'enum' && field.enumValues.length > 0) {
-    return field.enumValues.join(',');
-  }
-  return '';
-}

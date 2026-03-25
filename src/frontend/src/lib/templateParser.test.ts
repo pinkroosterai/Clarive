@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
 import {
-  buildConstraintStr,
   buildTagString,
   parseTemplateTags,
   TAG_PATTERN,
@@ -259,46 +258,3 @@ describe('buildTagString', () => {
   });
 });
 
-describe('buildConstraintStr', () => {
-  it('builds int range constraint', () => {
-    expect(
-      buildConstraintStr({
-        name: 'x',
-        type: 'int',
-        enumValues: [],
-        defaultValue: null,
-        description: null,
-        min: 1,
-        max: 100,
-      })
-    ).toBe('1-100');
-  });
-
-  it('builds enum constraint', () => {
-    expect(
-      buildConstraintStr({
-        name: 'x',
-        type: 'enum',
-        enumValues: ['a', 'b', 'c'],
-        defaultValue: null,
-        description: null,
-        min: null,
-        max: null,
-      })
-    ).toBe('a,b,c');
-  });
-
-  it('returns empty string for string type', () => {
-    expect(
-      buildConstraintStr({
-        name: 'x',
-        type: 'string',
-        enumValues: [],
-        defaultValue: null,
-        description: null,
-        min: null,
-        max: null,
-      })
-    ).toBe('');
-  });
-});

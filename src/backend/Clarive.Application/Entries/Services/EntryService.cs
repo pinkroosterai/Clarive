@@ -274,7 +274,7 @@ public class EntryService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null || entry.IsTrashed)
-            return DomainErrors.EntryNotFoundByCode;
+            return DomainErrors.EntryNotFound;
 
         var published = await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
         if (published is null)

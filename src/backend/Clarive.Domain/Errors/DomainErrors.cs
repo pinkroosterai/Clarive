@@ -8,9 +8,6 @@ public static class DomainErrors
 
     public static Error EntryNotFound => Error.NotFound("ENTRY_NOT_FOUND", "Entry not found.");
 
-    public static Error EntryNotFoundByCode =>
-        Error.NotFound("ENTRY_NOT_FOUND", "Entry not found.");
-
     public static Error VersionNotFound => Error.NotFound("VERSION_NOT_FOUND", "No version found.");
 
     public static Error VersionNotFoundForEntry =>

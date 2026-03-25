@@ -26,7 +26,7 @@ public class ShareLinkService(
     {
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
-            return DomainErrors.EntryNotFoundByCode;
+            return DomainErrors.EntryNotFound;
 
         if (entry.IsTrashed)
             return Error.Validation(
