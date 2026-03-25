@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { validateAvatarFile } from '@/lib/avatarValidation';
 import { handleApiError } from '@/lib/handleApiError';
 import {
   updateProfileSchema,
@@ -107,16 +108,10 @@ export default function ProfileSection() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Unsupported format. Use JPEG, PNG, or WebP.');
-      return;
-    }
-    if (file.size > 3 * 1024 * 1024) {
-      toast.error('Image exceeds the 3 MB size limit.');
-      return;
-    }
+    const validated = validateAvatarFile(file);
+    if (!validated) return;
 
-    avatarUpload.mutate(file);
+    avatarUpload.mutate(validated);
     e.target.value = '';
   }
 

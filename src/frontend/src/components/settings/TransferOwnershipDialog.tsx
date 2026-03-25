@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRightLeft } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -37,25 +37,18 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferTargetId, setTransferTargetId] = useState('');
   const [transferConfirm, setTransferConfirm] = useState('');
-  const [transferring, setTransferring] = useState(false);
-
-  const handleTransfer = async () => {
-    if (!currentUser || !transferTargetId) return;
-    setTransferring(true);
-    try {
-      await userService.transferOwnership(transferTargetId, transferConfirm);
-      setUser({ ...currentUser, role: 'editor' });
+  const transferMutation = useMutation({
+    mutationFn: () => userService.transferOwnership(transferTargetId, transferConfirm),
+    onSuccess: () => {
+      if (currentUser) setUser({ ...currentUser, role: 'editor' });
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Ownership transferred');
       setTransferOpen(false);
       setTransferTargetId('');
       setTransferConfirm('');
-    } catch (err: unknown) {
-      handleApiError(err, { fallback: 'Transfer failed' });
-    } finally {
-      setTransferring(false);
-    }
-  };
+    },
+    onError: (err: unknown) => handleApiError(err, { fallback: 'Transfer failed' }),
+  });
 
   return (
     <Dialog
@@ -113,10 +106,12 @@ export function TransferOwnershipDialog({ activeMembers }: TransferOwnershipDial
         <DialogFooter>
           <Button
             variant="destructive"
-            disabled={transferConfirm !== 'TRANSFER' || !transferTargetId || transferring}
-            onClick={handleTransfer}
+            disabled={
+              transferConfirm !== 'TRANSFER' || !transferTargetId || transferMutation.isPending
+            }
+            onClick={() => transferMutation.mutate()}
           >
-            {transferring ? 'Transferring…' : 'Confirm Transfer'}
+            {transferMutation.isPending ? 'Transferring…' : 'Confirm Transfer'}
           </Button>
         </DialogFooter>
       </DialogContent>

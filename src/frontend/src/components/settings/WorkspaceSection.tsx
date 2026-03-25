@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, Loader2, LogOut, Trash2 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { validateAvatarFile } from '@/lib/avatarValidation';
 import { handleApiError } from '@/lib/handleApiError';
 import { workspaceNameSchema } from '@/lib/validationSchemas';
 import { tenantService, workspaceService } from '@/services';
@@ -43,13 +44,10 @@ export default function WorkspaceSection() {
 
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
 
-  // Sync initial value once loaded
-  if (tenant && !initialized) {
-    setName(tenant.name);
-    setInitialized(true);
-  }
+  useEffect(() => {
+    if (tenant) setName(tenant.name);
+  }, [tenant]);
 
   const updateMutation = useMutation({
     mutationFn: () => tenantService.updateTenantName(name.trim()),
@@ -116,16 +114,10 @@ export default function WorkspaceSection() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Unsupported format. Use JPEG, PNG, or WebP.');
-      return;
-    }
-    if (file.size > 3 * 1024 * 1024) {
-      toast.error('Image exceeds the 3 MB size limit.');
-      return;
-    }
+    const validated = validateAvatarFile(file);
+    if (!validated) return;
 
-    avatarUpload.mutate(file);
+    avatarUpload.mutate(validated);
     e.target.value = '';
   }
 
