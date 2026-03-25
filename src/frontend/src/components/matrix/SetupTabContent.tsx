@@ -120,7 +120,7 @@ export function SetupTabContent({
   const allModelsAdded = models.length > 0 && models.every((m) => addedModelIds.has(m.modelId));
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4">
       {/* Versions section */}
       <ActionGroup label="Versions">
         <Popover open={versionPickerOpen} onOpenChange={setVersionPickerOpen}>

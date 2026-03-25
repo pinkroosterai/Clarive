@@ -34,7 +34,7 @@ export function CellScorecard({ modelName, versionLabel, evaluation, elapsedMs }
   const { text: avgText, label: avgLabel } = scoreColor(avg);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4">
       {/* Section header */}
       <div>
         <div className="flex items-center gap-2">

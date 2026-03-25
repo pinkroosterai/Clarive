@@ -299,7 +299,7 @@ function TestMatrixPage() {
       </div>
 
       {/* Right column: full-height sidebar */}
-      <div className="bg-surface border-l border-border-subtle h-full overflow-hidden">
+      <div className="bg-surface border-l border-border-subtle p-4 h-full overflow-hidden">
         <MatrixDetailDrawer
           entryId={entryId}
           models={state.models}

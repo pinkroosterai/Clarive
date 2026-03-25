@@ -89,7 +89,7 @@ export function MatrixDetailDrawer({
   // ── Collapsed strip ──
   if (collapsed) {
     return (
-      <div className="flex flex-col items-center gap-2 py-3 h-full">
+      <div className="flex flex-col items-center gap-2 h-full">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
@@ -140,26 +140,10 @@ export function MatrixDetailDrawer({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Collapse button */}
-      <div className="flex justify-end p-1 border-b border-border-subtle shrink-0">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              className="p-1 rounded-md hover:bg-muted/50 transition-colors text-foreground-muted"
-              aria-label="Collapse sidebar"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Collapse sidebar</TooltipContent>
-        </Tooltip>
-      </div>
-
       {/* Tabbed content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
-        <TabsList className="w-full shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <TabsList className="flex-1">
           <TabsTrigger value="setup" className="flex-1 gap-1.5 text-xs">
             Setup
           </TabsTrigger>
@@ -182,7 +166,21 @@ export function MatrixDetailDrawer({
               </span>
             )}
           </TabsTrigger>
-        </TabsList>
+          </TabsList>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="p-1.5 rounded-md hover:bg-muted/50 transition-colors text-foreground-muted shrink-0"
+                aria-label="Collapse sidebar"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Collapse sidebar</TooltipContent>
+          </Tooltip>
+        </div>
 
         {/* Setup tab */}
         <TabsContent value="setup" className="flex-1 overflow-hidden pt-4">
@@ -206,7 +204,7 @@ export function MatrixDetailDrawer({
                 </motion.div>
               ) : (
                 <>
-                  <div className="px-4 pb-3">
+                  <div className="pb-3">
                     <div className="flex items-center gap-2">
                       <Settings2 className="size-4 text-primary" />
                       <h3 className="text-sm font-semibold text-foreground">Model Parameters</h3>
@@ -215,7 +213,7 @@ export function MatrixDetailDrawer({
                       Click a model row to configure its parameters
                     </p>
                   </div>
-                  <motion.div {...contentAnimation} className="px-4 space-y-1">
+                  <motion.div {...contentAnimation} className="space-y-1">
                     {models.length === 0 ? (
                       <div className="rounded-xl border border-border-subtle bg-surface elevation-1 p-8 flex flex-col items-center gap-3 text-center">
                         <Settings2 className="size-8 text-foreground-muted" />
@@ -252,7 +250,7 @@ export function MatrixDetailDrawer({
           <ScrollArea className="h-full">
             <div className="pr-3">
               {versionContentLoading ? (
-                <div className="p-4 space-y-4">
+                <div className="space-y-4">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-16 w-full" />
                   <Skeleton className="h-24 w-full" />

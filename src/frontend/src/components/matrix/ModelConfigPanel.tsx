@@ -19,7 +19,7 @@ interface ModelConfigPanelProps {
 
 export function ModelConfigPanel({ model, onParamChange }: ModelConfigPanelProps) {
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4">
       {/* Header */}
       <div className="space-y-1">
         <h3 className="text-sm font-medium">{model.displayName}</h3>
