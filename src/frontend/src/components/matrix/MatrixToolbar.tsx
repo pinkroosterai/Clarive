@@ -1,7 +1,8 @@
-import { ArrowLeft, ChevronsUpDown, Clock, Database, Play, Plus, Square, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronsUpDown, Clock, Database, Play, Plus, Square, Trash2, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { MatrixToolsPanel } from '@/components/matrix/MatrixToolsPanel';
 import { TemplateVariablesSection } from '@/components/playground/TemplateVariablesSection';
 import type { PlaygroundTemplateState } from '@/components/playground/utils';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,8 @@ import type { EnrichedModel } from '@/services/api/playgroundService';
 import type { MatrixModel, MatrixVersion } from '@/types/matrix';
 import { enrichedModelToMatrixModel } from '@/types/matrix';
 import type { TestDataset } from '@/services/api/testDatasetService';
-import type { VersionInfo, TabInfo } from '@/types';
+import { Badge } from '@/components/ui/badge';
+import type { McpServer, ToolDescription, VersionInfo, TabInfo } from '@/types';
 
 interface MatrixToolbarProps {
   entryId: string;
@@ -50,6 +52,14 @@ interface MatrixToolbarProps {
   onClearMatrix: () => void;
   showHistory: boolean;
   onToggleHistory: () => void;
+  mcpServers: McpServer[];
+  allTools: ToolDescription[];
+  enabledServerIds: string[];
+  setEnabledServerIds: (ids: string[]) => void;
+  excludedToolNames: string[];
+  setExcludedToolNames: (names: string[]) => void;
+  addedVersionIds: Set<string>;
+  addedModelIds: Set<string>;
 }
 
 function groupModelsByProvider(models: EnrichedModel[]) {
@@ -81,6 +91,14 @@ export function MatrixToolbar({
   onClearMatrix,
   showHistory,
   onToggleHistory,
+  mcpServers,
+  allTools,
+  enabledServerIds,
+  setEnabledServerIds,
+  excludedToolNames,
+  setExcludedToolNames,
+  addedVersionIds,
+  addedModelIds,
 }: MatrixToolbarProps) {
   const navigate = useNavigate();
   const providerGroups = useMemo(() => groupModelsByProvider(models), [models]);
@@ -120,21 +138,22 @@ export function MatrixToolbar({
     }
   };
 
-  // Build version options: tabs first, then published, then historical
+  // Build version options: tabs first, then published, then historical (exclude already-added)
   const versionOptions: { id: string; label: string; group: string }[] = [];
   for (const tab of tabs) {
-    versionOptions.push({ id: tab.id, label: tab.name, group: 'Tabs' });
+    if (!addedVersionIds.has(tab.id))
+      versionOptions.push({ id: tab.id, label: tab.name, group: 'Tabs' });
   }
   for (const v of versions) {
-    if (v.versionState === 'published') {
+    if (v.versionState === 'published' && !addedVersionIds.has(v.id))
       versionOptions.push({ id: v.id, label: `Published (v${v.version})`, group: 'Published' });
-    }
   }
   for (const v of versions) {
-    if (v.versionState === 'historical') {
+    if (v.versionState === 'historical' && !addedVersionIds.has(v.id))
       versionOptions.push({ id: v.id, label: `v${v.version} (historical)`, group: 'History' });
-    }
   }
+
+  const allModelsAdded = models.length > 0 && models.every((m) => addedModelIds.has(m.modelId));
 
   return (
     <div className="space-y-3">
@@ -199,23 +218,27 @@ export function MatrixToolbar({
             <Command>
               <CommandInput placeholder="Search models..." />
               <CommandList>
-                <CommandEmpty>No models found.</CommandEmpty>
-                {Array.from(providerGroups.entries()).map(([provider, providerModels]) => (
-                  <CommandGroup key={provider} heading={provider}>
-                    {providerModels.map((m) => (
-                      <CommandItem
-                        key={m.modelId}
-                        value={`${provider} ${m.displayName ?? m.modelId}`}
-                        onSelect={() => {
-                          handleAddModel(m.modelId);
-                          setModelPickerOpen(false);
-                        }}
-                      >
-                        {m.displayName ?? m.modelId}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                ))}
+                <CommandEmpty>{allModelsAdded ? 'All models added' : 'No models found.'}</CommandEmpty>
+                {Array.from(providerGroups.entries()).map(([provider, providerModels]) => {
+                  const available = providerModels.filter((m) => !addedModelIds.has(m.modelId));
+                  if (available.length === 0) return null;
+                  return (
+                    <CommandGroup key={provider} heading={provider}>
+                      {available.map((m) => (
+                        <CommandItem
+                          key={m.modelId}
+                          value={`${provider} ${m.displayName ?? m.modelId}`}
+                          onSelect={() => {
+                            handleAddModel(m.modelId);
+                            setModelPickerOpen(false);
+                          }}
+                        >
+                          {m.displayName ?? m.modelId}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  );
+                })}
               </CommandList>
             </Command>
           </PopoverContent>
@@ -249,8 +272,42 @@ export function MatrixToolbar({
         {/* Spacer pushes secondary zone right */}
         <div className="flex-1" />
 
-        {/* Secondary zone: dataset, history, clear */}
+        {/* Secondary zone: tools, dataset, history, clear */}
         <div className="flex items-center gap-1">
+          {mcpServers.some((s) => s.isActive) && (
+            <Popover>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={enabledServerIds.length > 0 ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="relative size-8 shrink-0"
+                      aria-label="Configure tools"
+                    >
+                      <Wrench className="size-4" />
+                      {enabledServerIds.length > 0 && (
+                        <Badge variant="secondary" className="absolute -top-1 -right-1 size-4 p-0 flex items-center justify-center text-[9px]">
+                          {enabledServerIds.length}
+                        </Badge>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Tools</TooltipContent>
+              </Tooltip>
+              <PopoverContent className="w-[300px] p-0" align="end">
+                <MatrixToolsPanel
+                  mcpServers={mcpServers}
+                  allTools={allTools}
+                  enabledServerIds={enabledServerIds}
+                  setEnabledServerIds={setEnabledServerIds}
+                  excludedToolNames={excludedToolNames}
+                  setExcludedToolNames={setExcludedToolNames}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
           {datasets.length > 0 && (
             <Popover>
               <Tooltip>

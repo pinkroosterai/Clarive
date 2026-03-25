@@ -1,13 +1,12 @@
-import { ChevronLeft, ChevronRight, Settings2, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
 
-import { MatrixToolsPanel } from '@/components/matrix/MatrixToolsPanel';
 import { ModelConfigPanel } from '@/components/matrix/ModelConfigPanel';
 import { VersionPromptPreview } from '@/components/matrix/VersionPromptPreview';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { McpServer, ToolDescription, PromptEntry } from '@/types';
+import type { PromptEntry } from '@/types';
 import type { MatrixModel } from '@/types/matrix';
 
 interface MatrixConfigSidebarProps {
@@ -20,15 +19,9 @@ interface MatrixConfigSidebarProps {
   fieldValues: Record<string, string>;
   onSelectModel: (modelId: string | null) => void;
   onParamChange: (modelId: string, params: Partial<Pick<MatrixModel, 'temperature' | 'maxTokens' | 'reasoningEffort' | 'showReasoning'>>) => void;
-  mcpServers: McpServer[];
-  allTools: ToolDescription[];
-  enabledServerIds: string[];
-  setEnabledServerIds: (ids: string[]) => void;
-  excludedToolNames: string[];
-  setExcludedToolNames: (names: string[]) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
-  onExpandToSection: (section: 'config' | 'tools') => void;
+  onExpandToSection: () => void;
 }
 
 function formatModelParams(model: MatrixModel): string {
@@ -48,12 +41,6 @@ export function MatrixDetailDrawer({
   fieldValues,
   onSelectModel,
   onParamChange,
-  mcpServers,
-  allTools,
-  enabledServerIds,
-  setEnabledServerIds,
-  excludedToolNames,
-  setExcludedToolNames,
   collapsed,
   onToggleCollapse,
   onExpandToSection,
@@ -80,7 +67,7 @@ export function MatrixDetailDrawer({
           <TooltipTrigger asChild>
             <button
               type="button"
-              onClick={() => onExpandToSection('config')}
+              onClick={onExpandToSection}
               className="p-2 rounded-md hover:bg-muted/50 transition-colors text-foreground-muted hover:text-foreground"
               aria-label="Model Parameters"
             >
@@ -89,40 +76,14 @@ export function MatrixDetailDrawer({
           </TooltipTrigger>
           <TooltipContent side="left">Model Parameters</TooltipContent>
         </Tooltip>
-        {mcpServers.some((s) => s.isActive) && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={() => onExpandToSection('tools')}
-                className="p-2 rounded-md hover:bg-muted/50 transition-colors text-foreground-muted hover:text-foreground"
-                aria-label="Tools"
-              >
-                <Wrench className="size-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Tools</TooltipContent>
-          </Tooltip>
-        )}
       </div>
     );
   }
 
-  // ── Expanded drawer — model config ──
+  // ── Expanded drawer ──
   const selectedModel = selectedModelId
     ? models.find((m) => m.modelId === selectedModelId)
     : null;
-
-  const toolsPanel = mcpServers.some((s) => s.isActive) ? (
-    <MatrixToolsPanel
-      mcpServers={mcpServers}
-      allTools={allTools}
-      enabledServerIds={enabledServerIds}
-      setEnabledServerIds={setEnabledServerIds}
-      excludedToolNames={excludedToolNames}
-      setExcludedToolNames={setExcludedToolNames}
-    />
-  ) : null;
 
   const collapseButton = (
     <div className="flex justify-end p-1 border-b border-border-subtle shrink-0">
@@ -161,7 +122,6 @@ export function MatrixDetailDrawer({
               fieldValues={fieldValues}
             />
           ) : null}
-          {toolsPanel}
         </ScrollArea>
       </div>
     );
@@ -177,7 +137,6 @@ export function MatrixDetailDrawer({
             model={selectedModel}
             onParamChange={(params) => onParamChange(selectedModel.modelId, params)}
           />
-          {toolsPanel}
         </ScrollArea>
       </div>
     );
@@ -220,7 +179,6 @@ export function MatrixDetailDrawer({
             ))
           )}
         </div>
-        {toolsPanel}
       </ScrollArea>
     </div>
   );

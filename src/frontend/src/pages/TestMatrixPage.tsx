@@ -170,13 +170,15 @@ function TestMatrixPage() {
   });
 
   const matrixHasCells = state.versions.length > 0 && state.models.length > 0;
+  const addedVersionIds = useMemo(() => new Set(state.versions.map((v) => v.id)), [state.versions]);
+  const addedModelIds = useMemo(() => new Set(state.models.map((m) => m.modelId)), [state.models]);
   const hasResults = Object.values(state.cells).some(
     (c) => c.status === 'completed' || c.status === 'running',
   );
 
-  const handleExpandToSection = useCallback((section: 'config' | 'tools') => {
+  const handleExpandToSection = useCallback(() => {
     setSidebarCollapsed(false);
-    if (section === 'config' && state.models.length > 0 && !state.selectedModelId) {
+    if (state.models.length > 0 && !state.selectedModelId) {
       selectModel(state.models[0].modelId);
     }
   }, [state.models, state.selectedModelId, selectModel]);
@@ -247,6 +249,14 @@ function TestMatrixPage() {
           onClearMatrix={clearMatrix}
           showHistory={showHistory}
           onToggleHistory={() => setShowHistory((h) => !h)}
+          mcpServers={mcpServers}
+          allTools={allTools}
+          enabledServerIds={enabledServerIds}
+          setEnabledServerIds={setEnabledServerIds}
+          excludedToolNames={excludedToolNames}
+          setExcludedToolNames={setExcludedToolNames}
+          addedVersionIds={addedVersionIds}
+          addedModelIds={addedModelIds}
         />
       </div>
 
@@ -302,12 +312,6 @@ function TestMatrixPage() {
             fieldValues={fieldValues}
             onSelectModel={handleSelectModel}
             onParamChange={updateModelParams}
-            mcpServers={mcpServers}
-            allTools={allTools}
-            enabledServerIds={enabledServerIds}
-            setEnabledServerIds={setEnabledServerIds}
-            excludedToolNames={excludedToolNames}
-            setExcludedToolNames={setExcludedToolNames}
             collapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
             onExpandToSection={handleExpandToSection}
