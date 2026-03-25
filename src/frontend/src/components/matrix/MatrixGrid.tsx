@@ -10,7 +10,11 @@ import { cellKey, getCell } from '@/types/matrix';
 interface MatrixGridProps {
   state: MatrixState;
   selectedCell: CellKey | null;
+  selectedModelId: string | null;
+  selectedVersionId: string | null;
   onSelectCell: (cell: CellKey) => void;
+  onSelectModel: (modelId: string | null) => void;
+  onSelectVersion: (versionId: string | null) => void;
   onRunCell?: (versionId: string, modelId: string) => void;
 }
 
@@ -102,7 +106,7 @@ function CellContent({ status, score }: { status: CellStatus; score: number | nu
 
 // ── Grid ──
 
-export function MatrixGrid({ state, selectedCell, onSelectCell, onRunCell }: MatrixGridProps) {
+export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersionId, onSelectCell, onSelectModel, onSelectVersion, onRunCell }: MatrixGridProps) {
   const { versions, models } = state;
 
   const handleKeyDown = useCallback(
@@ -167,12 +171,24 @@ export function MatrixGrid({ state, selectedCell, onSelectCell, onRunCell }: Mat
             {models.map((model) => (
               <th
                 key={model.modelId}
-                className="p-2 text-center text-xs font-medium text-foreground-muted min-w-[100px]"
+                className={cn(
+                  'p-0 text-center text-xs font-medium text-foreground-muted min-w-[100px]',
+                  selectedModelId === model.modelId && 'bg-primary/5',
+                )}
               >
-                <div className="truncate">{model.displayName}</div>
-                <div className="text-[10px] text-foreground-muted/60 font-normal">
-                  {model.providerName}
-                </div>
+                <button
+                  type="button"
+                  className={cn(
+                    'w-full p-2 cursor-pointer transition-colors hover:bg-muted/50 rounded-sm',
+                    selectedModelId === model.modelId && 'ring-1 ring-primary/30 ring-inset',
+                  )}
+                  onClick={() => onSelectModel(selectedModelId === model.modelId ? null : model.modelId)}
+                >
+                  <div className="truncate">{model.displayName}</div>
+                  <div className="text-[10px] text-foreground-muted/60 font-normal">
+                    {model.providerName}
+                  </div>
+                </button>
               </th>
             ))}
           </tr>
@@ -180,11 +196,25 @@ export function MatrixGrid({ state, selectedCell, onSelectCell, onRunCell }: Mat
         <tbody>
           {versions.map((version) => (
             <tr key={version.id} className="border-t border-border-subtle">
-              <td className="sticky left-0 bg-surface z-10 p-2 text-xs font-medium">
-                <div className="truncate max-w-[130px]">{version.label}</div>
-                <div className="text-[10px] text-foreground-muted/60 font-normal capitalize">
-                  {version.type}
-                </div>
+              <td
+                className={cn(
+                  'sticky left-0 bg-surface z-10 p-0 text-xs font-medium',
+                  selectedVersionId === version.id && 'bg-primary/5',
+                )}
+              >
+                <button
+                  type="button"
+                  className={cn(
+                    'w-full p-2 text-left cursor-pointer transition-colors hover:bg-muted/50 rounded-sm',
+                    selectedVersionId === version.id && 'ring-1 ring-primary/30 ring-inset',
+                  )}
+                  onClick={() => onSelectVersion(selectedVersionId === version.id ? null : version.id)}
+                >
+                  <div className="truncate max-w-[130px]">{version.label}</div>
+                  <div className="text-[10px] text-foreground-muted/60 font-normal capitalize">
+                    {version.type}
+                  </div>
+                </button>
               </td>
               {models.map((model) => {
                 const cell = getCell(state, version.id, model.modelId);

@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useCallback, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { MatrixComparisonPanel } from '@/components/matrix/MatrixComparisonPanel';
 import { MatrixDetailDrawer } from '@/components/matrix/MatrixDetailDrawer';
 import { MatrixGrid } from '@/components/matrix/MatrixGrid';
 import { MatrixHistoryPanel } from '@/components/matrix/MatrixHistoryPanel';
@@ -16,14 +17,12 @@ import { entryService } from '@/services';
 import {
   getEnrichedModels,
   fillTemplateFields,
-  type TestRunResponse,
 } from '@/services/api/playgroundService';
 import { getDatasets } from '@/services/api/testDatasetService';
 import type { TemplateField } from '@/types';
 
 function TestMatrixPage() {
   const { entryId } = useParams<{ entryId: string }>();
-  const navigate = useNavigate();
 
   // ── Data fetching ──
   const { data: entry } = useQuery({
@@ -91,23 +90,23 @@ function TestMatrixPage() {
 
   // ── History ──
   const [showHistory, setShowHistory] = useState(false);
-  const [selectedHistoryRun, setSelectedHistoryRun] = useState<TestRunResponse | null>(null);
 
   // ── Matrix state ──
   const {
     state,
     addVersion,
-    removeVersion,
     addModel,
-    removeModel,
     selectCell,
     updateCellStatus,
     setCellSegments,
     setCellResult,
     setCellError,
+    updateModelParams,
+    selectModel,
+    selectVersion,
+    setComparisonFilter,
     setDataset,
-    clearMatrix,
-  } = useMatrixState();
+  } = useMatrixState(entryId);
 
   // ── Matrix execution ──
   const execution = useMatrixExecution({
@@ -122,6 +121,25 @@ function TestMatrixPage() {
   });
 
   const matrixHasCells = state.versions.length > 0 && state.models.length > 0;
+  const hasResults = Object.values(state.cells).some(
+    (c) => c.status === 'completed' || c.status === 'running',
+  );
+
+  const handleSelectModel = useCallback(
+    (modelId: string | null) => {
+      selectModel(modelId);
+      setComparisonFilter(modelId ? { type: 'model', modelId } : 'all');
+    },
+    [selectModel, setComparisonFilter],
+  );
+
+  const handleSelectVersion = useCallback(
+    (versionId: string | null) => {
+      selectVersion(versionId);
+      setComparisonFilter(versionId ? { type: 'version', versionId } : 'all');
+    },
+    [selectVersion, setComparisonFilter],
+  );
 
   if (!entryId) return null;
 
@@ -163,33 +181,42 @@ function TestMatrixPage() {
           <MatrixGrid
             state={state}
             selectedCell={state.selectedCell}
+            selectedModelId={state.selectedModelId}
+            selectedVersionId={state.selectedVersionId}
             onSelectCell={(cell) => {
-              setSelectedHistoryRun(null);
               selectCell(cell);
             }}
+            onSelectModel={handleSelectModel}
+            onSelectVersion={handleSelectVersion}
             onRunCell={execution.runSingle}
           />
+          {hasResults && (
+            <MatrixComparisonPanel
+              state={state}
+              comparisonFilter={state.comparisonFilter}
+              onFilterChange={setComparisonFilter}
+              activeStreamSegments={execution.activeStreamSegments}
+              activeStreamKey={execution.activeStreamKey}
+            />
+          )}
           {showHistory && (
             <div className="mt-4 pt-4 border-t border-border-subtle">
               <MatrixHistoryPanel
                 entryId={entryId}
-                selectedRunId={selectedHistoryRun?.id ?? null}
-                onSelectRun={(run) => {
-                  setSelectedHistoryRun(run);
-                  selectCell(null);
-                }}
+                selectedRunId={null}
+                onSelectRun={() => {}}
               />
             </div>
           )}
         </ScrollArea>
 
-        {/* Detail drawer */}
+        {/* Config sidebar */}
         <div className="w-[400px] shrink-0 border-l border-border-subtle bg-surface overflow-hidden">
           <MatrixDetailDrawer
-            state={state}
-            activeStreamSegments={execution.activeStreamSegments}
-            activeStreamKey={execution.activeStreamKey}
-            historyRun={selectedHistoryRun}
+            models={state.models}
+            selectedModelId={state.selectedModelId}
+            onSelectModel={handleSelectModel}
+            onParamChange={updateModelParams}
           />
         </div>
       </div>

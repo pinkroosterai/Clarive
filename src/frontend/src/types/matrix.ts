@@ -48,6 +48,7 @@ export interface MatrixModel {
   maxTokens: number;
   reasoningEffort: string;
   isReasoning: boolean;
+  showReasoning: boolean;
 }
 
 // ── Selected cell identifier ──
@@ -57,6 +58,13 @@ export interface CellKey {
   modelId: string;
 }
 
+// ── Comparison filter ──
+
+export type ComparisonFilter =
+  | 'all'
+  | { type: 'model'; modelId: string }
+  | { type: 'version'; versionId: string };
+
 // ── Overall matrix state ──
 
 export interface MatrixState {
@@ -64,6 +72,9 @@ export interface MatrixState {
   models: MatrixModel[];
   cells: Record<string, MatrixCell>; // key = `${versionId}:${modelId}`
   selectedCell: CellKey | null;
+  selectedModelId: string | null;
+  selectedVersionId: string | null;
+  comparisonFilter: ComparisonFilter;
   datasetId: string | null;
 }
 
@@ -100,5 +111,6 @@ export function enrichedModelToMatrixModel(model: EnrichedModel): MatrixModel {
     maxTokens: model.defaultMaxTokens ?? 4096,
     reasoningEffort: model.defaultReasoningEffort ?? 'medium',
     isReasoning: model.isReasoning,
+    showReasoning: model.isReasoning,
   };
 }

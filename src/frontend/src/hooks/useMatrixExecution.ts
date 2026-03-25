@@ -130,7 +130,7 @@ export function useMatrixExecution({
             temperature: model.temperature,
             maxTokens: model.maxTokens,
             reasoningEffort: model.isReasoning ? model.reasoningEffort : undefined,
-            showReasoning: model.isReasoning,
+            showReasoning: model.showReasoning,
             templateFields: templateFieldValues,
             tabId: versionId,
           },
