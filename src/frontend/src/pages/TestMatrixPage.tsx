@@ -232,28 +232,12 @@ function TestMatrixPage() {
           <h1 className="text-2xl font-bold tracking-tight">Playground</h1>
           <HelpLink section="playground" />
         </div>
-        <p className="text-sm text-foreground-muted mt-1">Test prompts across models and versions</p>
       </div>
 
-      {/* Toolbar */}
-      <div className="p-4 border-b border-border-subtle shrink-0">
+      {/* Action bar */}
+      <div className="px-4 py-2 border-b border-border-subtle shrink-0">
         <MatrixToolbar
           entryId={entryId}
-          models={models}
-          versions={versions}
-          tabs={tabs}
-          datasets={datasets}
-          selectedDatasetId={state.datasetId}
-          onDatasetChange={setDataset}
-          template={{
-            templateFields,
-            fieldValues,
-            setFieldValues,
-            onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
-            isFillingTemplateFields,
-          }}
-          onAddVersion={addVersion}
-          onAddModel={addModel}
           onRunAll={execution.runAll}
           onAbortAll={execution.abortAll}
           isRunning={execution.isRunning}
@@ -262,14 +246,6 @@ function TestMatrixPage() {
           onClearMatrix={clearMatrix}
           showHistory={showHistory}
           onToggleHistory={() => setShowHistory((h) => !h)}
-          mcpServers={mcpServers}
-          allTools={allTools}
-          enabledServerIds={enabledServerIds}
-          setEnabledServerIds={setEnabledServerIds}
-          excludedToolNames={excludedToolNames}
-          setExcludedToolNames={setExcludedToolNames}
-          addedVersionIds={addedVersionIds}
-          addedModelIds={addedModelIds}
         />
       </div>
 
@@ -322,7 +298,7 @@ function TestMatrixPage() {
         </ScrollArea>
 
         {/* Config sidebar */}
-        <div className={`${sidebarCollapsed ? 'w-12' : 'w-[400px]'} shrink-0 border-l border-border-subtle bg-surface overflow-hidden transition-[width] duration-200`}>
+        <div className={`${sidebarCollapsed ? 'w-12' : 'w-[360px]'} shrink-0 border-l border-border-subtle bg-surface overflow-hidden transition-[width] duration-200`}>
           <MatrixDetailDrawer
             entryId={entryId}
             models={state.models}
@@ -339,6 +315,31 @@ function TestMatrixPage() {
             collapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
             onExpandToSection={handleExpandToSection}
+            setupProps={{
+              models,
+              versions,
+              tabs,
+              datasets,
+              selectedDatasetId: state.datasetId,
+              onDatasetChange: setDataset,
+              template: {
+                templateFields,
+                fieldValues,
+                setFieldValues,
+                onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
+                isFillingTemplateFields,
+              },
+              onAddVersion: addVersion,
+              onAddModel: addModel,
+              mcpServers,
+              allTools,
+              enabledServerIds,
+              setEnabledServerIds,
+              excludedToolNames,
+              setExcludedToolNames,
+              addedVersionIds,
+              addedModelIds,
+            }}
           />
         </div>
       </div>

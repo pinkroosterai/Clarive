@@ -43,7 +43,7 @@ test.describe('Test Matrix — Core Happy Path', () => {
     expect(entryId).toBeTruthy();
   });
 
-  test('navigate to test matrix and verify toolbar', async () => {
+  test('navigate to test matrix and verify layout', async () => {
     // Navigate to the test matrix
     await page.goto(`/entry/${entryId}/test`);
     await page.waitForLoadState('networkidle');
@@ -51,17 +51,22 @@ test.describe('Test Matrix — Core Happy Path', () => {
     // Verify matrix page loaded — URL should stay on /test
     await page.waitForURL(/\/entry\/[a-f0-9-]+\/test$/, { timeout: 10_000 });
 
-    // Verify toolbar loaded with Add Version, Add Model, and Run All
+    // Verify action bar has Run All button
+    await expect(page.getByRole('button', { name: /run all/i })).toBeVisible({ timeout: 10_000 });
+
+    // Verify sidebar tabs exist (Setup is default active tab)
+    await expect(page.getByRole('tab', { name: /setup/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /config/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /preview/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /results/i })).toBeVisible();
+
+    // Verify Setup tab contains Add Version and Add Model pickers
     await expect(page.getByRole('combobox').filter({ hasText: 'Add Version' })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole('combobox').filter({ hasText: 'Add Model' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /run all/i })).toBeVisible();
 
     // Verify template variables section is visible with 2 required fields
     await expect(page.getByText(/template variables/i)).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText(/2 required/i)).toBeVisible();
-
-    // Verify empty state message
-    await expect(page.getByText(/add versions and models/i)).toBeVisible();
   });
 
   test('add version and model to create matrix cell', async () => {
@@ -98,8 +103,8 @@ test.describe('Test Matrix — Core Happy Path', () => {
     const cell = page.getByRole('button', { name: new RegExp(`Main on ${GROQ_MODEL_ID}`) });
     await cell.click();
 
-    // Detail drawer should show the empty cell message
-    await expect(page.getByText(/hasn't been run yet/i)).toBeVisible({ timeout: 3_000 });
+    // Sidebar should auto-switch to Results tab and show the empty cell message
+    await expect(page.getByText(/not scored yet/i)).toBeVisible({ timeout: 3_000 });
 
     // Double-click to run the cell
     await cell.dblclick();

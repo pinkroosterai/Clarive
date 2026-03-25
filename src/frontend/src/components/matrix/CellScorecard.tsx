@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ClipboardCheck } from 'lucide-react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { scoreColor } from '@/components/wizard/scoreUtils';
@@ -38,10 +38,8 @@ export function CellScorecard({ modelName, versionLabel, evaluation, elapsedMs }
       {/* Section header */}
       <div>
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
-            Evaluation
-          </h3>
-          <div className="flex-1 border-b border-border" />
+          <ClipboardCheck className="size-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Evaluation</h3>
         </div>
         <p className="text-xs text-foreground-muted mt-1">
           {modelName} × {versionLabel}

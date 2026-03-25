@@ -1,26 +1,15 @@
 import { format } from 'date-fns';
 import { FolderInput, Clock, User, Calendar, Copy, History, Info } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { ActivityTimeline } from '@/components/editor/ActivityTimeline';
 import { TagEditor } from '@/components/editor/TagEditor';
+import { ActionGroup } from '@/components/shared/ActionGroup';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { copyToClipboard } from '@/lib/utils';
 import type { PromptEntry } from '@/types';
-
-function ActionGroup({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="space-y-2">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-        {label}
-      </h3>
-      <div className="space-y-1.5">{children}</div>
-    </div>
-  );
-}
 
 export interface DetailsTabContentProps {
   entry: PromptEntry;

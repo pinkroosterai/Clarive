@@ -21,8 +21,11 @@ function renderDrawer(overrides: Partial<Parameters<typeof MatrixDetailDrawer>[0
   const defaults = {
     entryId: 'entry-1',
     models: [mockModel],
+    versions: [],
     selectedModelId: null as string | null,
     selectedVersionId: null as string | null,
+    selectedCell: null,
+    cells: {},
     versionContentLoading: false,
     fieldValues: {} as Record<string, string>,
     onSelectModel: vi.fn(),
@@ -30,6 +33,30 @@ function renderDrawer(overrides: Partial<Parameters<typeof MatrixDetailDrawer>[0
     collapsed: false,
     onToggleCollapse: vi.fn(),
     onExpandToSection: vi.fn(),
+    setupProps: {
+      models: [],
+      versions: [],
+      tabs: [],
+      datasets: [],
+      selectedDatasetId: null,
+      onDatasetChange: vi.fn(),
+      template: {
+        templateFields: [],
+        fieldValues: {},
+        setFieldValues: vi.fn(),
+        isFillingTemplateFields: false,
+      },
+      onAddVersion: vi.fn(),
+      onAddModel: vi.fn(),
+      mcpServers: [],
+      allTools: [],
+      enabledServerIds: [] as string[],
+      setEnabledServerIds: vi.fn(),
+      excludedToolNames: [] as string[],
+      setExcludedToolNames: vi.fn(),
+      addedVersionIds: new Set<string>(),
+      addedModelIds: new Set<string>(),
+    },
     ...overrides,
   };
   return {
@@ -78,10 +105,18 @@ describe('MatrixDetailDrawer', () => {
       expect(screen.getByRole('button', { name: /collapse sidebar/i })).toBeInTheDocument();
     });
 
-    it('renders model list when expanded and no model selected', () => {
+    it('renders tab navigation with Setup, Config, Preview, and Results tabs', () => {
       renderDrawer({ collapsed: false });
-      expect(screen.getByText('gpt-5')).toBeInTheDocument();
-      expect(screen.getByText('OpenAI')).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /setup/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /config/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /preview/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /results/i })).toBeInTheDocument();
+    });
+
+    it('defaults to Setup tab when expanded', () => {
+      renderDrawer({ collapsed: false });
+      const setupTab = screen.getByRole('tab', { name: /setup/i });
+      expect(setupTab).toHaveAttribute('data-state', 'active');
     });
 
     it('calls onToggleCollapse when collapse button clicked', () => {
