@@ -29,14 +29,37 @@ interface SeedFolderResult {
 async function seedFetch<T>(page: Page, path: string, body: object): Promise<T> {
   return page.evaluate(
     async ({ path, body }) => {
-      const res = await fetch(path, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('cl_token')}`,
-        },
-        body: JSON.stringify(body),
-      });
+      async function doFetch() {
+        return fetch(path, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('cl_token')}`,
+          },
+          body: JSON.stringify(body),
+        });
+      }
+
+      let res = await doFetch();
+
+      // If the JWT expired (common after snapshot restore), refresh it and retry
+      if (res.status === 401) {
+        const rt = localStorage.getItem('cl_refresh');
+        if (rt) {
+          const refreshRes = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: rt }),
+          });
+          if (refreshRes.ok) {
+            const data = await refreshRes.json();
+            localStorage.setItem('cl_token', data.token);
+            localStorage.setItem('cl_refresh', data.refreshToken);
+            res = await doFetch();
+          }
+        }
+      }
+
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`Seed API ${path} failed: ${res.status} ${text}`);

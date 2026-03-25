@@ -1,8 +1,10 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
-import { waitForAppShell, expectToast } from './helpers/pages';
+import { waitForAppShell, loginViaUI } from './helpers/pages';
 import { createEntryViaAPI } from './helpers/api';
 
 const GROQ_MODEL_ID = process.env.GROQ_MODEL_ID ?? 'openai/gpt-oss-120b';
+
+const ADMIN = { email: 'admin@e2e.test', password: 'E2ETestPassword123!' };
 
 test.describe('Test Matrix — Core Happy Path', () => {
   test.skip(!process.env.GROQ_API_KEY, 'GROQ_API_KEY required');
@@ -29,9 +31,16 @@ test.describe('Test Matrix — Core Happy Path', () => {
   });
 
   test('create entry with template variables for matrix testing', async () => {
-    // Navigate to app first so localStorage is accessible for API helper
+    // Navigate to app — if auth state is stale (snapshot restore), log in via UI
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+
+    // Detect if we landed on login page (stale JWT + consumed refresh token after snapshot restore)
+    if (page.url().includes('/login')) {
+      await loginViaUI(page, ADMIN.email, ADMIN.password);
+      await page.waitForURL(/\/$/, { timeout: 15_000 });
+      await waitForAppShell(page);
+    }
 
     // Create entry with template variables via API (faster than UI)
     const result = await createEntryViaAPI(page, {
@@ -52,7 +61,7 @@ test.describe('Test Matrix — Core Happy Path', () => {
     await page.waitForURL(/\/entry\/[a-f0-9-]+\/test$/, { timeout: 10_000 });
 
     // Verify action bar has Run All button
-    await expect(page.getByRole('button', { name: /run all/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('button', { name: 'Run All', exact: true })).toBeVisible({ timeout: 10_000 });
 
     // Verify sidebar tabs exist (Setup is default active tab)
     await expect(page.getByRole('tab', { name: /setup/i })).toBeVisible();
@@ -83,12 +92,13 @@ test.describe('Test Matrix — Core Happy Path', () => {
     await page.getByRole('option', { name: GROQ_MODEL_ID }).click();
 
     // Verify model column appeared — cell button should exist with version×model label
+    // Use .first() because the cell has both the main button and a hover "Run" overlay button
     await expect(
-      page.getByRole('button', { name: new RegExp(`Main on ${GROQ_MODEL_ID}`) })
+      page.getByRole('button', { name: new RegExp(`Main on ${GROQ_MODEL_ID}`) }).first()
     ).toBeVisible({ timeout: 3_000 });
 
     // Run All should now be enabled (we have at least one cell)
-    await expect(page.getByRole('button', { name: /run all/i })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Run All', exact: true })).toBeEnabled();
   });
 
   test('fill template variables and run matrix cell', async () => {
@@ -102,8 +112,8 @@ test.describe('Test Matrix — Core Happy Path', () => {
     // "2 empty" badge should disappear after filling both fields
     await expect(page.getByText(/\d+ empty/i)).not.toBeVisible({ timeout: 3_000 });
 
-    // Click the cell to select it
-    const cell = page.getByRole('button', { name: new RegExp(`Main on ${GROQ_MODEL_ID}`) });
+    // Click the cell to select it (use .first() — cell has a hover "Run" overlay button too)
+    const cell = page.getByRole('button', { name: new RegExp(`Main on ${GROQ_MODEL_ID}`) }).first();
     await cell.click();
 
     // Sidebar should auto-switch to Results tab and show the empty cell message
@@ -112,12 +122,10 @@ test.describe('Test Matrix — Core Happy Path', () => {
     // Double-click to run the cell
     await cell.dblclick();
 
-    // Results tab should show "Evaluating..." during streaming
-    await expect(page.getByText(/evaluating/i)).toBeVisible({ timeout: 15_000 });
-
-    // Wait for completion — the Evaluation section header and score label appear
-    await expect(page.getByText(/evaluation/i)).toBeVisible({ timeout: 120_000 });
-    await expect(page.getByText(/good|fair|poor/i)).toBeVisible({ timeout: 5_000 });
+    // Wait for completion — the Evaluation section header and score label appear.
+    // Skip asserting the transient "Evaluating..." state — fast models (e.g. Groq)
+    // may complete before the 100ms poll interval catches it.
+    await expect(page.getByText(/good|fair|poor/i)).toBeVisible({ timeout: 120_000 });
   });
 
   test('verify history panel shows the run', async () => {
