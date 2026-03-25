@@ -181,20 +181,39 @@ function TestMatrixPage() {
     }
   }, [state.models, state.selectedModelId, selectModel]);
 
+  // ── Version content for sidebar preview ──
+  const selectedVersion = state.selectedVersionId
+    ? state.versions.find((v) => v.id === state.selectedVersionId)
+    : null;
+
+  const { data: versionContent, isLoading: versionContentLoading } = useQuery({
+    queryKey: ['version-content', entryId, state.selectedVersionId],
+    queryFn: () => {
+      if (!entryId || !selectedVersion) return null;
+      if (selectedVersion.type === 'tab') {
+        return entryService.getTab(entryId, selectedVersion.id);
+      }
+      return entryService.getVersion(entryId, selectedVersion.version!);
+    },
+    enabled: !!entryId && !!state.selectedVersionId && !!selectedVersion,
+  });
+
   const handleSelectModel = useCallback(
     (modelId: string | null) => {
       selectModel(modelId);
+      selectVersion(null);
       setComparisonFilter(modelId ? { type: 'model', modelId } : 'all');
     },
-    [selectModel, setComparisonFilter],
+    [selectModel, selectVersion, setComparisonFilter],
   );
 
   const handleSelectVersion = useCallback(
     (versionId: string | null) => {
       selectVersion(versionId);
+      selectModel(null);
       setComparisonFilter(versionId ? { type: 'version', versionId } : 'all');
     },
-    [selectVersion, setComparisonFilter],
+    [selectVersion, selectModel, setComparisonFilter],
   );
 
   if (!entryId) return null;
@@ -274,8 +293,13 @@ function TestMatrixPage() {
         {/* Config sidebar */}
         <div className={`${sidebarCollapsed ? 'w-12' : 'w-[400px]'} shrink-0 border-l border-border-subtle bg-surface overflow-hidden transition-[width] duration-200`}>
           <MatrixDetailDrawer
+            entryId={entryId}
             models={state.models}
             selectedModelId={state.selectedModelId}
+            selectedVersionId={state.selectedVersionId}
+            versionContent={versionContent ?? undefined}
+            versionContentLoading={versionContentLoading}
+            fieldValues={fieldValues}
             onSelectModel={handleSelectModel}
             onParamChange={updateModelParams}
             mcpServers={mcpServers}

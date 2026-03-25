@@ -2,15 +2,22 @@ import { ChevronLeft, ChevronRight, Settings2, Wrench } from 'lucide-react';
 
 import { MatrixToolsPanel } from '@/components/matrix/MatrixToolsPanel';
 import { ModelConfigPanel } from '@/components/matrix/ModelConfigPanel';
+import { VersionPromptPreview } from '@/components/matrix/VersionPromptPreview';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { McpServer, ToolDescription } from '@/types';
+import type { McpServer, ToolDescription, PromptEntry } from '@/types';
 import type { MatrixModel } from '@/types/matrix';
 
 interface MatrixConfigSidebarProps {
+  entryId: string;
   models: MatrixModel[];
   selectedModelId: string | null;
+  selectedVersionId: string | null;
+  versionContent?: PromptEntry;
+  versionContentLoading: boolean;
+  fieldValues: Record<string, string>;
   onSelectModel: (modelId: string | null) => void;
   onParamChange: (modelId: string, params: Partial<Pick<MatrixModel, 'temperature' | 'maxTokens' | 'reasoningEffort' | 'showReasoning'>>) => void;
   mcpServers: McpServer[];
@@ -32,8 +39,13 @@ function formatModelParams(model: MatrixModel): string {
 }
 
 export function MatrixDetailDrawer({
+  entryId,
   models,
   selectedModelId,
+  selectedVersionId,
+  versionContent,
+  versionContentLoading,
+  fieldValues,
   onSelectModel,
   onParamChange,
   mcpServers,
@@ -96,7 +108,7 @@ export function MatrixDetailDrawer({
     );
   }
 
-  // ── Expanded drawer ──
+  // ── Expanded drawer — model config ──
   const selectedModel = selectedModelId
     ? models.find((m) => m.modelId === selectedModelId)
     : null;
@@ -129,6 +141,31 @@ export function MatrixDetailDrawer({
       </Tooltip>
     </div>
   );
+
+  // ── Version preview mode ──
+  if (selectedVersionId && (versionContent || versionContentLoading)) {
+    return (
+      <div className="flex flex-col h-full">
+        {collapseButton}
+        <ScrollArea className="flex-1">
+          {versionContentLoading ? (
+            <div className="p-4 space-y-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ) : versionContent ? (
+            <VersionPromptPreview
+              entryId={entryId}
+              content={versionContent}
+              fieldValues={fieldValues}
+            />
+          ) : null}
+          {toolsPanel}
+        </ScrollArea>
+      </div>
+    );
+  }
 
   // Selected model — show config panel
   if (selectedModel) {
