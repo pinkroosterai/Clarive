@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -12,68 +12,29 @@ import { MatrixHistoryPanel } from '@/components/matrix/MatrixHistoryPanel';
 import { MatrixToolbar } from '@/components/matrix/MatrixToolbar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMatrixExecution } from '@/hooks/useMatrixExecution';
+import { useMatrixPageData } from '@/hooks/useMatrixPageData';
+import { useMatrixPagePersistence } from '@/hooks/useMatrixPagePersistence';
 import { useMatrixState } from '@/hooks/useMatrixState';
 import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
-import { usePlaygroundTools } from '@/hooks/usePlaygroundTools';
-import { safeSessionGet } from '@/components/playground/utils';
-import { parseTemplateTags } from '@/lib/templateParser';
+import { fillTemplateFields } from '@/services/api/playgroundService';
 import { entryService } from '@/services';
-import {
-  getEnrichedModels,
-  fillTemplateFields,
-} from '@/services/api/playgroundService';
-import { getDatasets } from '@/services/api/testDatasetService';
-import type { TemplateField } from '@/types';
 
 function TestMatrixPage() {
   const { entryId } = useParams<{ entryId: string }>();
 
-  // ── Data fetching ──
-  const { data: entry } = useQuery({
-    queryKey: ['entry', entryId],
-    queryFn: () => entryService.getEntry(entryId!),
-    enabled: !!entryId,
-  });
+  // ── Data ──
+  const { tabs, versions, models, datasets, templateFields } = useMatrixPageData(entryId);
 
-  const { data: tabs = [] } = useQuery({
-    queryKey: ['tabs', entryId],
-    queryFn: () => entryService.listTabs(entryId!),
-    enabled: !!entryId,
-  });
-
-  const { data: versions = [] } = useQuery({
-    queryKey: ['versions', entryId],
-    queryFn: () => entryService.getVersionHistory(entryId!),
-    enabled: !!entryId,
-  });
-
-  const { data: models = [] } = useQuery({
-    queryKey: ['enriched-models'],
-    queryFn: getEnrichedModels,
-  });
-
-  const { data: datasets = [] } = useQuery({
-    queryKey: ['datasets', entryId],
-    queryFn: () => getDatasets(entryId!),
-    enabled: !!entryId,
-  });
+  // ── Persistence (sidebar, tools, history) ──
+  const {
+    sidebarCollapsed, setSidebarCollapsed,
+    showHistory, setShowHistory,
+    enabledServerIds, setEnabledServerIds,
+    excludedToolNames, setExcludedToolNames,
+    mcpServers, allTools,
+  } = useMatrixPagePersistence(entryId);
 
   // ── Template fields ──
-  const templateFields = useMemo<TemplateField[]>(() => {
-    if (!entry) return [];
-    const seen = new Set<string>();
-    const fields: TemplateField[] = [];
-    for (const prompt of entry.prompts) {
-      for (const f of parseTemplateTags(prompt.content)) {
-        if (!seen.has(f.name)) {
-          seen.add(f.name);
-          fields.push(f);
-        }
-      }
-    }
-    return fields;
-  }, [entry]);
-
   const storageKey = `matrix_${entryId}`;
   const { fieldValues, setFieldValues } = usePlaygroundTemplateFields(templateFields, storageKey);
 
@@ -92,69 +53,15 @@ function TestMatrixPage() {
     }
   }, [entryId, setFieldValues]);
 
-  // ── Tools ──
-  const {
-    enabledServerIds, setEnabledServerIds,
-    excludedToolNames, setExcludedToolNames,
-    mcpServers, allTools,
-  } = usePlaygroundTools();
-
-  // Restore tool config from sessionStorage (overrides hook's auto-enable)
-  const didRestoreToolsRef = useRef(false);
-  useEffect(() => {
-    if (!entryId || didRestoreToolsRef.current || mcpServers.length === 0) return;
-    const saved = safeSessionGet<{ enabledServerIds: string[]; excludedToolNames: string[] } | null>(
-      `matrix_${entryId}_tools`, null,
-    );
-    if (saved) {
-      didRestoreToolsRef.current = true;
-      setEnabledServerIds(saved.enabledServerIds);
-      setExcludedToolNames(saved.excludedToolNames);
-    } else {
-      // First visit — mark as restored so persist effect can start writing
-      didRestoreToolsRef.current = true;
-    }
-  }, [entryId, mcpServers, setEnabledServerIds, setExcludedToolNames]);
-
-  // Persist tool config to sessionStorage on change
-  useEffect(() => {
-    if (!entryId || !didRestoreToolsRef.current) return;
-    sessionStorage.setItem(
-      `matrix_${entryId}_tools`,
-      JSON.stringify({ enabledServerIds, excludedToolNames }),
-    );
-  }, [entryId, enabledServerIds, excludedToolNames]);
-
-  // ── Sidebar collapse ──
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
-    safeSessionGet<boolean>(`matrix_${entryId}_sidebar`, false),
-  );
-  useEffect(() => {
-    if (!entryId) return;
-    sessionStorage.setItem(`matrix_${entryId}_sidebar`, JSON.stringify(sidebarCollapsed));
-  }, [entryId, sidebarCollapsed]);
-
-  // ── History ──
-  const [showHistory, setShowHistory] = useState(false);
-
   // ── Matrix state ──
   const {
     state,
-    addVersion,
-    removeVersion,
-    addModel,
-    removeModel,
-    selectCell,
-    updateCellStatus,
-    setCellSegments,
-    setCellResult,
-    setCellError,
-    updateModelParams,
-    selectModel,
-    selectVersion,
-    setComparisonFilter,
-    setDataset,
-    clearMatrix,
+    addVersion, removeVersion,
+    addModel, removeModel,
+    selectCell, updateCellStatus,
+    setCellSegments, setCellResult, setCellError,
+    updateModelParams, selectModel, selectVersion,
+    setComparisonFilter, setDataset, clearMatrix,
   } = useMatrixState(entryId);
 
   // ── Matrix execution ──
@@ -171,6 +78,7 @@ function TestMatrixPage() {
     selectCell,
   });
 
+  // ── Derived values ──
   const matrixHasCells = state.versions.length > 0 && state.models.length > 0;
   const addedVersionIds = useMemo(() => new Set(state.versions.map((v) => v.id)), [state.versions]);
   const addedModelIds = useMemo(() => new Set(state.models.map((m) => m.modelId)), [state.models]);
@@ -183,7 +91,7 @@ function TestMatrixPage() {
     if (state.models.length > 0 && !state.selectedModelId) {
       selectModel(state.models[0].modelId);
     }
-  }, [state.models, state.selectedModelId, selectModel]);
+  }, [state.models, state.selectedModelId, selectModel, setSidebarCollapsed]);
 
   // ── Version content for sidebar preview ──
   const selectedVersion = state.selectedVersionId
@@ -202,6 +110,7 @@ function TestMatrixPage() {
     enabled: !!entryId && !!state.selectedVersionId && !!selectedVersion,
   });
 
+  // ── Selection handlers ──
   const handleSelectModel = useCallback(
     (modelId: string | null) => {
       selectModel(modelId);
