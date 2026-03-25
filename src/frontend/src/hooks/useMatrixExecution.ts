@@ -10,6 +10,8 @@ interface UseMatrixExecutionOptions {
   entryId: string | undefined;
   state: MatrixState;
   templateFieldValues?: Record<string, string>;
+  enabledServerIds?: string[];
+  excludedToolNames?: string[];
   updateCellStatus: (versionId: string, modelId: string, status: CellStatus) => void;
   setCellSegments: (versionId: string, modelId: string, segments: StreamSegment[]) => void;
   setCellResult: (
@@ -30,6 +32,8 @@ export function useMatrixExecution({
   entryId,
   state,
   templateFieldValues,
+  enabledServerIds,
+  excludedToolNames,
   updateCellStatus,
   setCellSegments,
   setCellResult,
@@ -133,6 +137,8 @@ export function useMatrixExecution({
             showReasoning: model.showReasoning,
             templateFields: templateFieldValues,
             tabId: versionId,
+            mcpServerIds: enabledServerIds?.length ? enabledServerIds : undefined,
+            excludedToolNames: excludedToolNames?.length ? excludedToolNames : undefined,
           },
           handler,
           controller.signal,
@@ -161,7 +167,7 @@ export function useMatrixExecution({
         abortControllersRef.current.delete(key);
       }
     },
-    [entryId, state.models, templateFieldValues, updateCellStatus, selectCell, startStreamSync, stopStreamSync, setCellSegments, setCellResult, setCellError],
+    [entryId, state.models, templateFieldValues, enabledServerIds, excludedToolNames, updateCellStatus, selectCell, startStreamSync, stopStreamSync, setCellSegments, setCellResult, setCellError],
   );
 
   // Shared batch runner — eliminates duplication across runAll/runRow/runColumn

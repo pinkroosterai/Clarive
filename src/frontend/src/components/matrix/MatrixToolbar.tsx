@@ -1,11 +1,19 @@
-import { ArrowLeft, Clock, Play, Plus, Square, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronsUpDown, Clock, Database, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { TemplateVariablesSection } from '@/components/playground/TemplateVariablesSection';
 import type { PlaygroundTemplateState } from '@/components/playground/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -16,7 +24,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { EnrichedModel } from '@/services/api/playgroundService';
 import type { MatrixModel, MatrixVersion } from '@/types/matrix';
@@ -78,7 +85,7 @@ export function MatrixToolbar({
   const navigate = useNavigate();
   const providerGroups = useMemo(() => groupModelsByProvider(models), [models]);
   const [versionSelectKey, setVersionSelectKey] = useState(0);
-  const [modelSelectKey, setModelSelectKey] = useState(0);
+  const [modelPickerOpen, setModelPickerOpen] = useState(false);
 
   const handleAddModel = (modelId: string) => {
     const model = models.find((m) => m.modelId === modelId);
@@ -131,7 +138,8 @@ export function MatrixToolbar({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        {/* Primary zone: navigation + add controls */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -172,48 +180,50 @@ export function MatrixToolbar({
           </SelectContent>
         </Select>
 
-        <Select key={modelSelectKey} onValueChange={(id) => { handleAddModel(id); setModelSelectKey((k) => k + 1); }}>
-          <SelectTrigger className="w-[200px]">
-            <div className="flex items-center gap-1.5">
-              <Plus className="size-3.5" />
-              <SelectValue placeholder="Add Model" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from(providerGroups.entries()).map(([provider, providerModels]) => (
-              <SelectGroup key={provider}>
-                <SelectLabel>{provider}</SelectLabel>
-                {providerModels.map((m) => (
-                  <SelectItem key={m.modelId} value={m.modelId}>
-                    {m.displayName ?? m.modelId}
-                  </SelectItem>
+        <Popover open={modelPickerOpen} onOpenChange={setModelPickerOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={modelPickerOpen}
+              className="w-[200px] justify-between"
+            >
+              <div className="flex items-center gap-1.5">
+                <Plus className="size-3.5" />
+                Add Model
+              </div>
+              <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[280px] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Search models..." />
+              <CommandList>
+                <CommandEmpty>No models found.</CommandEmpty>
+                {Array.from(providerGroups.entries()).map(([provider, providerModels]) => (
+                  <CommandGroup key={provider} heading={provider}>
+                    {providerModels.map((m) => (
+                      <CommandItem
+                        key={m.modelId}
+                        value={`${provider} ${m.displayName ?? m.modelId}`}
+                        onSelect={() => {
+                          handleAddModel(m.modelId);
+                          setModelPickerOpen(false);
+                        }}
+                      >
+                        {m.displayName ?? m.modelId}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
                 ))}
-              </SelectGroup>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {datasets.length > 0 && (
-          <Select
-            value={selectedDatasetId ?? 'none'}
-            onValueChange={(v) => onDatasetChange(v === 'none' ? null : v)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="No dataset" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No dataset</SelectItem>
-              {datasets.map((ds) => (
-                <SelectItem key={ds.id} value={ds.id}>
-                  {ds.name} ({ds.rowCount} rows)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
 
         <Separator orientation="vertical" className="h-6" />
 
+        {/* Run zone */}
         {isRunning ? (
           <Button variant="destructive" size="sm" className="gap-2" onClick={onAbortAll}>
             <Square className="size-3.5" />
@@ -235,35 +245,84 @@ export function MatrixToolbar({
             Run All
           </Button>
         )}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={showHistory ? 'secondary' : 'ghost'}
-              size="icon"
-              className="size-8 shrink-0"
-              onClick={onToggleHistory}
-              aria-label="Toggle history"
-            >
-              <Clock className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Test history</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 shrink-0"
-              onClick={onClearMatrix}
-              disabled={!matrixHasCells}
-              aria-label="Clear grid"
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Clear all</TooltipContent>
-        </Tooltip>
+
+        {/* Spacer pushes secondary zone right */}
+        <div className="flex-1" />
+
+        {/* Secondary zone: dataset, history, clear */}
+        <div className="flex items-center gap-1">
+          {datasets.length > 0 && (
+            <Popover>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={selectedDatasetId ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="size-8 shrink-0"
+                      aria-label="Select dataset"
+                    >
+                      <Database className="size-4" />
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {selectedDatasetId
+                    ? datasets.find((d) => d.id === selectedDatasetId)?.name ?? 'Dataset'
+                    : 'Select dataset'}
+                </TooltipContent>
+              </Tooltip>
+              <PopoverContent className="w-[200px] p-1" align="end">
+                <button
+                  type="button"
+                  className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-muted/50 transition-colors"
+                  onClick={() => onDatasetChange(null)}
+                >
+                  No dataset
+                </button>
+                {datasets.map((ds) => (
+                  <button
+                    key={ds.id}
+                    type="button"
+                    className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-muted/50 transition-colors"
+                    onClick={() => onDatasetChange(ds.id)}
+                  >
+                    {ds.name} ({ds.rowCount})
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={showHistory ? 'secondary' : 'ghost'}
+                size="icon"
+                className="size-8 shrink-0"
+                onClick={onToggleHistory}
+                aria-label="Toggle history"
+              >
+                <Clock className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Test history</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 shrink-0"
+                onClick={onClearMatrix}
+                disabled={!matrixHasCells}
+                aria-label="Clear grid"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Clear all</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
       <TemplateVariablesSection template={template} />
     </div>

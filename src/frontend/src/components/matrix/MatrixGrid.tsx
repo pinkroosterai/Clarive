@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { AlertTriangle, Circle, Clock, Loader2, X } from 'lucide-react';
+import { AlertTriangle, Circle, Clock, Loader2, Play, X } from 'lucide-react';
 import { memo, useCallback } from 'react';
 
 import { scoreColor } from '@/components/wizard/scoreUtils';
@@ -18,6 +18,8 @@ interface MatrixGridProps {
   onRemoveModel: (modelId: string) => void;
   onRemoveVersion: (versionId: string) => void;
   onRunCell?: (versionId: string, modelId: string) => void;
+  onRunRow?: (versionId: string) => void;
+  onRunColumn?: (modelId: string) => void;
 }
 
 // ── Memoized cell button — only re-renders when its own status/score/selection changes ──
@@ -47,13 +49,17 @@ const MatrixCellButton = memo(
     onRun,
   }: MatrixCellButtonProps) {
     const prefersReducedMotion = useReducedMotion();
+    const heatmapBg = status === 'completed' && score != null ? scoreColor(score).bg : undefined;
+
+    const canRun = status === 'empty' || status === 'error';
 
     return (
       <button
         type="button"
         className={cn(
-          'flex items-center justify-center w-full h-14 transition-colors cursor-pointer',
+          'group/cell relative flex items-center justify-center w-full h-14 transition-colors cursor-pointer',
           'hover:bg-elevated/50',
+          heatmapBg,
           isSelected && 'ring-2 ring-primary ring-inset bg-primary/5',
           status === 'error' && 'bg-error-bg/30',
         )}
@@ -72,6 +78,20 @@ const MatrixCellButton = memo(
             <CellContent status={status} score={score} />
           </motion.div>
         </AnimatePresence>
+        {canRun && (
+          <div
+            role="button"
+            tabIndex={-1}
+            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRun?.(versionId, modelId);
+            }}
+            aria-label={`Run ${versionLabel} on ${modelName}`}
+          >
+            <Play className="size-3.5 text-primary fill-primary" />
+          </div>
+        )}
       </button>
     );
   },
@@ -108,7 +128,7 @@ function CellContent({ status, score }: { status: CellStatus; score: number | nu
 
 // ── Grid ──
 
-export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersionId, onSelectCell, onSelectModel, onSelectVersion, onRemoveModel, onRemoveVersion, onRunCell }: MatrixGridProps) {
+export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersionId, onSelectCell, onSelectModel, onSelectVersion, onRemoveModel, onRemoveVersion, onRunCell, onRunRow, onRunColumn }: MatrixGridProps) {
   const { versions, models } = state;
 
   const handleKeyDown = useCallback(
@@ -194,6 +214,17 @@ export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersi
                   </button>
                   <button
                     type="button"
+                    aria-label={`Run all versions on ${model.displayName}`}
+                    className="absolute top-0.5 left-0.5 p-0.5 rounded opacity-0 group-hover/model:opacity-100 hover:bg-primary/10 text-foreground-muted hover:text-primary transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRunColumn?.(model.modelId);
+                    }}
+                  >
+                    <Play className="size-3 fill-current" />
+                  </button>
+                  <button
+                    type="button"
                     aria-label={`Remove ${model.displayName}`}
                     className="absolute top-0.5 right-0.5 p-0.5 rounded opacity-0 group-hover/model:opacity-100 hover:bg-error-bg text-foreground-muted hover:text-error-text transition-all"
                     onClick={(e) => {
@@ -241,6 +272,17 @@ export function MatrixGrid({ state, selectedCell, selectedModelId, selectedVersi
                     }}
                   >
                     <X className="size-3" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Run all models on ${version.label}`}
+                    className="absolute bottom-1 right-0.5 p-0.5 rounded opacity-0 group-hover/version:opacity-100 hover:bg-primary/10 text-foreground-muted hover:text-primary transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRunRow?.(version.id);
+                    }}
+                  >
+                    <Play className="size-3 fill-current" />
                   </button>
                 </div>
               </td>

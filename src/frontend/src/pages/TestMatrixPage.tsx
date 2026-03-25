@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useCallback, useState } from 'react';
+import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -12,6 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMatrixExecution } from '@/hooks/useMatrixExecution';
 import { useMatrixState } from '@/hooks/useMatrixState';
 import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
+import { usePlaygroundTools } from '@/hooks/usePlaygroundTools';
+import { safeSessionGet } from '@/components/playground/utils';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { entryService } from '@/services';
 import {
@@ -88,6 +90,39 @@ function TestMatrixPage() {
     }
   }, [entryId, setFieldValues]);
 
+  // ── Tools ──
+  const {
+    enabledServerIds, setEnabledServerIds,
+    excludedToolNames, setExcludedToolNames,
+    mcpServers, allTools,
+  } = usePlaygroundTools();
+
+  // Restore tool config from sessionStorage (overrides hook's auto-enable)
+  const didRestoreToolsRef = useRef(false);
+  useEffect(() => {
+    if (!entryId || didRestoreToolsRef.current || mcpServers.length === 0) return;
+    const saved = safeSessionGet<{ enabledServerIds: string[]; excludedToolNames: string[] } | null>(
+      `matrix_${entryId}_tools`, null,
+    );
+    if (saved) {
+      didRestoreToolsRef.current = true;
+      setEnabledServerIds(saved.enabledServerIds);
+      setExcludedToolNames(saved.excludedToolNames);
+    } else {
+      // First visit — mark as restored so persist effect can start writing
+      didRestoreToolsRef.current = true;
+    }
+  }, [entryId, mcpServers, setEnabledServerIds, setExcludedToolNames]);
+
+  // Persist tool config to sessionStorage on change
+  useEffect(() => {
+    if (!entryId || !didRestoreToolsRef.current) return;
+    sessionStorage.setItem(
+      `matrix_${entryId}_tools`,
+      JSON.stringify({ enabledServerIds, excludedToolNames }),
+    );
+  }, [entryId, enabledServerIds, excludedToolNames]);
+
   // ── History ──
   const [showHistory, setShowHistory] = useState(false);
 
@@ -116,6 +151,8 @@ function TestMatrixPage() {
     entryId,
     state,
     templateFieldValues: fieldValues,
+    enabledServerIds,
+    excludedToolNames,
     updateCellStatus,
     setCellSegments,
     setCellResult,
@@ -195,6 +232,8 @@ function TestMatrixPage() {
             onRemoveModel={removeModel}
             onRemoveVersion={removeVersion}
             onRunCell={execution.runSingle}
+            onRunRow={execution.runRow}
+            onRunColumn={execution.runColumn}
           />
           {hasResults && (
             <MatrixComparisonPanel
@@ -223,6 +262,12 @@ function TestMatrixPage() {
             selectedModelId={state.selectedModelId}
             onSelectModel={handleSelectModel}
             onParamChange={updateModelParams}
+            mcpServers={mcpServers}
+            allTools={allTools}
+            enabledServerIds={enabledServerIds}
+            setEnabledServerIds={setEnabledServerIds}
+            excludedToolNames={excludedToolNames}
+            setExcludedToolNames={setExcludedToolNames}
           />
         </div>
       </div>

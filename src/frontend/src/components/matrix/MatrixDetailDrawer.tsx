@@ -1,8 +1,10 @@
 import { Settings2 } from 'lucide-react';
 
+import { MatrixToolsPanel } from '@/components/matrix/MatrixToolsPanel';
 import { ModelConfigPanel } from '@/components/matrix/ModelConfigPanel';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { McpServer, ToolDescription } from '@/types';
 import type { MatrixModel } from '@/types/matrix';
 
 interface MatrixConfigSidebarProps {
@@ -10,6 +12,12 @@ interface MatrixConfigSidebarProps {
   selectedModelId: string | null;
   onSelectModel: (modelId: string | null) => void;
   onParamChange: (modelId: string, params: Partial<Pick<MatrixModel, 'temperature' | 'maxTokens' | 'reasoningEffort' | 'showReasoning'>>) => void;
+  mcpServers: McpServer[];
+  allTools: ToolDescription[];
+  enabledServerIds: string[];
+  setEnabledServerIds: (ids: string[]) => void;
+  excludedToolNames: string[];
+  setExcludedToolNames: (names: string[]) => void;
 }
 
 function formatModelParams(model: MatrixModel): string {
@@ -24,10 +32,27 @@ export function MatrixDetailDrawer({
   selectedModelId,
   onSelectModel,
   onParamChange,
+  mcpServers,
+  allTools,
+  enabledServerIds,
+  setEnabledServerIds,
+  excludedToolNames,
+  setExcludedToolNames,
 }: MatrixConfigSidebarProps) {
   const selectedModel = selectedModelId
     ? models.find((m) => m.modelId === selectedModelId)
     : null;
+
+  const toolsPanel = mcpServers.some((s) => s.isActive) ? (
+    <MatrixToolsPanel
+      mcpServers={mcpServers}
+      allTools={allTools}
+      enabledServerIds={enabledServerIds}
+      setEnabledServerIds={setEnabledServerIds}
+      excludedToolNames={excludedToolNames}
+      setExcludedToolNames={setExcludedToolNames}
+    />
+  ) : null;
 
   // Selected model — show config panel
   if (selectedModel) {
@@ -37,6 +62,7 @@ export function MatrixDetailDrawer({
           model={selectedModel}
           onParamChange={(params) => onParamChange(selectedModel.modelId, params)}
         />
+        {toolsPanel}
       </ScrollArea>
     );
   }
@@ -77,6 +103,7 @@ export function MatrixDetailDrawer({
             ))
           )}
         </div>
+        {toolsPanel}
       </ScrollArea>
     </div>
   );
