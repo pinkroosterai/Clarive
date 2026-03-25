@@ -123,6 +123,22 @@ function TestMatrixPage() {
     );
   }, [entryId, enabledServerIds, excludedToolNames]);
 
+  // ── Sidebar collapse ──
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    safeSessionGet<boolean>(`matrix_${entryId}_sidebar`, false),
+  );
+  useEffect(() => {
+    if (!entryId) return;
+    sessionStorage.setItem(`matrix_${entryId}_sidebar`, JSON.stringify(sidebarCollapsed));
+  }, [entryId, sidebarCollapsed]);
+
+  const handleExpandToSection = useCallback((section: 'config' | 'tools') => {
+    setSidebarCollapsed(false);
+    if (section === 'config' && state.models.length > 0 && !state.selectedModelId) {
+      selectModel(state.models[0].modelId);
+    }
+  }, [state.models, state.selectedModelId, selectModel]);
+
   // ── History ──
   const [showHistory, setShowHistory] = useState(false);
 
@@ -256,7 +272,7 @@ function TestMatrixPage() {
         </ScrollArea>
 
         {/* Config sidebar */}
-        <div className="w-[400px] shrink-0 border-l border-border-subtle bg-surface overflow-hidden">
+        <div className={`${sidebarCollapsed ? 'w-12' : 'w-[400px]'} shrink-0 border-l border-border-subtle bg-surface overflow-hidden transition-[width] duration-200`}>
           <MatrixDetailDrawer
             models={state.models}
             selectedModelId={state.selectedModelId}
@@ -268,6 +284,9 @@ function TestMatrixPage() {
             setEnabledServerIds={setEnabledServerIds}
             excludedToolNames={excludedToolNames}
             setExcludedToolNames={setExcludedToolNames}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
+            onExpandToSection={handleExpandToSection}
           />
         </div>
       </div>
