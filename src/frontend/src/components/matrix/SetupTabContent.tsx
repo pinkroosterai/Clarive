@@ -22,25 +22,44 @@ import type { MatrixModel, MatrixVersion } from '@/types/matrix';
 import { enrichedModelToMatrixModel } from '@/types/matrix';
 import type { McpServer, ToolDescription, VersionInfo, TabInfo } from '@/types';
 
-export interface SetupTabContentProps {
-  entryId: string;
-  models: EnrichedModel[];
-  versions: VersionInfo[];
-  tabs: TabInfo[];
-  datasets: TestDataset[];
-  selectedDatasetId: string | null;
-  onDatasetChange: (datasetId: string | null) => void;
-  template: PlaygroundTemplateState;
-  onAddVersion: (version: MatrixVersion) => void;
-  onAddModel: (model: MatrixModel) => void;
+// ── Grouped state interfaces ──
+
+export interface ToolsState {
   mcpServers: McpServer[];
   allTools: ToolDescription[];
   enabledServerIds: string[];
   setEnabledServerIds: (ids: string[]) => void;
   excludedToolNames: string[];
   setExcludedToolNames: (names: string[]) => void;
+}
+
+export interface VersionPickerProps {
+  versions: VersionInfo[];
+  tabs: TabInfo[];
+  onAddVersion: (version: MatrixVersion) => void;
   addedVersionIds: Set<string>;
+}
+
+export interface ModelPickerProps {
+  models: EnrichedModel[];
+  onAddModel: (model: MatrixModel) => void;
   addedModelIds: Set<string>;
+}
+
+export interface DatasetPickerProps {
+  datasets: TestDataset[];
+  selectedDatasetId: string | null;
+  onDatasetChange: (datasetId: string | null) => void;
+}
+
+// ── Component props ──
+
+export interface SetupTabContentProps {
+  versionPicker: VersionPickerProps;
+  modelPicker: ModelPickerProps;
+  template: PlaygroundTemplateState;
+  tools: ToolsState;
+  dataset: DatasetPickerProps;
 }
 
 function groupModelsByProvider(models: EnrichedModel[]) {
@@ -54,24 +73,17 @@ function groupModelsByProvider(models: EnrichedModel[]) {
 }
 
 export function SetupTabContent({
-  models,
-  versions,
-  tabs,
-  datasets,
-  selectedDatasetId,
-  onDatasetChange,
+  versionPicker,
+  modelPicker,
   template,
-  onAddVersion,
-  onAddModel,
-  mcpServers,
-  allTools,
-  enabledServerIds,
-  setEnabledServerIds,
-  excludedToolNames,
-  setExcludedToolNames,
-  addedVersionIds,
-  addedModelIds,
+  tools,
+  dataset,
 }: SetupTabContentProps) {
+  const { versions, tabs, onAddVersion, addedVersionIds } = versionPicker;
+  const { models, onAddModel, addedModelIds } = modelPicker;
+  const { mcpServers, allTools, enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames } = tools;
+  const { datasets, selectedDatasetId, onDatasetChange } = dataset;
+
   const providerGroups = useMemo(() => groupModelsByProvider(models), [models]);
   const [versionPickerOpen, setVersionPickerOpen] = useState(false);
   const [modelPickerOpen, setModelPickerOpen] = useState(false);

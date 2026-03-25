@@ -226,12 +226,8 @@ function TestMatrixPage() {
           onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
           onExpandToSection={handleExpandToSection}
           setupProps={{
-            models,
-            versions,
-            tabs,
-            datasets,
-            selectedDatasetId: state.datasetId,
-            onDatasetChange: setDataset,
+            versionPicker: { versions, tabs, onAddVersion: addVersion, addedVersionIds },
+            modelPicker: { models, onAddModel: addModel, addedModelIds },
             template: {
               templateFields,
               fieldValues,
@@ -239,16 +235,8 @@ function TestMatrixPage() {
               onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
               isFillingTemplateFields,
             },
-            onAddVersion: addVersion,
-            onAddModel: addModel,
-            mcpServers,
-            allTools,
-            enabledServerIds,
-            setEnabledServerIds,
-            excludedToolNames,
-            setExcludedToolNames,
-            addedVersionIds,
-            addedModelIds,
+            tools: { mcpServers, allTools, enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames },
+            dataset: { datasets, selectedDatasetId: state.datasetId, onDatasetChange: setDataset },
           }}
         />
       </div>

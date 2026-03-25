@@ -13,6 +13,7 @@ import { CellScorecard } from '@/components/matrix/CellScorecard';
 import { ModelConfigPanel } from '@/components/matrix/ModelConfigPanel';
 import type { SetupTabContentProps } from '@/components/matrix/SetupTabContent';
 import { SetupTabContent } from '@/components/matrix/SetupTabContent';
+
 import { VersionPromptPreview } from '@/components/matrix/VersionPromptPreview';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -39,7 +40,7 @@ interface MatrixConfigSidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   onExpandToSection: () => void;
-  setupProps: Omit<SetupTabContentProps, 'entryId'>;
+  setupProps: SetupTabContentProps;
 }
 
 function formatModelParams(model: MatrixModel): string {
@@ -186,7 +187,7 @@ export function MatrixDetailDrawer({
         <TabsContent value="setup" className="flex-1 overflow-hidden pt-4">
           <ScrollArea className="h-full">
             <div className="pr-3">
-              <SetupTabContent entryId={entryId} {...setupProps} />
+              <SetupTabContent {...setupProps} />
             </div>
           </ScrollArea>
         </TabsContent>
