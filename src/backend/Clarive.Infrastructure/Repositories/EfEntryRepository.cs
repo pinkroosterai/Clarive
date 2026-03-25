@@ -195,6 +195,26 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
             );
     }
 
+    public async Task<Dictionary<Guid, List<PromptEntryVersion>>> GetTabsBatchAsync(
+        Guid tenantId,
+        List<Guid> entryIds,
+        CancellationToken ct = default
+    )
+    {
+        if (entryIds.Count == 0)
+            return [];
+
+        var tabs = await db.PromptEntryVersions.AsNoTracking()
+            .Where(v => v.Entry.TenantId == tenantId
+                        && entryIds.Contains(v.EntryId)
+                        && v.VersionState == VersionState.Tab)
+            .OrderByDescending(v => v.CreatedAt)
+            .ToListAsync(ct);
+
+        return tabs.GroupBy(v => v.EntryId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
     public async Task<PromptEntryVersion?> GetVersionAsync(
         Guid tenantId,
         Guid entryId,

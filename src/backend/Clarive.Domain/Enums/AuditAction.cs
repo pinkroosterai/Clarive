@@ -11,6 +11,8 @@ public enum AuditAction
     DraftDeleted,
     ApiGet,
     ApiGenerate,
+    ApiGetTab,
+    ApiGenerateTab,
     UserInvited,
     InvitationRevoked,
     InvitationAccepted,

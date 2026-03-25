@@ -44,6 +44,11 @@ public interface IEntryRepository
         List<Guid> entryIds,
         CancellationToken ct = default
     );
+    Task<Dictionary<Guid, List<PromptEntryVersion>>> GetTabsBatchAsync(
+        Guid tenantId,
+        List<Guid> entryIds,
+        CancellationToken ct = default
+    );
 
     // Version management
     Task<PromptEntryVersion?> GetVersionAsync(

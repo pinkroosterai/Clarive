@@ -940,15 +940,16 @@ export const sectionGroups: SectionGroup[] = [
         icon: Globe,
         title: 'Public API',
         searchText:
-          'public api fetch render published prompts get post entries generate template fields validation authentication x-api-key curl json error 401 404 422 429 rate limit list search tags pagination openapi',
+          'public api fetch render published prompts get post entries generate template fields validation authentication x-api-key curl json error 401 404 422 429 rate limit list search tags pagination openapi tabs variants tab-aware a/b testing',
         plainTextContent:
-          'Public API for fetching and rendering published prompts. Authentication via X-Api-Key header. Endpoints: List entries with search, tags, and pagination. Get single entry by ID. Generate AI response using entry prompt with template field values. Render entry with template field values substituted. Error codes: 401 Unauthorized, 404 Not Found, 422 Validation Error, 429 Rate Limited. OpenAPI spec available. Curl examples for fetching and generating.',
+          'Public API for fetching and rendering published prompts. Authentication via X-Api-Key header. Endpoints: List entries with search, tags, and pagination. Get single entry by ID. List tabs (working variants) for an entry. Get a specific tab by ID. Generate rendered prompts from published version or a specific tab. Render entry with template field values substituted. Tab-aware generation for A/B testing without publishing. Error codes: 401 Unauthorized, 404 Not Found, 422 Validation Error, 429 Rate Limited. OpenAPI spec available. Curl examples for fetching and generating.',
         searchAliases: ['rest api endpoints', 'api documentation', 'curl examples'],
         relatedSections: ['api-keys', 'sdks'],
         content: (
           <div className="space-y-3">
             <p>
               The Public API lets you list, fetch, and render published prompts programmatically.
+              You can also access tabs (working variants) for A/B testing and CI/CD workflows.
               All requests require an API key (see <strong>API Keys</strong> above).
             </p>
 
@@ -1039,7 +1040,12 @@ export const sectionGroups: SectionGroup[] = [
       "firstPromptPreview": "Write a {{tone}} email to {{recipient}}.",
       "tags": ["marketing", "email"],
       "createdAt": "2026-01-15T10:30:00Z",
-      "updatedAt": "2026-03-10T14:22:00Z"
+      "updatedAt": "2026-03-10T14:22:00Z",
+      "tabs": [
+        { "id": "t1b2c3d4-...", "name": "Main", "isMainTab": true, "forkedFromVersion": null },
+        { "id": "t5e6f7a8-...", "name": "Experiment A", "isMainTab": false, "forkedFromVersion": 2 }
+      ],
+      "tabCount": 2
     }
   ],
   "totalCount": 1,
@@ -1087,7 +1093,11 @@ export const sectionGroups: SectionGroup[] = [
   ],
   "tags": ["marketing", "email"],
   "updatedAt": "2026-03-10T14:22:00Z",
-  "publishedAt": "2026-03-10T14:22:00Z"
+  "publishedAt": "2026-03-10T14:22:00Z",
+  "tabs": [
+    { "id": "t1b2c3d4-...", "name": "Main", "isMainTab": true, "forkedFromVersion": null }
+  ],
+  "tabCount": 1
 }`}
             </pre>
 
@@ -1120,6 +1130,64 @@ export const sectionGroups: SectionGroup[] = [
   ]
 }`}
             </pre>
+
+            <h4 className="text-sm font-semibold text-foreground">
+              GET /public/v1/entries/{'{entryId}'}/tabs
+            </h4>
+            <p>
+              List all tabs (working variants) for an entry. Each tab includes its name, ID, and
+              whether it&apos;s the main tab. Use this to discover available variants for A/B testing or
+              CI/CD workflows.
+            </p>
+            <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle whitespace-pre">
+              {`curl -H "X-Api-Key: cl_your_key_here" \\
+  https://your-domain/public/v1/entries/{entryId}/tabs`}
+            </p>
+            <p className="text-xs text-foreground-muted mt-1">Response (200):</p>
+            <pre className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle overflow-x-auto">
+              {`[
+  {
+    "id": "t1b2c3d4-...",
+    "name": "Main",
+    "isMainTab": true,
+    "forkedFromVersion": null
+  },
+  {
+    "id": "t5e6f7a8-...",
+    "name": "Experiment A",
+    "isMainTab": false,
+    "forkedFromVersion": 2
+  }
+]`}
+            </pre>
+
+            <h4 className="text-sm font-semibold text-foreground">
+              GET /public/v1/entries/{'{entryId}'}/tabs/{'{tabId}'}
+            </h4>
+            <p>
+              Fetch the full content of a specific tab, including its system message, prompts,
+              template fields, and tags. The response shape matches the entry detail endpoint.
+            </p>
+            <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle whitespace-pre">
+              {`curl -H "X-Api-Key: cl_your_key_here" \\
+  https://your-domain/public/v1/entries/{entryId}/tabs/{tabId}`}
+            </p>
+
+            <h4 className="text-sm font-semibold text-foreground">
+              POST /public/v1/entries/{'{entryId}'}/tabs/{'{tabId}'}/generate
+            </h4>
+            <p>
+              Render a tab&apos;s templates by substituting variables with the values you provide.
+              Works the same as the entry generate endpoint but targets a specific tab instead of the
+              published version. Useful for A/B testing prompt variants without publishing them.
+            </p>
+            <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle whitespace-pre">
+              {`curl -X POST \\
+  -H "X-Api-Key: cl_your_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{"fields":{"tone":"casual","recipient":"Bob"}}' \\
+  https://your-domain/public/v1/entries/{entryId}/tabs/{tabId}/generate`}
+            </p>
 
             <h4 className="text-sm font-semibold text-foreground">GET /public/v1/tags</h4>
             <p>List all tags in your workspace with entry counts.</p>
@@ -1230,6 +1298,11 @@ export const sectionGroups: SectionGroup[] = [
                     <td className="p-2 font-mono">404</td>
                     <td className="p-2 font-mono">NOT_PUBLISHED</td>
                     <td className="p-2">Entry exists but has no published version</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-mono">404</td>
+                    <td className="p-2 font-mono">TAB_NOT_FOUND</td>
+                    <td className="p-2">Tab doesn&apos;t exist or isn&apos;t a valid working tab</td>
                   </tr>
                   <tr>
                     <td className="p-2 font-mono">422</td>

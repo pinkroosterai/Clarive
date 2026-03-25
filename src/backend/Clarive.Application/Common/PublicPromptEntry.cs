@@ -10,7 +10,9 @@ public record PublicPromptEntry(
     List<PublicPrompt> Prompts,
     List<string> Tags,
     DateTime UpdatedAt,
-    DateTime? PublishedAt
+    DateTime? PublishedAt,
+    List<PublicTabSummary> Tabs,
+    int TabCount
 );
 
 public record PublicPrompt(
@@ -31,5 +33,14 @@ public record PublicEntrySummary(
     string? FirstPromptPreview,
     List<string> Tags,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    List<PublicTabSummary> Tabs,
+    int TabCount
+);
+
+public record PublicTabSummary(
+    Guid Id,
+    string Name,
+    bool IsMainTab,
+    int? ForkedFromVersion
 );

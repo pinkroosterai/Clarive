@@ -1,7 +1,11 @@
+using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Services;
+using Clarive.Domain.Interfaces.Repositories;
 using Microsoft.AspNetCore.Hosting;
 using Clarive.Auth.Jwt;
+using Clarive.Application.Common;
 using Clarive.Application.Tags.Contracts;
+using Clarive.Application.Tabs.Contracts;
 using System.ComponentModel;
 using Clarive.Api.Helpers;
 using Clarive.Domain.Enums;
@@ -29,6 +33,11 @@ public static class PublicApiEndpoints
         group.MapGet("/entries", HandleList);
         group.MapGet("/entries/{entryId:guid}", HandleGet);
         group.MapPost("/entries/{entryId:guid}/generate", HandleGenerate);
+
+        // Tabs (read-only)
+        group.MapGet("/entries/{entryId:guid}/tabs", HandleListTabs).AddEndpointFilter(new CacheControlFilter(300));
+        group.MapGet("/entries/{entryId:guid}/tabs/{tabId:guid}", HandleGetTab);
+        group.MapPost("/entries/{entryId:guid}/tabs/{tabId:guid}/generate", HandleGenerateTab);
 
         // Tags
         group.MapGet("/tags", HandleListTags).AddEndpointFilter(new CacheControlFilter(300));
@@ -76,6 +85,7 @@ public static class PublicApiEndpoints
     private static async Task<IResult> HandleList(
         HttpContext ctx,
         IEntryService entryService,
+        IEntryRepository entryRepo,
         CancellationToken ct,
         [Description("Folder ID to filter by, or 'all' for all folders")] string? folderId = null,
         [Description("Comma-separated tag names")] string? tags = null,
@@ -122,20 +132,22 @@ public static class PublicApiEndpoints
 
         var (summaries, totalCount) = result.Value;
 
+        // Batch-load tabs for all entries in one query (avoids N+1)
+        var entryIds = summaries.Select(s => s.Id).ToList();
+        var tabsByEntry = await entryRepo.GetTabsBatchAsync(claims.TenantId, entryIds, ct);
+
         var items = summaries
-            .Select(s => new PublicEntrySummary(
-                s.Id,
-                s.Title,
-                s.Version,
-                s.HasSystemMessage,
-                s.IsTemplate,
-                s.IsChain,
-                s.PromptCount,
-                s.FirstPromptPreview,
-                s.Tags,
-                s.CreatedAt,
-                s.UpdatedAt
-            ))
+            .Select(s =>
+            {
+                var tabs = tabsByEntry.TryGetValue(s.Id, out var entryTabs)
+                    ? MapTabSummaries(entryTabs)
+                    : [];
+                return new PublicEntrySummary(
+                    s.Id, s.Title, s.Version, s.HasSystemMessage, s.IsTemplate, s.IsChain,
+                    s.PromptCount, s.FirstPromptPreview, s.Tags, s.CreatedAt, s.UpdatedAt,
+                    tabs, tabs.Count
+                );
+            })
             .ToList();
 
         return Results.Ok(new PaginatedResponse<PublicEntrySummary>(items, totalCount, p, ps));
@@ -147,6 +159,7 @@ public static class PublicApiEndpoints
         Guid entryId,
         HttpContext ctx,
         IEntryService entryService,
+        ITabService tabService,
         ITagService tagService,
         IAuditLogger auditLogger,
         CancellationToken ct
@@ -174,27 +187,14 @@ public static class PublicApiEndpoints
         );
 
         var entryTags = await tagService.GetByEntryIdAsync(claims.TenantId, entryId, ct);
+        var tabs = await LoadTabSummariesAsync(tabService, claims.TenantId, entryId, ct);
 
-        var prompts = published
-            .Prompts.OrderBy(p => p.Order)
-            .Select(p => new PublicPrompt(
-                p.Content,
-                p.Order,
-                p.IsTemplate,
-                p.IsTemplate && p.TemplateFields.Count > 0 ? p.TemplateFields : null
-            ))
-            .ToList();
+        var prompts = MapPublicPrompts(published);
 
         return Results.Ok(
             new PublicPromptEntry(
-                entry.Id,
-                entry.Title,
-                published.SystemMessage,
-                published.Version,
-                prompts,
-                entryTags,
-                entry.UpdatedAt,
-                published.PublishedAt
+                entry.Id, entry.Title, published.SystemMessage, published.Version,
+                prompts, entryTags, entry.UpdatedAt, published.PublishedAt, tabs, tabs.Count
             )
         );
     }
@@ -220,59 +220,19 @@ public static class PublicApiEndpoints
 
         var (entry, published) = result.Value;
 
-        // Collect all template fields across all prompts, deduplicated by name.
-        // GroupBy guarantees non-empty groups, so First() is always safe here.
-        var allFields = published
-            .Prompts.Where(p => p.IsTemplate)
-            .SelectMany(p => p.TemplateFields)
-            .GroupBy(f => f.Name)
-            .Select(g => g.First())
-            .ToList();
+        var validationError = ValidateTemplateFields(published, request, ctx, out var fields);
+        if (validationError is not null)
+            return validationError;
 
-        // Validate fields
-        var fields = request.Fields ?? new Dictionary<string, string>();
-        var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
-        if (errors.Count > 0)
-            return ctx.ErrorResult(
-                422,
-                "VALIDATION_ERROR",
-                "Template field validation failed.",
-                errors
-            );
-
-        // Render prompts
-        var rendered = published
-            .Prompts.OrderBy(p => p.Order)
-            .Select(p => new RenderedPrompt(
-                p.IsTemplate ? TemplateParser.Render(p.Content, fields) : p.Content,
-                p.Order
-            ))
-            .ToList();
-
-        // Render system message if it contains templates
-        var systemMessage = published.SystemMessage;
-        if (!string.IsNullOrEmpty(systemMessage))
-            systemMessage = TemplateParser.Render(systemMessage, fields);
+        var (rendered, systemMessage) = RenderVersion(published, fields);
 
         await auditLogger.LogAsync(
-            claims.TenantId,
-            claims.ApiKeyId,
-            claims.ApiKeyName,
-            AuditAction.ApiGenerate,
-            "entry",
-            entry.Id,
-            entry.Title,
-            ct: ct
+            claims.TenantId, claims.ApiKeyId, claims.ApiKeyName,
+            AuditAction.ApiGenerate, "entry", entry.Id, entry.Title, ct: ct
         );
 
         return Results.Ok(
-            new PublicGenerateResponse(
-                entry.Id,
-                entry.Title,
-                published.Version,
-                systemMessage,
-                rendered
-            )
+            new PublicGenerateResponse(entry.Id, entry.Title, published.Version, systemMessage, rendered)
         );
     }
 
@@ -292,6 +252,168 @@ public static class PublicApiEndpoints
         var response = tags.Select(t => new { name = t.Name, entryCount = t.EntryCount })
             .ToList();
         return Results.Ok(response);
+    }
+
+    // ── Get single tab ──
+
+    private static async Task<IResult> HandleGetTab(
+        Guid entryId,
+        Guid tabId,
+        HttpContext ctx,
+        IEntryRepository entryRepo,
+        ITabService tabService,
+        ITagService tagService,
+        IAuditLogger auditLogger,
+        CancellationToken ct
+    )
+    {
+        var (claims, claimsError) = GetApiKeyClaims(ctx);
+        if (claims is null)
+            return claimsError!;
+
+        var entry = await entryRepo.GetByIdAsync(claims.TenantId, entryId, ct);
+        if (entry is null || entry.IsTrashed)
+            return ctx.ErrorResult(404, "ENTRY_NOT_FOUND", "Entry not found.");
+
+        var tab = await entryRepo.GetVersionByIdAsync(claims.TenantId, tabId, ct);
+        if (tab is null || tab.EntryId != entryId || tab.VersionState != VersionState.Tab)
+            return ctx.ErrorResult(404, "TAB_NOT_FOUND", "Tab not found.");
+
+        await auditLogger.LogAsync(
+            claims.TenantId, claims.ApiKeyId, claims.ApiKeyName,
+            AuditAction.ApiGetTab, "entry", entry.Id, entry.Title, ct: ct
+        );
+
+        var entryTags = await tagService.GetByEntryIdAsync(claims.TenantId, entryId, ct);
+        var tabs = await LoadTabSummariesAsync(tabService, claims.TenantId, entryId, ct);
+        var prompts = MapPublicPrompts(tab);
+
+        return Results.Ok(
+            new PublicPromptEntry(
+                entry.Id, entry.Title, tab.SystemMessage, tab.Version,
+                prompts, entryTags, entry.UpdatedAt, tab.PublishedAt, tabs, tabs.Count
+            )
+        );
+    }
+
+    // ── Generate (render templates) from a tab ──
+
+    private static async Task<IResult> HandleGenerateTab(
+        Guid entryId,
+        Guid tabId,
+        HttpContext ctx,
+        PublicGenerateRequest request,
+        IEntryRepository entryRepo,
+        IAuditLogger auditLogger,
+        CancellationToken ct
+    )
+    {
+        var (claims, claimsError) = GetApiKeyClaims(ctx);
+        if (claims is null)
+            return claimsError!;
+
+        var entry = await entryRepo.GetByIdAsync(claims.TenantId, entryId, ct);
+        if (entry is null || entry.IsTrashed)
+            return ctx.ErrorResult(404, "ENTRY_NOT_FOUND", "Entry not found.");
+
+        var tab = await entryRepo.GetVersionByIdAsync(claims.TenantId, tabId, ct);
+        if (tab is null || tab.EntryId != entryId || tab.VersionState != VersionState.Tab)
+            return ctx.ErrorResult(404, "TAB_NOT_FOUND", "Tab not found.");
+
+        var validationError = ValidateTemplateFields(tab, request, ctx, out var fields);
+        if (validationError is not null)
+            return validationError;
+
+        var (rendered, systemMessage) = RenderVersion(tab, fields);
+
+        await auditLogger.LogAsync(
+            claims.TenantId, claims.ApiKeyId, claims.ApiKeyName,
+            AuditAction.ApiGenerateTab, "entry", entry.Id, entry.Title, ct: ct
+        );
+
+        return Results.Ok(
+            new PublicGenerateResponse(entry.Id, entry.Title, tab.Version, systemMessage, rendered)
+        );
+    }
+
+    // ── List tabs for an entry ──
+
+    private static async Task<IResult> HandleListTabs(
+        Guid entryId,
+        HttpContext ctx,
+        IEntryRepository entryRepo,
+        ITabService tabService,
+        CancellationToken ct
+    )
+    {
+        var (claims, claimsError) = GetApiKeyClaims(ctx);
+        if (claims is null)
+            return claimsError!;
+
+        var entry = await entryRepo.GetByIdAsync(claims.TenantId, entryId, ct);
+        if (entry is null || entry.IsTrashed)
+            return ctx.ErrorResult(404, "ENTRY_NOT_FOUND", "Entry not found.");
+
+        var tabs = await LoadTabSummariesAsync(tabService, claims.TenantId, entryId, ct);
+        return Results.Ok(tabs);
+    }
+
+    // ── Shared helpers ──
+
+    private static List<PublicTabSummary> MapTabSummaries(List<PromptEntryVersion> tabs) =>
+        tabs.Select(t => new PublicTabSummary(t.Id, t.TabName ?? "Main", t.IsMainTab, t.ForkedFromVersion)).ToList();
+
+    private static async Task<List<PublicTabSummary>> LoadTabSummariesAsync(
+        ITabService tabService, Guid tenantId, Guid entryId, CancellationToken ct)
+    {
+        var result = await tabService.ListAsync(tenantId, entryId, ct);
+        return result.IsError
+            ? []
+            : result.Value
+                .Select(t => new PublicTabSummary(t.Id, t.Name, t.IsMainTab, t.ForkedFromVersion))
+                .ToList();
+    }
+
+    private static List<PublicPrompt> MapPublicPrompts(PromptEntryVersion version) =>
+        version.Prompts.OrderBy(p => p.Order)
+            .Select(p => new PublicPrompt(
+                p.Content, p.Order, p.IsTemplate,
+                p.IsTemplate && p.TemplateFields.Count > 0 ? p.TemplateFields : null
+            ))
+            .ToList();
+
+    private static IResult? ValidateTemplateFields(
+        PromptEntryVersion version, PublicGenerateRequest request, HttpContext ctx,
+        out Dictionary<string, string> fields)
+    {
+        // Collect all template fields across all prompts, deduplicated by name.
+        var allFields = version.Prompts.Where(p => p.IsTemplate)
+            .SelectMany(p => p.TemplateFields)
+            .GroupBy(f => f.Name)
+            .Select(g => g.First())
+            .ToList();
+
+        fields = request.Fields ?? new Dictionary<string, string>();
+        var errors = TemplateFieldValidator.ValidateFields(allFields, fields);
+        if (errors.Count > 0)
+            return ctx.ErrorResult(422, "VALIDATION_ERROR", "Template field validation failed.", errors);
+        return null;
+    }
+
+    private static (List<RenderedPrompt> Rendered, string? SystemMessage) RenderVersion(
+        PromptEntryVersion version, Dictionary<string, string> fields)
+    {
+        var rendered = version.Prompts.OrderBy(p => p.Order)
+            .Select(p => new RenderedPrompt(
+                p.IsTemplate ? TemplateParser.Render(p.Content, fields) : p.Content, p.Order
+            ))
+            .ToList();
+
+        var systemMessage = version.SystemMessage;
+        if (!string.IsNullOrEmpty(systemMessage))
+            systemMessage = TemplateParser.Render(systemMessage, fields);
+
+        return (rendered, systemMessage);
     }
 
     // ── Serve OpenAPI spec ──

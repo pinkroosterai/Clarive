@@ -29,9 +29,10 @@ info:
     All data is scoped to the authenticated user's tenant (organization). Users only see data belonging to their own tenant.
 
     ## Versioning Behavior
-    - Saving an entry always overwrites the current **draft**.
-    - Publishing promotes the draft to **published** (incrementing the version number); the prior published version becomes **historical**.
+    - Each entry has one or more **tabs** (working variants). The main tab is the default editing surface.
+    - Publishing a tab promotes it to **published** (incrementing the version number); the prior published version becomes **historical**.
     - Promoting a historical version creates a new published version (new version number); the prior published version becomes historical.
+    - The Public API exposes published versions by default. Tabs are accessible via dedicated `/tabs` endpoints for A/B testing and CI/CD workflows.
 
   version: 1.0.0
   contact:
@@ -812,9 +813,28 @@ components:
 
     # ── Public API Schemas ─────────────────────
 
+    PublicTabSummary:
+      type: object
+      description: Summary of a tab (working variant) for a prompt entry.
+      required: [id, name, isMainTab]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Human-readable tab name (e.g. "Main", "Experiment A").
+        isMainTab:
+          type: boolean
+          description: Whether this is the entry's main tab.
+        forkedFromVersion:
+          type: integer
+          nullable: true
+          description: The version number this tab was forked from, if any.
+
     PublicPromptEntry:
       type: object
-      description: Published prompt entry as returned by the public API.
+      description: Prompt entry content as returned by the public API (published version or tab).
       required: [id, title, version, prompts]
       properties:
         id:
@@ -843,6 +863,14 @@ components:
                 type: array
                 items:
                   $ref: '#/components/schemas/TemplateField'
+        tabs:
+          type: array
+          description: All tabs for this entry.
+          items:
+            $ref: '#/components/schemas/PublicTabSummary'
+        tabCount:
+          type: integer
+          description: Number of tabs for this entry.
 
     PublicGenerateRequest:
       type: object
@@ -2308,6 +2336,148 @@ paths:
                 error:
                   code: NOT_PUBLISHED
                   message: This entry has no published version.
+
+  /public/v1/entries/{entryId}/tabs:
+    parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Public API]
+      summary: List all tabs for an entry
+      description: |
+        Returns all tabs (working variants) for a prompt entry.
+        Each tab includes its ID, name, whether it is the main tab,
+        and which version it was forked from.
+        Authenticated via API key (`X-Api-Key` header).
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Array of tab summaries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicTabSummary'
+        '401':
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Entry not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /public/v1/entries/{entryId}/tabs/{tabId}:
+    parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: tabId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Public API]
+      summary: Get a specific tab's content
+      description: |
+        Returns the full content of a specific tab (working variant) for a prompt entry,
+        including system message, prompts, template fields, and tags.
+        Only tabs (not published or historical versions) are accessible via this endpoint.
+        Authenticated via API key (`X-Api-Key` header).
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Full tab content.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicPromptEntry'
+        '401':
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Entry or tab not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /public/v1/entries/{entryId}/tabs/{tabId}/generate:
+    parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: tabId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Public API]
+      summary: Generate a rendered prompt from a tab's templates
+      description: |
+        Renders templates against a specific tab's content rather than the published version.
+        Accepts values for all template fields, validates them server-side, and returns
+        the fully rendered prompt(s) with all template tags substituted.
+
+        Useful for A/B testing different prompt variants without publishing them.
+        Authenticated via API key (`X-Api-Key` header).
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicGenerateRequest'
+      responses:
+        '200':
+          description: Rendered prompt with all template tags substituted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicGenerateResponse'
+        '401':
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Entry or tab not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Template field validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /public/v1/entries/{entryId}/generate:
     parameters:
