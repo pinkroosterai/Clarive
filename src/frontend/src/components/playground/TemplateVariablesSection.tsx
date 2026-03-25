@@ -3,7 +3,6 @@ import { useState } from 'react';
 
 import type { PlaygroundTemplateState } from './utils';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
@@ -18,7 +17,6 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { TemplateField } from '@/types';
 
 interface TemplateVariablesSectionProps {
   template: PlaygroundTemplateState;
@@ -38,9 +36,9 @@ export function TemplateVariablesSection({ template }: TemplateVariablesSectionP
           <ChevronDown className="size-3.5 transition-transform duration-200 group-data-[state=closed]:-rotate-90" />
           Variables ({templateFields.length})
           {missingCount > 0 && (
-            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+            <span className="px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">
               {missingCount} empty
-            </Badge>
+            </span>
           )}
         </CollapsibleTrigger>
         {onFillTemplateFields && (
@@ -84,6 +82,8 @@ export function TemplateVariablesSection({ template }: TemplateVariablesSectionP
     </Collapsible>
   );
 }
+
+type TemplateField = PlaygroundTemplateState['templateFields'][number];
 
 interface FieldPillProps {
   field: TemplateField;
