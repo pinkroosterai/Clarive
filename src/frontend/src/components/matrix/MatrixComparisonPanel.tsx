@@ -70,12 +70,20 @@ export function MatrixComparisonPanel({
 
   // Build tab data — only tabs with at least one result cell
   const tabs = useMemo(() => {
+    // Single-pass count maps: O(cells) instead of O(models * cells + versions * cells)
+    const modelCounts = new Map<string, number>();
+    const versionCounts = new Map<string, number>();
+    for (const cell of resultCells) {
+      modelCounts.set(cell.modelId, (modelCounts.get(cell.modelId) ?? 0) + 1);
+      versionCounts.set(cell.versionId, (versionCounts.get(cell.versionId) ?? 0) + 1);
+    }
+
     const items: { label: string; count: number; filter: ComparisonFilter }[] = [
       { label: 'All', count: resultCells.length, filter: 'all' },
     ];
 
     for (const model of state.models) {
-      const count = resultCells.filter((c) => c.modelId === model.modelId).length;
+      const count = modelCounts.get(model.modelId) ?? 0;
       if (count > 0) {
         items.push({
           label: model.displayName,
@@ -86,7 +94,7 @@ export function MatrixComparisonPanel({
     }
 
     for (const version of state.versions) {
-      const count = resultCells.filter((c) => c.versionId === version.id).length;
+      const count = versionCounts.get(version.id) ?? 0;
       if (count > 0) {
         items.push({
           label: version.label,

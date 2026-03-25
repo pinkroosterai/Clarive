@@ -111,24 +111,26 @@ function TestMatrixPage() {
   });
 
   // ── Selection handlers ──
-  const handleSelectModel = useCallback(
-    (modelId: string | null) => {
-      selectModel(modelId);
-      selectVersion(null);
+  const handleSelect = useCallback(
+    (type: 'model' | 'version', id: string | null) => {
+      selectModel(type === 'model' ? id : null);
+      selectVersion(type === 'version' ? id : null);
       selectCell(null);
-      setComparisonFilter(modelId ? { type: 'model', modelId } : 'all');
+      if (!id) setComparisonFilter('all');
+      else if (type === 'model') setComparisonFilter({ type: 'model', modelId: id });
+      else setComparisonFilter({ type: 'version', versionId: id });
     },
     [selectModel, selectVersion, selectCell, setComparisonFilter],
   );
 
+  const handleSelectModel = useCallback(
+    (modelId: string | null) => handleSelect('model', modelId),
+    [handleSelect],
+  );
+
   const handleSelectVersion = useCallback(
-    (versionId: string | null) => {
-      selectVersion(versionId);
-      selectModel(null);
-      selectCell(null);
-      setComparisonFilter(versionId ? { type: 'version', versionId } : 'all');
-    },
-    [selectVersion, selectModel, selectCell, setComparisonFilter],
+    (versionId: string | null) => handleSelect('version', versionId),
+    [handleSelect],
   );
 
   if (!entryId) return null;
