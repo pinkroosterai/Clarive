@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { createStreamEventHandler, type StreamSegment } from './streamingTypes';
+import { createStreamEventHandler } from './streamingTypes';
+import { useStreamSync } from './useStreamSync';
 
 import { testEntry, type Evaluation } from '@/services/api/playgroundService';
 import type { CellStatus, MatrixState, CellKey } from '@/types/matrix';
@@ -44,38 +45,17 @@ export function useMatrixExecution({
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(
     null,
   );
-  const [activeStreamSegments, setActiveStreamSegments] = useState<StreamSegment[]>([]);
-  const [activeStreamKey, setActiveStreamKey] = useState<string>('');
+
+  const {
+    activeStreamSegments,
+    activeStreamKey,
+    activeStreamRef,
+    syncTimerRef,
+    startStreamSync,
+    stopStreamSync,
+  } = useStreamSync();
 
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
-  const activeStreamRef = useRef<{ key: string; segments: StreamSegment[] }>({
-    key: '',
-    segments: [],
-  });
-  const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Sync active stream ref to state at 100ms intervals for the detail drawer
-  const startStreamSync = useCallback((key: string) => {
-    activeStreamRef.current = { key, segments: [] };
-    setActiveStreamKey(key);
-    setActiveStreamSegments([]);
-
-    if (syncTimerRef.current) clearInterval(syncTimerRef.current);
-    syncTimerRef.current = setInterval(() => {
-      if (activeStreamRef.current.key === key) {
-        setActiveStreamSegments([...activeStreamRef.current.segments]);
-      }
-    }, 100);
-  }, []);
-
-  const stopStreamSync = useCallback(() => {
-    if (syncTimerRef.current) {
-      clearInterval(syncTimerRef.current);
-      syncTimerRef.current = null;
-    }
-    // Final sync
-    setActiveStreamSegments([...activeStreamRef.current.segments]);
-  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -86,7 +66,7 @@ export function useMatrixExecution({
       }
       abortControllersRef.current.clear();
     };
-  }, []);
+  }, [syncTimerRef]);
 
   const runSingle = useCallback(
     async (versionId: string, modelId: string) => {
