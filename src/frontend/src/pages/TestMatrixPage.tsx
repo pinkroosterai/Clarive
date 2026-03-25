@@ -132,13 +132,6 @@ function TestMatrixPage() {
     sessionStorage.setItem(`matrix_${entryId}_sidebar`, JSON.stringify(sidebarCollapsed));
   }, [entryId, sidebarCollapsed]);
 
-  const handleExpandToSection = useCallback((section: 'config' | 'tools') => {
-    setSidebarCollapsed(false);
-    if (section === 'config' && state.models.length > 0 && !state.selectedModelId) {
-      selectModel(state.models[0].modelId);
-    }
-  }, [state.models, state.selectedModelId, selectModel]);
-
   // ── History ──
   const [showHistory, setShowHistory] = useState(false);
 
@@ -180,6 +173,13 @@ function TestMatrixPage() {
   const hasResults = Object.values(state.cells).some(
     (c) => c.status === 'completed' || c.status === 'running',
   );
+
+  const handleExpandToSection = useCallback((section: 'config' | 'tools') => {
+    setSidebarCollapsed(false);
+    if (section === 'config' && state.models.length > 0 && !state.selectedModelId) {
+      selectModel(state.models[0].modelId);
+    }
+  }, [state.models, state.selectedModelId, selectModel]);
 
   const handleSelectModel = useCallback(
     (modelId: string | null) => {
