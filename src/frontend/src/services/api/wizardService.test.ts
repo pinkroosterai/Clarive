@@ -141,7 +141,7 @@ describe('generatePrompt', () => {
     expect(draft.systemMessage).toBe('sys msg');
     expect(draft.folderId).toBe('f1');
     expect(draft.version).toBe(1);
-    expect(draft.versionState).toBe('draft');
+    expect(draft.versionState).toBe('tab');
     expect(draft.isTrashed).toBe(false);
     expect(draft.createdBy).toBe('');
     expect(draft.prompts).toHaveLength(2);
@@ -289,7 +289,7 @@ describe('refinePrompt', () => {
 
     expect(result.draft.id).toBe('');
     expect(result.draft.version).toBe(1);
-    expect(result.draft.versionState).toBe('draft');
+    expect(result.draft.versionState).toBe('tab');
     expect(result.questions).toEqual(apiRes.questions);
     expect(result.enhancements).toEqual(apiRes.enhancements);
   });

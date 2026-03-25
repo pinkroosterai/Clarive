@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/services', () => ({
   entryService: {
     updateEntry: vi.fn(),
-    publishEntry: vi.fn(),
+    publishTab: vi.fn(),
     moveEntry: vi.fn(),
   },
   wizardService: {
@@ -29,7 +29,7 @@ import { entryService, wizardService } from '@/services';
 import { createDraftEntry } from '@/test/factories';
 
 const mockUpdateEntry = vi.mocked(entryService.updateEntry);
-const mockPublishEntry = vi.mocked(entryService.publishEntry);
+const mockPublishTab = vi.mocked(entryService.publishTab);
 const mockMoveEntry = vi.mocked(entryService.moveEntry);
 const mockGenerateSystemMessage = vi.mocked(wizardService.generateSystemMessage);
 const mockDecomposeToChain = vi.mocked(wizardService.decomposeToChain);
@@ -46,6 +46,7 @@ function makeOptions(overrides?: Partial<Parameters<typeof useEditorMutations>[0
   const entry = createDraftEntry();
   return {
     entryId: entry.id,
+    activeTabId: 'tab-1',
     localEntryRef: { current: entry },
     pendingEvaluationRef: { current: null },
     onSaveSuccess: vi.fn(),
@@ -75,14 +76,14 @@ describe('useEditorMutations', () => {
     expect(mockUpdateEntry).toHaveBeenCalledWith(
       opts.localEntryRef.current!.id,
       opts.localEntryRef.current,
-      undefined
+      { evaluation: undefined, tabId: 'tab-1' }
     );
     expect(opts.onSaveSuccess).toHaveBeenCalled();
   });
 
-  it('handlePublish calls publishEntry', async () => {
+  it('handlePublish calls publishTab', async () => {
     const opts = makeOptions();
-    mockPublishEntry.mockResolvedValue({} as unknown);
+    mockPublishTab.mockResolvedValue({} as unknown);
 
     const { result } = renderHook(() => useEditorMutations(opts), {
       wrapper: createWrapper(),
@@ -92,7 +93,7 @@ describe('useEditorMutations', () => {
       result.current.handlePublish();
     });
 
-    expect(mockPublishEntry).toHaveBeenCalledWith(opts.entryId);
+    expect(mockPublishTab).toHaveBeenCalledWith(opts.entryId, opts.activeTabId);
     expect(opts.onPublishSuccess).toHaveBeenCalled();
   });
 
@@ -123,7 +124,7 @@ describe('useEditorMutations', () => {
       await result.current.handleGenerateSystemMessage();
     });
 
-    expect(mockGenerateSystemMessage).toHaveBeenCalledWith(opts.entryId, {
+    expect(mockGenerateSystemMessage).toHaveBeenCalledWith(opts.entryId, opts.activeTabId, {
       signal: expect.any(AbortSignal),
     });
     expect(opts.handleChange).toHaveBeenCalledWith(
@@ -145,7 +146,7 @@ describe('useEditorMutations', () => {
       await result.current.handleDecomposeToChain();
     });
 
-    expect(mockDecomposeToChain).toHaveBeenCalledWith(opts.entryId, {
+    expect(mockDecomposeToChain).toHaveBeenCalledWith(opts.entryId, opts.activeTabId, {
       signal: expect.any(AbortSignal),
     });
     expect(opts.handleChange).toHaveBeenCalledWith({ prompts: decomposed }, { force: true });

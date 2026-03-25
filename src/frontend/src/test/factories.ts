@@ -45,6 +45,7 @@ export function createFolder(overrides?: Partial<Folder>): Folder {
     id: uid(),
     name: 'Test Folder',
     parentId: null,
+    color: null,
     children: [],
     ...overrides,
   };
@@ -81,7 +82,7 @@ export function createEntry(overrides?: Partial<PromptEntry>): PromptEntry {
     prompts: [createPrompt()],
     folderId: null,
     version: 1,
-    versionState: 'draft',
+    versionState: 'tab',
     isTrashed: false,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
@@ -91,7 +92,7 @@ export function createEntry(overrides?: Partial<PromptEntry>): PromptEntry {
 }
 
 export function createDraftEntry(overrides?: Partial<PromptEntry>): PromptEntry {
-  return createEntry({ versionState: 'draft', version: 1, ...overrides });
+  return createEntry({ versionState: 'tab', version: 1, ...overrides });
 }
 
 export function createPublishedEntry(overrides?: Partial<PromptEntry>): PromptEntry {
@@ -185,8 +186,9 @@ export function createAuditLogEntry(overrides?: Partial<AuditLogEntry>): AuditLo
 
 export function createVersionInfo(overrides?: Partial<VersionInfo>): VersionInfo {
   return {
+    id: uid(),
     version: 1,
-    versionState: 'draft',
+    versionState: 'tab',
     publishedAt: null,
     publishedBy: null,
     ...overrides,

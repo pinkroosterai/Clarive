@@ -19,8 +19,8 @@ import {
   getEntry,
   createEntry,
   updateEntry,
-  publishEntry,
-  promoteVersion,
+  publishTab,
+  restoreVersion,
   getVersion,
   getVersionHistory,
   moveEntry,
@@ -47,7 +47,7 @@ describe('getEntriesList', () => {
       id: 'e1',
       title: 'My Entry',
       version: 1,
-      versionState: 'draft' as const,
+      versionState: 'tab' as const,
       isTrashed: false,
       folderId: null,
       hasSystemMessage: false,
@@ -253,30 +253,30 @@ describe('updateEntry', () => {
   });
 });
 
-// ── publishEntry ──
+// ── publishTab ──
 
-describe('publishEntry', () => {
-  it('calls POST /api/entries/:id/publish', async () => {
+describe('publishTab', () => {
+  it('calls POST /api/entries/:entryId/tabs/:tabId/publish', async () => {
     const entry = createEntryFactory({ id: 'e1', versionState: 'published' });
     mockApi.post.mockResolvedValue(entry);
 
-    const result = await publishEntry('e1');
+    const result = await publishTab('e1', 'tab-1');
 
-    expect(mockApi.post).toHaveBeenCalledWith('/api/entries/e1/publish');
+    expect(mockApi.post).toHaveBeenCalledWith('/api/entries/e1/tabs/tab-1/publish');
     expect(result).toEqual(entry);
   });
 });
 
-// ── promoteVersion ──
+// ── restoreVersion ──
 
-describe('promoteVersion', () => {
-  it('calls POST /api/entries/:entryId/versions/:version/promote', async () => {
+describe('restoreVersion', () => {
+  it('calls POST /api/entries/:entryId/versions/:version/restore', async () => {
     const entry = createEntryFactory({ id: 'e1' });
     mockApi.post.mockResolvedValue(entry);
 
-    const result = await promoteVersion('e1', 2);
+    const result = await restoreVersion('e1', 2);
 
-    expect(mockApi.post).toHaveBeenCalledWith('/api/entries/e1/versions/2/promote');
+    expect(mockApi.post).toHaveBeenCalledWith('/api/entries/e1/versions/2/restore', {});
     expect(result).toEqual(entry);
   });
 });
@@ -302,7 +302,7 @@ describe('getVersionHistory', () => {
     const versions = [
       createVersionInfo({ version: 1, versionState: 'historical' }),
       createVersionInfo({ version: 2, versionState: 'published' }),
-      createVersionInfo({ version: 3, versionState: 'draft' }),
+      createVersionInfo({ version: 3, versionState: 'tab' }),
     ];
     mockApi.get.mockResolvedValue(versions);
 
@@ -387,7 +387,7 @@ describe('getTrashedEntries', () => {
       id: 'e1',
       title: 'Trashed',
       version: 1,
-      versionState: 'draft' as const,
+      versionState: 'tab' as const,
       isTrashed: true,
       folderId: null,
       hasSystemMessage: false,
@@ -430,7 +430,7 @@ describe('getTrashedEntries', () => {
       id: 'e-trash',
       title: 'Trashed Entry',
       version: 2,
-      versionState: 'draft' as const,
+      versionState: 'tab' as const,
       isTrashed: true,
       folderId: 'f1',
       hasSystemMessage: true,

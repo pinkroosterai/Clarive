@@ -43,9 +43,9 @@ describe('EntryCard', () => {
     expect(screen.getByText('Test Entry')).toBeInTheDocument();
   });
 
-  it('shows draft badge for draft entries', () => {
+  it('shows unpublished badge for tab entries', () => {
     renderCard({ entry: createDraftEntry() });
-    expect(screen.getByText('Draft')).toBeInTheDocument();
+    expect(screen.getByText('Unpublished')).toBeInTheDocument();
   });
 
   it('shows published badge for published entries', () => {
