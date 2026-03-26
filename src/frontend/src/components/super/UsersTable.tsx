@@ -89,20 +89,11 @@ function UserCell({ data }: ICellRendererParams<SuperUser>) {
   );
 }
 
-function RoleCell({ data }: ICellRendererParams<SuperUser>) {
-  if (!data) return null;
-  return (
-    <Badge variant="outline" className="capitalize">
-      {data.role}
-    </Badge>
-  );
-}
-
 function AuthCell({ data }: ICellRendererParams<SuperUser>) {
   if (!data) return null;
   return (
     <Badge variant="outline" className="text-xs">
-      {data.isGoogleAccount ? 'Google' : 'Password'}
+      {data.isGoogleAccount ? 'Google' : data.isGitHubAccount ? 'GitHub' : 'Password'}
     </Badge>
   );
 }
@@ -182,7 +173,6 @@ export default function UsersTable() {
   // ── Table state ──
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
-  const [roleFilter, setRoleFilter] = useState<string>('');
   const [authFilter, setAuthFilter] = useState<string>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -198,14 +188,14 @@ export default function UsersTable() {
     queryKey: [
       'super',
       'users',
-      { page, pageSize, search: debouncedSearch, roleFilter, authFilter, sortBy, sortDesc },
+      { page, pageSize, search: debouncedSearch, authFilter, sortBy, sortDesc },
     ],
     queryFn: () =>
       getSuperUsers({
         page,
         pageSize,
         search: debouncedSearch || undefined,
-        role: roleFilter || undefined,
+        role: undefined,
         authType: authFilter || undefined,
         sortBy,
         sortDesc,
@@ -226,14 +216,6 @@ export default function UsersTable() {
         flex: 3,
         minWidth: 160,
         cellRenderer: UserCell,
-      },
-      {
-        field: 'role',
-        headerName: 'Role',
-        sortable: true,
-        flex: 1,
-        minWidth: 70,
-        cellRenderer: RoleCell,
       },
       {
         headerName: 'Auth',
@@ -341,23 +323,6 @@ export default function UsersTable() {
           />
         </div>
         <Select
-          value={roleFilter}
-          onValueChange={(v) => {
-            setRoleFilter(v === 'all' ? '' : v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-[130px]">
-            <SelectValue placeholder="All roles" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All roles</SelectItem>
-            <SelectItem value="Admin">Admin</SelectItem>
-            <SelectItem value="Editor">Editor</SelectItem>
-            <SelectItem value="Viewer">Viewer</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
           value={authFilter}
           onValueChange={(v) => {
             setAuthFilter(v === 'all' ? '' : v);
@@ -371,6 +336,7 @@ export default function UsersTable() {
             <SelectItem value="all">All auth</SelectItem>
             <SelectItem value="password">Password</SelectItem>
             <SelectItem value="google">Google</SelectItem>
+            <SelectItem value="github">GitHub</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -63,6 +63,7 @@ export interface SuperUser {
   role: string;
   emailVerified: boolean;
   isGoogleAccount: boolean;
+  isGitHubAccount: boolean;
   isSuperUser: boolean;
   avatarUrl: string | null;
   createdAt: string;

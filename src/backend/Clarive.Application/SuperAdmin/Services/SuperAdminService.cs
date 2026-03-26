@@ -96,6 +96,7 @@ public class SuperAdminService(
                     u.Role.ToString(),
                     u.EmailVerified,
                     u.GoogleId != null,
+                    u.GitHubId != null,
                     u.IsSuperUser,
                     u.AvatarPath != null ? $"/api/users/{u.Id}/avatar" : null,
                     u.CreatedAt,

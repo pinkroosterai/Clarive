@@ -7,6 +7,7 @@ public record SuperUserResponse(
     string Role,
     bool EmailVerified,
     bool IsGoogleAccount,
+    bool IsGitHubAccount,
     bool IsSuperUser,
     string? AvatarUrl,
     DateTime CreatedAt,
