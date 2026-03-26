@@ -32,9 +32,9 @@ public class ApiKeyService(IApiKeyRepository keyRepo) : IApiKeyService
         CancellationToken ct = default
     )
     {
-        var validationErr = Validator.ValidateRequest(request);
+        var validationErr = Validator.ValidateAndGetError(request);
         if (validationErr is not null)
-            return Error.Validation("VALIDATION_ERROR", "Invalid request.");
+            return validationErr.Value;
 
         if (request.ExpiresAt.HasValue && request.ExpiresAt.Value.ToUniversalTime() <= DateTime.UtcNow)
             return Error.Validation("VALIDATION_ERROR", "Expiry date must be in the future.");

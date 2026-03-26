@@ -20,9 +20,9 @@ public class TabService(
     public async Task<ErrorOr<TabInfo>> CreateAsync(
         Guid tenantId, Guid entryId, CreateTabRequest request, CancellationToken ct = default)
     {
-        var validationErr = Common.Validator.ValidateRequest(request);
+        var validationErr = Common.Validator.ValidateAndGetError(request);
         if (validationErr is not null)
-            return Error.Validation("VALIDATION_ERROR", "Invalid request.");
+            return validationErr.Value;
 
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
@@ -91,9 +91,9 @@ public class TabService(
     public async Task<ErrorOr<TabInfo>> RenameAsync(
         Guid tenantId, Guid entryId, Guid tabId, RenameTabRequest request, CancellationToken ct = default)
     {
-        var validationErr = Common.Validator.ValidateRequest(request);
+        var validationErr = Common.Validator.ValidateAndGetError(request);
         if (validationErr is not null)
-            return Error.Validation("VALIDATION_ERROR", "Invalid request.");
+            return validationErr.Value;
 
         var tab = await entryRepo.GetVersionByIdAsync(tenantId, tabId, ct);
         if (tab is null || tab.EntryId != entryId || tab.VersionState != VersionState.Tab)

@@ -122,9 +122,9 @@ public class AbTestService(
         Guid tenantId, Guid userId, Guid entryId, StartAbTestRequest request,
         Func<AbTestProgressEvent, Task>? onProgress = null, CancellationToken ct = default)
     {
-        var validationErr = Common.Validator.ValidateRequest(request);
+        var validationErr = Common.Validator.ValidateAndGetError(request);
         if (validationErr is not null)
-            return Error.Validation("VALIDATION_ERROR", "Invalid request.");
+            return validationErr.Value;
 
         // Validate entry
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);

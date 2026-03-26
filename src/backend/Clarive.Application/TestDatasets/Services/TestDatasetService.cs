@@ -54,9 +54,9 @@ public class TestDatasetService(
     public async Task<ErrorOr<TestDatasetDetailResponse>> CreateAsync(
         Guid tenantId, Guid entryId, CreateTestDatasetRequest request, CancellationToken ct = default)
     {
-        var validationErr = Validator.ValidateRequest(request);
+        var validationErr = Validator.ValidateAndGetError(request);
         if (validationErr is not null)
-            return Error.Validation("VALIDATION_ERROR", "Invalid request.");
+            return validationErr.Value;
 
         var entry = await entryRepo.GetByIdAsync(tenantId, entryId, ct);
         if (entry is null)
@@ -87,9 +87,9 @@ public class TestDatasetService(
     public async Task<ErrorOr<TestDatasetDetailResponse>> UpdateAsync(
         Guid tenantId, Guid entryId, Guid datasetId, UpdateTestDatasetRequest request, CancellationToken ct = default)
     {
-        var validationErr = Validator.ValidateRequest(request);
+        var validationErr = Validator.ValidateAndGetError(request);
         if (validationErr is not null)
-            return Error.Validation("VALIDATION_ERROR", "Invalid request.");
+            return validationErr.Value;
 
         var dataset = await GetDatasetWithOwnershipCheckAsync(tenantId, entryId, datasetId, ct);
         if (dataset is null)
@@ -186,9 +186,9 @@ public class TestDatasetService(
     public async Task<ErrorOr<List<TestDatasetRowResponse>>> GenerateRowsAsync(
         Guid tenantId, Guid entryId, Guid datasetId, GenerateTestDatasetRowsRequest request, CancellationToken ct = default)
     {
-        var validationErr = Validator.ValidateRequest(request);
+        var validationErr = Validator.ValidateAndGetError(request);
         if (validationErr is not null)
-            return Error.Validation("VALIDATION_ERROR", "Invalid request.");
+            return validationErr.Value;
 
         var dataset = await GetDatasetWithOwnershipCheckAsync(tenantId, entryId, datasetId, ct);
         if (dataset is null)
