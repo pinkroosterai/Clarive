@@ -230,7 +230,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, IsTrashed = false });
         _entryRepo
-            .GetMainTabAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+            .GetWorkingVersionAsync(TenantId, EntryId, Arg.Any<Guid?>(), Arg.Any<CancellationToken>())
             .Returns((PromptEntryVersion?)null);
 
         var result = await _sut.EnhanceAsync(TenantId, UserId, EntryId, null, default);
@@ -261,7 +261,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, IsTrashed = false });
         _entryRepo
-            .GetMainTabAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+            .GetWorkingVersionAsync(TenantId, EntryId, Arg.Any<Guid?>(), Arg.Any<CancellationToken>())
             .Returns(
                 new PromptEntryVersion
                 {
@@ -283,7 +283,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, IsTrashed = false });
         _entryRepo
-            .GetMainTabAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+            .GetWorkingVersionAsync(TenantId, EntryId, Arg.Any<Guid?>(), Arg.Any<CancellationToken>())
             .Returns(
                 new PromptEntryVersion
                 {
@@ -323,7 +323,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, IsTrashed = false });
         _entryRepo
-            .GetMainTabAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+            .GetWorkingVersionAsync(TenantId, EntryId, Arg.Any<Guid?>(), Arg.Any<CancellationToken>())
             .Returns(
                 new PromptEntryVersion
                 {
@@ -348,7 +348,7 @@ public class AiGenerationServiceTests
             .GetByIdAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
             .Returns(new PromptEntry { Id = EntryId, IsTrashed = false });
         _entryRepo
-            .GetMainTabAsync(TenantId, EntryId, Arg.Any<CancellationToken>())
+            .GetWorkingVersionAsync(TenantId, EntryId, Arg.Any<Guid?>(), Arg.Any<CancellationToken>())
             .Returns(
                 new PromptEntryVersion
                 {

@@ -537,10 +537,7 @@ public class AiGenerationService(
         if (entry is null || entry.IsTrashed)
             return DomainErrors.EntryNotFound;
 
-        var version = tabId.HasValue
-            ? await entryRepo.GetVersionByIdAsync(tenantId, tabId.Value, ct)
-            : await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
-              ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, tabId, ct);
         if (version is null)
             return DomainErrors.VersionNotFoundForEntry;
 

@@ -34,6 +34,12 @@ public interface IEntryRepository
     Task<bool> DeleteAsync(Guid tenantId, Guid entryId, CancellationToken ct = default);
 
     // Tab management
+    Task<PromptEntryVersion?> GetWorkingVersionAsync(
+        Guid tenantId,
+        Guid entryId,
+        Guid? versionId = null,
+        CancellationToken ct = default
+    );
     Task<PromptEntryVersion?> GetMainTabAsync(
         Guid tenantId,
         Guid entryId,

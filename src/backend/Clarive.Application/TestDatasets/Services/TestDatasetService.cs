@@ -198,8 +198,7 @@ public class TestDatasetService(
             return DomainErrors.TestDatasetRowLimitExceeded;
 
         // Get entry's template fields
-        var working = await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
-                     ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        var working = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct: ct);
         if (working is null)
             return DomainErrors.NoWorkingVersion;
 

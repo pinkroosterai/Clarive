@@ -161,6 +161,19 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
     private IQueryable<PromptEntryVersion> TenantVersionsReadOnly(Guid tenantId) =>
         TenantVersions(tenantId).AsNoTracking();
 
+    public async Task<PromptEntryVersion?> GetWorkingVersionAsync(
+        Guid tenantId,
+        Guid entryId,
+        Guid? versionId = null,
+        CancellationToken ct = default
+    )
+    {
+        if (versionId.HasValue)
+            return await GetVersionByIdAsync(tenantId, versionId.Value, ct);
+        return await GetMainTabAsync(tenantId, entryId, ct)
+            ?? await GetPublishedVersionAsync(tenantId, entryId, ct);
+    }
+
     public async Task<PromptEntryVersion?> GetMainTabAsync(
         Guid tenantId,
         Guid entryId,

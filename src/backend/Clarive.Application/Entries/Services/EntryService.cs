@@ -365,8 +365,7 @@ public class EntryService(
             return DomainErrors.EntryNotFound;
 
         // Prefer Main tab; fall back to published version (for entries without tabs, e.g. seed data)
-        var version = await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
-                      ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct: ct);
         if (version is null)
             return DomainErrors.VersionNotFound;
 
@@ -409,8 +408,7 @@ public class EntryService(
         CancellationToken ct
     )
     {
-        var version = await entryRepo.GetMainTabAsync(tenantId, entryId, ct)
-                      ?? await entryRepo.GetPublishedVersionAsync(tenantId, entryId, ct);
+        var version = await entryRepo.GetWorkingVersionAsync(tenantId, entryId, ct: ct);
         if (version is null)
             return DomainErrors.VersionNotFound;
         return version;
