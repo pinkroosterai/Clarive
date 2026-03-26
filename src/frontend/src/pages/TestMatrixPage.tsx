@@ -142,7 +142,7 @@ function TestMatrixPage() {
   if (!entryId) return null;
 
   return (
-    <div className={`grid h-full ${sidebarCollapsed ? 'grid-cols-[minmax(0,1fr)_48px]' : 'grid-cols-[minmax(0,1fr)_360px]'} transition-[grid-template-columns] duration-200`}>
+    <div className={`grid h-full ${sidebarCollapsed ? 'grid-cols-[minmax(0,1fr)_48px]' : 'grid-cols-[minmax(0,1fr)_540px]'} transition-[grid-template-columns] duration-200`}>
       {/* Left column: header + action bar + grid */}
       <div className="flex flex-col min-h-0">
         {/* Page header */}
