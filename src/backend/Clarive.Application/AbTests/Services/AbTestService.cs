@@ -196,8 +196,8 @@ public class AbTestService(
                 var taskB = playgroundService.TestEntryAsync(tenantId, userId, entryId, testRequest, ct, versionId: versionB.Id);
                 await Task.WhenAll(taskA, taskB);
 
-                var resultA = taskA.Result;
-                var resultB = taskB.Result;
+                var resultA = await taskA;
+                var resultB = await taskB;
 
                 var outputA = resultA.IsError ? null : ExtractAssistantOutput(resultA.Value.ConversationLog);
                 var scoresA = resultA.IsError ? null : resultA.Value.JudgeScores;

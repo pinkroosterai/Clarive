@@ -385,8 +385,8 @@ public class PromptOrchestrator : IPromptOrchestrator
 
         await Task.WhenAll(evalTask, clarifyTask);
 
-        var (evaluation, evalUsage) = evalTask.Result;
-        var (clarification, clarifyUsage) = clarifyTask.Result;
+        var (evaluation, evalUsage) = await evalTask;
+        var (clarification, clarifyUsage) = await clarifyTask;
 
         return (evaluation, clarification, evalUsage, clarifyUsage);
     }
