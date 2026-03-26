@@ -26,6 +26,14 @@ public record GoogleAuthLoginResult(
     bool IsNewUser
 );
 
+public record GitHubAuthLoginResult(
+    User User,
+    string AccessToken,
+    string RawRefreshToken,
+    Guid RefreshTokenId,
+    bool IsNewUser
+);
+
 public record RefreshResult(
     User User,
     string AccessToken,

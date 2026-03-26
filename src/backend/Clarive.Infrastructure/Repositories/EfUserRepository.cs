@@ -23,6 +23,13 @@ public class EfUserRepository(ClariveDbContext db) : IUserRepository
             .FirstOrDefaultAsync(u => u.GoogleId == googleId, ct);
     }
 
+    public async Task<User?> GetByGitHubIdAsync(string gitHubId, CancellationToken ct = default)
+    {
+        return await db
+            .Users.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.GitHubId == gitHubId, ct);
+    }
+
     public async Task<User?> GetByIdAsync(
         Guid tenantId,
         Guid userId,
@@ -143,7 +150,8 @@ public class EfUserRepository(ClariveDbContext db) : IUserRepository
             query = authType.ToLowerInvariant() switch
             {
                 "google" => query.Where(u => u.GoogleId != null),
-                "password" => query.Where(u => u.GoogleId == null),
+                "github" => query.Where(u => u.GitHubId != null),
+                "password" => query.Where(u => u.GoogleId == null && u.GitHubId == null),
                 _ => query,
             };
         }

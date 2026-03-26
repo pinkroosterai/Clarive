@@ -4,6 +4,7 @@ using Clarive.Api.Helpers;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Domain.Interfaces.Services;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using static Clarive.Api.Helpers.ResponseMappers;
 
@@ -45,6 +46,24 @@ public static class AuthEndpoints
             .RequireRateLimiting("strict-auth");
 
         group.MapPost("/google", HandleGoogleAuth).AllowAnonymous().RequireRateLimiting("auth");
+
+        group
+            .MapGet("/github/authorize", HandleGitHubAuthorize)
+            .AllowAnonymous()
+            .RequireRateLimiting("auth");
+
+        group
+            .MapGet("/github/callback", HandleGitHubCallback)
+            .AllowAnonymous()
+            .RequireRateLimiting("auth");
+
+        group
+            .MapGet(
+                "/github-client-id",
+                (IConfiguration config) =>
+                    Results.Ok(new { clientId = config["GitHub:ClientId"] ?? "" })
+            )
+            .AllowAnonymous();
 
         group.MapGet("/setup-status", HandleSetupStatus).AllowAnonymous();
 
@@ -413,6 +432,125 @@ public static class AuthEndpoints
         );
     }
 
+    private static async Task<IResult> HandleGitHubAuthorize(
+        HttpContext ctx,
+        IGitHubAuthService gitHubAuthService,
+        IDistributedCache cache,
+        IConfiguration configuration
+    )
+    {
+        if (!gitHubAuthService.IsConfigured)
+            return ctx.ErrorResult(
+                503,
+                "GITHUB_AUTH_NOT_CONFIGURED",
+                "GitHub authentication is not configured."
+            );
+
+        var state = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .TrimEnd('=');
+
+        await cache.SetStringAsync(
+            $"github_oauth_state:{state}",
+            "1",
+            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) }
+        );
+
+        var request = ctx.Request;
+        var redirectUri =
+            $"{request.Scheme}://{request.Host}/api/auth/github/callback";
+
+        var authorizationUrl = gitHubAuthService.GetAuthorizationUrl(redirectUri, state);
+        return Results.Redirect(authorizationUrl);
+    }
+
+    private static async Task<IResult> HandleGitHubCallback(
+        HttpContext ctx,
+        string? code,
+        string? state,
+        IGitHubAuthService gitHubAuthService,
+        IAccountService accountService,
+        ILoginSessionRepository sessionRepo,
+        IUserRepository userRepo,
+        IDistributedCache cache,
+        IConfiguration configuration,
+        IOptions<AppSettings> appSettings,
+        CancellationToken ct
+    )
+    {
+        var frontendUrl = appSettings.Value.FrontendUrl.TrimEnd('/');
+
+        // Validate state (CSRF protection)
+        if (string.IsNullOrWhiteSpace(state) || string.IsNullOrWhiteSpace(code))
+            return Results.Redirect($"{frontendUrl}/login?error=invalid_request");
+
+        var cacheKey = $"github_oauth_state:{state}";
+        var cachedState = await cache.GetStringAsync(cacheKey, ct);
+        if (cachedState is null)
+            return Results.Redirect($"{frontendUrl}/login?error=invalid_state");
+
+        // Remove state token (one-time use)
+        await cache.RemoveAsync(cacheKey, ct);
+
+        if (!gitHubAuthService.IsConfigured)
+            return Results.Redirect($"{frontendUrl}/login?error=not_configured");
+
+        var request = ctx.Request;
+        var redirectUri =
+            $"{request.Scheme}://{request.Host}/api/auth/github/callback";
+
+        // Pre-check: if registration is disabled, verify the GitHub user already has an account
+        if (!IsRegistrationAllowed(configuration))
+        {
+            try
+            {
+                var gitHubUser = await gitHubAuthService.ExchangeCodeForUserAsync(
+                    code,
+                    redirectUri,
+                    ct
+                );
+                var existsByGitHub = await userRepo.GetByGitHubIdAsync(gitHubUser.GitHubId, ct);
+                var existsByEmail =
+                    existsByGitHub ?? await userRepo.GetByEmailAsync(gitHubUser.Email, ct);
+                if (existsByEmail is null)
+                    return Results.Redirect(
+                        $"{frontendUrl}/login?error={Uri.EscapeDataString("REGISTRATION_DISABLED")}"
+                    );
+            }
+            catch (Exception)
+            {
+                return Results.Redirect(
+                    $"{frontendUrl}/login?error={Uri.EscapeDataString("GITHUB_AUTH_FAILED")}"
+                );
+            }
+        }
+
+        var result = await accountService.LoginWithGitHubAsync(code, redirectUri, ct);
+        if (result.IsError)
+        {
+            var errorCode = result.Errors[0].Code;
+            return Results.Redirect($"{frontendUrl}/login?error={Uri.EscapeDataString(errorCode)}");
+        }
+
+        await LoginSessionHelper.RecordAsync(
+            ctx,
+            sessionRepo,
+            result.Value.User.Id,
+            result.Value.RefreshTokenId,
+            ct
+        );
+
+        // Redirect to frontend completion page with tokens in fragment
+        var fragment = string.Join(
+            "&",
+            $"token={Uri.EscapeDataString(result.Value.AccessToken)}",
+            $"refresh={Uri.EscapeDataString(result.Value.RawRefreshToken)}",
+            $"isNewUser={result.Value.IsNewUser.ToString().ToLowerInvariant()}"
+        );
+        return Results.Redirect($"{frontendUrl}/auth/github/complete#{fragment}");
+    }
+
     private static async Task<IResult> HandleSetupStatus(
         IUserRepository userRepo,
         IConfiguration configuration,
@@ -427,12 +565,14 @@ public static class AuthEndpoints
             "none",
             StringComparison.OrdinalIgnoreCase
         );
+        var githubEnabled = !string.IsNullOrWhiteSpace(configuration["GitHub:ClientId"]);
         return Results.Ok(
             new
             {
                 isSetupComplete,
                 allowRegistration,
                 emailEnabled,
+                githubEnabled,
             }
         );
     }

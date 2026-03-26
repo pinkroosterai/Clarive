@@ -30,6 +30,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasDefaultValue(false);
         builder.Property(u => u.GoogleId).HasColumnName("google_id").HasMaxLength(255);
+        builder.Property(u => u.GitHubId).HasColumnName("github_id").HasMaxLength(255);
         builder.Property(u => u.DeletedAt).HasColumnName("deleted_at");
         builder.Property(u => u.DeleteScheduledAt).HasColumnName("delete_scheduled_at");
         builder
@@ -52,6 +53,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique()
             .HasFilter("google_id IS NOT NULL")
             .HasDatabaseName("uq_users_google_id");
+        builder
+            .HasIndex(u => u.GitHubId)
+            .IsUnique()
+            .HasFilter("github_id IS NOT NULL")
+            .HasDatabaseName("uq_users_github_id");
         builder
             .HasIndex(u => u.IsSuperUser)
             .HasFilter("is_super_user = true")

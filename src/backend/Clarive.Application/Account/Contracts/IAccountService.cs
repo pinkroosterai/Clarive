@@ -39,6 +39,18 @@ public interface IAccountService
     );
 
     /// <summary>
+    /// Handles GitHub OAuth end-to-end: exchanges the auth code for user info,
+    /// finds or creates user, and issues auth tokens.
+    /// Returns Error.Conflict if the email already exists with a password-only account.
+    /// Returns Error.Failure if the GitHub auth exchange fails.
+    /// </summary>
+    Task<ErrorOr<GitHubAuthLoginResult>> LoginWithGitHubAsync(
+        string code,
+        string redirectUri,
+        CancellationToken ct = default
+    );
+
+    /// <summary>
     /// Validates a refresh token, ensures user still has active workspace membership
     /// (falls back to personal workspace if revoked), syncs role, rotates tokens.
     /// Returns Error.Unauthorized if the refresh token is invalid or expired.

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 
+import { GitHubLoginButton } from '@/components/auth/GitHubLoginButton';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 import { AnvilIcon } from '@/components/icons/AnvilIcon';
 import { Button } from '@/components/ui/button';
@@ -98,6 +99,7 @@ const LoginPage = () => {
 
           <div className="space-y-4">
             <GoogleLoginButton />
+            <GitHubLoginButton />
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

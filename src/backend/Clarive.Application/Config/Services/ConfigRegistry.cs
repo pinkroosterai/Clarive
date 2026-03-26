@@ -59,6 +59,26 @@ public static class ConfigRegistry
             false,
             SubGroup: "Google OAuth"
         ),
+        // ── Authentication › GitHub OAuth ──
+        new ConfigDefinition(
+            "GitHub:ClientId",
+            "GitHub OAuth Client ID",
+            "OAuth app client ID from GitHub Developer Settings (Settings > Developer settings > OAuth Apps). Enables the \"Sign in with GitHub\" button on the login page. Both client ID and secret must be set for GitHub login to appear. Changing this requires a server restart.",
+            ConfigSection.Authentication,
+            false,
+            true,
+            "e.g., Iv1.abc123def456",
+            SubGroup: "GitHub OAuth"
+        ),
+        new ConfigDefinition(
+            "GitHub:ClientSecret",
+            "GitHub OAuth Client Secret",
+            "OAuth app client secret paired with the client ID above. Keep this value confidential — it authenticates your application with GitHub's OAuth servers.",
+            ConfigSection.Authentication,
+            true,
+            false,
+            SubGroup: "GitHub OAuth"
+        ),
         // ── Authentication › JWT Tokens ──
         new ConfigDefinition(
             "Jwt:ExpirationMinutes",

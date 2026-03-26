@@ -61,6 +61,8 @@ services:
       Ai__PremiumModel: ${AI_PREMIUM_MODEL:-gpt-4o}
       Google__ClientId: ${GOOGLE_CLIENT_ID:-}
       Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      GitHub__ClientId: ${GITHUB_CLIENT_ID:-}
+      GitHub__ClientSecret: ${GITHUB_CLIENT_SECRET:-}
       Email__Provider: ${EMAIL_PROVIDER:-none}
       Email__ApiKey: ${EMAIL_API_KEY:-}
       Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@localhost}

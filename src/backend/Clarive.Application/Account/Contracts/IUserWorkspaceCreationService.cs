@@ -15,6 +15,7 @@ public interface IUserWorkspaceCreationService
         string? googleId,
         bool emailVerified,
         bool isSuperUser = false,
+        string? gitHubId = null,
         CancellationToken ct = default
     );
 

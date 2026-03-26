@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { GitHubLoginButton } from '@/components/auth/GitHubLoginButton';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 import { PasswordStrengthBar } from '@/components/common/PasswordStrengthBar';
 import { AnvilIcon } from '@/components/icons/AnvilIcon';
@@ -71,6 +72,7 @@ const RegisterPage = () => {
 
           <div className="space-y-4">
             <GoogleLoginButton />
+            <GitHubLoginButton />
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

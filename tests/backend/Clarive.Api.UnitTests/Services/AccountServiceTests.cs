@@ -30,6 +30,7 @@ public class AccountServiceTests : IDisposable
         Substitute.For<IInvitationRepository>();
     private readonly IOnboardingSeeder _onboardingSeeder = Substitute.For<IOnboardingSeeder>();
     private readonly IGoogleAuthService _googleAuth = Substitute.For<IGoogleAuthService>();
+    private readonly IGitHubAuthService _gitHubAuth = Substitute.For<IGitHubAuthService>();
     private readonly JwtService _jwtService;
     private readonly PasswordHasher _passwordHasher = new();
     private readonly IConfiguration _configuration;
@@ -90,6 +91,7 @@ public class AccountServiceTests : IDisposable
             _tokenRepo,
             _invitationRepo,
             _googleAuth,
+            _gitHubAuth,
             _jwtService,
             _passwordHasher,
             _configuration,
@@ -177,6 +179,7 @@ public class AccountServiceTests : IDisposable
             _tokenRepo,
             _invitationRepo,
             _googleAuth,
+            _gitHubAuth,
             _jwtService,
             _passwordHasher,
             config,

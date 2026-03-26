@@ -19,6 +19,7 @@ public class AccountService(
     ITokenRepository tokenRepo,
     IInvitationRepository invitationRepo,
     IGoogleAuthService googleAuthService,
+    IGitHubAuthService gitHubAuthService,
     JwtService jwtService,
     PasswordHasher passwordHasher,
     IConfiguration configuration,
@@ -85,7 +86,7 @@ public class AccountService(
                             googleId: null,
                             emailVerified: skipVerification,
                             isSuperUser: isFirstUser,
-                            ct
+                            ct: ct
                         );
 
                     // Skip verification token when auto-verified (first user or no email provider)
@@ -200,6 +201,72 @@ public class AccountService(
                 logger.LogInformation("New account created via {AuthMethod} for {Email}, user {UserId}", "google", googleUser.Email, user.Id);
                 return (ErrorOr<GoogleAuthLoginResult>)
                     new GoogleAuthLoginResult(user, at, rr, rtId, true);
+            },
+            ct
+        );
+    }
+
+    public async Task<ErrorOr<GitHubAuthLoginResult>> LoginWithGitHubAsync(
+        string code,
+        string redirectUri,
+        CancellationToken ct
+    )
+    {
+        GitHubUserInfo gitHubUser;
+        try
+        {
+            gitHubUser = await gitHubAuthService.ExchangeCodeForUserAsync(code, redirectUri, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "GitHub OAuth login failed: code exchange error");
+            return Error.Failure(
+                "GITHUB_AUTH_FAILED",
+                "GitHub authentication failed. Please try again."
+            );
+        }
+
+        // 1. Find by GitHubId — existing linked account
+        var user = await userRepo.GetByGitHubIdAsync(gitHubUser.GitHubId, ct);
+        if (user is not null)
+        {
+            var (accessToken, rawRefresh, refreshTokenId) =
+                await tokenIssuance.IssueTokensAsync(user, ct);
+            logger.LogInformation("Login succeeded for {Email} via {AuthMethod}", user.Email, "github");
+            return new GitHubAuthLoginResult(user, accessToken, rawRefresh, refreshTokenId, false);
+        }
+
+        // 2. Find by email — reject silent linking (user must link from Settings)
+        user = await userRepo.GetByEmailAsync(gitHubUser.Email, ct);
+        if (user is not null)
+        {
+            logger.LogWarning("GitHub OAuth login rejected for {Email}: email conflict with existing account", gitHubUser.Email);
+            return Error.Conflict(
+                "EMAIL_CONFLICT",
+                "An account with this email already exists. "
+                    + "Please log in with your password and link GitHub from Settings."
+            );
+        }
+
+        // 3. New user — create tenant + user (no password, email auto-verified)
+        return await unitOfWork.ExecuteInTransactionAsync(
+            async () =>
+            {
+                (user, _) = await workspaceCreation.CreateUserWithPersonalWorkspaceAsync(
+                    gitHubUser.Email.Trim().ToLowerInvariant(),
+                    gitHubUser.Name,
+                    passwordHash: null,
+                    googleId: null,
+                    emailVerified: true,
+                    gitHubId: gitHubUser.GitHubId,
+                    ct: ct
+                );
+
+                var (at, rr, rtId) = await tokenIssuance.IssueTokensAsync(user, ct);
+
+                logger.LogInformation("New account created via {AuthMethod} for {Email}, user {UserId}", "github", gitHubUser.Email, user.Id);
+                return (ErrorOr<GitHubAuthLoginResult>)
+                    new GitHubAuthLoginResult(user, at, rr, rtId, true);
             },
             ct
         );

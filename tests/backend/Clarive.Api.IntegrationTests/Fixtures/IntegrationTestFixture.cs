@@ -132,6 +132,8 @@ internal class ClariveApiFactory : WebApplicationFactory<Program>
                             "clarive-test-avatars"
                         ),
                         ["CONFIG_ENCRYPTION_KEY"] = "ChR4vnM1Gafgxlak06xIsYYQ8J+oPVmtuhcWQa7PUNQ=", // 32-byte test key
+                        ["GitHub:ClientId"] = "test-github-client-id",
+                        ["GitHub:ClientSecret"] = "test-github-client-secret",
                     }
                 );
             }

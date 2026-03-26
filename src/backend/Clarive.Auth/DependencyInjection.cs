@@ -1,4 +1,5 @@
 using System.Text;
+using Clarive.Auth.GitHub;
 using Clarive.Auth.Google;
 using Clarive.Auth.Jwt;
 using Clarive.Domain.Interfaces.Services;
@@ -90,6 +91,36 @@ public static class DependencyInjection
             services.AddSingleton<IGoogleAuthService, NullGoogleAuthService>();
             Log.Warning("Google OAuth disabled: Google:ClientId not configured");
         }
+
+        // ── GitHub OAuth ──
+        services.Configure<GitHubAuthSettings>(configuration.GetSection("GitHub"));
+        var gitHubSettings =
+            configuration.GetSection("GitHub").Get<GitHubAuthSettings>()
+            ?? new GitHubAuthSettings();
+        if (!string.IsNullOrWhiteSpace(gitHubSettings.ClientId))
+        {
+            services.AddSingleton<IGitHubAuthService, GitHubAuthService>();
+        }
+        else
+        {
+            services.AddSingleton<IGitHubAuthService, NullGitHubAuthService>();
+            Log.Warning("GitHub OAuth disabled: GitHub:ClientId not configured");
+        }
+
+        services
+            .AddHttpClient("GitHub")
+            .ConfigureHttpClient(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(10);
+                client.DefaultRequestHeaders.Accept.Add(
+                    new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(
+                        "application/json"
+                    )
+                );
+                client.DefaultRequestHeaders.UserAgent.Add(
+                    new System.Net.Http.Headers.ProductInfoHeaderValue("Clarive", "1.0")
+                );
+            });
 
         return services;
     }

@@ -109,6 +109,14 @@ public static class DomainErrors
     public static Error AbTestVersionNotFound =>
         Error.NotFound("AB_TEST_VERSION_NOT_FOUND", "One or both versions not found for this entry.");
 
+    // ── GitHub Auth ──
+
+    public static Error GitHubAuthFailed =>
+        Error.Failure("GITHUB_AUTH_FAILED", "GitHub authentication failed.");
+
+    public static Error GitHubNotConfigured =>
+        Error.Failure("GITHUB_NOT_CONFIGURED", "GitHub OAuth is not configured.");
+
     // ── Tabs ──
 
     public static Error TabNotFound =>

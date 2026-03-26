@@ -18,6 +18,7 @@ public class UserWorkspaceCreationService(
         string? googleId,
         bool emailVerified,
         bool isSuperUser = false,
+        string? gitHubId = null,
         CancellationToken ct = default
     )
     {
@@ -40,6 +41,7 @@ public class UserWorkspaceCreationService(
                 Name = name,
                 PasswordHash = passwordHash,
                 GoogleId = googleId,
+                GitHubId = gitHubId,
                 EmailVerified = emailVerified,
                 IsSuperUser = isSuperUser,
                 Role = UserRole.Admin,

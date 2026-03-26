@@ -13,6 +13,7 @@ public class User : ITenantScoped
     public DateTime CreatedAt { get; set; }
     public bool EmailVerified { get; set; }
     public string? GoogleId { get; set; }
+    public string? GitHubId { get; set; }
     public DateTime? DeletedAt { get; set; }
     public DateTime? DeleteScheduledAt { get; set; }
     public bool OnboardingCompleted { get; set; }

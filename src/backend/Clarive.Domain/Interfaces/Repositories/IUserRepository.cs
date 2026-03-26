@@ -6,6 +6,7 @@ public interface IUserRepository
 {
     Task<User?> GetByEmailAsync(string email, CancellationToken ct = default);
     Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken ct = default);
+    Task<User?> GetByGitHubIdAsync(string gitHubId, CancellationToken ct = default);
     Task<User?> GetByIdAsync(Guid tenantId, Guid userId, CancellationToken ct = default);
     Task<User?> GetByIdCrossTenantsAsync(Guid userId, CancellationToken ct = default);
     Task<Dictionary<Guid, User>> GetByIdsAsync(

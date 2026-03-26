@@ -17,6 +17,21 @@ export const config: AppConfig = {
   mode: import.meta.env.MODE,
 };
 
+// Fetch GitHub Client ID from API (DB-backed config)
+let cachedGitHubClientId: string | null = null;
+export async function getGitHubClientId(): Promise<string> {
+  if (cachedGitHubClientId !== null) return cachedGitHubClientId;
+  try {
+    const res = await fetch('/api/auth/github-client-id');
+    if (!res.ok) throw new Error('Failed to fetch GitHub Client ID');
+    const data = await res.json();
+    cachedGitHubClientId = data.clientId ?? '';
+  } catch {
+    cachedGitHubClientId = '';
+  }
+  return cachedGitHubClientId;
+}
+
 // Fetch Google Client ID from API (DB-backed config)
 let cachedGoogleClientId: string | null = null;
 export async function getGoogleClientId(): Promise<string> {

@@ -117,6 +117,7 @@ const router = createBrowserRouter([
           { path: '/verify-email', lazy: lazy(() => import('@/pages/VerifyEmailPage')) },
           { path: '/invite/accept', lazy: lazy(() => import('@/pages/AcceptInvitationPage')) },
           { path: '/auth/google/callback', lazy: lazy(() => import('@/pages/GoogleCallbackPage')) },
+          { path: '/auth/github/complete', lazy: lazy(() => import('@/pages/GitHubCompletePage')) },
           { path: '/terms', lazy: lazy(() => import('@/pages/TermsPage')) },
           { path: '/privacy', lazy: lazy(() => import('@/pages/PrivacyPage')) },
           { path: '/share/:token', lazy: lazy(() => import('@/pages/PublicShareViewerPage')) },
