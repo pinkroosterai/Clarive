@@ -1,6 +1,6 @@
 import {
   Copy,
-  GitCompareArrows,
+  FlaskConical,
   MoreHorizontal,
   Settings2,
   Share2,
@@ -191,8 +191,8 @@ export function ActionsTabContent({
                 onClick={onTest}
                 disabled={!aiEnabled}
               >
-                <GitCompareArrows className="size-4" />
-                Test Matrix
+                <FlaskConical className="size-4" />
+                Playground
               </Button>
             )}
 
@@ -219,7 +219,6 @@ export function ActionsTabContent({
                 {isDecomposing ? 'Decomposing...' : 'Decompose to Chain'}
               </Button>
             )}
-
           </div>
         </>
       )}
