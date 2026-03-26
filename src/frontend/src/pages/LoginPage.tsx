@@ -2,7 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { GitHubLoginButton } from '@/components/auth/GitHubLoginButton';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
@@ -24,8 +25,19 @@ import { getActiveWorkspaceId } from '@/services/api/apiClient';
 import { getSetupStatus } from '@/services/api/authService';
 import { useAuthStore } from '@/store/authStore';
 
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  REGISTRATION_DISABLED: 'New account registration is currently disabled.',
+  EMAIL_CONFLICT:
+    'An account with this email already exists. Please log in with your password.',
+  GITHUB_AUTH_FAILED: 'GitHub authentication failed. Please try again.',
+  invalid_state: 'Authentication session expired. Please try again.',
+  invalid_request: 'Invalid authentication request. Please try again.',
+  not_configured: 'GitHub authentication is not configured.',
+};
+
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated, setUser, setWorkspaces, switchWorkspace } = useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -35,6 +47,14 @@ const LoginPage = () => {
   useEffect(() => {
     document.title = 'Clarive — Login';
   }, []);
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      toast.error(OAUTH_ERROR_MESSAGES[error] ?? 'Sign-in failed. Please try again.');
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     getSetupStatus()
