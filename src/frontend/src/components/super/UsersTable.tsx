@@ -15,12 +15,13 @@ import {
   Search,
   Shield,
   Trash2,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { CreateUserDialog } from '@/components/super/CreateUserDialog';
 import { DeleteUserDialog } from '@/components/super/DeleteUserDialog';
 import { agGridTheme } from '@/lib/agGridTheme';
 import { ResetPasswordDialog } from '@/components/super/ResetPasswordDialog';
@@ -174,6 +175,7 @@ function ActionsCell({ data, context }: ICellRendererParams<SuperUser, unknown, 
 // ── Main Component ──
 
 export default function UsersTable() {
+  const navigate = useNavigate();
   const currentUserId = useAuthStore((s) => s.currentUser?.id);
   const gridRef = useRef<AgGridReact<SuperUser>>(null);
 
@@ -313,7 +315,10 @@ export default function UsersTable() {
           {total.toLocaleString()} user{total !== 1 ? 's' : ''} total
         </div>
         <div className="flex items-center gap-2">
-          <CreateUserDialog />
+          <Button size="sm" className="gap-1.5" onClick={() => navigate('/super/users/create')}>
+            <UserPlus className="size-4" />
+            Create User
+          </Button>
           <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={users.length === 0}>
             <Download className="size-3.5 mr-1.5" />
             Export CSV

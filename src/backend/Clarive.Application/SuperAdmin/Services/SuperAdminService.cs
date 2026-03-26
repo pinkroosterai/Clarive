@@ -158,16 +158,38 @@ public class SuperAdminService(
     )
     {
         var email = request.Email.Trim().ToLowerInvariant();
+        var workspaces = request.Workspaces ?? [];
 
         if (await userRepo.GetByEmailAsync(email, ct) is not null)
             return Error.Conflict("EMAIL_ALREADY_EXISTS", "A user with this email already exists.");
 
-        var workspace = await tenantRepo.GetByIdAsync(request.WorkspaceId, ct);
-        if (workspace is null)
-            return Error.NotFound("WORKSPACE_NOT_FOUND", "The selected workspace was not found.");
+        // Validate workspace assignments
+        if (workspaces.Count > 0)
+        {
+            var workspaceIds = workspaces.Select(w => w.WorkspaceId).ToList();
+            if (workspaceIds.Distinct().Count() != workspaceIds.Count)
+                return Error.Validation(
+                    "DUPLICATE_WORKSPACE",
+                    "The same workspace cannot be assigned twice."
+                );
 
-        if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var role))
-            return Error.Validation("INVALID_ROLE", "Role must be Admin, Editor, or Viewer.");
+            var existingTenants = await tenantRepo.GetByIdsAsync(workspaceIds, ct);
+            var missing = workspaceIds.Where(id => !existingTenants.ContainsKey(id)).ToList();
+            if (missing.Count > 0)
+                return Error.NotFound(
+                    "WORKSPACE_NOT_FOUND",
+                    $"Workspace(s) not found: {string.Join(", ", missing)}"
+                );
+
+            foreach (var ws in workspaces)
+            {
+                if (!Enum.TryParse<UserRole>(ws.Role, ignoreCase: true, out _))
+                    return Error.Validation(
+                        "INVALID_ROLE",
+                        $"Invalid role '{ws.Role}'. Must be Admin, Editor, or Viewer."
+                    );
+            }
+        }
 
         var emailProvider = configuration["Email:Provider"] ?? "none";
         var emailEnabled = !string.Equals(emailProvider, "none", StringComparison.OrdinalIgnoreCase);
@@ -178,13 +200,11 @@ public class SuperAdminService(
 
         if (emailEnabled)
         {
-            // Temporary password — user will set their own via reset link
             var tempPassword = GenerateRandomPassword();
             passwordHash = passwordHasher.Hash(tempPassword);
         }
         else
         {
-            // No email — generate password to show to admin
             generatedPassword = GenerateRandomPassword();
             passwordHash = passwordHasher.Hash(generatedPassword);
         }
@@ -202,19 +222,23 @@ public class SuperAdminService(
                     ct: ct
                 );
 
-                // Add membership to the assigned workspace
-                await membershipRepo.CreateAsync(
-                    new TenantMembership
-                    {
-                        Id = Guid.NewGuid(),
-                        UserId = user.Id,
-                        TenantId = request.WorkspaceId,
-                        Role = role,
-                        IsPersonal = false,
-                        JoinedAt = DateTime.UtcNow,
-                    },
-                    ct
-                );
+                // Add memberships to assigned workspaces
+                foreach (var ws in workspaces)
+                {
+                    var role = Enum.Parse<UserRole>(ws.Role, ignoreCase: true);
+                    await membershipRepo.CreateAsync(
+                        new TenantMembership
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id,
+                            TenantId = ws.WorkspaceId,
+                            Role = role,
+                            IsPersonal = false,
+                            JoinedAt = DateTime.UtcNow,
+                        },
+                        ct
+                    );
+                }
 
                 // Send password setup email if email is configured
                 if (emailEnabled)

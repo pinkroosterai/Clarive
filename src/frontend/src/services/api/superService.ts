@@ -112,11 +112,15 @@ export async function resetUserPassword(userId: string): Promise<ResetPasswordRe
 
 // ── Create User ──
 
+export interface WorkspaceAssignment {
+  workspaceId: string;
+  role: string;
+}
+
 export interface CreateUserRequest {
   name: string;
   email: string;
-  workspaceId: string;
-  role: string;
+  workspaces: WorkspaceAssignment[];
 }
 
 export interface CreateUserResponse {

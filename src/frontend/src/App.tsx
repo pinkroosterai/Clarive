@@ -128,6 +128,7 @@ const router = createBrowserRouter([
             errorElement: <RouteErrorBoundary />,
             children: [
               { path: '/super', lazy: lazy(() => import('@/pages/SuperDashboardPage')) },
+              { path: '/super/users/create', lazy: lazy(() => import('@/pages/CreateUserPage')) },
               { path: '/setup-wizard', lazy: lazy(() => import('@/pages/SetupWizardPage')) },
             ],
           },

@@ -25,7 +25,8 @@ public class SuperAdminServiceCreateUserTests
     private readonly ITokenRepository _tokenRepo = Substitute.For<ITokenRepository>();
     private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 
-    private static readonly Guid WorkspaceId = Guid.NewGuid();
+    private static readonly Guid Workspace1Id = Guid.NewGuid();
+    private static readonly Guid Workspace2Id = Guid.NewGuid();
     private static readonly Guid UserId = Guid.NewGuid();
 
     private SuperAdminService CreateService(string emailProvider = "none")
@@ -51,22 +52,31 @@ public class SuperAdminServiceCreateUserTests
 
         var appSettings = Options.Create(new AppSettings { FrontendUrl = "http://localhost:8080" });
 
-        // Make UnitOfWork execute the function directly
         _unitOfWork
-            .ExecuteInTransactionAsync(Arg.Any<Func<Task<ErrorOr.ErrorOr<CreateUserResponse>>>>(), Arg.Any<CancellationToken>())
+            .ExecuteInTransactionAsync(
+                Arg.Any<Func<Task<ErrorOr.ErrorOr<CreateUserResponse>>>>(),
+                Arg.Any<CancellationToken>()
+            )
             .Returns(ci => ci.Arg<Func<Task<ErrorOr.ErrorOr<CreateUserResponse>>>>()());
 
-        // Default workspace exists
+        // Default: workspaces exist
         _tenantRepo
-            .GetByIdAsync(WorkspaceId, Arg.Any<CancellationToken>())
-            .Returns(new Tenant { Id = WorkspaceId, Name = "Test Workspace" });
+            .GetByIdsAsync(Arg.Any<IEnumerable<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                var ids = ci.Arg<IEnumerable<Guid>>().ToList();
+                var result = new Dictionary<Guid, Tenant>();
+                if (ids.Contains(Workspace1Id))
+                    result[Workspace1Id] = new Tenant { Id = Workspace1Id, Name = "Workspace 1" };
+                if (ids.Contains(Workspace2Id))
+                    result[Workspace2Id] = new Tenant { Id = Workspace2Id, Name = "Workspace 2" };
+                return result;
+            });
 
-        // Default: no duplicate email
         _userRepo
             .GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((User?)null);
 
-        // Workspace creation returns a user + tenant
         _workspaceCreation
             .CreateUserWithPersonalWorkspaceAsync(
                 Arg.Any<string>(),
@@ -116,7 +126,11 @@ public class SuperAdminServiceCreateUserTests
     public async Task CreateUserAsync_NoEmail_ReturnsGeneratedPassword()
     {
         var sut = CreateService(emailProvider: "none");
-        var request = new CreateUserRequest("Test User", "new@test.com", WorkspaceId, "Editor");
+        var request = new CreateUserRequest(
+            "Test User",
+            "new@test.com",
+            [new WorkspaceAssignment(Workspace1Id, "Editor")]
+        );
 
         var result = await sut.CreateUserAsync(request, default);
 
@@ -130,7 +144,11 @@ public class SuperAdminServiceCreateUserTests
     public async Task CreateUserAsync_WithEmail_SendsSetupEmailAndNoPassword()
     {
         var sut = CreateService(emailProvider: "resend");
-        var request = new CreateUserRequest("Test User", "new@test.com", WorkspaceId, "Editor");
+        var request = new CreateUserRequest(
+            "Test User",
+            "new@test.com",
+            [new WorkspaceAssignment(Workspace1Id, "Editor")]
+        );
 
         var result = await sut.CreateUserAsync(request, default);
 
@@ -152,7 +170,7 @@ public class SuperAdminServiceCreateUserTests
             .GetByEmailAsync("existing@test.com", Arg.Any<CancellationToken>())
             .Returns(new User { Id = Guid.NewGuid(), Email = "existing@test.com" });
 
-        var request = new CreateUserRequest("Test", "existing@test.com", WorkspaceId, "Editor");
+        var request = new CreateUserRequest("Test", "existing@test.com");
 
         var result = await sut.CreateUserAsync(request, default);
 
@@ -164,11 +182,13 @@ public class SuperAdminServiceCreateUserTests
     public async Task CreateUserAsync_InvalidWorkspace_ReturnsNotFound()
     {
         var sut = CreateService();
-        _tenantRepo
-            .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns((Tenant?)null);
+        var badId = Guid.NewGuid();
 
-        var request = new CreateUserRequest("Test", "new@test.com", Guid.NewGuid(), "Editor");
+        var request = new CreateUserRequest(
+            "Test",
+            "new@test.com",
+            [new WorkspaceAssignment(badId, "Editor")]
+        );
 
         var result = await sut.CreateUserAsync(request, default);
 
@@ -177,20 +197,61 @@ public class SuperAdminServiceCreateUserTests
     }
 
     [Fact]
-    public async Task CreateUserAsync_CreatesWorkspaceMembership()
+    public async Task CreateUserAsync_MultipleWorkspaces_CreatesAllMemberships()
     {
         var sut = CreateService();
-        var request = new CreateUserRequest("Test User", "new@test.com", WorkspaceId, "Admin");
+        var request = new CreateUserRequest(
+            "Test User",
+            "new@test.com",
+            [
+                new WorkspaceAssignment(Workspace1Id, "Admin"),
+                new WorkspaceAssignment(Workspace2Id, "Viewer"),
+            ]
+        );
 
         await sut.CreateUserAsync(request, default);
 
         await _membershipRepo.Received(1).CreateAsync(
-            Arg.Is<TenantMembership>(m =>
-                m.TenantId == WorkspaceId &&
-                m.Role == UserRole.Admin &&
-                !m.IsPersonal
-            ),
+            Arg.Is<TenantMembership>(m => m.TenantId == Workspace1Id && m.Role == UserRole.Admin),
             Arg.Any<CancellationToken>()
         );
+        await _membershipRepo.Received(1).CreateAsync(
+            Arg.Is<TenantMembership>(m => m.TenantId == Workspace2Id && m.Role == UserRole.Viewer),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_EmptyWorkspaces_CreatesOnlyPersonalWorkspace()
+    {
+        var sut = CreateService();
+        var request = new CreateUserRequest("Test User", "new@test.com");
+
+        var result = await sut.CreateUserAsync(request, default);
+
+        result.IsError.Should().BeFalse();
+        await _membershipRepo.DidNotReceive().CreateAsync(
+            Arg.Is<TenantMembership>(m => !m.IsPersonal),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_DuplicateWorkspaceIds_ReturnsValidationError()
+    {
+        var sut = CreateService();
+        var request = new CreateUserRequest(
+            "Test",
+            "new@test.com",
+            [
+                new WorkspaceAssignment(Workspace1Id, "Editor"),
+                new WorkspaceAssignment(Workspace1Id, "Admin"),
+            ]
+        );
+
+        var result = await sut.CreateUserAsync(request, default);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("DUPLICATE_WORKSPACE");
     }
 }

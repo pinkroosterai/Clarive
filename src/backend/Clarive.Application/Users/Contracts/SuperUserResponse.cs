@@ -25,6 +25,14 @@ public record SuperUsersPagedResponse(
 
 public record ResetPasswordResponse(string NewPassword);
 
+public record WorkspaceAssignment(
+    [property: System.ComponentModel.DataAnnotations.Required]
+    Guid WorkspaceId,
+    [property: System.ComponentModel.DataAnnotations.Required]
+    [property: System.ComponentModel.DataAnnotations.RegularExpression("^(Admin|Editor|Viewer)$")]
+    string Role
+);
+
 public record CreateUserRequest(
     [property: System.ComponentModel.DataAnnotations.Required]
     [property: System.ComponentModel.DataAnnotations.StringLength(255)]
@@ -32,11 +40,7 @@ public record CreateUserRequest(
     [property: System.ComponentModel.DataAnnotations.Required]
     [property: System.ComponentModel.DataAnnotations.EmailAddress]
     string Email,
-    [property: System.ComponentModel.DataAnnotations.Required]
-    Guid WorkspaceId,
-    [property: System.ComponentModel.DataAnnotations.Required]
-    [property: System.ComponentModel.DataAnnotations.RegularExpression("^(Admin|Editor|Viewer)$")]
-    string Role
+    List<WorkspaceAssignment>? Workspaces = null
 );
 
 public record CreateUserResponse(

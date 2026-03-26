@@ -28,7 +28,7 @@ public class SuperCreateUserTests : IntegrationTestBase
         var email = TestData.UniqueEmail();
         var response = await Client.PostAsJsonAsync(
             "/api/super/users",
-            new { name = "Test Created User", email, workspaceId, role = "Editor" }
+            new { name = "Test Created User", email, workspaces = new[] { new { workspaceId, role = "Editor" } } }
         );
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -52,7 +52,7 @@ public class SuperCreateUserTests : IntegrationTestBase
         // Use existing seed user email
         var response = await Client.PostAsJsonAsync(
             "/api/super/users",
-            new { name = "Duplicate", email = TestData.AdminEmail, workspaceId, role = "Editor" }
+            new { name = "Duplicate", email = TestData.AdminEmail, workspaces = new[] { new { workspaceId, role = "Editor" } } }
         );
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -80,7 +80,7 @@ public class SuperCreateUserTests : IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync(
             "/api/super/users",
-            new { name = "Test", email = "test@test.com", workspaceId = System.Guid.NewGuid(), role = "Editor" }
+            new { name = "Test", email = "test@test.com", workspaces = new[] { new { workspaceId = System.Guid.NewGuid(), role = "Editor" } } }
         );
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
