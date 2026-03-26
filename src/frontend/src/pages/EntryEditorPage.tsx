@@ -51,6 +51,7 @@ const EntryEditorPage = () => {
   const [viewingPublished, setViewingPublished] = useState(false);
   const [createTabOpen, setCreateTabOpen] = useState(false);
   const isInitialLoad = useRef(true);
+  const shouldDefaultToPublished = useRef(true);
   const prefersReducedMotion = useReducedMotion();
 
   // ── Data fetching ──
@@ -62,19 +63,30 @@ const EntryEditorPage = () => {
     enabled: !!entryId,
   });
 
-  // Set active tab to Main tab on initial load (or first available tab)
-  const mainTab = useMemo(() => tabs.find((t: TabInfo) => t.isMainTab), [tabs]);
-  useEffect(() => {
-    if (!activeTabId && tabs.length > 0) {
-      setActiveTabId(mainTab?.id ?? tabs[0].id);
-    }
-  }, [activeTabId, mainTab, tabs]);
-
   const { data: versions = [], isLoading: versionsLoading } = useQuery({
     queryKey: ['versions', entryId],
     queryFn: () => entryService.getVersionHistory(entryId!),
     enabled: !!entryId,
   });
+
+  // Set active tab to Main tab on initial load (or first available tab)
+  // If entry has a published version, default to published view on initial load
+  const mainTab = useMemo(() => tabs.find((t: TabInfo) => t.isMainTab), [tabs]);
+  const hasPublishedVersion = useMemo(
+    () => versions.some((v) => v.versionState === 'published'),
+    [versions],
+  );
+  useEffect(() => {
+    if (!activeTabId && tabs.length > 0) {
+      setActiveTabId(mainTab?.id ?? tabs[0].id);
+    }
+  }, [activeTabId, mainTab, tabs]);
+  useEffect(() => {
+    if (shouldDefaultToPublished.current && hasPublishedVersion) {
+      setViewingPublished(true);
+      shouldDefaultToPublished.current = false;
+    }
+  }, [hasPublishedVersion]);
 
   // Fetch active tab content (or main entry for version view / published view)
   const {
