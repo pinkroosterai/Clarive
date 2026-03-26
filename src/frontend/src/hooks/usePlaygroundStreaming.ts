@@ -18,7 +18,6 @@ import {
 
 // Re-export types for backward compatibility
 export type { StreamSegment, UsePlaygroundStreamingOptions } from './streamingTypes';
-export { getStreamingStatusMessage } from './streamingTypes';
 
 // ── Constants ──
 

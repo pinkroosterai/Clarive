@@ -3,19 +3,6 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { ConversationStreamEvent } from '@/services/api/playgroundService';
 import type { TemplateField } from '@/types';
 
-// ── Streaming status thresholds ──
-
-const STATUS_THRESHOLDS = {
-  STILL_GENERATING: 15,
-  TAKING_A_WHILE: 30,
-} as const;
-
-export function getStreamingStatusMessage(seconds: number): string {
-  if (seconds >= STATUS_THRESHOLDS.TAKING_A_WHILE) return 'This is taking a while...';
-  if (seconds >= STATUS_THRESHOLDS.STILL_GENERATING) return 'Still generating...';
-  return 'Generating...';
-}
-
 // ── Types ──
 
 export type StreamSegment =
