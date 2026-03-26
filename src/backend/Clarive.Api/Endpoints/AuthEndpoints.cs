@@ -436,7 +436,7 @@ public static class AuthEndpoints
         HttpContext ctx,
         IGitHubAuthService gitHubAuthService,
         IDistributedCache cache,
-        IConfiguration configuration
+        IOptions<AppSettings> appSettings
     )
     {
         if (!gitHubAuthService.IsConfigured)
@@ -457,9 +457,7 @@ public static class AuthEndpoints
             new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) }
         );
 
-        var request = ctx.Request;
-        var redirectUri =
-            $"{request.Scheme}://{request.Host}/api/auth/github/callback";
+        var redirectUri = $"{appSettings.Value.FrontendUrl.TrimEnd('/')}/api/auth/github/callback";
 
         var authorizationUrl = gitHubAuthService.GetAuthorizationUrl(redirectUri, state);
         return Results.Redirect(authorizationUrl);
@@ -496,9 +494,7 @@ public static class AuthEndpoints
         if (!gitHubAuthService.IsConfigured)
             return Results.Redirect($"{frontendUrl}/login?error=not_configured");
 
-        var request = ctx.Request;
-        var redirectUri =
-            $"{request.Scheme}://{request.Host}/api/auth/github/callback";
+        var redirectUri = $"{frontendUrl}/api/auth/github/callback";
 
         // Pre-check: if registration is disabled, verify the GitHub user already has an account
         if (!IsRegistrationAllowed(configuration))
