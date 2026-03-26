@@ -27,6 +27,9 @@ node_modules/
 # Serilog log files
 **/logs/
 
+# Runtime data (LiteLLM cache, etc.)
+src/backend/Clarive.Api/data/
+
 # Environment-specific settings (contain secrets)
 **/appsettings.Development.json
 
