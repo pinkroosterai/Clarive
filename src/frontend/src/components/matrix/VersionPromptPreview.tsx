@@ -38,7 +38,7 @@ export function VersionPromptPreview({
       {/* System message */}
       {content.systemMessage && (
         <ActionGroup label="System Message">
-          <div className="rounded-md bg-muted/30 p-3 text-xs leading-relaxed">
+          <div className="rounded-md bg-muted/30 p-3 text-xs leading-relaxed [&_pre]:overflow-x-auto [&_code]:break-words [&_code]:whitespace-pre-wrap">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {renderTemplate(content.systemMessage, fieldValues)}
             </ReactMarkdown>
@@ -51,7 +51,7 @@ export function VersionPromptPreview({
         .sort((a, b) => a.order - b.order)
         .map((prompt, index) => (
           <ActionGroup key={prompt.id} label={`Prompt #${index + 1}`}>
-            <div className="rounded-md border border-border-subtle p-3 text-xs leading-relaxed">
+            <div className="rounded-md border border-border-subtle p-3 text-xs leading-relaxed [&_pre]:overflow-x-auto [&_code]:break-words [&_code]:whitespace-pre-wrap">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {renderTemplate(prompt.content, fieldValues)}
               </ReactMarkdown>
