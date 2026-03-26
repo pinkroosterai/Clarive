@@ -446,12 +446,13 @@ const EntryEditorPage = () => {
         <SoftLockBanner activeEditor={activeEditor} onOverride={() => setSoftLockOverride(true)} />
       )}
       <PromptEditor
-        key={`${viewingPublished ? 'published' : activeTabId}-${editor.discardVersion}`}
+        key={editor.discardVersion}
         entry={localEntry}
         onChange={editor.handleChange}
         isReadOnly={isReadOnly}
         hideTitleInput
         skipEntryAnimation={!showEntryAnimation}
+        contentKey={viewingPublished ? 'published' : activeTabId}
       />
     </div>
   );
