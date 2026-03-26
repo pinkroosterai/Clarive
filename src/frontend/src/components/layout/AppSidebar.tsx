@@ -31,12 +31,8 @@ import {
 import { APP_VERSION } from '@/lib/config';
 import { useAuthStore } from '@/store/authStore';
 
-const navLinks = [
-  { title: 'Dashboard', icon: LayoutDashboard, url: '/' },
-  { title: 'Trash', icon: Trash2, url: '/trash' },
-];
-
 const utilLinks = [
+  { title: 'Trash', icon: Trash2, url: '/trash' },
   { title: 'Settings', icon: Settings, url: '/settings' },
   { title: 'Help', icon: CircleHelp, url: '/help' },
 ];
@@ -82,6 +78,24 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarGroup>
 
+      {/* Dashboard — primary nav above folders */}
+      <SidebarGroup>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Dashboard">
+              <NavLink
+                to="/"
+                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-sidebar-primary"
+                className="transition-colors duration-150"
+              >
+                <LayoutDashboard className="size-4" />
+                <span>Dashboard</span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+
       <SidebarContent data-tour="sidebar-nav" className="overflow-hidden">
         <ScrollArea className="flex-1">
           <SidebarGroup>
@@ -96,20 +110,6 @@ export function AppSidebar() {
       <SidebarFooter>
         <InvitationNotificationBell />
         <SidebarMenu>
-          {navLinks.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <NavLink
-                  to={item.url}
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-sidebar-primary"
-                  className="transition-colors duration-150"
-                >
-                  <item.icon className="size-4" />
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
           {utilLinks.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild tooltip={item.title}>
