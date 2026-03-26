@@ -15,8 +15,6 @@ namespace Clarive.Api.Endpoints;
 
 public static class PublicApiEndpoints
 {
-    private const int MaxPageSize = 100;
-    private const int DefaultPageSize = 50;
 
     public static IEndpointRouteBuilder MapPublicApiEndpoints(this IEndpointRouteBuilder app)
     {
@@ -73,12 +71,6 @@ public static class PublicApiEndpoints
         return (new ApiKeyClaims(tenantId, apiKeyId, apiKeyNameClaim), null);
     }
 
-    private static (int page, int pageSize) NormalizePagination(int? page, int? pageSize)
-    {
-        var p = page is > 0 ? page.Value : 1;
-        var ps = pageSize is > 0 ? Math.Min(pageSize.Value, MaxPageSize) : DefaultPageSize;
-        return (p, ps);
-    }
 
     // ── List published entries ──
 
@@ -110,7 +102,7 @@ public static class PublicApiEndpoints
             parsedFolderId = gid;
         }
 
-        var (p, ps) = NormalizePagination(page, pageSize);
+        var (p, ps) = PaginationHelper.Normalize(page, pageSize);
 
         // Force status=published — the public API only exposes published entries
         var result = await entryService.ListEntriesAsync(

@@ -67,17 +67,8 @@ public static partial class EntryEndpoints
         return group;
     }
 
-    private const int MaxPageSize = 100;
-    private const int DefaultPageSize = 50;
     private const int MaxActivityPageSize = 50;
     private const int DefaultActivityPageSize = 20;
-
-    private static (int page, int pageSize) NormalizePagination(int? page, int? pageSize)
-    {
-        var p = page is > 0 ? page.Value : 1;
-        var ps = pageSize is > 0 ? Math.Min(pageSize.Value, MaxPageSize) : DefaultPageSize;
-        return (p, ps);
-    }
 
     // ── Tree (minimal sidebar data) ──
     private static async Task<IResult> HandleGetTree(
@@ -119,7 +110,7 @@ public static partial class EntryEndpoints
             parsedFolderId = gid;
         }
 
-        var (p, ps) = NormalizePagination(page, pageSize);
+        var (p, ps) = PaginationHelper.Normalize(page, pageSize);
         var result = await entryService.ListEntriesAsync(
             tenantId,
             userId,
@@ -152,7 +143,7 @@ public static partial class EntryEndpoints
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
-        var (p, ps) = NormalizePagination(page, pageSize);
+        var (p, ps) = PaginationHelper.Normalize(page, pageSize);
         var result = await entryService.ListTrashedEntriesAsync(tenantId, userId, p, ps, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
