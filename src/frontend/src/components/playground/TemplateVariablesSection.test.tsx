@@ -1,7 +1,16 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 
 import { TemplateVariablesSection } from './TemplateVariablesSection';
+
+// Radix Slider uses ResizeObserver which isn't available in jsdom
+beforeAll(() => {
+  global.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+});
 
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { TemplateField } from '@/types';
@@ -66,20 +75,20 @@ describe('TemplateVariablesSection', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders pill inputs with monospace labels', () => {
+  it('renders pill inputs with labels', () => {
     renderSection();
-    expect(screen.getByText('topic:')).toBeInTheDocument();
-    expect(screen.getByText('tone:')).toBeInTheDocument();
+    expect(screen.getByText('topic')).toBeInTheDocument();
+    expect(screen.getByText('tone')).toBeInTheDocument();
   });
 
   it('shows empty badge when fields are unfilled', () => {
     renderSection();
-    expect(screen.getByText('2 empty')).toBeInTheDocument();
+    expect(screen.getByText(/2\s*empty/)).toBeInTheDocument();
   });
 
   it('shows 1 empty when one field filled', () => {
     renderSection({ fieldValues: { topic: 'AI' } });
-    expect(screen.getByText('1 empty')).toBeInTheDocument();
+    expect(screen.getByText(/1\s*empty/)).toBeInTheDocument();
   });
 
   it('hides empty badge when all fields are filled', () => {
@@ -108,7 +117,7 @@ describe('TemplateVariablesSection', () => {
 
   it('enum pill shows Select... when empty', () => {
     renderSection();
-    expect(screen.getByText('Select...')).toBeInTheDocument();
+    expect(screen.getByText('Select tone')).toBeInTheDocument();
   });
 
   it('fill button has aria-label and no visible text', () => {
@@ -129,7 +138,7 @@ describe('TemplateVariablesSection', () => {
       templateFields: [sliderField],
       fieldValues: { temperature: '0.7' },
     });
-    expect(screen.getByText('temperature:')).toBeInTheDocument();
+    expect(screen.getByText('temperature')).toBeInTheDocument();
     expect(screen.getByText('0.7')).toBeInTheDocument();
   });
 });

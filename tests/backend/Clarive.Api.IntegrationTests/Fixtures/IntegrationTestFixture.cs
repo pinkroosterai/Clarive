@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -53,6 +54,8 @@ public class IntegrationTestFixture : IAsyncLifetime
             "JWT__SECRET",
             "integration-test-secret-key-minimum-32-characters-long-for-hmac-sha256"
         );
+        Environment.SetEnvironmentVariable("GITHUB__CLIENTID", "test-github-client-id");
+        Environment.SetEnvironmentVariable("GITHUB__CLIENTSECRET", "test-github-client-secret");
 
         _factory = new ClariveApiFactory(connStr);
 
@@ -113,6 +116,10 @@ internal class ClariveApiFactory : WebApplicationFactory<Program>
             // Replace Tavily client with deterministic mock
             services.RemoveAll<ITavilyClientService>();
             services.AddSingleton<ITavilyClientService, MockTavilyClientService>();
+
+            // Replace Redis-backed distributed cache with in-memory for tests
+            services.RemoveAll<IDistributedCache>();
+            services.AddDistributedMemoryCache();
         });
 
         // Raise rate limit for tests (all requests share loopback IP)
