@@ -72,7 +72,7 @@ const CreateUserPage = () => {
         toast.success('User created. A password setup email has been sent.');
       }
 
-      navigate('/super');
+      navigate('/super?tab=users');
     },
     onError: (err: unknown) => handleApiError(err, { fallback: 'Failed to create user' }),
   });
@@ -127,7 +127,7 @@ const CreateUserPage = () => {
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <button
-          onClick={() => navigate('/super')}
+          onClick={() => navigate('/super?tab=users')}
           className="flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground mb-6 transition-colors"
         >
           <ChevronLeft className="size-4" />
