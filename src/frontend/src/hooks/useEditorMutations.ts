@@ -115,6 +115,7 @@ export function useEditorMutations({
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       toast.success('Entry moved');
     },
+    onError: (err: unknown) => handleApiError(err, { title: 'Failed to move entry' }),
   });
 
   const handleSave = useCallback(() => {

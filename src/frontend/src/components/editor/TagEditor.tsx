@@ -4,6 +4,7 @@ import { useState, useRef, memo } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { handleApiError } from '@/lib/handleApiError';
 import * as tagService from '@/services/api/tagService';
 import { useAuthStore } from '@/store/authStore';
 
@@ -38,6 +39,7 @@ export const TagEditor = memo(function TagEditor({ entryId, readOnly = false }: 
       queryClient.invalidateQueries({ queryKey: ['entry-tags', entryId] });
       queryClient.invalidateQueries({ queryKey: ['tags'] });
     },
+    onError: (err: unknown) => handleApiError(err, { title: 'Failed to add tag' }),
   });
 
   const removeMutation = useMutation({
@@ -46,6 +48,7 @@ export const TagEditor = memo(function TagEditor({ entryId, readOnly = false }: 
       queryClient.invalidateQueries({ queryKey: ['entry-tags', entryId] });
       queryClient.invalidateQueries({ queryKey: ['tags'] });
     },
+    onError: (err: unknown) => handleApiError(err, { title: 'Failed to remove tag' }),
   });
 
   const handleAdd = (name: string) => {
