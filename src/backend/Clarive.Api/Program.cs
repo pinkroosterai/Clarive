@@ -34,6 +34,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Npgsql;
 using Quartz;
+using Quartz.Impl.Matchers;
 using Resend;
 using Serilog;
 using StackExchange.Redis;
@@ -527,6 +528,29 @@ try
             ddlCmd.CommandText = ddl;
             await ddlCmd.ExecuteNonQueryAsync();
             Log.Information("Quartz.NET scheduler tables created");
+        }
+    }
+
+    // ── Trigger never-run jobs on startup ──
+    {
+        using var jobScope = app.Services.CreateScope();
+        var schedulerFactory = jobScope.ServiceProvider.GetRequiredService<ISchedulerFactory>();
+        var scheduler = await schedulerFactory.GetScheduler();
+        var historyRepo = jobScope.ServiceProvider.GetRequiredService<IJobExecutionHistoryRepository>();
+
+        var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+        foreach (var jobKey in jobKeys)
+        {
+            // MaintenanceSync runs every 10s — no need to force-trigger on startup
+            if (jobKey.Name == "MaintenanceSync")
+                continue;
+
+            var history = await historyRepo.GetByJobNameAsync(jobKey.Name, page: 1, pageSize: 1);
+            if (history.Total == 0)
+            {
+                Log.Information("Triggering {JobName} — no previous execution found", jobKey.Name);
+                await scheduler.TriggerJob(jobKey);
+            }
         }
     }
 

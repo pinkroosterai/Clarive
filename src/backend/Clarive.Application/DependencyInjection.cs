@@ -89,7 +89,6 @@ public static class DependencyInjection
             q.AddTrigger(opts => opts
                 .ForJob("LiteLlmSync", "Application")
                 .WithIdentity("LiteLlmSync-trigger")
-                .StartNow()
                 .WithCronSchedule("0 0 1 * * ?"));
 
             q.AddJob<McpSyncJob>(opts => opts
