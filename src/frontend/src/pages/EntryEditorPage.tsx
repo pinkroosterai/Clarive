@@ -446,7 +446,7 @@ const EntryEditorPage = () => {
         <SoftLockBanner activeEditor={activeEditor} onOverride={() => setSoftLockOverride(true)} />
       )}
       <PromptEditor
-        key={editor.discardVersion}
+        key={`${viewingPublished ? 'published' : activeTabId}-${editor.discardVersion}`}
         entry={localEntry}
         onChange={editor.handleChange}
         isReadOnly={isReadOnly}
