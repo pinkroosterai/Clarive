@@ -106,8 +106,8 @@ export function TabBar({
         );
       })}
 
-      {/* Create tab button */}
-      {!isReadOnly && (
+      {/* Create tab button — visible when editing OR viewing published (creating a tab is always allowed) */}
+      {(!isReadOnly || isViewingPublished) && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

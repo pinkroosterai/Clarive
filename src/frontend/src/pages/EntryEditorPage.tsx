@@ -338,7 +338,7 @@ const EntryEditorPage = () => {
       />
 
       {/* Tab bar */}
-      {!version && tabs.length > 0 && (
+      {!version && (tabs.length > 0 || hasPublished) && (
         <TabBar
           tabs={tabs}
           activeTabId={activeTabId}
@@ -534,7 +534,10 @@ const EntryEditorPage = () => {
         versions={versions}
         open={createTabOpen}
         onOpenChange={setCreateTabOpen}
-        onCreated={(tabId) => setActiveTabId(tabId)}
+        onCreated={(tabId) => {
+          setViewingPublished(false);
+          setActiveTabId(tabId);
+        }}
       />
     </>
   );
