@@ -101,8 +101,79 @@ export function ActionsTabContent({
 
   if (isReadOnly) {
     return (
-      <div className="py-4 text-center text-sm text-foreground-muted">
-        Read-only mode — no actions available.
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Settings2 className="size-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Actions</h3>
+        </div>
+
+        <div className="text-xs text-foreground-muted">
+          Read-only mode — editing is not available.
+        </div>
+
+        {onTest && (
+          <Button
+            variant="outline"
+            className="w-full gap-2 hover:border-primary/30 transition-all"
+            onClick={onTest}
+            disabled={!aiEnabled}
+          >
+            <FlaskConical className="size-4" />
+            Playground
+          </Button>
+        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full gap-2">
+              <MoreHorizontal className="size-4" />
+              More actions
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {onShare && hasPublished && (
+              <DropdownMenuItem onClick={onShare}>
+                <Share2 className="size-4 mr-2" />
+                {hasShareLink ? 'Manage Share Link' : 'Share Link'}
+              </DropdownMenuItem>
+            )}
+            {onDuplicate && (
+              <DropdownMenuItem onClick={onDuplicate} disabled={isDuplicating}>
+                <Copy className="size-4 mr-2" />
+                {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+              </DropdownMenuItem>
+            )}
+            {onMoveToTrash && (
+              <>
+                {(onShare || onDuplicate) && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  onClick={() => setShowTrashConfirm(true)}
+                  disabled={isMovingToTrash}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="size-4 mr-2" />
+                  {isMovingToTrash ? 'Moving...' : 'Move to Trash'}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Trash confirmation dialog */}
+        <AlertDialog open={showTrashConfirm} onOpenChange={setShowTrashConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Move to trash?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This entry will be moved to the trash. You can restore it later.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onMoveToTrash}>Move to Trash</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
