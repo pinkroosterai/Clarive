@@ -22,4 +22,6 @@ public interface ISuperAdminService
     Task<bool> SoftDeleteUserAsync(Guid userId, CancellationToken ct);
 
     Task<ErrorOr<string>> ResetUserPasswordAsync(Guid userId, CancellationToken ct);
+
+    Task<ErrorOr<CreateUserResponse>> CreateUserAsync(CreateUserRequest request, CancellationToken ct);
 }

@@ -1,7 +1,12 @@
+using Clarive.Auth.Jwt;
 using Clarive.Infrastructure.Security;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
+using Clarive.Domain.Interfaces.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Clarive.Api.UnitTests.Services;
@@ -12,6 +17,12 @@ public class SuperAdminServiceTests
     private readonly ISuperAdminRepository _adminRepo = Substitute.For<ISuperAdminRepository>();
     private readonly IUserRepository _userRepo = Substitute.For<IUserRepository>();
     private readonly PasswordHasher _passwordHasher = new();
+    private readonly IUserWorkspaceCreationService _workspaceCreation = Substitute.For<IUserWorkspaceCreationService>();
+    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly ITenantMembershipRepository _membershipRepo = Substitute.For<ITenantMembershipRepository>();
+    private readonly ITenantRepository _tenantRepo = Substitute.For<ITenantRepository>();
+    private readonly ITokenRepository _tokenRepo = Substitute.For<ITokenRepository>();
+    private readonly IEmailService _emailService = Substitute.For<IEmailService>();
     private readonly SuperAdminService _sut;
 
     private static readonly Guid UserId = Guid.NewGuid();
@@ -22,7 +33,40 @@ public class SuperAdminServiceTests
             .UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.Arg<User>());
 
-        _sut = new SuperAdminService(_statsRepo, _adminRepo, _userRepo, _passwordHasher);
+        var jwtSettings = new JwtSettings
+        {
+            Secret = "test-secret-key-minimum-32-characters-long-for-hmac-sha256!",
+            Issuer = "test",
+            Audience = "test",
+            ExpirationMinutes = 15,
+            RefreshTokenExpirationDays = 7,
+        };
+        var jwtService = new JwtService(
+            new OptionsMonitorStub<JwtSettings>(jwtSettings),
+            Substitute.For<ILogger<JwtService>>()
+        );
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Email:Provider"] = "none" })
+            .Build();
+
+        var appSettings = Options.Create(new AppSettings { FrontendUrl = "http://localhost:8080" });
+
+        _sut = new SuperAdminService(
+            _statsRepo,
+            _adminRepo,
+            _userRepo,
+            _passwordHasher,
+            _workspaceCreation,
+            _unitOfWork,
+            _membershipRepo,
+            _tenantRepo,
+            _tokenRepo,
+            jwtService,
+            _emailService,
+            appSettings,
+            config
+        );
     }
 
     // ── SoftDeleteUserAsync ──

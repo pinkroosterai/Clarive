@@ -1,6 +1,7 @@
 using Clarive.Api.Helpers;
 using Clarive.Application.SuperAdmin.Contracts;
 using Clarive.Domain.Enums;
+using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Domain.ValueObjects;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -20,7 +21,9 @@ public static class SuperEndpoints
         group.MapPost("/maintenance", HandleSetMaintenance);
         group.MapGet("/users", HandleGetUsers);
         group.MapDelete("/users/{userId}", HandleDeleteUser);
+        group.MapPost("/users", HandleCreateUser);
         group.MapPost("/users/{userId}/reset-password", HandleResetPassword);
+        group.MapGet("/workspaces", HandleListWorkspaces);
 
         // ── Job monitoring & control ──
         group.MapGet("/jobs", HandleGetJobs);
@@ -135,6 +138,33 @@ public static class SuperEndpoints
             return result.Errors.ToHttpResult(ctx);
 
         return Results.Ok(new ResetPasswordResponse(NewPassword: result.Value));
+    }
+
+    private static async Task<IResult> HandleCreateUser(
+        HttpContext ctx,
+        CreateUserRequest request,
+        ISuperAdminService superAdminService,
+        CancellationToken ct = default
+    )
+    {
+        if (Validator.ValidateRequest(request) is { } validationErr)
+            return validationErr;
+
+        var result = await superAdminService.CreateUserAsync(request, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
+
+        return Results.Created($"/api/super/users/{result.Value.Id}", result.Value);
+    }
+
+    private static async Task<IResult> HandleListWorkspaces(
+        ITenantRepository tenantRepo,
+        CancellationToken ct = default
+    )
+    {
+        var tenants = await tenantRepo.GetAllAsync(ct);
+        var workspaces = tenants.Select(t => new { id = t.Id, name = t.Name }).ToList();
+        return Results.Ok(workspaces);
     }
 
     // ── Job endpoints ──

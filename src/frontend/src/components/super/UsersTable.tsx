@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { CreateUserDialog } from '@/components/super/CreateUserDialog';
 import { DeleteUserDialog } from '@/components/super/DeleteUserDialog';
 import { agGridTheme } from '@/lib/agGridTheme';
 import { ResetPasswordDialog } from '@/components/super/ResetPasswordDialog';
@@ -311,10 +312,13 @@ export default function UsersTable() {
         <div className="text-sm text-foreground-muted">
           {total.toLocaleString()} user{total !== 1 ? 's' : ''} total
         </div>
-        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={users.length === 0}>
-          <Download className="size-3.5 mr-1.5" />
-          Export CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <CreateUserDialog />
+          <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={users.length === 0}>
+            <Download className="size-3.5 mr-1.5" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Search & Filters */}

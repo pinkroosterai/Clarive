@@ -1,3 +1,6 @@
+using Clarive.Auth.Jwt;
+using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Security;
 using System.Security.Cryptography;
@@ -5,6 +8,8 @@ using Clarive.Domain.Errors;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Application.Users.Contracts;
 using ErrorOr;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Clarive.Application.SuperAdmin.Services;
 
@@ -12,7 +17,16 @@ public class SuperAdminService(
     IPlatformStatsRepository statsRepo,
     ISuperAdminRepository adminRepo,
     IUserRepository userRepo,
-    PasswordHasher passwordHasher
+    PasswordHasher passwordHasher,
+    IUserWorkspaceCreationService workspaceCreation,
+    IUnitOfWork unitOfWork,
+    ITenantMembershipRepository membershipRepo,
+    ITenantRepository tenantRepo,
+    ITokenRepository tokenRepo,
+    JwtService jwtService,
+    IEmailService emailService,
+    IOptions<AppSettings> appSettings,
+    IConfiguration configuration
 ) : ISuperAdminService
 {
     public async Task<PlatformStatsResponse> GetPlatformStatsAsync(CancellationToken ct)
@@ -136,5 +150,111 @@ public class SuperAdminService(
         await userRepo.UpdateAsync(user, ct);
 
         return password;
+    }
+
+    public async Task<ErrorOr<CreateUserResponse>> CreateUserAsync(
+        CreateUserRequest request,
+        CancellationToken ct
+    )
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+
+        if (await userRepo.GetByEmailAsync(email, ct) is not null)
+            return Error.Conflict("EMAIL_ALREADY_EXISTS", "A user with this email already exists.");
+
+        var workspace = await tenantRepo.GetByIdAsync(request.WorkspaceId, ct);
+        if (workspace is null)
+            return Error.NotFound("WORKSPACE_NOT_FOUND", "The selected workspace was not found.");
+
+        if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var role))
+            return Error.Validation("INVALID_ROLE", "Role must be Admin, Editor, or Viewer.");
+
+        var emailProvider = configuration["Email:Provider"] ?? "none";
+        var emailEnabled = !string.Equals(emailProvider, "none", StringComparison.OrdinalIgnoreCase);
+
+        // Generate password (always needed for account creation)
+        string? generatedPassword = null;
+        string passwordHash;
+
+        if (emailEnabled)
+        {
+            // Temporary password — user will set their own via reset link
+            var tempPassword = GenerateRandomPassword();
+            passwordHash = passwordHasher.Hash(tempPassword);
+        }
+        else
+        {
+            // No email — generate password to show to admin
+            generatedPassword = GenerateRandomPassword();
+            passwordHash = passwordHasher.Hash(generatedPassword);
+        }
+
+        return await unitOfWork.ExecuteInTransactionAsync(
+            async () =>
+            {
+                // Create user with personal workspace
+                var (user, _) = await workspaceCreation.CreateUserWithPersonalWorkspaceAsync(
+                    email,
+                    request.Name.Trim(),
+                    passwordHash: passwordHash,
+                    googleId: null,
+                    emailVerified: true,
+                    ct: ct
+                );
+
+                // Add membership to the assigned workspace
+                await membershipRepo.CreateAsync(
+                    new TenantMembership
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id,
+                        TenantId = request.WorkspaceId,
+                        Role = role,
+                        IsPersonal = false,
+                        JoinedAt = DateTime.UtcNow,
+                    },
+                    ct
+                );
+
+                // Send password setup email if email is configured
+                if (emailEnabled)
+                {
+                    var (rawToken, _) = jwtService.GenerateRefreshToken();
+                    await tokenRepo.CreateResetTokenAsync(
+                        new PasswordResetToken
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id,
+                            TokenHash = JwtService.HashRefreshToken(rawToken),
+                            ExpiresAt = DateTime.UtcNow.AddHours(24),
+                            CreatedAt = DateTime.UtcNow,
+                        },
+                        ct
+                    );
+
+                    var resetUrl = $"{appSettings.Value.FrontendUrl}/reset-password?token={rawToken}";
+                    await emailService.SendPasswordResetEmailAsync(
+                        user.Email,
+                        user.Name,
+                        resetUrl,
+                        ct
+                    );
+                }
+
+                return (ErrorOr<CreateUserResponse>)
+                    new CreateUserResponse(user.Id, user.Email, user.Name, generatedPassword);
+            },
+            ct
+        );
+    }
+
+    private static string GenerateRandomPassword()
+    {
+        const string chars =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        var passwordChars = new char[16];
+        for (var i = 0; i < passwordChars.Length; i++)
+            passwordChars[i] = chars[RandomNumberGenerator.GetInt32(chars.Length)];
+        return new string(passwordChars);
     }
 }

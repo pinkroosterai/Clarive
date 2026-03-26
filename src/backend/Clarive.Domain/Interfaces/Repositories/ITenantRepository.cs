@@ -11,4 +11,5 @@ public interface ITenantRepository
         CancellationToken ct = default
     );
     Task UpdateAsync(Tenant tenant, CancellationToken ct = default);
+    Task<List<Tenant>> GetAllAsync(CancellationToken ct = default);
 }

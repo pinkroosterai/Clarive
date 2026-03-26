@@ -109,3 +109,36 @@ export async function deleteSuperUser(userId: string, hard: boolean): Promise<vo
 export async function resetUserPassword(userId: string): Promise<ResetPasswordResponse> {
   return api.post<ResetPasswordResponse>(`/api/super/users/${userId}/reset-password`);
 }
+
+// ── Create User ──
+
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+  workspaceId: string;
+  role: string;
+}
+
+export interface CreateUserResponse {
+  id: string;
+  email: string;
+  name: string;
+  generatedPassword: string | null;
+}
+
+export async function createSuperUser(
+  request: CreateUserRequest,
+): Promise<CreateUserResponse> {
+  return api.post<CreateUserResponse>('/api/super/users', request);
+}
+
+// ── Workspaces (for super admin dropdowns) ──
+
+export interface SuperAdminWorkspace {
+  id: string;
+  name: string;
+}
+
+export async function getSuperWorkspaces(): Promise<SuperAdminWorkspace[]> {
+  return api.get<SuperAdminWorkspace[]>('/api/super/workspaces');
+}

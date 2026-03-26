@@ -41,4 +41,9 @@ public class EfTenantRepository(ClariveDbContext db) : ITenantRepository
         db.Tenants.Update(tenant);
         await db.SaveChangesAsync(ct);
     }
+
+    public async Task<List<Tenant>> GetAllAsync(CancellationToken ct = default)
+    {
+        return await db.Tenants.IgnoreQueryFilters().AsNoTracking().OrderBy(t => t.Name).ToListAsync(ct);
+    }
 }
