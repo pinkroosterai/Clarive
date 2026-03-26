@@ -208,5 +208,6 @@ public class OpenAIAgentFactoryTests
             FillTemplateFields = new ActionAiConfig { Model = "gpt-4o" },
             PlaygroundJudge = new ActionAiConfig { Model = "gpt-4o" },
             PolishDescription = new ActionAiConfig { Model = "gpt-4o" },
+            MergeConflict = new ActionAiConfig { Model = "gpt-4o" },
         };
 }

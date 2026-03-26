@@ -255,14 +255,14 @@ public static class AiGenerationEndpoints
     private static async Task<IResult> HandleGenerateSystemMessage(
         HttpContext ctx,
         GenerateSystemMessageRequest request,
-        IAiGenerationService aiService,
+        IAiUtilityService aiUtilityService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await aiService.GenerateSystemMessageAsync(
+        var result = await aiUtilityService.GenerateSystemMessageAsync(
             tenantId,
             userId,
             request.EntryId,
@@ -280,14 +280,14 @@ public static class AiGenerationEndpoints
     private static async Task<IResult> HandleDecompose(
         HttpContext ctx,
         DecomposeRequest request,
-        IAiGenerationService aiService,
+        IAiUtilityService aiUtilityService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await aiService.DecomposeAsync(tenantId, userId, request.EntryId, request.TabId, ct);
+        var result = await aiUtilityService.DecomposeAsync(tenantId, userId, request.EntryId, request.TabId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
@@ -299,14 +299,14 @@ public static class AiGenerationEndpoints
     private static async Task<IResult> HandleFillTemplateFields(
         HttpContext ctx,
         FillTemplateFieldsRequest request,
-        IAiGenerationService aiService,
+        IAiUtilityService aiUtilityService,
         CancellationToken ct
     )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await aiService.FillTemplateFieldsAsync(tenantId, userId, request.EntryId, request.TabId, ct);
+        var result = await aiUtilityService.FillTemplateFieldsAsync(tenantId, userId, request.EntryId, request.TabId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx, "Entry", request.EntryId.ToString());
 
@@ -328,14 +328,14 @@ public static class AiGenerationEndpoints
     private static async Task<IResult> HandleEvaluate(
         HttpContext ctx,
         EvaluateEntryRequest request,
-        IAiGenerationService aiService,
+        IAiUtilityService aiUtilityService,
         CancellationToken ct
     )
     {
         if (Validator.ValidateRequest(request) is { } validationErr)
             return validationErr;
 
-        var result = await aiService.EvaluateAsync(
+        var result = await aiUtilityService.EvaluateAsync(
             ctx.GetTenantId(),
             ctx.GetUserId(),
             request,
@@ -352,13 +352,13 @@ public static class AiGenerationEndpoints
     private static async Task<IResult> HandlePolishDescription(
         HttpContext ctx,
         PolishDescriptionRequest request,
-        IAiGenerationService aiService
+        IAiUtilityService aiUtilityService
     )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await aiService.PolishDescriptionAsync(
+        var result = await aiUtilityService.PolishDescriptionAsync(
             tenantId,
             userId,
             request.Description,
@@ -377,13 +377,13 @@ public static class AiGenerationEndpoints
     private static async Task<IResult> HandleResolveMergeConflict(
         HttpContext ctx,
         ResolveMergeConflictRequest request,
-        IAiGenerationService aiService
+        IAiUtilityService aiUtilityService
     )
     {
         var tenantId = ctx.GetTenantId();
         var userId = ctx.GetUserId();
 
-        var result = await aiService.ResolveMergeConflictAsync(
+        var result = await aiUtilityService.ResolveMergeConflictAsync(
             tenantId,
             userId,
             request.FieldName,

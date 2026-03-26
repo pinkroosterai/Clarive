@@ -34,6 +34,11 @@ const CONFIGURABLE_ACTIONS = [
     label: 'Polish Description',
     description: 'Rewrite rough wizard descriptions into clear input',
   },
+  {
+    key: 'MergeConflict',
+    label: 'Merge Conflict',
+    description: 'AI-assisted resolution of conflicting field versions',
+  },
 ] as const;
 
 interface ActionModelTableProps {

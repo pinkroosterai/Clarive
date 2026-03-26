@@ -22,6 +22,7 @@ public record AiSettings
     public ActionAiConfig FillTemplateFields { get; init; } = new();
     public ActionAiConfig PlaygroundJudge { get; init; } = new();
     public ActionAiConfig PolishDescription { get; init; } = new();
+    public ActionAiConfig MergeConflict { get; init; } = new();
 
     // Playground & tools
     public string AllowedModels { get; init; } = "";
@@ -38,6 +39,7 @@ public record AiSettings
             AiActionType.FillTemplateFields => FillTemplateFields,
             AiActionType.PlaygroundJudge => PlaygroundJudge,
             AiActionType.PolishDescription => PolishDescription,
+            AiActionType.MergeConflict => MergeConflict,
             _ => null,
         };
 }

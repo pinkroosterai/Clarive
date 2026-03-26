@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<IAiGenerationService, AiGenerationService>();
+        services.AddScoped<IAiUtilityService, AiUtilityService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();

@@ -11,4 +11,5 @@ public enum AiActionType
     PlaygroundJudge,
     FillTemplateFields,
     PolishDescription,
+    MergeConflict,
 }
