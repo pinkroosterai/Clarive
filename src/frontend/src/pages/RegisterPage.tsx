@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { GitHubLoginButton } from '@/components/auth/GitHubLoginButton';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
+import { getGitHubClientId, getGoogleClientId } from '@/lib/config';
 import { PasswordStrengthBar } from '@/components/common/PasswordStrengthBar';
 import { AnvilIcon } from '@/components/icons/AnvilIcon';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,13 @@ const RegisterPage = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [hasOAuthProvider, setHasOAuthProvider] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getGoogleClientId(), getGitHubClientId()]).then(([google, github]) => {
+      setHasOAuthProvider(!!google || !!github);
+    });
+  }, []);
   const [honeypot, setHoneypot] = useState('');
   const formLoadedAt = useRef(Date.now());
 
@@ -74,14 +82,16 @@ const RegisterPage = () => {
             <GoogleLoginButton />
             <GitHubLoginButton />
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
+            {hasOAuthProvider && (
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-surface/80 px-2 text-foreground-muted">or</span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-surface/80 px-2 text-foreground-muted">or</span>
-              </div>
-            </div>
+            )}
           </div>
 
           <Form {...form}>
