@@ -11,6 +11,7 @@ interface MatrixToolbarProps {
   isRunning: boolean;
   batchProgress: { current: number; total: number } | null;
   matrixHasCells: boolean;
+  runDisabledReason: string | null;
   onClearMatrix: () => void;
   showHistory: boolean;
   onToggleHistory: () => void;
@@ -23,6 +24,7 @@ export function MatrixToolbar({
   isRunning,
   batchProgress,
   matrixHasCells,
+  runDisabledReason,
   onClearMatrix,
   showHistory,
   onToggleHistory,
@@ -58,15 +60,17 @@ export function MatrixToolbar({
           )}
         </Button>
       ) : (
-        <Button
-          size="sm"
-          className="gap-2"
-          onClick={onRunAll}
-          disabled={!matrixHasCells}
-        >
-          <Play className="size-3.5" />
-          Run All
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span tabIndex={runDisabledReason ? 0 : undefined}>
+              <Button size="sm" className="gap-2" onClick={onRunAll} disabled={!!runDisabledReason}>
+                <Play className="size-3.5" />
+                Run All
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {runDisabledReason && <TooltipContent>{runDisabledReason}</TooltipContent>}
+        </Tooltip>
       )}
 
       {/* Spacer */}

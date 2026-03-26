@@ -80,6 +80,12 @@ function TestMatrixPage() {
 
   // ── Derived values ──
   const matrixHasCells = state.versions.length > 0 && state.models.length > 0;
+  const hasUnfilledTemplateFields = templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
+  const runDisabledReason = !matrixHasCells
+    ? 'Add at least one version and one model to run'
+    : hasUnfilledTemplateFields
+      ? 'Fill in all template variables before running'
+      : null;
   const addedVersionIds = useMemo(() => new Set(state.versions.map((v) => v.id)), [state.versions]);
   const addedModelIds = useMemo(() => new Set(state.models.map((m) => m.modelId)), [state.models]);
   const hasResults = Object.values(state.cells).some(
@@ -156,6 +162,7 @@ function TestMatrixPage() {
             isRunning={execution.isRunning}
             batchProgress={execution.batchProgress}
             matrixHasCells={matrixHasCells}
+            runDisabledReason={runDisabledReason}
             onClearMatrix={clearMatrix}
             showHistory={showHistory}
             onToggleHistory={() => setShowHistory((h) => !h)}
