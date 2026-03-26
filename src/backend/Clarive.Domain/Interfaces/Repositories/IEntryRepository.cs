@@ -32,6 +32,11 @@ public interface IEntryRepository
     Task<PromptEntry> CreateAsync(PromptEntry entry, CancellationToken ct = default);
     Task<PromptEntry> UpdateAsync(PromptEntry entry, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid tenantId, Guid entryId, CancellationToken ct = default);
+    Task<List<PromptEntry>> GetExpiredTrashedEntriesAsync(
+        DateTime cutoff,
+        int batchSize,
+        CancellationToken ct = default
+    );
 
     // Tab management
     Task<PromptEntryVersion?> GetWorkingVersionAsync(

@@ -147,6 +147,20 @@ public class EfEntryRepository(ClariveDbContext db, ITenantCacheService cache) :
         return true;
     }
 
+    public async Task<List<PromptEntry>> GetExpiredTrashedEntriesAsync(
+        DateTime cutoff,
+        int batchSize,
+        CancellationToken ct = default
+    )
+    {
+        return await db
+            .PromptEntries.IgnoreQueryFilters()
+            .Where(e => e.IsTrashed && e.TrashedAt != null && e.TrashedAt <= cutoff)
+            .OrderBy(e => e.TrashedAt)
+            .Take(batchSize)
+            .ToListAsync(ct);
+    }
+
     // ── Version Management ──
 
     private IQueryable<PromptEntryVersion> VersionsWithIncludes =>

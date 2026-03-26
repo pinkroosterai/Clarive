@@ -99,6 +99,14 @@ public static class DependencyInjection
                 .ForJob("McpSync", "Application")
                 .WithIdentity("McpSync-trigger")
                 .WithCronSchedule("0 */5 * * * ?"));
+
+            q.AddJob<TrashPurgeJob>(opts => opts
+                .WithIdentity("TrashPurge", "Application")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("TrashPurge", "Application")
+                .WithIdentity("TrashPurge-trigger")
+                .WithCronSchedule("0 0 6 * * ?"));
         });
 
         return services;

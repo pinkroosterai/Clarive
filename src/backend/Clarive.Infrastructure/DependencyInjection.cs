@@ -199,6 +199,14 @@ public static class DependencyInjection
                 .WithIdentity("HistoryCleanup-trigger")
                 .WithCronSchedule("0 0 5 * * ?"));
 
+            q.AddJob<AuditLogCleanupJob>(opts => opts
+                .WithIdentity("AuditLogCleanup", "Infrastructure")
+                .StoreDurably());
+            q.AddTrigger(opts => opts
+                .ForJob("AuditLogCleanup", "Infrastructure")
+                .WithIdentity("AuditLogCleanup-trigger")
+                .WithCronSchedule("0 0 7 * * ?"));
+
             // ── Job execution history listener (captures all job events) ──
             q.AddJobListener<JobExecutionHistoryListener>(GroupMatcher<JobKey>.AnyGroup());
         });

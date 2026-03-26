@@ -9,6 +9,7 @@ public class PromptEntry : ITenantScoped
     public string Title { get; set; } = "";
     public Guid? FolderId { get; set; }
     public bool IsTrashed { get; set; }
+    public DateTime? TrashedAt { get; set; }
     public Guid CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

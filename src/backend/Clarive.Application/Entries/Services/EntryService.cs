@@ -196,6 +196,7 @@ public class EntryService(
             async () =>
             {
                 entry.IsTrashed = true;
+                entry.TrashedAt = DateTime.UtcNow;
                 entry.UpdatedAt = DateTime.UtcNow;
                 await entryRepo.UpdateAsync(entry, ct);
 
@@ -225,6 +226,7 @@ public class EntryService(
             async () =>
             {
                 entry.IsTrashed = false;
+                entry.TrashedAt = null;
                 entry.UpdatedAt = DateTime.UtcNow;
                 await entryRepo.UpdateAsync(entry, ct);
 

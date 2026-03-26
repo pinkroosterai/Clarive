@@ -29,13 +29,14 @@ public class QuartzSchedulerTests : IntegrationTestBase
         var scheduler = await schedulerFactory.GetScheduler();
 
         var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-        jobKeys.Should().HaveCount(9, "all 9 background jobs should be registered");
+        jobKeys.Should().HaveCount(11, "all 11 background jobs should be registered");
 
         var jobNames = jobKeys.Select(k => k.Name).OrderBy(n => n).ToList();
         jobNames.Should().Contain("TokenCleanup");
         jobNames.Should().Contain("AiSessionCleanup");
         jobNames.Should().Contain("AiUsageCleanup");
         jobNames.Should().Contain("LogCleanup");
+        jobNames.Should().Contain("AuditLogCleanup");
         jobNames.Should().Contain("AccountPurge");
         jobNames.Should().Contain("MaintenanceSync");
         jobNames.Should().Contain("LiteLlmSync");
@@ -49,10 +50,10 @@ public class QuartzSchedulerTests : IntegrationTestBase
         var scheduler = await schedulerFactory.GetScheduler();
 
         var infraJobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals("Infrastructure"));
-        infraJobs.Should().HaveCount(5);
+        infraJobs.Should().HaveCount(6);
 
         var names = infraJobs.Select(k => k.Name).OrderBy(n => n).ToList();
-        names.Should().BeEquivalentTo(["AiSessionCleanup", "AiUsageCleanup", "HistoryCleanup", "LogCleanup", "TokenCleanup"]);
+        names.Should().BeEquivalentTo(["AiSessionCleanup", "AiUsageCleanup", "AuditLogCleanup", "HistoryCleanup", "LogCleanup", "TokenCleanup"]);
     }
 
     [Fact]
@@ -62,10 +63,10 @@ public class QuartzSchedulerTests : IntegrationTestBase
         var scheduler = await schedulerFactory.GetScheduler();
 
         var appJobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals("Application"));
-        appJobs.Should().HaveCount(4);
+        appJobs.Should().HaveCount(5);
 
         var names = appJobs.Select(k => k.Name).OrderBy(n => n).ToList();
-        names.Should().BeEquivalentTo(["AccountPurge", "LiteLlmSync", "MaintenanceSync", "McpSync"]);
+        names.Should().BeEquivalentTo(["AccountPurge", "LiteLlmSync", "MaintenanceSync", "McpSync", "TrashPurge"]);
     }
 
     [Fact]
