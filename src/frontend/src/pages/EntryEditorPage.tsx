@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { AlertTriangle, Redo2, Star, Undo2 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
@@ -52,7 +52,6 @@ const EntryEditorPage = () => {
   const [createTabOpen, setCreateTabOpen] = useState(false);
   const isInitialLoad = useRef(true);
   const shouldDefaultToPublished = useRef(true);
-  const prefersReducedMotion = useReducedMotion();
 
   // ── Data fetching ──
 
@@ -110,6 +109,7 @@ const EntryEditorPage = () => {
       return entryService.getEntry(entryId!);
     },
     enabled: !!entryId && (!viewingPublished || versions.length > 0),
+    placeholderData: keepPreviousData,
   });
 
   const { data: folders = [] } = useQuery({
@@ -445,24 +445,14 @@ const EntryEditorPage = () => {
       {isSoftLocked && activeEditor && (
         <SoftLockBanner activeEditor={activeEditor} onOverride={() => setSoftLockOverride(true)} />
       )}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={viewingPublished ? 'published' : (activeTabId ?? 'default')}
-          initial={prefersReducedMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={prefersReducedMotion ? undefined : { opacity: 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          <PromptEditor
-            key={editor.discardVersion}
-            entry={localEntry}
-            onChange={editor.handleChange}
-            isReadOnly={isReadOnly}
-            hideTitleInput
-            skipEntryAnimation={!showEntryAnimation}
-          />
-        </motion.div>
-      </AnimatePresence>
+      <PromptEditor
+        key={editor.discardVersion}
+        entry={localEntry}
+        onChange={editor.handleChange}
+        isReadOnly={isReadOnly}
+        hideTitleInput
+        skipEntryAnimation={!showEntryAnimation}
+      />
     </div>
   );
 
