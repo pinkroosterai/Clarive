@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { ArrowUp, ArrowDown, Copy, HelpCircle, Trash2 } from 'lucide-react';
 import { memo, useState } from 'react';
 import { toast } from 'sonner';
@@ -62,7 +61,6 @@ interface PromptCardProps {
   isOnly: boolean;
   isLast: boolean;
   isReadOnly: boolean;
-  skipEntryAnimation?: boolean;
   onUpdate: (updated: Prompt) => void;
   onDelete: () => void;
   onMoveUp: () => void;
@@ -75,7 +73,6 @@ export const PromptCard = memo(function PromptCard({
   isOnly,
   isLast,
   isReadOnly,
-  skipEntryAnimation,
   onUpdate,
   onDelete,
   onMoveUp,
@@ -96,14 +93,7 @@ export const PromptCard = memo(function PromptCard({
   const borderColor = BORDER_COLORS[(index - 1) % BORDER_COLORS.length];
 
   return (
-    <motion.div
-      initial={skipEntryAnimation ? false : { opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12, scale: 0.97 }}
-      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-      whileHover={{ boxShadow: '0 4px 20px -4px hsl(var(--primary) / 0.10)' }}
-      className="rounded-xl"
-    >
+    <div className="rounded-xl">
       <Card className={`border-l-2 ${borderColor} transition-shadow`}>
         <Collapsible open={helpOpen} onOpenChange={setHelpOpen}>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
@@ -162,7 +152,6 @@ export const PromptCard = memo(function PromptCard({
             <div className="flex gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <motion.div whileTap={{ scale: 0.92 }}>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -173,13 +162,11 @@ export const PromptCard = memo(function PromptCard({
                     >
                       <ArrowUp className="size-3.5" />
                     </Button>
-                  </motion.div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">Move up</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <motion.div whileTap={{ scale: 0.92 }}>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -190,12 +177,10 @@ export const PromptCard = memo(function PromptCard({
                     >
                       <ArrowDown className="size-3.5" />
                     </Button>
-                  </motion.div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">Move down</TooltipContent>
               </Tooltip>
             </div>
-            <motion.div whileTap={{ scale: 0.95 }}>
               <Button
                 variant="ghost"
                 size="sm"
@@ -204,10 +189,9 @@ export const PromptCard = memo(function PromptCard({
               >
                 <Trash2 className="size-3.5" /> Remove
               </Button>
-            </motion.div>
           </CardFooter>
         )}
       </Card>
-    </motion.div>
+    </div>
   );
 });

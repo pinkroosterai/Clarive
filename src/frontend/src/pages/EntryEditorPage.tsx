@@ -1,5 +1,4 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { AlertTriangle, Redo2, Star, Undo2 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
@@ -50,7 +49,6 @@ const EntryEditorPage = () => {
   const [activeTabId, setActiveTabId] = useState<string | undefined>(undefined);
   const [viewingPublished, setViewingPublished] = useState(false);
   const [createTabOpen, setCreateTabOpen] = useState(false);
-  const isInitialLoad = useRef(true);
   const shouldDefaultToPublished = useRef(true);
 
   // ── Data fetching ──
@@ -240,12 +238,6 @@ const EntryEditorPage = () => {
   // ── Loading / error ──
   if (isError) return <EditorError />;
   if (isLoading || !editor.localEntry) return <EditorSkeleton isMobile={isMobile} />;
-
-  // Capture before flipping — first render gets true (play animations), all subsequent get false
-  const showEntryAnimation = isInitialLoad.current;
-  if (isInitialLoad.current) {
-    isInitialLoad.current = false;
-  }
 
   const localEntry = editor.localEntry;
 
@@ -451,7 +443,6 @@ const EntryEditorPage = () => {
         onChange={editor.handleChange}
         isReadOnly={isReadOnly}
         hideTitleInput
-        skipEntryAnimation={!showEntryAnimation}
         contentKey={viewingPublished ? 'published' : activeTabId}
       />
     </div>
@@ -594,13 +585,7 @@ const EntryEditorPage = () => {
         onCancel={mutations.handleCancelAiOperation}
       />
       <ScrollArea className="p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {editorContent}
-        </motion.div>
+        {editorContent}
       </ScrollArea>
 
       <div
