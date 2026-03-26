@@ -439,13 +439,14 @@ public class EntryService(
             {
                 workingVersions.TryGetValue(entry.Id, out var version);
                 tagsByEntry.TryGetValue(entry.Id, out var entryTags);
-                var hasPublished = publishedVersions.ContainsKey(entry.Id);
+                publishedVersions.TryGetValue(entry.Id, out var publishedVersion);
                 return PromptEntryDto.FromEntryAndVersion(
                     entry,
                     version,
                     entryTags,
                     favoritedIds.Contains(entry.Id),
-                    hasPublished
+                    hasPublished: publishedVersion is not null,
+                    publishedEvaluationScore: publishedVersion?.EvaluationAverageScore
                 );
             })
             .ToList();

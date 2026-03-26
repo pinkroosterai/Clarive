@@ -27,7 +27,8 @@ public record PromptEntryDto(
         PromptEntryVersion? version,
         List<string>? tags = null,
         bool isFavorited = false,
-        bool hasPublished = false
+        bool hasPublished = false,
+        double? publishedEvaluationScore = null
     )
     {
         var preview = version?.Prompts.OrderBy(p => p.Order).FirstOrDefault()?.Content;
@@ -56,7 +57,7 @@ public record PromptEntryDto(
             entry.UpdatedAt,
             Tags: tags ?? [],
             IsFavorited: isFavorited,
-            EvaluationAverageScore: version?.EvaluationAverageScore
+            EvaluationAverageScore: publishedEvaluationScore
         );
     }
 }
