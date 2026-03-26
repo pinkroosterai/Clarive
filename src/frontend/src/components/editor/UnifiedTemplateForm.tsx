@@ -2,6 +2,7 @@ import { ChevronDown, Copy, Eye, EyeOff, FileCode } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { AutoExpandInput } from '@/components/ui/auto-expand-input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -283,9 +284,17 @@ export function UnifiedTemplateForm({ prompts, isReadOnly }: UnifiedTemplateForm
                           {value || field.min}
                         </span>
                       </div>
+                    ) : field.type === 'string' ? (
+                      <AutoExpandInput
+                        value={value}
+                        onChange={(v) => updateValue(field.name, v)}
+                        disabled={isReadOnly}
+                        placeholder={field.description ?? undefined}
+                        className="h-9 text-sm"
+                      />
                     ) : (
                       <Input
-                        type={field.type === 'string' ? 'text' : 'number'}
+                        type="number"
                         step={field.type === 'int' ? 1 : 0.01}
                         min={field.min ?? undefined}
                         max={field.max ?? undefined}

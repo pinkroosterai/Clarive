@@ -1,12 +1,12 @@
 import { ChevronDown, Loader2, Sparkles } from 'lucide-react';
-import { useState } from 'react';
 
 import type { PlaygroundTemplateState } from './utils';
 
+import { AutoExpandInput } from '@/components/ui/auto-expand-input';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -23,7 +23,13 @@ interface TemplateVariablesSectionProps {
 }
 
 export function TemplateVariablesSection({ template }: TemplateVariablesSectionProps) {
-  const { templateFields, fieldValues, setFieldValues, onFillTemplateFields, isFillingTemplateFields } = template;
+  const {
+    templateFields,
+    fieldValues,
+    setFieldValues,
+    onFillTemplateFields,
+    isFillingTemplateFields,
+  } = template;
 
   if (templateFields.length === 0) return null;
 
@@ -65,140 +71,81 @@ export function TemplateVariablesSection({ template }: TemplateVariablesSectionP
         )}
       </div>
       <CollapsibleContent>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {templateFields.map((field) => (
-            <FieldPill
-              key={field.name}
-              field={field}
-              value={fieldValues[field.name] || ''}
-              isEmpty={!fieldValues[field.name]}
-              onChange={(v) =>
-                setFieldValues((prev) => ({ ...prev, [field.name]: v }))
-              }
-            />
-          ))}
+        <div className="grid grid-cols-1 gap-3 mt-2">
+          {templateFields.map((field) => {
+            const value = fieldValues[field.name] || '';
+            const isEmpty = !fieldValues[field.name];
+            const onChange = (v: string) =>
+              setFieldValues((prev) => ({ ...prev, [field.name]: v }));
+
+            const isEnum = field.type === 'enum' && field.enumValues.length > 0;
+            const isSlider =
+              (field.type === 'int' || field.type === 'float') &&
+              field.min !== null &&
+              field.max !== null;
+
+            return (
+              <div key={field.name} className="space-y-1.5">
+                <Label className="text-xs">
+                  {field.name}
+                  <span className="ml-1 text-foreground-muted">({field.type})</span>
+                </Label>
+
+                {isEnum ? (
+                  <Select value={value} onValueChange={onChange}>
+                    <SelectTrigger className={cn('h-9 text-sm', isEmpty && 'border-destructive')}>
+                      <SelectValue placeholder={`Select ${field.name}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {field.enumValues.map((v) => (
+                        <SelectItem key={v} value={v}>
+                          {v}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : isSlider ? (
+                  <div className="flex items-center gap-3">
+                    <Slider
+                      min={field.min!}
+                      max={field.max!}
+                      step={field.type === 'int' ? 1 : 0.01}
+                      value={[Number(value) || field.min!]}
+                      onValueChange={([v]) => onChange(String(v))}
+                      className="flex-1"
+                    />
+                    <span className="text-sm text-foreground-muted tabular-nums w-12 text-right">
+                      {value || field.min}
+                    </span>
+                  </div>
+                ) : field.type === 'string' ? (
+                  <AutoExpandInput
+                    value={value}
+                    onChange={onChange}
+                    placeholder={field.description ?? 'value'}
+                    className={cn('h-9 text-sm', isEmpty && 'border-destructive')}
+                  />
+                ) : (
+                  <Input
+                    type="number"
+                    step={field.type === 'int' ? 1 : 0.01}
+                    min={field.min ?? undefined}
+                    max={field.max ?? undefined}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={field.type}
+                    className={cn('h-9 text-sm', isEmpty && 'border-destructive')}
+                  />
+                )}
+
+                {field.description && (
+                  <p className="text-xs text-muted-foreground">{field.description}</p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </CollapsibleContent>
     </Collapsible>
-  );
-}
-
-type TemplateField = PlaygroundTemplateState['templateFields'][number];
-
-interface FieldPillProps {
-  field: TemplateField;
-  value: string;
-  isEmpty: boolean;
-  onChange: (value: string) => void;
-}
-
-function FieldPill({ field, value, isEmpty, onChange }: FieldPillProps) {
-  const isEnum = field.type === 'enum' && field.enumValues.length > 0;
-  const isSlider =
-    (field.type === 'int' || field.type === 'float') &&
-    field.min !== null &&
-    field.max !== null;
-
-  if (isEnum) return <EnumPill field={field} value={value} isEmpty={isEmpty} onChange={onChange} />;
-  if (isSlider) return <SliderPill field={field} value={value} isEmpty={isEmpty} onChange={onChange} />;
-
-  return (
-    <div
-      className={cn(
-        'flex items-center gap-1.5 border rounded-md px-2 py-1 text-xs',
-        isEmpty && 'border-destructive',
-      )}
-    >
-      <span className="font-mono text-foreground-muted whitespace-nowrap">{field.name}:</span>
-      <Input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={field.type !== 'string' ? field.type : 'value'}
-        className="h-5 w-24 border-0 bg-transparent px-0 text-xs shadow-none focus-visible:ring-0"
-        type={field.type === 'int' || field.type === 'float' ? 'number' : 'text'}
-      />
-    </div>
-  );
-}
-
-function EnumPill({ field, value, isEmpty, onChange }: FieldPillProps) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'flex items-center gap-1.5 border rounded-md px-2 py-1 text-xs cursor-pointer hover:bg-muted/50 transition-colors',
-            isEmpty && 'border-destructive',
-          )}
-        >
-          <span className="font-mono text-foreground-muted whitespace-nowrap">{field.name}:</span>
-          <span className={cn(!value && 'text-foreground-muted')}>
-            {value || 'Select...'}
-          </span>
-          <ChevronDown className="size-3 opacity-50" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-48 p-2" align="start">
-        <Select
-          value={value}
-          onValueChange={(v) => {
-            onChange(v);
-            setOpen(false);
-          }}
-        >
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Select..." />
-          </SelectTrigger>
-          <SelectContent>
-            {field.enumValues.map((v) => (
-              <SelectItem key={v} value={v} className="text-xs">
-                {v}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function SliderPill({ field, value, isEmpty, onChange }: FieldPillProps) {
-  const [open, setOpen] = useState(false);
-  const numValue = Number(value) || field.min!;
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'flex items-center gap-1.5 border rounded-md px-2 py-1 text-xs cursor-pointer hover:bg-muted/50 transition-colors',
-            isEmpty && 'border-destructive',
-          )}
-        >
-          <span className="font-mono text-foreground-muted whitespace-nowrap">{field.name}:</span>
-          <span className="tabular-nums">{value || field.min}</span>
-          <ChevronDown className="size-3 opacity-50" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-56 p-3" align="start">
-        <div className="flex items-center gap-3">
-          <Slider
-            min={field.min!}
-            max={field.max!}
-            step={field.type === 'int' ? 1 : 0.01}
-            value={[numValue]}
-            onValueChange={([v]) => onChange(String(v))}
-            className="flex-1"
-          />
-          <span className="text-xs text-foreground-muted tabular-nums w-10 text-right">
-            {numValue}
-          </span>
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }
