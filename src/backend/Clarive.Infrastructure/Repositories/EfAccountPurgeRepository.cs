@@ -1,11 +1,12 @@
 using Clarive.Domain.Entities;
 using Clarive.Domain.Interfaces.Repositories;
+using Clarive.Domain.Interfaces.Services;
 using Clarive.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clarive.Infrastructure.Repositories;
 
-public class EfAccountPurgeRepository(ClariveDbContext db) : IAccountPurgeRepository
+public class EfAccountPurgeRepository(ClariveDbContext db, IUnitOfWork unitOfWork) : IAccountPurgeRepository
 {
     public async Task<List<Tenant>> GetExpiredTenantsAsync(int batchSize, CancellationToken ct = default)
     {
@@ -34,7 +35,12 @@ public class EfAccountPurgeRepository(ClariveDbContext db) : IAccountPurgeReposi
 
     public async Task RemoveUsersAsync(List<User> users, CancellationToken ct = default)
     {
-        db.Users.RemoveRange(users);
-        await db.SaveChangesAsync(ct);
+        foreach (var user in users)
+        {
+            await unitOfWork.ExecuteInTransactionAsync(
+                async () => await UserCascadeDeleter.DeleteUserCascadeAsync(db, user.Id, ct),
+                ct
+            );
+        }
     }
 }
