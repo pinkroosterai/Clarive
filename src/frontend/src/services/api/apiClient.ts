@@ -66,6 +66,10 @@ export function setActiveWorkspaceId(id: string | null): void {
 }
 
 let refreshPromise: Promise<boolean> | null = null;
+let _switchingWorkspace = false;
+export function setSwitchingWorkspace(v: boolean): void {
+  _switchingWorkspace = v;
+}
 
 async function tryRefresh(): Promise<boolean> {
   if (refreshPromise) return refreshPromise;
@@ -123,6 +127,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     !isAuthEndpoint &&
     !(options.headers as Record<string, string>)?.['X-No-Retry']
   ) {
+    // During workspace switch, stale requests may 401 — suppress logout
+    if (_switchingWorkspace) {
+      throw new ApiError(401, 'WORKSPACE_SWITCHING', 'Request cancelled during workspace switch');
+    }
     const refreshed = await tryRefresh();
     if (refreshed) {
       headers['Authorization'] = `Bearer ${getToken()}`;

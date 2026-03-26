@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { handleApiError } from '@/lib/handleApiError';
+import { setSwitchingWorkspace } from '@/services/api/apiClient';
 import { useAuthStore } from '@/store/authStore';
 
 export function WorkspaceSwitcher() {
@@ -27,13 +28,16 @@ export function WorkspaceSwitcher() {
   const handleSwitch = async (workspaceId: string) => {
     if (workspaceId === activeWorkspace?.id || switching) return;
     setSwitching(workspaceId);
+    setSwitchingWorkspace(true);
     try {
+      queryClient.cancelQueries();
       await switchWorkspace(workspaceId);
       queryClient.clear();
       navigate('/', { replace: true });
     } catch (err: unknown) {
       handleApiError(err, { fallback: 'Failed to switch workspace' });
     } finally {
+      setSwitchingWorkspace(false);
       setSwitching(null);
     }
   };
