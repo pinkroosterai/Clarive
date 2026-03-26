@@ -213,9 +213,6 @@ export function MatrixComparisonPanel({
                       <SegmentTimeline
                         segments={segments}
                         isStreaming={isStreaming}
-                        copiedIndex={copiedIndex}
-                        handleCopy={handleCopy}
-                        copyIndexOffset={colIdx * 100}
                         responseClassName="text-sm"
                       />
                     ) : cell.status === 'running' ? (

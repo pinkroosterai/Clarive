@@ -1,4 +1,3 @@
-import CopyButton from './CopyButton';
 import ReasoningBlock from './ReasoningBlock';
 import { ToolCallBlock } from './ToolCallBlock';
 
@@ -8,10 +7,6 @@ import type { StreamSegment } from '@/hooks/usePlaygroundStreaming';
 interface SegmentTimelineProps {
   segments: StreamSegment[];
   isStreaming: boolean;
-  copiedIndex: number | null;
-  handleCopy: (text: string, index: number) => Promise<void>;
-  /** Offset added to copy index to avoid collisions between instances */
-  copyIndexOffset?: number;
   /** Custom wrapper class for response blocks */
   responseClassName?: string;
 }
@@ -19,9 +14,6 @@ interface SegmentTimelineProps {
 export function SegmentTimeline({
   segments,
   isStreaming,
-  copiedIndex,
-  handleCopy,
-  copyIndexOffset = 0,
   responseClassName = 'rounded-lg border border-border-subtle bg-surface p-4',
 }: SegmentTimelineProps) {
   return (
@@ -53,18 +45,8 @@ export function SegmentTimeline({
             return null; // Rendered as part of tool_call above
           case 'response':
             return (
-              <div key={`seg-${idx}`} className="relative group">
-                <div className={responseClassName}>
-                  <LLMResponseBlock output={seg.text} isStreaming={isStreaming} />
-                </div>
-                {!isStreaming && seg.text && (
-                  <CopyButton
-                    text={seg.text}
-                    index={copyIndexOffset + idx}
-                    copiedIndex={copiedIndex}
-                    onCopy={handleCopy}
-                  />
-                )}
+              <div key={`seg-${idx}`} className={responseClassName}>
+                <LLMResponseBlock output={seg.text} isStreaming={isStreaming} />
               </div>
             );
           default:
