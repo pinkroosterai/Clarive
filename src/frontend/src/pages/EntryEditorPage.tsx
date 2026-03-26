@@ -466,10 +466,10 @@ const EntryEditorPage = () => {
     isDecomposing: mutations.isDecomposing,
     showGenerateSystemMessage: !localEntry.systemMessage,
     showDecomposeToChain: localEntry.prompts.length === 1,
-    onTest: aiEnabled && !isReadOnly ? () => navigate(`/entry/${entryId}/test`) : undefined,
+    onTest: aiEnabled ? () => navigate(`/entry/${entryId}/test`) : undefined,
     versions,
     onShare:
-      !isReadOnly && currentUser?.role !== 'viewer'
+      currentUser?.role !== 'viewer'
         ? () => {
             setShareDialogEverOpened(true);
             setShareDialogOpen(true);
@@ -481,9 +481,9 @@ const EntryEditorPage = () => {
     isEvaluating,
     onEvaluate: handleEvaluate,
     presenceUsers,
-    onDuplicate: !isReadOnly ? () => startDuplicate(localEntry) : undefined,
+    onDuplicate: () => startDuplicate(localEntry),
     isDuplicating,
-    onMoveToTrash: !isReadOnly && currentUser?.role !== 'viewer' ? () => trashMutation.mutate() : undefined,
+    onMoveToTrash: currentUser?.role !== 'viewer' ? () => trashMutation.mutate() : undefined,
     isMovingToTrash: trashMutation.isPending,
   } as const;
 
