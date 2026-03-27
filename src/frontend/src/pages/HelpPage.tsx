@@ -28,13 +28,7 @@ import { useAuthStore } from '@/store/authStore';
 
 // ── Highlight component for fuzzy search matches ──
 
-function HighlightMatch({
-  text,
-  indices,
-}: {
-  text: string;
-  indices: readonly [number, number][];
-}) {
+function HighlightMatch({ text, indices }: { text: string; indices: readonly [number, number][] }) {
   if (!indices || indices.length === 0) return <>{text}</>;
 
   const result: React.ReactNode[] = [];
@@ -45,10 +39,7 @@ function HighlightMatch({
       result.push(text.slice(lastEnd, start));
     }
     result.push(
-      <mark
-        key={start}
-        className="bg-yellow-200/60 dark:bg-yellow-500/30 rounded-sm px-0.5"
-      >
+      <mark key={start} className="bg-yellow-200/60 dark:bg-yellow-500/30 rounded-sm px-0.5">
         {text.slice(start, end + 1)}
       </mark>
     );
@@ -236,9 +227,9 @@ export default function HelpPage() {
         <div className="flex items-center gap-3">
           <CircleHelp className="size-7 text-foreground-muted" />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Help</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Help Center</h1>
             <p className="text-sm text-foreground-muted">
-              Everything you need to know about using Clarive.
+              Find answers, learn features, and get the most out of Clarive.
             </p>
           </div>
         </div>
@@ -249,19 +240,21 @@ export default function HelpPage() {
             {
               icon: Rocket,
               title: 'Create Your First Prompt',
-              description: 'Start from scratch or let AI generate one for you.',
+              description: 'Write a prompt from scratch or let AI generate one for you in minutes.',
               section: 'getting-started',
             },
             {
               icon: FlaskConical,
               title: 'Test & Compare Models',
-              description: 'Run prompts against AI models and compare results.',
+              description:
+                'Run your prompt against multiple AI models and see which performs best.',
               section: 'playground',
             },
             {
               icon: Users,
-              title: 'Share with Your Team',
-              description: 'Invite members and collaborate in shared workspaces.',
+              title: 'Collaborate with Your Team',
+              description:
+                'Invite teammates, assign roles, and work together in shared workspaces.',
               section: 'workspaces',
             },
           ].map((card) => (
@@ -285,7 +278,7 @@ export default function HelpPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-foreground-muted" />
             <Input
-              placeholder="Search help..."
+              placeholder='Search help topics, e.g. "publish" or "API keys"...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-8"
@@ -324,7 +317,8 @@ export default function HelpPage() {
         {filteredGroups.length === 0 ? (
           <div className="text-center py-12 text-foreground-muted">
             <Search className="size-8 mx-auto mb-3 opacity-40" />
-            <p className="text-sm">No results for &ldquo;{searchQuery}&rdquo;</p>
+            <p className="text-sm font-medium">No results for &ldquo;{searchQuery}&rdquo;</p>
+            <p className="text-xs mt-2">Try a different term, or browse the sections below.</p>
           </div>
         ) : (
           <Accordion
