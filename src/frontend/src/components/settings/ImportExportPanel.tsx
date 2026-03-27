@@ -104,7 +104,7 @@ export default function ImportExportPanel() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg">Export Entries</CardTitle>
-            <HelpLink section="account-settings" />
+            <HelpLink section="import-export" />
           </div>
           <CardDescription>Download your prompt entries as a YAML file.</CardDescription>
         </CardHeader>

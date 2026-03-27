@@ -151,7 +151,6 @@ const router = createBrowserRouter([
               { path: '/settings', lazy: lazy(() => import('@/pages/SettingsPage')) },
               { path: '/trash', lazy: lazy(() => import('@/pages/TrashPage')) },
               { path: '/entry/:entryId/ab-test', lazy: lazy(() => import('@/pages/TestMatrixPage')) },
-              { path: '/help', lazy: lazy(() => import('@/pages/HelpPage')) },
             ],
           },
 

@@ -87,7 +87,7 @@ export default function AuditLogTable() {
           description="Activity in your workspace will appear here."
           actions={
             <Link
-              to="/help#account-settings"
+              to="/help#audit-log"
               className="text-xs text-foreground-muted underline hover:text-foreground"
             >
               Learn more

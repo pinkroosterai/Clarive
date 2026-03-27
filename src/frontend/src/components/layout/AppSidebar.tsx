@@ -4,7 +4,7 @@ import {
   Settings,
   ShieldAlert,
   LayoutDashboard,
-  CircleHelp,
+  BookOpen,
   Library,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -34,7 +34,6 @@ import { useAuthStore } from '@/store/authStore';
 const utilLinks = [
   { title: 'Trash', icon: Trash2, url: '/trash' },
   { title: 'Settings', icon: Settings, url: '/settings' },
-  { title: 'Help', icon: CircleHelp, url: '/help' },
 ];
 
 export function AppSidebar() {
@@ -124,6 +123,19 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Docs">
+              <a
+                href="https://docs.clarive.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors duration-150"
+              >
+                <BookOpen className="size-4" />
+                <span>Docs</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           {currentUser?.isSuperUser && (
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Super Admin">

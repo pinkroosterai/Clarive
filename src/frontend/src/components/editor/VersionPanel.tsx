@@ -100,7 +100,7 @@ export function VersionPanel({
           </h3>
           <HelpPopover
             content="Every publish creates a new version snapshot. Click to view, or restore any version to a new tab."
-            section="entry-editor"
+            section="tabs-and-versions"
           />
         </div>
 

@@ -151,7 +151,7 @@ export function VersionDiffDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               Compare Versions
-              <HelpLink section="entry-editor" />
+              <HelpLink section="tabs-and-versions" />
             </DialogTitle>
           </DialogHeader>
 
