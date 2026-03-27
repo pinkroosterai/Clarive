@@ -40,8 +40,8 @@ export const teamWorkspaceGroup: SectionGroup = {
           <p>
             Admins can invite people from <strong>Settings &gt; Users</strong>. Enter their email
             address and choose a role (<strong>Editor</strong> or <strong>Viewer</strong>).
-            They&apos;ll receive an invitation and need to accept before they can access the
-            workspace. You can resend or cancel pending invitations.
+            They&apos;ll receive an invitation with an expiration countdown and need to accept
+            before they can access the workspace. You can resend or cancel pending invitations.
           </p>
           <h4 className="text-sm font-semibold text-foreground">Accept an invitation</h4>
           <p>
@@ -153,9 +153,9 @@ export const teamWorkspaceGroup: SectionGroup = {
       icon: Wrench,
       title: 'Tools & MCP',
       searchText:
-        'tool descriptions external functions ai model name identifier add tool edit delete mcp model context protocol server import bearer token sync manage servers playground',
+        'tool descriptions external functions ai model name identifier add tool edit delete mcp model context protocol server import bearer token sync manage servers playground parameter types',
       plainTextContent:
-        'Give AI models access to external tools and functions. Define tool descriptions manually or connect MCP (Model Context Protocol) servers to auto-sync tool definitions. Enable or disable tools per Playground run.',
+        'Give AI models access to external tools and functions. Define tools manually with typed parameters or connect MCP servers to auto-sync tool definitions. Manual tools are editable; MCP-synced tools are read-only. Enable or disable servers and individual tools per Playground run.',
       searchAliases: ['how to add tools', 'mcp server setup', 'connect mcp'],
       relatedSections: ['playground'],
       content: (
@@ -168,10 +168,16 @@ export const teamWorkspaceGroup: SectionGroup = {
             </li>
             <li>
               Click <strong>Add Tool</strong> and provide a display name, identifier, and
-              description.
+              description. Add parameters with a name, type (string, integer, number, boolean,
+              array, or object), and description.
             </li>
             <li>Edit a tool with the pencil icon, or delete with the trash icon.</li>
           </ul>
+          <p className="text-xs text-foreground-muted">
+            Identifiers must start with a letter or underscore, followed by letters, numbers,
+            underscores, dots, or hyphens (e.g., <strong>my_tool</strong>,{' '}
+            <strong>search.v2</strong>).
+          </p>
           <h4 className="text-sm font-semibold text-foreground">Connect MCP servers</h4>
           <p>
             <strong>MCP (Model Context Protocol) servers</strong> automatically sync tool
@@ -179,21 +185,26 @@ export const teamWorkspaceGroup: SectionGroup = {
           </p>
           <ul className="list-disc list-inside space-y-1">
             <li>
-              <strong>Add Server</strong> — provide a name, URL, and optional bearer token. Tools
-              sync automatically.
+              <strong>Add Server</strong> — provide a name, URL, and optional bearer token (only
+              needed for servers that require authentication). Tools sync automatically.
             </li>
             <li>
               <strong>Sync</strong> — click the refresh button to re-sync. Each card shows tool
-              count, last sync time, and any errors.
+              count, last sync time, and any sync errors. If a sync fails, hover the error icon for
+              details.
             </li>
             <li>
               <strong>Remove</strong> — removes the server and all its synced tools.
             </li>
           </ul>
+          <p className="text-xs text-foreground-muted">
+            MCP-synced tools are read-only — to modify them, manage the MCP server directly. Manual
+            tools show a &quot;Manual&quot; badge and can be freely edited or deleted.
+          </p>
           <h4 className="text-sm font-semibold text-foreground">Use tools in the Playground</h4>
           <p>
-            When testing prompts, use the toolbar dropdown to enable or disable MCP servers and
-            individual tools per run. Only enabled tools are sent to the AI model.
+            When testing prompts, use the toolbar dropdown to enable or disable entire MCP servers
+            or individual tools per run. Only enabled tools are sent to the AI model.
           </p>
         </div>
       ),

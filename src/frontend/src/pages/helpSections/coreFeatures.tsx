@@ -23,6 +23,7 @@ export const coreFeaturesGroup: SectionGroup = {
           <p>
             The dashboard is your home base. It shows how many entries you have, which ones
             you&apos;ve published, what you edited recently, and what your teammates are working on.
+            Click any stat card to jump to a filtered view of your library.
           </p>
           <h4 className="text-sm font-semibold text-foreground">Create your first entry</h4>
           <ol className="list-decimal list-inside space-y-1">
@@ -200,6 +201,11 @@ export const coreFeaturesGroup: SectionGroup = {
             it. Clarive suggests existing tags as you type. Tags are case-insensitive and appear on
             entry cards in the library for easy filtering.
           </p>
+          <h4 className="text-sm font-semibold text-foreground">Copy the entry ID</h4>
+          <p>
+            In the <strong>Details</strong> panel, click <strong>Copy Entry ID</strong> to copy the
+            unique identifier to your clipboard — useful for API integrations.
+          </p>
           <h4 className="text-sm font-semibold text-foreground">Track changes</h4>
           <p>
             The <strong>Details</strong> panel includes an activity timeline showing every action on
@@ -250,8 +256,9 @@ export const coreFeaturesGroup: SectionGroup = {
             </li>
             <li>
               <strong>Review</strong> — See the generated prompt with quality scores (clarity,
-              effectiveness, completeness, faithfulness — each 0–10). Pick from suggested
-              improvements, answer clarification questions, or regenerate entirely.
+              effectiveness, completeness, faithfulness — each 0–10). A chart tracks how scores
+              improve across iterations. Pick from suggested improvements, answer clarification
+              questions, or regenerate entirely.
             </li>
             <li>
               <strong>Save</strong> — Save the result as a new entry in your library.
@@ -329,6 +336,8 @@ export const coreFeaturesGroup: SectionGroup = {
             coherence, and safety (0–10 each). You get color-coded bars, numeric scores, and written
             feedback for every dimension.
           </p>
+          <h4 className="text-sm font-semibold text-foreground">Copy responses</h4>
+          <p>Click the copy icon on any response to copy it to your clipboard.</p>
           <h4 className="text-sm font-semibold text-foreground">Tool calls and reasoning</h4>
           <p>
             Tool calls and results appear inline, exactly as they happened. When{' '}

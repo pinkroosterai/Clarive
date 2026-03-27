@@ -747,8 +747,8 @@ const entry = await client.getEntry(entryId);`}
           <h4 className="text-sm font-semibold text-foreground">Update your profile</h4>
           <p>
             Change your display name, email, password, or avatar from{' '}
-            <strong>Settings &gt; Profile</strong>. If you signed up with Google, you can also set a
-            password to enable email-based login.
+            <strong>Settings &gt; Profile</strong>. Passwords must be at least 12 characters. If you
+            signed up with Google, you can set a password to enable email-based login.
           </p>
           <h4 className="text-sm font-semibold text-foreground">Sign in with Google</h4>
           <p>
