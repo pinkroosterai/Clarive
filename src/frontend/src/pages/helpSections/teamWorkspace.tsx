@@ -12,7 +12,7 @@ export const teamWorkspaceGroup: SectionGroup = {
       searchText:
         'personal shared workspace team collaboration workspace switcher invite members email admin editor viewer roles leave revoke invitation bell notification',
       plainTextContent:
-        'Collaborate with your team using workspaces. Every account starts with a private personal workspace. Get invited to shared workspaces for team collaboration. Switch between workspaces from the sidebar. Invite members by email. Assign roles: Admin (full control), Editor (create and publish), or Viewer (read-only). Transfer ownership to another admin.',
+        'Collaborate with your team using workspaces. Every account starts with a private personal workspace. Get invited to shared workspaces for team collaboration. Switch between workspaces from the sidebar. Invite members by email. Assign roles: Admin (full control), Editor (create and publish), or Viewer (read-only). Transfer ownership to another admin (your role changes to editor).',
       searchAliases: ['how to invite team members', 'switch workspace', 'team collaboration'],
       relatedSections: ['account-settings'],
       content: (
@@ -58,7 +58,7 @@ export const teamWorkspaceGroup: SectionGroup = {
           <p>
             Leave any shared workspace from <strong>Settings &gt; Users</strong>. Workspace owners
             can transfer ownership to another admin using the <strong>Transfer Ownership</strong>{' '}
-            option — you remain as an admin after the transfer.
+            option — your role changes to editor after the transfer.
           </p>
         </div>
       ),
@@ -143,7 +143,7 @@ export const teamWorkspaceGroup: SectionGroup = {
       searchText:
         'tool descriptions external functions ai model name identifier add tool edit delete mcp model context protocol server import bearer token sync manage servers playground',
       plainTextContent:
-        'Give AI models access to external tools and functions. Define tool descriptions manually or connect MCP (Model Context Protocol) servers to auto-sync tool definitions. Import tools from MCP servers without registering them. Enable or disable tools per Playground run.',
+        'Give AI models access to external tools and functions. Define tool descriptions manually or connect MCP (Model Context Protocol) servers to auto-sync tool definitions. Enable or disable tools per Playground run.',
       searchAliases: ['how to add tools', 'mcp server setup', 'connect mcp'],
       relatedSections: ['playground'],
       content: (
@@ -178,12 +178,6 @@ export const teamWorkspaceGroup: SectionGroup = {
               <strong>Remove</strong> — removes the server and all its synced tools.
             </li>
           </ul>
-          <h4 className="text-sm font-semibold text-foreground">One-off import</h4>
-          <p>
-            Import tools from an MCP server without registering it. Enter the server URL in the{' '}
-            <strong>MCP Import</strong> section to discover and import available tools. Duplicates
-            are skipped.
-          </p>
           <h4 className="text-sm font-semibold text-foreground">Use tools in the Playground</h4>
           <p>
             When testing prompts, use the toolbar dropdown to enable or disable MCP servers and
