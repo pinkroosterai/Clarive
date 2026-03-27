@@ -163,7 +163,7 @@ export const sectionGroups: SectionGroup[] = [
         icon: FileText,
         title: 'Entry Editor',
         searchText:
-          'title system message prompt cards rich-text editor sidebar tabs actions details versions prompt chains follow-up bold italic headings bubble menu tabs published historical versioning diff restore ai enhance generate system message decompose chain test prompt playground',
+          'title system message prompt cards rich-text editor sidebar tabs actions details versions prompt chains follow-up bold italic headings bubble menu tabs published historical versioning diff restore ai enhance generate system message decompose chain test prompt playground duplicate copy tags activity timeline',
         plainTextContent:
           'How the Editor Works. Every entry has a title, an optional system message that tells the AI how to behave, and one or more prompt cards. On the right you find panels for Actions, Details, and Versions. Tabs. Every entry has a Main tab that is always editable. Create additional named tabs to experiment with different approaches. Any tab can be published. Published and Historical. Published is the live version served via the API. Historical versions are older snapshots you can view or restore to a new tab. Version History. Every time you publish a tab, Clarive takes a snapshot. Browse versions, compare side by side, or restore any version to a new tab. AI Tools. AI Enhance, Generate System Message, Decompose to Chain, Test Prompt.',
         searchAliases: ['how to edit a prompt', 'save', 'publish entry', 'version history', 'tabs'],
@@ -238,6 +238,27 @@ export const sectionGroups: SectionGroup[] = [
                 against a live AI model.
               </li>
             </ul>
+            <h4 className="text-sm font-semibold text-foreground">Duplicating an Entry</h4>
+            <p>
+              Right-click an entry in the library (or use the action menu) and choose{' '}
+              <strong>Duplicate</strong>. Pick a destination folder and confirm — Clarive creates a
+              copy with all the content, system message, and tags intact. The copy opens immediately
+              as an unpublished entry.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Tags</h4>
+            <p>
+              Tags help you categorize and filter entries. In the <strong>Details</strong> panel,
+              type a tag name and press <Kbd>Enter</Kbd> to add it. Clarive suggests existing tags
+              as you type. Click the <strong>X</strong> on any tag to remove it. Tags are
+              case-insensitive and appear on entry cards in the library for easy filtering.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Activity Timeline</h4>
+            <p>
+              The <strong>Details</strong> panel also includes an activity timeline showing every
+              action taken on the entry: created, draft updated, published, moved to trash,
+              restored, and version restored. Each event shows who did it and when, with a link to
+              view the relevant version.
+            </p>
           </div>
         ),
       },
@@ -380,6 +401,20 @@ export const sectionGroups: SectionGroup[] = [
             <p>
               If a model calls tools during a run, you&apos;ll see the calls and results inline,
               exactly as they happened. Nothing gets cut off.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Reasoning Blocks</h4>
+            <p>
+              When <strong>Show Thinking</strong> is enabled, reasoning models reveal their
+              thought process in a collapsible &quot;Thinking&quot; section above the response. This
+              helps you understand how the model arrived at its answer — useful for debugging
+              prompts or evaluating reasoning quality.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Evaluation Scores</h4>
+            <p>
+              After running a test, evaluation scores break down response quality across multiple
+              dimensions — each scored 0–10 with a color-coded bar and written feedback explaining
+              the rating. Click any dimension row to expand its detailed feedback. The overall
+              average score appears as a prominent badge on the cell.
             </p>
             <h4 className="text-sm font-semibold text-foreground">Run History</h4>
             <p>
@@ -1043,7 +1078,7 @@ export const sectionGroups: SectionGroup[] = [
         icon: ShieldCheck,
         title: 'Super Admin',
         searchText:
-          'super admin dashboard usage analytics users ai providers models settings logs maintenance mode system configuration email smtp resend google oauth',
+          'super admin dashboard usage analytics users ai providers models settings logs jobs background maintenance mode system configuration email smtp resend google oauth',
         plainTextContent:
           'Super Admins have access to a dedicated administration area. Dashboard. Overview of platform health: total users, entries, AI sessions with 7-day deltas. Usage. AI usage analytics with date filtering, charts, and detailed log grid. Users. Manage all platform users, reset passwords, delete accounts. AI Configuration. Configure external AI providers like OpenAI, Anthropic, or any OpenAI-compatible endpoint. Add providers, fetch models, assign to actions. Settings. Email provider, Google OAuth, registration toggle, maintenance mode. Logs. Application logs with level filtering and search. Jobs. Background job status and history.',
         searchAliases: ['admin settings', 'manage users', 'configure AI providers'],
@@ -1086,6 +1121,15 @@ export const sectionGroups: SectionGroup[] = [
             <h4 className="text-sm font-semibold text-foreground">Logs</h4>
             <p>
               System-level logs with filtering and search. Expand any log entry for full details.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Jobs</h4>
+            <p>
+              Monitor background jobs that keep the platform running (e.g., trash cleanup, audit log
+              pruning). Each job shows its schedule, status (Normal, Paused, Blocked, or Error),
+              last run time, next fire time, and duration. Select a job to{' '}
+              <strong>Trigger Now</strong>, <strong>Pause</strong>, or <strong>Resume</strong> it.
+              Expand any job to see its execution history with timestamps, durations, and error
+              details.
             </p>
           </div>
         ),
