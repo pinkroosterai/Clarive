@@ -99,9 +99,9 @@ export const contentOrganizationGroup: SectionGroup = {
       icon: Search,
       title: 'Library & Search',
       searchText:
-        'library browse grid search filter status unpublished published sort recent alphabetical oldest tags any all pagination 50 entries per page',
+        'library browse grid search filter status unpublished published sort recent alphabetical oldest tags any all pagination 50 entries per page quality score context menu duplicate trash',
       plainTextContent:
-        'Find and browse all your entries in the library. Search by title, filter by status (published or unpublished) and tags, and sort by date or name. The library shows 50 entries per page in a responsive grid. Click any entry to open it in the editor.',
+        'Find and browse all your entries in the library. Search by title, filter by status (published or unpublished) and tags, and sort by date or name. Entry cards show quality scores, status badges, and indicators for system messages, templates, and chains. The library shows 50 entries per page in a responsive grid.',
       searchAliases: ['how to find prompts', 'search entries', 'filter by tag'],
       relatedSections: ['folders', 'favorites'],
       content: (
@@ -109,6 +109,13 @@ export const contentOrganizationGroup: SectionGroup = {
           <p>
             The library shows all entries in your workspace as a responsive grid. Click any entry
             card to open it in the editor.
+          </p>
+          <h4 className="text-sm font-semibold text-foreground">Entry cards</h4>
+          <p>
+            Each card shows the entry title, status badge (Published with version number, or
+            Unpublished), and a color-coded <strong>quality score</strong> if the entry has been
+            evaluated. Small indicators at the bottom show whether the entry has a system message,
+            template variables, or a prompt chain.
           </p>
           <h4 className="text-sm font-semibold text-foreground">Search by title</h4>
           <p>
@@ -202,6 +209,10 @@ export const contentOrganizationGroup: SectionGroup = {
               rename, delete, or assign a color.
             </li>
             <li>Nest folders as deep as you need.</li>
+            <li>
+              Folders can only be deleted when empty — move or remove all entries and subfolders
+              first.
+            </li>
           </ul>
           <h4 className="text-sm font-semibold text-foreground">Color-code folders</h4>
           <p>
@@ -229,9 +240,9 @@ export const contentOrganizationGroup: SectionGroup = {
       icon: Share2,
       title: 'Share Links',
       searchText:
-        'share link public read-only access password protect expiration copy revoke regenerate manage share link viewer token',
+        'share link public read-only access password protect expiration copy revoke regenerate manage share link viewer token view count pinned version',
       plainTextContent:
-        'Share a read-only view of any published prompt with anyone — no Clarive account required. Optionally set an expiration date and password. Manage existing links by copying, regenerating, or revoking them. Visitors see a clean page with the prompt content and can copy it to their clipboard.',
+        'Share a read-only view of any published prompt with anyone — no Clarive account required. Set an expiration date, password, or pin to a specific version. Track views. Manage existing links by copying, regenerating, or revoking them. Each entry can have one active share link.',
       searchAliases: ['how to share a prompt', 'create public link', 'share with password'],
       relatedSections: ['entry-editor'],
       content: (
@@ -250,13 +261,21 @@ export const contentOrganizationGroup: SectionGroup = {
               Optionally add a <strong>password</strong> (minimum 12 characters).
             </li>
             <li>
+              Optionally <strong>pin to a version</strong> — by default, the link always shows the
+              latest published version. Pin it to lock the link to a specific version.
+            </li>
+            <li>
               Click <strong>Create Share Link</strong> to generate the URL.
             </li>
           </ol>
+          <p className="text-xs text-foreground-muted">
+            Each entry can have one active share link. Creating a new link replaces the previous
+            one.
+          </p>
           <h4 className="text-sm font-semibold text-foreground">Manage an existing link</h4>
           <p>
-            Once active, the button changes to <strong>Manage Share Link</strong> with these
-            options:
+            Once active, the button changes to <strong>Manage Share Link</strong> showing the
+            creation date, expiration, and <strong>view count</strong>. You can:
           </p>
           <ul className="list-disc list-inside space-y-1">
             <li>

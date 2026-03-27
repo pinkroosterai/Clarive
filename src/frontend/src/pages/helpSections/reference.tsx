@@ -70,7 +70,7 @@ export const referenceGroup: SectionGroup = {
       searchText:
         'api key programmatic rest api admin create copy store x-api-key header revoke regenerate cl_',
       plainTextContent:
-        'Access Clarive programmatically with API keys. Only workspace admins can create them. Create a key from Settings > API Keys, copy it immediately (shown once), and pass it in the X-Api-Key header. Revoke keys instantly from the settings tab.',
+        'Access Clarive programmatically with API keys. Only workspace admins can create them. Create a key from Settings > API Keys, set an optional expiration, copy it immediately (shown once), and pass it in the X-Api-Key header. Revoke keys instantly from the settings tab.',
       searchAliases: ['create api key', 'api authentication', 'programmatic access'],
       relatedSections: ['public-api', 'sdks'],
       content: (
@@ -86,6 +86,10 @@ export const referenceGroup: SectionGroup = {
             </li>
             <li>
               Click <strong>Create API Key</strong> and give it a descriptive name.
+            </li>
+            <li>
+              Set an <strong>expiration</strong> — choose 30 days, 60 days, 90 days, 6 months, 1
+              year, or no expiration.
             </li>
             <li>Copy the key immediately — it&apos;s shown only once.</li>
           </ol>
@@ -809,8 +813,8 @@ const entry = await client.getEntry(entryId);`}
                   <td className="p-2">A new entry was created</td>
                 </tr>
                 <tr>
-                  <td className="p-2 font-mono">entry_updated</td>
-                  <td className="p-2">An entry was edited</td>
+                  <td className="p-2 font-mono">entry_draft_updated</td>
+                  <td className="p-2">An entry draft was edited</td>
                 </tr>
                 <tr>
                   <td className="p-2 font-mono">entry_published</td>
@@ -827,6 +831,50 @@ const entry = await client.getEntry(entryId);`}
                 <tr>
                   <td className="p-2 font-mono">entry_deleted</td>
                   <td className="p-2">An entry was permanently deleted</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">version_promoted</td>
+                  <td className="p-2">A version or tab was promoted</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">draft_deleted</td>
+                  <td className="p-2">A draft was permanently deleted</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">api_get / api_generate</td>
+                  <td className="p-2">Entry accessed or rendered via Public API</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">user_invited</td>
+                  <td className="p-2">A user was invited to the workspace</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">invitation_accepted</td>
+                  <td className="p-2">An invitation was accepted</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">invitation_revoked</td>
+                  <td className="p-2">An invitation was canceled</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">user_role_changed</td>
+                  <td className="p-2">A member&apos;s role was changed</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">member_removed</td>
+                  <td className="p-2">A member was removed from the workspace</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">ownership_transferred</td>
+                  <td className="p-2">Workspace ownership was transferred</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">maintenance_enabled</td>
+                  <td className="p-2">Maintenance mode was turned on</td>
+                </tr>
+                <tr>
+                  <td className="p-2 font-mono">maintenance_disabled</td>
+                  <td className="p-2">Maintenance mode was turned off</td>
                 </tr>
               </tbody>
             </table>

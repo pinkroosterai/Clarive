@@ -10,9 +10,9 @@ export const teamWorkspaceGroup: SectionGroup = {
       icon: Users,
       title: 'Workspaces & Teams',
       searchText:
-        'personal shared workspace team collaboration workspace switcher invite members email admin editor viewer roles leave revoke invitation bell notification',
+        'personal shared workspace team collaboration workspace switcher invite members email admin editor viewer roles leave revoke invitation bell notification avatar remove member',
       plainTextContent:
-        'Collaborate with your team using workspaces. Every account starts with a private personal workspace. Get invited to shared workspaces for team collaboration. Switch between workspaces from the sidebar. Invite members by email. Assign roles: Admin (full control), Editor (create and publish), or Viewer (read-only). Transfer ownership to another admin (your role changes to editor).',
+        'Collaborate with your team using workspaces. Every account starts with a private personal workspace. Get invited to shared workspaces for team collaboration. Switch between workspaces from the sidebar. Upload a workspace avatar. Invite members as Editor or Viewer. Change roles or remove members. Transfer ownership to another admin (your role changes to editor).',
       searchAliases: ['how to invite team members', 'switch workspace', 'team collaboration'],
       relatedSections: ['account-settings'],
       content: (
@@ -31,11 +31,17 @@ export const teamWorkspaceGroup: SectionGroup = {
             independent with its own entries, folders, and settings. Switch between workspaces using
             the <strong>workspace switcher</strong> at the top of the sidebar.
           </p>
+          <h4 className="text-sm font-semibold text-foreground">Customize the workspace</h4>
+          <p>
+            Admins can upload a workspace avatar from <strong>Settings &gt; Workspace</strong>.
+            Supported formats: JPEG, PNG, or WebP (max 3 MB).
+          </p>
           <h4 className="text-sm font-semibold text-foreground">Invite team members</h4>
           <p>
             Admins can invite people from <strong>Settings &gt; Users</strong>. Enter their email
-            address — they&apos;ll receive an invitation and need to accept before they can access
-            the workspace. You can resend or cancel pending invitations.
+            address and choose a role (<strong>Editor</strong> or <strong>Viewer</strong>).
+            They&apos;ll receive an invitation and need to accept before they can access the
+            workspace. You can resend or cancel pending invitations.
           </p>
           <h4 className="text-sm font-semibold text-foreground">Accept an invitation</h4>
           <p>
@@ -54,6 +60,12 @@ export const teamWorkspaceGroup: SectionGroup = {
               <strong>Viewer</strong> — read-only access. Cannot create or modify content.
             </li>
           </ul>
+          <h4 className="text-sm font-semibold text-foreground">Manage members</h4>
+          <p>
+            Admins can change a member&apos;s role or remove them from the workspace in{' '}
+            <strong>Settings &gt; Users</strong>. Removing a member revokes their access
+            immediately.
+          </p>
           <h4 className="text-sm font-semibold text-foreground">Leave or transfer a workspace</h4>
           <p>
             Leave any shared workspace from <strong>Settings &gt; Users</strong>. Workspace owners
