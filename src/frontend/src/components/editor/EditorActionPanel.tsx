@@ -15,6 +15,7 @@ export interface EditorActionPanelProps {
   entry: PromptEntry;
   isDirty: boolean;
   isReadOnly: boolean;
+  isMetadataReadOnly: boolean;
   onSave: () => void;
   onDiscard: () => void;
   onPublish: () => void;
@@ -49,6 +50,7 @@ export function EditorActionPanel({
   entry,
   isDirty,
   isReadOnly,
+  isMetadataReadOnly,
   onSave,
   onDiscard,
   onPublish,
@@ -202,7 +204,7 @@ export function EditorActionPanel({
                 entry={entry}
                 folderName={folderName}
                 onMoveFolder={onMoveFolder}
-                isReadOnly={isReadOnly}
+                isReadOnly={isMetadataReadOnly}
               />
             </div>
           </ScrollArea>

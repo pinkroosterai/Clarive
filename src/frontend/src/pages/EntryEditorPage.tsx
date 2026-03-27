@@ -166,6 +166,7 @@ const EntryEditorPage = () => {
 
   const isSoftLocked = !!activeEditor && !softLockOverride;
   const isReadOnly = !!version || viewingPublished || currentUser?.role === 'viewer' || isSoftLocked;
+  const isMetadataReadOnly = !!version || currentUser?.role === 'viewer';
 
   // Reset soft lock override when navigating to a different entry
   useEffect(() => {
@@ -452,6 +453,7 @@ const EntryEditorPage = () => {
     entry: localEntry,
     isDirty: editor.isDirty,
     isReadOnly,
+    isMetadataReadOnly,
     onSave: mutations.handleSave,
     onDiscard: editor.handleDiscard,
     onPublish: handlePublishWithCheck,
