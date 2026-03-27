@@ -14,7 +14,7 @@ public class SecurityHeadersMiddleware(RequestDelegate next)
             headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
             headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload";
             headers["Content-Security-Policy"] =
-                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';";
+                "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';";
             return Task.CompletedTask;
         });
 

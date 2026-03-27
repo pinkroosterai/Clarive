@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Play, Square, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, FileText, Play, Square, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ interface MatrixToolbarProps {
   onClearMatrix: () => void;
   showHistory: boolean;
   onToggleHistory: () => void;
+  hasCompletedCells: boolean;
+  onGenerateReport: () => void;
 }
 
 export function MatrixToolbar({
@@ -28,6 +30,8 @@ export function MatrixToolbar({
   onClearMatrix,
   showHistory,
   onToggleHistory,
+  hasCompletedCells,
+  onGenerateReport,
 }: MatrixToolbarProps) {
   const navigate = useNavigate();
 
@@ -76,8 +80,23 @@ export function MatrixToolbar({
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* History + Clear */}
+      {/* Report + History + Clear */}
       <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={onGenerateReport}
+              disabled={!hasCompletedCells}
+              aria-label="Generate report"
+            >
+              <FileText className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Generate report</TooltipContent>
+        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

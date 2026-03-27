@@ -10,28 +10,35 @@ import { MatrixDetailDrawer } from '@/components/matrix/MatrixDetailDrawer';
 import { MatrixGrid } from '@/components/matrix/MatrixGrid';
 import { MatrixHistoryPanel } from '@/components/matrix/MatrixHistoryPanel';
 import { MatrixToolbar } from '@/components/matrix/MatrixToolbar';
+import { ReportPreviewDialog } from '@/components/matrix/report/ReportPreviewDialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMatrixExecution } from '@/hooks/useMatrixExecution';
 import { useMatrixPageData } from '@/hooks/useMatrixPageData';
 import { useMatrixPagePersistence } from '@/hooks/useMatrixPagePersistence';
 import { useMatrixState } from '@/hooks/useMatrixState';
 import { usePlaygroundTemplateFields } from '@/hooks/usePlaygroundTemplateFields';
-import { fillTemplateFields } from '@/services/api/playgroundService';
+import { useReportData } from '@/hooks/useReportData';
 import { entryService } from '@/services';
+import { fillTemplateFields } from '@/services/api/playgroundService';
 
 function TestMatrixPage() {
   const { entryId } = useParams<{ entryId: string }>();
 
   // ── Data ──
-  const { tabs, versions, models, templateFields } = useMatrixPageData(entryId);
+  const { entry, tabs, versions, models, templateFields } = useMatrixPageData(entryId);
 
   // ── Persistence (sidebar, tools, history) ──
   const {
-    sidebarCollapsed, setSidebarCollapsed,
-    showHistory, setShowHistory,
-    enabledServerIds, setEnabledServerIds,
-    excludedToolNames, setExcludedToolNames,
-    mcpServers, allTools,
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    showHistory,
+    setShowHistory,
+    enabledServerIds,
+    setEnabledServerIds,
+    excludedToolNames,
+    setExcludedToolNames,
+    mcpServers,
+    allTools,
   } = useMatrixPagePersistence(entryId);
 
   // ── Template fields ──
@@ -56,12 +63,20 @@ function TestMatrixPage() {
   // ── Matrix state ──
   const {
     state,
-    addVersion, removeVersion,
-    addModel, removeModel,
-    selectCell, updateCellStatus,
-    setCellSegments, setCellResult, setCellError,
-    updateModelParams, selectModel, selectVersion,
-    setComparisonFilter, clearMatrix,
+    addVersion,
+    removeVersion,
+    addModel,
+    removeModel,
+    selectCell,
+    updateCellStatus,
+    setCellSegments,
+    setCellResult,
+    setCellError,
+    updateModelParams,
+    selectModel,
+    selectVersion,
+    setComparisonFilter,
+    clearMatrix,
   } = useMatrixState(entryId);
 
   // ── Matrix execution ──
@@ -80,7 +95,8 @@ function TestMatrixPage() {
 
   // ── Derived values ──
   const matrixHasCells = state.versions.length > 0 && state.models.length > 0;
-  const hasUnfilledTemplateFields = templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
+  const hasUnfilledTemplateFields =
+    templateFields.length > 0 && templateFields.some((f) => !fieldValues[f.name]);
   const runDisabledReason = !matrixHasCells
     ? 'Add at least one version and one model to run'
     : hasUnfilledTemplateFields
@@ -89,8 +105,18 @@ function TestMatrixPage() {
   const addedVersionIds = useMemo(() => new Set(state.versions.map((v) => v.id)), [state.versions]);
   const addedModelIds = useMemo(() => new Set(state.models.map((m) => m.modelId)), [state.models]);
   const hasResults = Object.values(state.cells).some(
-    (c) => c.status === 'completed' || c.status === 'running',
+    (c) => c.status === 'completed' || c.status === 'running'
   );
+  const hasCompletedCells = Object.values(state.cells).some((c) => c.status === 'completed');
+
+  // ── Report ──
+  const [showReport, setShowReport] = useState(false);
+  const reportData = useReportData({
+    state,
+    fieldValues,
+    templateFields,
+    entryTitle: entry?.title ?? 'Untitled',
+  });
 
   const handleExpandToSection = useCallback(() => {
     setSidebarCollapsed(false);
@@ -126,23 +152,25 @@ function TestMatrixPage() {
       else if (type === 'model') setComparisonFilter({ type: 'model', modelId: id });
       else setComparisonFilter({ type: 'version', versionId: id });
     },
-    [selectModel, selectVersion, selectCell, setComparisonFilter],
+    [selectModel, selectVersion, selectCell, setComparisonFilter]
   );
 
   const handleSelectModel = useCallback(
     (modelId: string | null) => handleSelect('model', modelId),
-    [handleSelect],
+    [handleSelect]
   );
 
   const handleSelectVersion = useCallback(
     (versionId: string | null) => handleSelect('version', versionId),
-    [handleSelect],
+    [handleSelect]
   );
 
   if (!entryId) return null;
 
   return (
-    <div className={`grid h-full ${sidebarCollapsed ? 'grid-cols-[minmax(0,1fr)_48px]' : 'grid-cols-[minmax(0,1fr)_540px]'} transition-[grid-template-columns] duration-200`}>
+    <div
+      className={`grid h-full ${sidebarCollapsed ? 'grid-cols-[minmax(0,1fr)_48px]' : 'grid-cols-[minmax(0,1fr)_540px]'} transition-[grid-template-columns] duration-200`}
+    >
       {/* Left column: header + action bar + grid */}
       <div className="flex flex-col min-h-0">
         {/* Page header */}
@@ -166,6 +194,8 @@ function TestMatrixPage() {
             onClearMatrix={clearMatrix}
             showHistory={showHistory}
             onToggleHistory={() => setShowHistory((h) => !h)}
+            hasCompletedCells={hasCompletedCells}
+            onGenerateReport={() => setShowReport(true)}
           />
         </div>
 
@@ -206,15 +236,18 @@ function TestMatrixPage() {
               transition={{ duration: 0.25 }}
               className="mt-4 pt-4 border-t border-border-subtle"
             >
-              <MatrixHistoryPanel
-                entryId={entryId}
-                selectedRunId={null}
-                onSelectRun={() => {}}
-              />
+              <MatrixHistoryPanel entryId={entryId} selectedRunId={null} onSelectRun={() => {}} />
             </motion.div>
           )}
         </ScrollArea>
       </div>
+
+      {/* Report preview */}
+      <ReportPreviewDialog
+        isOpen={showReport}
+        onClose={() => setShowReport(false)}
+        reportData={reportData}
+      />
 
       {/* Right column: full-height sidebar */}
       <div className="bg-surface border-l border-border-subtle p-4 h-full overflow-hidden">
@@ -241,10 +274,18 @@ function TestMatrixPage() {
               templateFields,
               fieldValues,
               setFieldValues,
-              onFillTemplateFields: templateFields.length > 0 ? handleFillTemplateFields : undefined,
+              onFillTemplateFields:
+                templateFields.length > 0 ? handleFillTemplateFields : undefined,
               isFillingTemplateFields,
             },
-            tools: { mcpServers, allTools, enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames },
+            tools: {
+              mcpServers,
+              allTools,
+              enabledServerIds,
+              setEnabledServerIds,
+              excludedToolNames,
+              setExcludedToolNames,
+            },
           }}
         />
       </div>
