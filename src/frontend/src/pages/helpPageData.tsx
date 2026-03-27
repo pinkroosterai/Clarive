@@ -916,6 +916,13 @@ export const sectionGroups: SectionGroup[] = [
               Leave any shared workspace from <strong>Settings &gt; Users</strong>. Personal
               workspaces can&apos;t be left.
             </p>
+            <h4 className="text-sm font-semibold text-foreground">Transferring Ownership</h4>
+            <p>
+              Workspace owners can transfer ownership to another admin in the workspace. Go to{' '}
+              <strong>Settings &gt; Users</strong> and use the{' '}
+              <strong>Transfer Ownership</strong> option. The new owner gets full control of the
+              workspace, including member management. You remain as an admin after the transfer.
+            </p>
           </div>
         ),
       },
