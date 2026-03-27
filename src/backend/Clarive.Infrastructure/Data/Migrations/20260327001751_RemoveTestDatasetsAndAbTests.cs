@@ -11,17 +11,12 @@ namespace Clarive.Infrastructure.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "ab_test_results");
-
-            migrationBuilder.DropTable(
-                name: "test_dataset_rows");
-
-            migrationBuilder.DropTable(
-                name: "ab_test_runs");
-
-            migrationBuilder.DropTable(
-                name: "test_datasets");
+            // Use IF EXISTS since these tables may not exist on fresh databases
+            // (they were removed from InitialCreate during a migration squash)
+            migrationBuilder.Sql("DROP TABLE IF EXISTS ab_test_results;");
+            migrationBuilder.Sql("DROP TABLE IF EXISTS test_dataset_rows;");
+            migrationBuilder.Sql("DROP TABLE IF EXISTS ab_test_runs;");
+            migrationBuilder.Sql("DROP TABLE IF EXISTS test_datasets;");
         }
 
         /// <inheritdoc />
