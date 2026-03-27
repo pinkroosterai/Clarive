@@ -1204,7 +1204,7 @@ export const sectionGroups: SectionGroup[] = [
             </pre>
 
             <h4 className="text-sm font-semibold text-foreground">GET /public/v1/openapi.json</h4>
-            <p>Download the full OpenAPI specification for the Clarive API in YAML format.</p>
+            <p>Download the full OpenAPI specification for the Clarive API in JSON format.</p>
 
             <h4 className="text-sm font-semibold text-foreground">Template Field Types</h4>
             <div className="bg-elevated rounded-md border border-border-subtle overflow-hidden">
@@ -1431,7 +1431,7 @@ const entry = await client.getEntry(entryId);`}
         searchText:
           'keyboard shortcuts save ctrl s publish enter undo redo bold italic strikethrough inline code cmd mac sidebar toggle playground run stop escape',
         plainTextContent:
-          'Keyboard Shortcuts. Editor: Ctrl+S save. Ctrl+Shift+Enter publish. Ctrl+Z undo. Ctrl+Shift+Z redo. Formatting: Ctrl+B bold. Ctrl+I italic. Ctrl+Shift+X strikethrough. Ctrl+E inline code. Navigation: Ctrl+B toggle sidebar. Playground: Ctrl+Enter run prompt. Escape stop streaming. Cmd replaces Ctrl on macOS.',
+          'Keyboard Shortcuts. Editor: Ctrl+S save. Ctrl+Enter publish. Ctrl+Z undo. Ctrl+Shift+Z redo. Formatting: Ctrl+B bold. Ctrl+I italic. Ctrl+Shift+X strikethrough. Ctrl+E inline code. Navigation: Ctrl+B toggle sidebar. Playground: Ctrl+Enter run prompt. Escape stop streaming. Cmd replaces Ctrl on macOS.',
         searchAliases: ['keyboard shortcuts', 'hotkeys', 'key bindings'],
         relatedSections: ['entry-editor', 'playground'],
         content: (
@@ -1681,8 +1681,9 @@ const entry = await client.getEntry(entryId);`}
             </p>
             <h4 className="text-sm font-semibold text-foreground">Account Deletion</h4>
             <p>
-              Permanently delete your account from the Profile tab. This removes all your data and
-              can&apos;t be undone.
+              Permanently delete your account from the Profile tab. After requesting deletion, your
+              account enters a <strong>30-day grace period</strong> during which you can cancel. Once
+              the grace period expires, all your data is permanently removed.
             </p>
           </div>
         ),
