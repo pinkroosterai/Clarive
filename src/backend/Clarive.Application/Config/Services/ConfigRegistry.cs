@@ -527,6 +527,58 @@ public static class ConfigRegistry
             SelectOptions: ["", "low", "medium", "high", "extra-high"]
         ),
         new ConfigDefinition(
+            "Ai:MergeConflict:Model",
+            "Merge Conflict Model",
+            "Model for AI-assisted resolution of conflicting field versions.",
+            ConfigSection.Ai,
+            false,
+            false,
+            "e.g., gpt-4o-mini",
+            SubGroup: "Merge Conflict"
+        ),
+        new ConfigDefinition(
+            "Ai:MergeConflict:ProviderId",
+            "Merge Conflict Provider",
+            "Provider ID for the merge conflict model. Set automatically when selecting a model.",
+            ConfigSection.Ai,
+            false,
+            false,
+            SubGroup: "Merge Conflict"
+        ),
+        new ConfigDefinition(
+            "Ai:MergeConflict:Temperature",
+            "Merge Conflict Temperature",
+            "Override temperature for merge conflict resolution. Leave empty to use the model's default.",
+            ConfigSection.Ai,
+            false,
+            false,
+            "e.g., 0.3",
+            ConfigInputType.Number,
+            SubGroup: "Merge Conflict Overrides"
+        ),
+        new ConfigDefinition(
+            "Ai:MergeConflict:MaxTokens",
+            "Merge Conflict Max Tokens",
+            "Override max output tokens for merge conflict resolution. Leave empty to use the model's default.",
+            ConfigSection.Ai,
+            false,
+            false,
+            "e.g., 4096",
+            ConfigInputType.Number,
+            SubGroup: "Merge Conflict Overrides"
+        ),
+        new ConfigDefinition(
+            "Ai:MergeConflict:ReasoningEffort",
+            "Merge Conflict Reasoning Effort",
+            "Override reasoning effort for merge conflict resolution (only applies to reasoning models).",
+            ConfigSection.Ai,
+            false,
+            false,
+            SubGroup: "Merge Conflict Overrides",
+            InputType: ConfigInputType.Select,
+            SelectOptions: ["", "low", "medium", "high", "extra-high"]
+        ),
+        new ConfigDefinition(
             "Ai:AllowedModels",
             "Allowed Playground Models",
             "Restrict which models users can select in the AI Playground. When empty, all models from configured providers are available. Use this to control costs or limit access to specific models.",
