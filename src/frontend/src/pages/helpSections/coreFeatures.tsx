@@ -18,12 +18,6 @@ export const coreFeaturesGroup: SectionGroup = {
       relatedSections: ['entry-editor', 'ai-wizard'],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-dashboard.png"
-            alt="Dashboard showing greeting, stat cards for entries, published, unpublished, and folders, plus recent entries list"
-            className="rounded-lg border border-border-subtle mb-4 w-full"
-            loading="lazy"
-          />
           <p>Get up and running with Clarive in minutes. Here&apos;s what to do first.</p>
           <h4 className="text-sm font-semibold text-foreground">Explore your dashboard</h4>
           <p>
@@ -128,12 +122,6 @@ export const coreFeaturesGroup: SectionGroup = {
       ],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-editor.png"
-            alt="Entry Editor showing tab bar, title, system message, prompt card with highlighted template variables, and Add follow-up button"
-            className="rounded-lg border border-border-subtle mb-4 w-full"
-            loading="lazy"
-          />
           <p>
             The editor is where you write, refine, and publish your prompts. Every entry has three
             parts:
@@ -233,12 +221,6 @@ export const coreFeaturesGroup: SectionGroup = {
       relatedSections: ['entry-editor', 'templates'],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-wizard.png"
-            alt="AI Wizard Describe step with 3-step progress bar, text area, and configuration toggles for system message, template, chain, and web research"
-            className="rounded-lg border border-border-subtle mb-4 w-full"
-            loading="lazy"
-          />
           <p>
             Let AI write your prompt for you. Describe what you need, and the wizard generates a
             ready-to-use prompt in three steps.
@@ -301,12 +283,6 @@ export const coreFeaturesGroup: SectionGroup = {
       relatedSections: ['entry-editor', 'test-matrix', 'tools'],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-playground.png"
-            alt="Playground toolbar with model selector, Enqueue button, Run button, reasoning and token parameters, and template variable inputs"
-            className="rounded-lg border border-border-subtle mb-4 w-full"
-            loading="lazy"
-          />
           <p>
             Test any prompt against a live AI model and see the response in real time. Open the
             Playground by clicking <strong>Test Prompt</strong> in the editor.

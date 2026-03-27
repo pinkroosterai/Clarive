@@ -75,12 +75,6 @@ export const referenceGroup: SectionGroup = {
       relatedSections: ['public-api', 'sdks'],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-apikeys.png"
-            alt="API Keys settings tab showing tab navigation, Create API Key button, and key table with name, masked key, dates, and usage"
-            className="rounded-lg border border-border-subtle mb-4 w-full"
-            loading="lazy"
-          />
           <p>
             Access Clarive programmatically through the REST API using API keys. Only workspace
             admins can create and manage them.

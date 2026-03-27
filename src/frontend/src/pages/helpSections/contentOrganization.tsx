@@ -18,12 +18,6 @@ export const contentOrganizationGroup: SectionGroup = {
       relatedSections: ['entry-editor', 'playground'],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-templates.png"
-            alt="Variable edit popover showing name, type, default value, and description fields over a prompt card with highlighted template variables"
-            className="rounded-lg border border-border-subtle mb-4 w-full"
-            loading="lazy"
-          />
           <p>
             Turn any prompt into a reusable template by adding variables. Wrap a word in double
             curly braces — like <Code>{'{{topic}}'}</Code> — and it becomes a placeholder that gets
@@ -112,12 +106,6 @@ export const contentOrganizationGroup: SectionGroup = {
       relatedSections: ['folders', 'favorites'],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-library.png"
-            alt="Library card grid with search bar, status filter, sort dropdown, and entry cards showing quality scores and tags"
-            className="rounded-lg border border-border-subtle mb-4 w-full"
-            loading="lazy"
-          />
           <p>
             The library shows all entries in your workspace as a responsive grid. Click any entry
             card to open it in the editor.
@@ -202,12 +190,6 @@ export const contentOrganizationGroup: SectionGroup = {
       relatedSections: ['library'],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-folders.png"
-            alt="Sidebar folder tree showing workspace name, colored folders with entry counts, search box, and New folder button"
-            className="rounded-lg border border-border-subtle mb-4 w-full"
-            loading="lazy"
-          />
           <p>Keep your entries organized with the folder tree in the sidebar.</p>
           <h4 className="text-sm font-semibold text-foreground">Create and manage folders</h4>
           <ul className="list-disc list-inside space-y-1">
@@ -254,12 +236,6 @@ export const contentOrganizationGroup: SectionGroup = {
       relatedSections: ['entry-editor'],
       content: (
         <div className="space-y-3">
-          <img
-            src="/static/help/help-share.png"
-            alt="Manage Share Link dialog showing status, view count, creation date, and Copy Link, Regenerate, Revoke actions"
-            className="rounded-lg border border-border-subtle mb-4 w-full max-w-sm"
-            loading="lazy"
-          />
           <p>
             Share a read-only view of any published prompt with anyone — no Clarive account
             required. Open an entry and click <strong>Share Link</strong> in the Actions panel.
