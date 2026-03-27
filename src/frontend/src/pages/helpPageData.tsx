@@ -4,7 +4,9 @@ import {
   FileText,
   FlaskConical,
   FolderTree,
+  GitCompareArrows,
   Globe,
+  Grid3X3,
   Key,
   Keyboard,
   PanelLeft,
@@ -165,7 +167,7 @@ export const sectionGroups: SectionGroup[] = [
         plainTextContent:
           'How the Editor Works. Every entry has a title, an optional system message that tells the AI how to behave, and one or more prompt cards. On the right you find panels for Actions, Details, and Versions. Tabs. Every entry has a Main tab that is always editable. Create additional named tabs to experiment with different approaches. Any tab can be published. Published and Historical. Published is the live version served via the API. Historical versions are older snapshots you can view or restore to a new tab. Version History. Every time you publish a tab, Clarive takes a snapshot. Browse versions, compare side by side, or restore any version to a new tab. AI Tools. AI Enhance, Generate System Message, Decompose to Chain, Test Prompt.',
         searchAliases: ['how to edit a prompt', 'save', 'publish entry', 'version history', 'tabs'],
-        relatedSections: ['playground', 'templates', 'ai-wizard', 'share-links'],
+        relatedSections: ['playground', 'test-matrix', 'templates', 'ai-wizard', 'share-links', 'collaboration'],
         content: (
           <div className="space-y-3">
             <img
@@ -314,7 +316,7 @@ export const sectionGroups: SectionGroup[] = [
         plainTextContent:
           'Try Your Prompts. The Playground lets you run any entry against a live AI model and watch the response come in. Pick a Model and Tweak the Settings. Model — choose from available models. Temperature — lower is more predictable, higher is more creative. Max Tokens — caps response length. Reasoning Effort — higher effort means better answers on hard problems. Show Thinking — peeks behind the curtain. Running a Test. Click Run or Ctrl+Enter. Response streams live with timer and token count. Hit Esc to stop. Template variables get a form to fill in first. Comparing Models Side by Side. Click Enqueue to save model and settings to a queue. Run Queue to compare them all. AI Judge. Let AI score each response on accuracy, helpfulness, relevance, coherence, safety. Run History. Every test run is saved. Browse, pin for comparison, or rerun with one click.',
         searchAliases: ['how to test a prompt', 'compare models', 'run prompt against AI', 'batch comparison'],
-        relatedSections: ['entry-editor', 'tools'],
+        relatedSections: ['entry-editor', 'test-matrix', 'tools'],
         content: (
           <div className="space-y-3">
             <img
@@ -385,6 +387,119 @@ export const sectionGroups: SectionGroup[] = [
               to read the full response, or <strong>pin</strong> it for side-by-side comparison with
               your latest result. You can also <strong>rerun</strong> any previous test with one
               click.
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: 'test-matrix',
+        icon: Grid3X3,
+        title: 'Test Matrix & Reports',
+        searchText:
+          'test matrix grid versions models comparison report pdf export evaluation scores run all run column run row configuration temperature reasoning effort max tokens batch compare side by side download report prompt variants',
+        plainTextContent:
+          'Compare Prompt Versions Across Models. The Test Matrix lets you run prompt versions against multiple AI models in a grid and compare results side by side. Building the Matrix. Open any entry and click Test Prompt. Add versions (tabs, published, or historical) and models from the Setup tab. Each combination creates a cell in the grid. Running Tests. Click Run All to test every cell, or run a single cell, row, or column using play buttons. Progress shows in the toolbar. Model Configuration. Select a model column to configure Temperature, Max Tokens, and Reasoning Effort per model. Each model keeps its own settings. Viewing Results. Click any completed cell to see detailed evaluation scores: accuracy, helpfulness, relevance, coherence, and safety. The comparison panel below the grid shows responses side by side. Generating Reports. Click the Report button to preview a structured report covering run configuration, rendered prompts, full responses, and evaluation summary. Download as PDF for sharing. Keyboard Shortcuts. Arrow keys navigate cells. Enter runs the selected cell.',
+        searchAliases: ['compare models', 'batch test', 'model comparison', 'playground matrix', 'pdf report'],
+        relatedSections: ['playground', 'entry-editor', 'tools'],
+        content: (
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-foreground">Compare Prompt Versions Across Models</h4>
+            <p>
+              The Test Matrix lets you run prompt versions against multiple AI models in a grid and
+              compare results side by side. It&apos;s the best way to find out which model handles
+              your prompt best — or which version of a prompt performs better across the board.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Building the Matrix</h4>
+            <p>
+              Open any entry and click <strong>Test Prompt</strong> in the Actions tab. The Setup
+              panel on the right lets you add:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>
+                <strong>Versions</strong> — your tabs, published version, or any historical snapshot.
+                Each one becomes a row in the grid.
+              </li>
+              <li>
+                <strong>Models</strong> — pick from available models across all configured providers.
+                Each one becomes a column.
+              </li>
+            </ul>
+            <p>
+              Every version × model combination creates a cell you can run and evaluate.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Running Tests</h4>
+            <ul className="list-disc list-inside space-y-1">
+              <li>
+                <strong>Run All</strong> — tests every cell in the matrix. The toolbar shows progress
+                (e.g., &quot;3/12&quot;).
+              </li>
+              <li>
+                <strong>Run a row</strong> — hover over a version label and click the play icon to
+                test that version against all models.
+              </li>
+              <li>
+                <strong>Run a column</strong> — hover over a model header and click the play icon to
+                test all versions against that model.
+              </li>
+              <li>
+                <strong>Run a single cell</strong> — double-click any cell or hover and click the
+                play icon.
+              </li>
+            </ul>
+            <p>
+              If your entry uses template variables, fill them in on the Setup tab before running.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Model Configuration</h4>
+            <p>
+              Click any model column header to open the <strong>Config</strong> tab where you can
+              adjust settings per model:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>
+                <strong>Temperature</strong> — controls randomness (0–2). Hidden for reasoning
+                models.
+              </li>
+              <li>
+                <strong>Reasoning Effort</strong> — for reasoning models only: Low, Medium, High,
+                or Extra High.
+              </li>
+              <li>
+                <strong>Max Tokens</strong> — caps response length (1–128,000).
+              </li>
+            </ul>
+            <p>
+              Each model keeps its own settings, so you can compare the same prompt at different
+              temperatures or effort levels.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Viewing Results</h4>
+            <p>
+              Completed cells show a color-coded score (red → yellow → green). Click any cell to
+              open the <strong>Results</strong> tab with detailed evaluation scores across
+              dimensions like accuracy, helpfulness, relevance, coherence, and safety — each scored
+              0–10 with written feedback.
+            </p>
+            <p>
+              The <strong>comparison panel</strong> below the grid shows responses side by side.
+              Filter by model or version using the tab pills at the top.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Generating Reports</h4>
+            <p>
+              Click the <strong>Report</strong> button in the toolbar to preview a structured report
+              covering:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Run configuration — models, parameters, template variable values</li>
+              <li>Rendered prompts — with variables substituted</li>
+              <li>Full responses — complete output from each cell</li>
+              <li>Evaluation summary — scores across all dimensions with feedback</li>
+            </ul>
+            <p>
+              Click <strong>Download PDF</strong> to save the report for sharing or archiving.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Keyboard Shortcuts</h4>
+            <p>
+              Use <Kbd>↑</Kbd> <Kbd>↓</Kbd> <Kbd>←</Kbd> <Kbd>→</Kbd> to navigate cells and{' '}
+              <Kbd>Enter</Kbd> to run the selected cell.
             </p>
           </div>
         ),
@@ -765,6 +880,89 @@ export const sectionGroups: SectionGroup[] = [
             <p>
               Leave any shared workspace from <strong>Settings &gt; Users</strong>. Personal
               workspaces can&apos;t be left.
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: 'collaboration',
+        icon: GitCompareArrows,
+        title: 'Real-Time Collaboration',
+        searchText:
+          'collaboration real-time presence editing viewing soft lock conflict resolution merge save concurrent users avatar indicators override edit anyway keep mine keep theirs resolve with AI',
+        plainTextContent:
+          'Work on Entries Together. Clarive shows who else is viewing or editing an entry in real time. Presence Indicators. Avatars appear in the editor header with a green pencil for editing or a gray eye for viewing. Hover for details. Soft Lock. When another user is editing, a warning banner appears with their name. Click Edit anyway to continue — a confirmation dialog warns about potential conflicts. Conflict Resolution. If two users save at the same time, a conflict dialog appears showing your changes and the server version side by side. For each conflicting field choose Keep mine, Keep theirs, Edit merged to combine manually, or Resolve with AI for an intelligent merge. A live preview shows the result before you save. Automatic State Tracking. Your editing state updates automatically when you switch browser tabs or navigate away.',
+        searchAliases: ['multi-user editing', 'who is editing', 'merge conflict', 'concurrent editing'],
+        relatedSections: ['entry-editor', 'workspaces'],
+        content: (
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-foreground">Work on Entries Together</h4>
+            <p>
+              When multiple people open the same entry, Clarive shows who&apos;s there and what
+              they&apos;re doing — in real time. No one loses work to surprise overwrites.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Presence Indicators</h4>
+            <p>
+              Avatars appear in the editor header showing other users in the entry. Each avatar has a
+              small badge:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>
+                <strong>Green pencil</strong> — the user is actively editing.
+              </li>
+              <li>
+                <strong>Gray eye</strong> — the user is viewing (read-only).
+              </li>
+            </ul>
+            <p>
+              Hover over any avatar to see the user&apos;s name and state. If more than three users
+              are present, a <strong>+N</strong> badge shows the overflow count — hover it for the
+              full list.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Soft Lock</h4>
+            <p>
+              When another user is editing, a warning banner appears at the top of the editor
+              showing their name. You can still read the entry, but editing is soft-locked to
+              prevent conflicts.
+            </p>
+            <p>
+              Click <strong>Edit anyway</strong> to override the lock. A confirmation dialog reminds
+              you that editing simultaneously may cause conflicts when saving — click{' '}
+              <strong>Edit anyway</strong> again to proceed, or <strong>Cancel</strong> to stay in
+              viewing mode.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Conflict Resolution</h4>
+            <p>
+              If two users save overlapping changes, a full-screen conflict dialog appears showing
+              each conflicting field (title, system message, prompts) with your version on the left
+              and the server version on the right.
+            </p>
+            <p>For each field, you have four options:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>
+                <strong>Keep mine</strong> — use your version entirely.
+              </li>
+              <li>
+                <strong>Keep theirs</strong> — use the server version entirely.
+              </li>
+              <li>
+                <strong>Edit merged</strong> — manually combine both versions in an editable text
+                area.
+              </li>
+              <li>
+                <strong>Resolve with AI</strong> — let AI intelligently merge both versions for you.
+              </li>
+            </ul>
+            <p>
+              A <strong>live preview</strong> below each field shows exactly what will be saved.
+              When you&apos;re happy with all fields, click <strong>Save resolved</strong> to apply
+              the resolution.
+            </p>
+            <h4 className="text-sm font-semibold text-foreground">Automatic State Tracking</h4>
+            <p>
+              Your editing state updates automatically. When you switch to another browser tab,
+              Clarive marks you as &quot;viewing&quot; so teammates know you&apos;re not actively
+              typing. When you return, your editing state resumes.
             </p>
           </div>
         ),
