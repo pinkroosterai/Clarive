@@ -1,6 +1,7 @@
 import { Lightbulb, X } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import { getDocsUrl } from '@/lib/docsUrl';
 
 interface FirstUseHintProps {
   hintId: string;
@@ -12,7 +13,6 @@ interface FirstUseHintProps {
 const STORAGE_PREFIX = 'cl_hint_';
 
 export function FirstUseHint({ hintId, title, description, section }: FirstUseHintProps) {
-  const navigate = useNavigate();
   const storageKey = `${STORAGE_PREFIX}${hintId}_dismissed`;
 
   const [dismissed, setDismissed] = useState(() => {
@@ -42,13 +42,14 @@ export function FirstUseHint({ hintId, title, description, section }: FirstUseHi
           <h5 className="text-sm font-medium text-foreground mb-1">{title}</h5>
           <p className="text-xs text-foreground-muted leading-relaxed">{description}</p>
           {section && (
-            <button
-              type="button"
-              onClick={() => navigate(`/help#${section}`)}
-              className="mt-2 text-xs text-primary hover:underline"
+            <a
+              href={getDocsUrl(section)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 block text-xs text-primary hover:underline"
             >
               Learn more
-            </button>
+            </a>
           )}
         </div>
         <button

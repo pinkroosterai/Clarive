@@ -10,7 +10,9 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useMemo, useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+
+import { getDocsUrl } from '@/lib/docsUrl';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
@@ -300,12 +302,14 @@ export default function LibraryPage() {
             actions={
               <>
                 {emptyStateActions}
-                <Link
-                  to="/help#folders"
+                <a
+                  href={getDocsUrl('folders')}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-xs text-foreground-muted underline hover:text-foreground"
                 >
                   Learn more about folders
-                </Link>
+                </a>
               </>
             }
           />
@@ -317,12 +321,14 @@ export default function LibraryPage() {
             actions={
               <>
                 {emptyStateActions}
-                <Link
-                  to="/help#getting-started"
+                <a
+                  href={getDocsUrl('getting-started')}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-xs text-foreground-muted underline hover:text-foreground"
                 >
                   Learn more
-                </Link>
+                </a>
               </>
             }
           />

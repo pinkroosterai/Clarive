@@ -1,6 +1,7 @@
 import { Info } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { getDocsUrl } from '@/lib/docsUrl';
 
 interface HelpPopoverProps {
   content: string;
@@ -22,7 +23,12 @@ export function HelpPopover({ content, section }: HelpPopoverProps) {
       <PopoverContent className="w-64 p-3" side="top" align="start">
         <p className="text-xs text-foreground-muted leading-relaxed">{content}</p>
         {section && (
-          <a href={`/help#${section}`} className="mt-2 block text-xs text-primary hover:underline">
+          <a
+            href={getDocsUrl(section)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 block text-xs text-primary hover:underline"
+          >
             Learn more
           </a>
         )}

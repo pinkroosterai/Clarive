@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Info, ScrollText } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { getDocsUrl } from '@/lib/docsUrl';
 
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/ui/badge';
@@ -86,12 +86,14 @@ export default function AuditLogTable() {
           title="No audit log entries"
           description="Activity in your workspace will appear here."
           actions={
-            <Link
-              to="/help#audit-log"
+            <a
+              href={getDocsUrl('audit-log')}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-xs text-foreground-muted underline hover:text-foreground"
             >
               Learn more
-            </Link>
+            </a>
           }
         />
       ) : (

@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Trash2, Undo2, FolderOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { getDocsUrl } from '@/lib/docsUrl';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
@@ -228,12 +228,14 @@ const TrashPage = () => {
           title="Trash is empty"
           description="Items you delete will appear here for 30 days before permanent removal."
           actions={
-            <Link
-              to="/help#trash"
+            <a
+              href={getDocsUrl('trash')}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-xs text-foreground-muted underline hover:text-foreground"
             >
               Learn more
-            </Link>
+            </a>
           }
         />
       )}

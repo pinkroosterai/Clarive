@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Wrench } from 'lucide-react';
 import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { getDocsUrl } from '@/lib/docsUrl';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
@@ -212,12 +212,14 @@ export default function ToolsPanel() {
           title="No tools yet"
           description="Add tool descriptions manually or import them from an MCP server."
           actions={
-            <Link
-              to="/help#tools"
+            <a
+              href={getDocsUrl('tools')}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-xs text-foreground-muted underline hover:text-foreground"
             >
               Learn more
-            </Link>
+            </a>
           }
         />
       )}

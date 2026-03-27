@@ -28,7 +28,6 @@ export default function AccountDeletionSection() {
   const [confirmation, setConfirmation] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isAdmin = currentUser?.role === 'admin';
   const canDelete = confirmation === 'DELETE';
 
   const handleDelete = async () => {
@@ -46,8 +45,6 @@ export default function AccountDeletionSection() {
       setConfirmation('');
     }
   };
-
-  if (!isAdmin) return null;
 
   return (
     <div className="rounded-xl border border-error-border bg-error-bg elevation-1 p-6 space-y-4">

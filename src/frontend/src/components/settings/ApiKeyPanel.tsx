@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { addDays, addMonths, format, formatDistanceToNow } from 'date-fns';
 import { Copy, Key, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { getDocsUrl } from '@/lib/docsUrl';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/common/EmptyState';
@@ -158,12 +158,14 @@ export default function ApiKeyPanel() {
           title="No API keys yet"
           description="Create one to get started with external integrations."
           actions={
-            <Link
-              to="/help#api-keys"
+            <a
+              href={getDocsUrl('api-keys')}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-xs text-foreground-muted underline hover:text-foreground"
             >
               Learn more
-            </Link>
+            </a>
           }
         />
       ) : (
