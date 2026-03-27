@@ -7,14 +7,6 @@ export type CellStatus = 'empty' | 'queued' | 'running' | 'completed' | 'error';
 
 // ── Matrix cell — one (version, model) intersection ──
 
-export interface DatasetCellResult {
-  rowId: string;
-  inputValues: Record<string, string>;
-  segments: StreamSegment[];
-  score: number | null;
-  error: string | null;
-}
-
 export interface MatrixCell {
   versionId: string;
   modelId: string;
@@ -24,8 +16,6 @@ export interface MatrixCell {
   evaluation: Evaluation | null;
   error: string | null;
   elapsedMs: number | null;
-  /** Present when running with a dataset — one result per input row */
-  datasetResults: DatasetCellResult[];
 }
 
 // ── Matrix row — one prompt version ──
@@ -75,7 +65,6 @@ export interface MatrixState {
   selectedModelId: string | null;
   selectedVersionId: string | null;
   comparisonFilter: ComparisonFilter;
-  datasetId: string | null;
 }
 
 // ── Helpers ──
@@ -98,7 +87,6 @@ export function createEmptyCell(versionId: string, modelId: string): MatrixCell 
     evaluation: null,
     error: null,
     elapsedMs: null,
-    datasetResults: [],
   };
 }
 

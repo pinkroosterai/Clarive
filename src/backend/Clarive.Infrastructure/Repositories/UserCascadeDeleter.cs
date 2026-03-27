@@ -13,26 +13,6 @@ public static class UserCascadeDeleter
     {
         // Deepest children first — entry sub-trees
         await db.Database.ExecuteSqlInterpolatedAsync(
-            $"DELETE FROM ab_test_results WHERE run_id IN (SELECT id FROM ab_test_runs WHERE entry_id IN (SELECT id FROM prompt_entries WHERE created_by = {userId}))",
-            ct
-        );
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"DELETE FROM ab_test_runs WHERE entry_id IN (SELECT id FROM prompt_entries WHERE created_by = {userId})",
-            ct
-        );
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"DELETE FROM ab_test_runs WHERE user_id = {userId}",
-            ct
-        );
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"DELETE FROM test_dataset_rows WHERE dataset_id IN (SELECT id FROM test_datasets WHERE entry_id IN (SELECT id FROM prompt_entries WHERE created_by = {userId}))",
-            ct
-        );
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"DELETE FROM test_datasets WHERE entry_id IN (SELECT id FROM prompt_entries WHERE created_by = {userId})",
-            ct
-        );
-        await db.Database.ExecuteSqlInterpolatedAsync(
             $"DELETE FROM prompts WHERE version_id IN (SELECT id FROM prompt_entry_versions WHERE entry_id IN (SELECT id FROM prompt_entries WHERE created_by = {userId}))",
             ct
         );

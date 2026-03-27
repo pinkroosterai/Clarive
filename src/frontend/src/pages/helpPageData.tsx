@@ -940,16 +940,16 @@ export const sectionGroups: SectionGroup[] = [
         icon: Globe,
         title: 'Public API',
         searchText:
-          'public api fetch render published prompts get post entries generate template fields validation authentication x-api-key curl json error 401 404 422 429 rate limit list search tags pagination openapi tabs variants tab-aware a/b testing',
+          'public api fetch render published prompts get post entries generate template fields validation authentication x-api-key curl json error 401 404 422 429 rate limit list search tags pagination openapi tabs variants tab-aware variant testing',
         plainTextContent:
-          'Public API for fetching and rendering published prompts. Authentication via X-Api-Key header. Endpoints: List entries with search, tags, and pagination. Get single entry by ID. List tabs (working variants) for an entry. Get a specific tab by ID. Generate rendered prompts from published version or a specific tab. Render entry with template field values substituted. Tab-aware generation for A/B testing without publishing. Error codes: 401 Unauthorized, 404 Not Found, 422 Validation Error, 429 Rate Limited. OpenAPI spec available. Curl examples for fetching and generating.',
+          'Public API for fetching and rendering published prompts. Authentication via X-Api-Key header. Endpoints: List entries with search, tags, and pagination. Get single entry by ID. List tabs (working variants) for an entry. Get a specific tab by ID. Generate rendered prompts from published version or a specific tab. Render entry with template field values substituted. Tab-aware generation for variant testing without publishing. Error codes: 401 Unauthorized, 404 Not Found, 422 Validation Error, 429 Rate Limited. OpenAPI spec available. Curl examples for fetching and generating.',
         searchAliases: ['rest api endpoints', 'api documentation', 'curl examples'],
         relatedSections: ['api-keys', 'sdks'],
         content: (
           <div className="space-y-3">
             <p>
               The Public API lets you list, fetch, and render published prompts programmatically.
-              You can also access tabs (working variants) for A/B testing and CI/CD workflows.
+              You can also access tabs (working variants) for variant testing and CI/CD workflows.
               All requests require an API key (see <strong>API Keys</strong> above).
             </p>
 
@@ -1136,7 +1136,7 @@ export const sectionGroups: SectionGroup[] = [
             </h4>
             <p>
               List all tabs (working variants) for an entry. Each tab includes its name, ID, and
-              whether it&apos;s the main tab. Use this to discover available variants for A/B testing or
+              whether it&apos;s the main tab. Use this to discover available variants for testing or
               CI/CD workflows.
             </p>
             <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle whitespace-pre">
@@ -1179,7 +1179,7 @@ export const sectionGroups: SectionGroup[] = [
             <p>
               Render a tab&apos;s templates by substituting variables with the values you provide.
               Works the same as the entry generate endpoint but targets a specific tab instead of the
-              published version. Useful for A/B testing prompt variants without publishing them.
+              published version. Useful for testing prompt variants without publishing them.
             </p>
             <p className="bg-elevated rounded-md p-3 text-xs font-mono border border-border-subtle whitespace-pre">
               {`curl -X POST \\

@@ -54,14 +54,9 @@ global using Clarive.Application.ShareLinks.Services;
 global using Clarive.Application.SuperAdmin;
 global using Clarive.Application.SuperAdmin.Contracts;
 global using Clarive.Application.SuperAdmin.Services;
-global using Clarive.Application.AbTests;
-global using Clarive.Application.AbTests.Contracts;
-global using Clarive.Application.AbTests.Services;
 global using Clarive.Application.Tags;
 global using Clarive.Application.Tags.Contracts;
-global using Clarive.Application.TestDatasets;
-global using Clarive.Application.TestDatasets.Contracts;
-global using Clarive.Application.TestDatasets.Services;
+
 global using Clarive.Application.Tabs.Contracts;
 global using Clarive.Application.Tabs.Services;
 global using Clarive.Application.Tenants;

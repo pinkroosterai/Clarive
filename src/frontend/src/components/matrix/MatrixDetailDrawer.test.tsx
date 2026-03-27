@@ -38,7 +38,6 @@ function renderDrawer(overrides: Partial<Parameters<typeof MatrixDetailDrawer>[0
       modelPicker: { models: [], onAddModel: vi.fn(), addedModelIds: new Set<string>() },
       template: { templateFields: [], fieldValues: {}, setFieldValues: vi.fn(), isFillingTemplateFields: false },
       tools: { mcpServers: [], allTools: [], enabledServerIds: [] as string[], setEnabledServerIds: vi.fn(), excludedToolNames: [] as string[], setExcludedToolNames: vi.fn() },
-      dataset: { datasets: [], selectedDatasetId: null, onDatasetChange: vi.fn() },
     },
     ...overrides,
   };

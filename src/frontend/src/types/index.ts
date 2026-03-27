@@ -299,6 +299,5 @@ export type {
   MatrixModel,
   MatrixState,
   CellKey,
-  DatasetCellResult,
 } from './matrix';
 export { cellKey, getCell, createEmptyCell, enrichedModelToMatrixModel } from './matrix';

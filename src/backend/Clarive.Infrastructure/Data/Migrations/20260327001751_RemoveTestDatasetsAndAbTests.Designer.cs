@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Clarive.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ClariveDbContext))]
-    [Migration("20260323221727_AddAbTests")]
-    partial class AddAbTests
+    [Migration("20260327001751_RemoveTestDatasetsAndAbTests")]
+    partial class RemoveTestDatasetsAndAbTests
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,127 +25,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestResult", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("DatasetRowId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("dataset_row_id");
-
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("run_id");
-
-                    b.Property<double?>("VersionAAvgScore")
-                        .HasColumnType("double precision")
-                        .HasColumnName("version_a_avg_score");
-
-                    b.Property<string>("VersionAOutput")
-                        .HasColumnType("text")
-                        .HasColumnName("version_a_output");
-
-                    b.Property<string>("VersionAScores")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("version_a_scores");
-
-                    b.Property<double?>("VersionBAvgScore")
-                        .HasColumnType("double precision")
-                        .HasColumnName("version_b_avg_score");
-
-                    b.Property<string>("VersionBOutput")
-                        .HasColumnType("text")
-                        .HasColumnName("version_b_output");
-
-                    b.Property<string>("VersionBScores")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("version_b_scores");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RunId")
-                        .HasDatabaseName("ix_ab_test_results_run");
-
-                    b.ToTable("ab_test_results", (string)null);
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestRun", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("completed_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid?>("DatasetId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("dataset_id");
-
-                    b.Property<Guid>("EntryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("entry_id");
-
-                    b.Property<int>("MaxTokens")
-                        .HasColumnType("integer")
-                        .HasColumnName("max_tokens");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("model");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("status");
-
-                    b.Property<float>("Temperature")
-                        .HasColumnType("real")
-                        .HasColumnName("temperature");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("VersionANumber")
-                        .HasColumnType("integer")
-                        .HasColumnName("version_a_number");
-
-                    b.Property<int>("VersionBNumber")
-                        .HasColumnType("integer")
-                        .HasColumnName("version_b_number");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DatasetId");
-
-                    b.HasIndex("EntryId")
-                        .HasDatabaseName("ix_ab_test_runs_entry");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("TenantId", "EntryId")
-                        .HasDatabaseName("ix_ab_test_runs_tenant_entry");
-
-                    b.ToTable("ab_test_runs", (string)null);
-                });
 
             modelBuilder.Entity("Clarive.Domain.Entities.AiProvider", b =>
                 {
@@ -1108,7 +987,7 @@ namespace Clarive.Infrastructure.Data.Migrations
 
                     b.Property<int>("Order")
                         .HasColumnType("integer")
-                        .HasColumnName("\"order\"");
+                        .HasColumnName("sort_order");
 
                     b.Property<Guid>("VersionId")
                         .HasColumnType("uuid")
@@ -1163,6 +1042,9 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("title");
 
+                    b.Property<DateTime?>("TrashedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -1216,6 +1098,16 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("evaluation_average_score");
 
+                    b.Property<int?>("ForkedFromVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("forked_from_version");
+
+                    b.Property<bool>("IsMainTab")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_main_tab");
+
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("published_at");
@@ -1234,6 +1126,11 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("system_message");
 
+                    b.Property<string>("TabName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tab_name");
+
                     b.Property<int>("Version")
                         .HasColumnType("integer")
                         .HasColumnName("version");
@@ -1251,9 +1148,15 @@ namespace Clarive.Infrastructure.Data.Migrations
 
                     b.HasIndex("PublishedBy");
 
+                    b.HasIndex("EntryId", "TabName")
+                        .IsUnique()
+                        .HasDatabaseName("uq_prompt_entry_versions_entry_tab_name")
+                        .HasFilter("tab_name IS NOT NULL");
+
                     b.HasIndex("EntryId", "Version")
                         .IsUnique()
-                        .HasDatabaseName("uq_prompt_entry_versions_entry_version");
+                        .HasDatabaseName("uq_prompt_entry_versions_entry_version")
+                        .HasFilter("version_state != 'Tab'");
 
                     b.HasIndex("EntryId", "VersionState")
                         .HasDatabaseName("ix_prompt_entry_versions_entry_state");
@@ -1578,74 +1481,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                     b.ToTable("tenant_memberships", (string)null);
                 });
 
-            modelBuilder.Entity("Clarive.Domain.Entities.TestDataset", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("EntryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("entry_id");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("name");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EntryId")
-                        .HasDatabaseName("ix_test_datasets_entry");
-
-                    b.HasIndex("TenantId", "EntryId")
-                        .HasDatabaseName("ix_test_datasets_tenant_entry");
-
-                    b.ToTable("test_datasets", (string)null);
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.TestDatasetRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("DatasetId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("dataset_id");
-
-                    b.Property<string>("Values")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("values");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DatasetId")
-                        .HasDatabaseName("ix_test_dataset_rows_dataset");
-
-                    b.ToTable("test_dataset_rows", (string)null);
-                });
-
             modelBuilder.Entity("Clarive.Domain.Entities.ToolDescription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1733,6 +1568,11 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("email_verified");
 
+                    b.Property<string>("GitHubId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("github_id");
+
                     b.Property<string>("GoogleId")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
@@ -1781,6 +1621,11 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("uq_users_email");
 
+                    b.HasIndex("GitHubId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_users_github_id")
+                        .HasFilter("github_id IS NOT NULL");
+
                     b.HasIndex("GoogleId")
                         .IsUnique()
                         .HasDatabaseName("uq_users_google_id")
@@ -1794,46 +1639,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .HasDatabaseName("ix_users_tenant_id");
 
                     b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestResult", b =>
-                {
-                    b.HasOne("Clarive.Domain.Entities.ABTestRun", "Run")
-                        .WithMany("Results")
-                        .HasForeignKey("RunId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Run");
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestRun", b =>
-                {
-                    b.HasOne("Clarive.Domain.Entities.TestDataset", "Dataset")
-                        .WithMany()
-                        .HasForeignKey("DatasetId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Clarive.Domain.Entities.PromptEntry", "Entry")
-                        .WithMany()
-                        .HasForeignKey("EntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Clarive.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Dataset");
-
-                    b.Navigation("Entry");
                 });
 
             modelBuilder.Entity("Clarive.Domain.Entities.AiProviderModel", b =>
@@ -2126,34 +1931,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Clarive.Domain.Entities.TestDataset", b =>
-                {
-                    b.HasOne("Clarive.Domain.Entities.PromptEntry", "Entry")
-                        .WithMany()
-                        .HasForeignKey("EntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Clarive.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Entry");
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.TestDatasetRow", b =>
-                {
-                    b.HasOne("Clarive.Domain.Entities.TestDataset", "Dataset")
-                        .WithMany("Rows")
-                        .HasForeignKey("DatasetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Dataset");
-                });
-
             modelBuilder.Entity("Clarive.Domain.Entities.ToolDescription", b =>
                 {
                     b.HasOne("Clarive.Domain.Entities.McpServer", null)
@@ -2175,11 +1952,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.ABTestRun", b =>
-                {
-                    b.Navigation("Results");
                 });
 
             modelBuilder.Entity("Clarive.Domain.Entities.AiProvider", b =>
@@ -2214,11 +1986,6 @@ namespace Clarive.Infrastructure.Data.Migrations
                     b.Navigation("Folders");
 
                     b.Navigation("Users");
-                });
-
-            modelBuilder.Entity("Clarive.Domain.Entities.TestDataset", b =>
-                {
-                    b.Navigation("Rows");
                 });
 #pragma warning restore 612, 618
         }

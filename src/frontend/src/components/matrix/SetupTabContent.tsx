@@ -17,7 +17,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import type { EnrichedModel } from '@/services/api/playgroundService';
-import type { TestDataset } from '@/services/api/testDatasetService';
 import type { MatrixModel, MatrixVersion } from '@/types/matrix';
 import { enrichedModelToMatrixModel } from '@/types/matrix';
 import type { McpServer, ToolDescription, VersionInfo, TabInfo } from '@/types';
@@ -46,12 +45,6 @@ export interface ModelPickerProps {
   addedModelIds: Set<string>;
 }
 
-export interface DatasetPickerProps {
-  datasets: TestDataset[];
-  selectedDatasetId: string | null;
-  onDatasetChange: (datasetId: string | null) => void;
-}
-
 // ── Component props ──
 
 export interface SetupTabContentProps {
@@ -59,7 +52,6 @@ export interface SetupTabContentProps {
   modelPicker: ModelPickerProps;
   template: PlaygroundTemplateState;
   tools: ToolsState;
-  dataset: DatasetPickerProps;
 }
 
 function groupModelsByProvider(models: EnrichedModel[]) {
@@ -77,12 +69,10 @@ export function SetupTabContent({
   modelPicker,
   template,
   tools,
-  dataset,
 }: SetupTabContentProps) {
   const { versions, tabs, onAddVersion, addedVersionIds } = versionPicker;
   const { models, onAddModel, addedModelIds } = modelPicker;
   const { mcpServers, allTools, enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames } = tools;
-  const { datasets, selectedDatasetId, onDatasetChange } = dataset;
 
   const providerGroups = useMemo(() => groupModelsByProvider(models), [models]);
   const [versionPickerOpen, setVersionPickerOpen] = useState(false);
@@ -246,38 +236,6 @@ export function SetupTabContent({
               excludedToolNames={excludedToolNames}
               setExcludedToolNames={setExcludedToolNames}
             />
-          </ActionGroup>
-        </>
-      )}
-
-      {/* Dataset */}
-      {datasets.length > 0 && (
-        <>
-          <Separator />
-          <ActionGroup label="Dataset">
-            <div className="space-y-1">
-              <button
-                type="button"
-                className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                  !selectedDatasetId ? 'bg-muted/50 font-medium' : 'hover:bg-muted/50'
-                }`}
-                onClick={() => onDatasetChange(null)}
-              >
-                No dataset
-              </button>
-              {datasets.map((ds) => (
-                <button
-                  key={ds.id}
-                  type="button"
-                  className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                    selectedDatasetId === ds.id ? 'bg-muted/50 font-medium' : 'hover:bg-muted/50'
-                  }`}
-                  onClick={() => onDatasetChange(ds.id)}
-                >
-                  {ds.name} ({ds.rowCount})
-                </button>
-              ))}
-            </div>
           </ActionGroup>
         </>
       )}

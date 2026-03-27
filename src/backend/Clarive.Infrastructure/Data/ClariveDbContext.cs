@@ -47,10 +47,6 @@ public class ClariveDbContext : DbContext
     public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
     public DbSet<JobExecutionHistory> JobExecutionHistories => Set<JobExecutionHistory>();
-    public DbSet<TestDataset> TestDatasets => Set<TestDataset>();
-    public DbSet<TestDatasetRow> TestDatasetRows => Set<TestDatasetRow>();
-    public DbSet<ABTestRun> ABTestRuns => Set<ABTestRun>();
-    public DbSet<ABTestResult> ABTestResults => Set<ABTestResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

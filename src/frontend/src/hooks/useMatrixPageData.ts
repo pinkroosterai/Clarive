@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import { parseTemplateTags } from '@/lib/templateParser';
 import { entryService } from '@/services';
 import { getEnrichedModels } from '@/services/api/playgroundService';
-import { getDatasets } from '@/services/api/testDatasetService';
 import type { TemplateField } from '@/types';
 
 export function useMatrixPageData(entryId: string | undefined) {
@@ -31,12 +30,6 @@ export function useMatrixPageData(entryId: string | undefined) {
     queryFn: getEnrichedModels,
   });
 
-  const { data: datasets = [] } = useQuery({
-    queryKey: ['datasets', entryId],
-    queryFn: () => getDatasets(entryId!),
-    enabled: !!entryId,
-  });
-
   const templateFields = useMemo<TemplateField[]>(() => {
     if (!entry) return [];
     const seen = new Set<string>();
@@ -52,5 +45,5 @@ export function useMatrixPageData(entryId: string | undefined) {
     return fields;
   }, [entry]);
 
-  return { entry, tabs, versions, models, datasets, templateFields };
+  return { entry, tabs, versions, models, templateFields };
 }

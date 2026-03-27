@@ -28,7 +28,6 @@ type MatrixAction =
       modelId: string;
       update: Partial<MatrixCell>;
     }
-  | { type: 'SET_DATASET'; datasetId: string | null }
   | { type: 'UPDATE_MODEL_PARAMS'; modelId: string; params: Partial<Pick<MatrixModel, 'temperature' | 'maxTokens' | 'reasoningEffort' | 'showReasoning'>> }
   | { type: 'SELECT_MODEL'; modelId: string | null }
   | { type: 'SELECT_VERSION'; versionId: string | null }
@@ -157,9 +156,6 @@ function matrixReducer(state: MatrixState, action: MatrixAction): MatrixState {
       return { ...state, comparisonFilter: f };
     }
 
-    case 'SET_DATASET':
-      return { ...state, datasetId: action.datasetId };
-
     case 'CLEAR_MATRIX':
       return emptyState;
 
@@ -178,7 +174,6 @@ const emptyState: MatrixState = {
   selectedModelId: null,
   selectedVersionId: null,
   comparisonFilter: 'all',
-  datasetId: null,
 };
 
 // ── Session storage helpers ──
@@ -186,7 +181,6 @@ const emptyState: MatrixState = {
 interface PersistedMatrixConfig {
   versions: MatrixVersion[];
   models: MatrixModel[];
-  datasetId: string | null;
 }
 
 const STORAGE_SUFFIX = '_config';
@@ -220,7 +214,6 @@ function loadPersistedState(entryId: string | undefined): MatrixState {
     selectedModelId: null,
     selectedVersionId: null,
     comparisonFilter: 'all',
-    datasetId: config.datasetId,
   };
 }
 
@@ -229,7 +222,7 @@ function loadPersistedState(entryId: string | undefined): MatrixState {
 export function useMatrixState(entryId?: string) {
   const [state, dispatch] = useReducer(matrixReducer, entryId, loadPersistedState);
 
-  // Persist config (versions, models, datasetId) to sessionStorage on change
+  // Persist config (versions, models) to sessionStorage on change
   useEffect(() => {
     const key = buildSessionKey(entryId);
     if (!key) return;
@@ -242,10 +235,9 @@ export function useMatrixState(entryId?: string) {
     const config: PersistedMatrixConfig = {
       versions: state.versions,
       models: state.models,
-      datasetId: state.datasetId,
     };
     sessionStorage.setItem(key, JSON.stringify(config));
-  }, [entryId, state.versions, state.models, state.datasetId]);
+  }, [entryId, state.versions, state.models]);
 
   const addVersion = useCallback(
     (version: MatrixVersion) => dispatch({ type: 'ADD_VERSION', version }),
@@ -340,11 +332,6 @@ export function useMatrixState(entryId?: string) {
     [],
   );
 
-  const setDataset = useCallback(
-    (datasetId: string | null) => dispatch({ type: 'SET_DATASET', datasetId }),
-    [],
-  );
-
   const clearMatrix = useCallback(() => dispatch({ type: 'CLEAR_MATRIX' }), []);
 
   return {
@@ -363,7 +350,6 @@ export function useMatrixState(entryId?: string) {
     selectModel,
     selectVersion,
     setComparisonFilter,
-    setDataset,
     clearMatrix,
   };
 }

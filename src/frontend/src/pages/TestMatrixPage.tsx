@@ -23,7 +23,7 @@ function TestMatrixPage() {
   const { entryId } = useParams<{ entryId: string }>();
 
   // ── Data ──
-  const { tabs, versions, models, datasets, templateFields } = useMatrixPageData(entryId);
+  const { tabs, versions, models, templateFields } = useMatrixPageData(entryId);
 
   // ── Persistence (sidebar, tools, history) ──
   const {
@@ -61,7 +61,7 @@ function TestMatrixPage() {
     selectCell, updateCellStatus,
     setCellSegments, setCellResult, setCellError,
     updateModelParams, selectModel, selectVersion,
-    setComparisonFilter, setDataset, clearMatrix,
+    setComparisonFilter, clearMatrix,
   } = useMatrixState(entryId);
 
   // ── Matrix execution ──
@@ -245,7 +245,6 @@ function TestMatrixPage() {
               isFillingTemplateFields,
             },
             tools: { mcpServers, allTools, enabledServerIds, setEnabledServerIds, excludedToolNames, setExcludedToolNames },
-            dataset: { datasets, selectedDatasetId: state.datasetId, onDatasetChange: setDataset },
           }}
         />
       </div>
