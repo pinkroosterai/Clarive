@@ -64,14 +64,27 @@ public class OnboardingSeederTests
     {
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
-        _capturedVersions.Should().HaveCount(3);
-        _capturedVersions!
+        _capturedVersions.Should().HaveCount(6); // 3 published + 3 tab versions
+
+        var published = _capturedVersions!.Where(v => v.VersionState == VersionState.Published).ToList();
+        published.Should().HaveCount(3);
+        published
             .Should()
             .AllSatisfy(v =>
             {
-                v.VersionState.Should().Be(VersionState.Published);
                 v.Version.Should().Be(1);
                 v.PublishedBy.Should().Be(UserId);
+            });
+
+        var tabs = _capturedVersions.Where(v => v.VersionState == VersionState.Tab).ToList();
+        tabs.Should().HaveCount(3);
+        tabs
+            .Should()
+            .AllSatisfy(v =>
+            {
+                v.Version.Should().Be(0);
+                v.IsMainTab.Should().BeTrue();
+                v.TabName.Should().Be("Main");
             });
     }
 
@@ -89,7 +102,7 @@ public class OnboardingSeederTests
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
         var emailEntry = _capturedEntries!.First(e => e.Title == "Email Composer");
-        var version = _capturedVersions!.First(v => v.EntryId == emailEntry.Id);
+        var version = _capturedVersions!.First(v => v.EntryId == emailEntry.Id && v.VersionState == VersionState.Published);
 
         version.Prompts.Should().HaveCount(2);
         version.Prompts.Should().AllSatisfy(p => p.IsTemplate.Should().BeTrue());
@@ -109,7 +122,7 @@ public class OnboardingSeederTests
         await _sut.SeedStarterTemplatesAsync(TenantId, UserId, default);
 
         var blogEntry = _capturedEntries!.First(e => e.Title == "Blog Post Writer");
-        var version = _capturedVersions!.First(v => v.EntryId == blogEntry.Id);
+        var version = _capturedVersions!.First(v => v.EntryId == blogEntry.Id && v.VersionState == VersionState.Published);
 
         var prompt = version.Prompts.First();
         prompt.IsTemplate.Should().BeTrue();
