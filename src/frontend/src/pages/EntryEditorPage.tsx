@@ -572,7 +572,7 @@ const EntryEditorPage = () => {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="editor">{editorContent}</TabsContent>
-          <TabsContent value="panel">
+          <TabsContent value="panel" data-tour="editor-actions">
             <EditorActionPanel {...sharedActionProps} versionPanel={versionPanel} />
           </TabsContent>
         </Tabs>

@@ -72,7 +72,8 @@ public class OnboardingSeeder(IOnboardingRepository repo) : IOnboardingSeeder
     )
     {
         var entryId = Guid.NewGuid();
-        var versionId = Guid.NewGuid();
+        var publishedVersionId = Guid.NewGuid();
+        var tabVersionId = Guid.NewGuid();
 
         var entry = new PromptEntry
         {
@@ -85,7 +86,44 @@ public class OnboardingSeeder(IOnboardingRepository repo) : IOnboardingSeeder
             UpdatedAt = now,
         };
 
-        var promptEntities = prompts
+        // Published version (v1)
+        var publishedPrompts = CreatePrompts(prompts, publishedVersionId);
+        var publishedVersion = new PromptEntryVersion
+        {
+            Id = publishedVersionId,
+            EntryId = entryId,
+            Version = 1,
+            VersionState = VersionState.Published,
+            SystemMessage = systemMessage,
+            Prompts = publishedPrompts,
+            PublishedAt = now,
+            PublishedBy = userId,
+            CreatedAt = now,
+        };
+
+        // Working tab so the entry opens in editable mode during onboarding
+        var tabPrompts = CreatePrompts(prompts, tabVersionId);
+        var tabVersion = new PromptEntryVersion
+        {
+            Id = tabVersionId,
+            EntryId = entryId,
+            Version = 0,
+            VersionState = VersionState.Tab,
+            TabName = "Main",
+            IsMainTab = true,
+            SystemMessage = systemMessage,
+            Prompts = tabPrompts,
+            CreatedAt = now,
+        };
+
+        entries.Add(entry);
+        versions.Add(publishedVersion);
+        versions.Add(tabVersion);
+    }
+
+    private static List<Prompt> CreatePrompts(List<string> prompts, Guid versionId)
+    {
+        return prompts
             .Select(
                 (content, i) =>
                 {
@@ -106,21 +144,5 @@ public class OnboardingSeeder(IOnboardingRepository repo) : IOnboardingSeeder
                 }
             )
             .ToList();
-
-        var version = new PromptEntryVersion
-        {
-            Id = versionId,
-            EntryId = entryId,
-            Version = 1,
-            VersionState = VersionState.Published,
-            SystemMessage = systemMessage,
-            Prompts = promptEntities,
-            PublishedAt = now,
-            PublishedBy = userId,
-            CreatedAt = now,
-        };
-
-        entries.Add(entry);
-        versions.Add(version);
     }
 }

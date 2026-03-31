@@ -131,7 +131,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     popover: {
       title: "You're All Set!",
-      description: 'Start creating prompts or explore the AI Wizard. Happy forging!',
+      description: 'Start creating prompts or explore the AI Wizard. Happy prompting!',
       side: 'over',
       popoverClass: 'tour-popover tour-welcome-modal',
       showButtons: ['next'],

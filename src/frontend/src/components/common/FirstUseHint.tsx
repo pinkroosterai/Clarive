@@ -2,6 +2,7 @@ import { Lightbulb, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { getDocsUrl } from '@/lib/docsUrl';
+import { useAuthStore } from '@/store/authStore';
 
 interface FirstUseHintProps {
   hintId: string;
@@ -13,6 +14,7 @@ interface FirstUseHintProps {
 const STORAGE_PREFIX = 'cl_hint_';
 
 export function FirstUseHint({ hintId, title, description, section }: FirstUseHintProps) {
+  const onboardingCompleted = useAuthStore((s) => s.currentUser?.onboardingCompleted);
   const storageKey = `${STORAGE_PREFIX}${hintId}_dismissed`;
 
   const [dismissed, setDismissed] = useState(() => {
@@ -23,6 +25,8 @@ export function FirstUseHint({ hintId, title, description, section }: FirstUseHi
     }
   });
 
+  // Don't show hints while the onboarding tour is active
+  if (!onboardingCompleted) return null;
   if (dismissed) return null;
 
   const handleDismiss = () => {
