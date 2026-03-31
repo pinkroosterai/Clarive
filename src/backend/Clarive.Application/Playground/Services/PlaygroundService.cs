@@ -130,7 +130,7 @@ public class PlaygroundService(
         await runService.SaveRunAsync(run, ct);
         sw.Stop();
 
-        await usageLogger.LogAsync(
+        var cost = await usageLogger.LogAsync(
             tenantId,
             userId,
             AiActionType.PlaygroundTest,
@@ -149,7 +149,9 @@ public class PlaygroundService(
             totalInputTokens,
             totalOutputTokens,
             VersionNumber: version.Version,
-            VersionLabel: versionLabel
+            VersionLabel: versionLabel,
+            EstimatedInputCostUsd: cost.EstimatedInputCostUsd,
+            EstimatedOutputCostUsd: cost.EstimatedOutputCostUsd
         );
     }
 

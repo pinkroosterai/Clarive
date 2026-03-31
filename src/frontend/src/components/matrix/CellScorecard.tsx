@@ -13,14 +13,27 @@ function scoreBorderColor(score: number) {
   return 'border-error-text';
 }
 
+const tokenFormatter = new Intl.NumberFormat('en-US');
+
 interface CellScorecardProps {
   modelName: string;
   versionLabel: string;
   evaluation: Evaluation;
   elapsedMs: number | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  estimatedTotalCostUsd?: number | null;
 }
 
-export function CellScorecard({ modelName, versionLabel, evaluation, elapsedMs }: CellScorecardProps) {
+export function CellScorecard({
+  modelName,
+  versionLabel,
+  evaluation,
+  elapsedMs,
+  inputTokens,
+  outputTokens,
+  estimatedTotalCostUsd,
+}: CellScorecardProps) {
   const sortedDimensions = Object.entries(evaluation.dimensions).sort(([a], [b]) => {
     const ai = DIMENSION_ORDER.indexOf(a);
     const bi = DIMENSION_ORDER.indexOf(b);
@@ -105,10 +118,22 @@ export function CellScorecard({ modelName, versionLabel, evaluation, elapsedMs }
         })}
       </div>
 
-      {/* Elapsed time footer */}
-      {elapsedMs != null && (
+      {/* Stats footer */}
+      {(elapsedMs != null || inputTokens != null || outputTokens != null) && (
         <div className="text-xs text-foreground-muted text-center pt-2 border-t border-border-subtle">
-          Completed in {elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`}
+          {[
+            elapsedMs != null
+              ? elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`
+              : null,
+            inputTokens != null || outputTokens != null
+              ? `${tokenFormatter.format((inputTokens ?? 0) + (outputTokens ?? 0))} tok`
+              : null,
+            estimatedTotalCostUsd != null
+              ? `~$${estimatedTotalCostUsd.toFixed(4)}`
+              : inputTokens != null || outputTokens != null
+                ? '\u2014'
+                : null,
+          ].filter(Boolean).join(' \u00b7 ')}
         </div>
       )}
     </div>

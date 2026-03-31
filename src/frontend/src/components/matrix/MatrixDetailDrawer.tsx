@@ -289,6 +289,9 @@ export function MatrixDetailDrawer({
                     versionLabel={selectedCellVersion?.label ?? 'Unknown'}
                     evaluation={selectedCellData.evaluation}
                     elapsedMs={selectedCellData.elapsedMs}
+                    inputTokens={selectedCellData.inputTokens}
+                    outputTokens={selectedCellData.outputTokens}
+                    estimatedTotalCostUsd={selectedCellData.estimatedTotalCostUsd}
                   />
                 </motion.div>
               ) : selectedCellData?.status === 'running' ? (

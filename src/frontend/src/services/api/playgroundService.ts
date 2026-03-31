@@ -33,6 +33,8 @@ export interface TestStreamResult {
   judgeScores: Evaluation | null;
   versionNumber: number | null;
   versionLabel: string | null;
+  estimatedInputCostUsd: number | null;
+  estimatedOutputCostUsd: number | null;
 }
 
 export interface TestRunResponse {

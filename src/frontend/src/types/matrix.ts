@@ -16,6 +16,9 @@ export interface MatrixCell {
   evaluation: Evaluation | null;
   error: string | null;
   elapsedMs: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  estimatedTotalCostUsd: number | null;
 }
 
 // ── Matrix row — one prompt version ──
@@ -87,6 +90,9 @@ export function createEmptyCell(versionId: string, modelId: string): MatrixCell 
     evaluation: null,
     error: null,
     elapsedMs: null,
+    inputTokens: null,
+    outputTokens: null,
+    estimatedTotalCostUsd: null,
   };
 }
 

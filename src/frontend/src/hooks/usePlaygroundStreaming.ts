@@ -161,6 +161,10 @@ export function usePlaygroundStreaming({
     input: number | null;
     output: number | null;
   } | null>(null);
+  const [lastCost, setLastCost] = useState<{
+    input: number | null;
+    output: number | null;
+  } | null>(null);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
   const [lastJudgeScores, setLastJudgeScores] = useState<Evaluation | null>(null);
   const [lastVersionLabel, setLastVersionLabel] = useState<string | null>(null);
@@ -202,6 +206,7 @@ export function usePlaygroundStreaming({
     resetAutoFollow();
     resetCountdown();
     setLastTokens(null);
+    setLastCost(null);
     setLastRunId(null);
     setLastJudgeScores(null);
     setLastVersionLabel(null);
@@ -239,6 +244,9 @@ export function usePlaygroundStreaming({
 
       if (result.inputTokens != null || result.outputTokens != null) {
         setLastTokens({ input: result.inputTokens, output: result.outputTokens });
+      }
+      if (result.estimatedInputCostUsd != null || result.estimatedOutputCostUsd != null) {
+        setLastCost({ input: result.estimatedInputCostUsd, output: result.estimatedOutputCostUsd });
       }
       setLastRunId(result.runId);
       setLastJudgeScores(result.judgeScores ?? null);
@@ -295,6 +303,7 @@ export function usePlaygroundStreaming({
     setError(null);
     setWasStopped(false);
     setLastTokens(null);
+    setLastCost(null);
     setLastRunId(null);
     setLastJudgeScores(null);
     setLastVersionLabel(null);
@@ -311,6 +320,7 @@ export function usePlaygroundStreaming({
     elapsedSeconds,
     approxOutputTokens,
     lastTokens,
+    lastCost,
     lastRunId,
     lastJudgeScores,
     lastVersionLabel,

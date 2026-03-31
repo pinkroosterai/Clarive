@@ -26,5 +26,7 @@ public record TestStreamResult(
     long? OutputTokens,
     OutputEvaluation? JudgeScores = null,
     int? VersionNumber = null,
-    string? VersionLabel = null
+    string? VersionLabel = null,
+    decimal? EstimatedInputCostUsd = null,
+    decimal? EstimatedOutputCostUsd = null
 );

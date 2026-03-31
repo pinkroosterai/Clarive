@@ -18,7 +18,14 @@ interface UseMatrixExecutionOptions {
   setCellResult: (
     versionId: string,
     modelId: string,
-    result: { score: number | null; evaluation: Evaluation | null; elapsedMs: number },
+    result: {
+      score: number | null;
+      evaluation: Evaluation | null;
+      elapsedMs: number;
+      inputTokens?: number | null;
+      outputTokens?: number | null;
+      estimatedTotalCostUsd?: number | null;
+    },
   ) => void;
   setCellError: (versionId: string, modelId: string, error: string) => void;
   selectCell: (cell: CellKey | null) => void;
@@ -130,10 +137,18 @@ export function useMatrixExecution({
 
         // Persist final segments to matrix state (single dispatch)
         setCellSegments(versionId, modelId, [...activeStreamRef.current.segments]);
+        const totalCost =
+          result.estimatedInputCostUsd != null || result.estimatedOutputCostUsd != null
+            ? (result.estimatedInputCostUsd ?? 0) + (result.estimatedOutputCostUsd ?? 0)
+            : null;
+
         setCellResult(versionId, modelId, {
           score: avgScore,
           evaluation: result.judgeScores,
           elapsedMs,
+          inputTokens: result.inputTokens,
+          outputTokens: result.outputTokens,
+          estimatedTotalCostUsd: totalCost,
         });
       } catch (err) {
         stopStreamSync();

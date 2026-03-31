@@ -3,6 +3,7 @@ using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
 using Clarive.Domain.Interfaces.Repositories;
 using Clarive.Domain.Interfaces.Services;
+using Clarive.Domain.ValueObjects;
 
 namespace Clarive.Application.AiProviders.Services;
 
@@ -13,7 +14,7 @@ public class AiUsageLogger(
     ILogger<AiUsageLogger> logger
 ) : IAiUsageLogger
 {
-    public async Task LogAsync(
+    public async Task<AiUsageCostResult> LogAsync(
         Guid tenantId,
         Guid userId,
         AiActionType actionType,
@@ -56,6 +57,11 @@ public class AiUsageLogger(
             }
 
             await repo.AddAsync(log, ct);
+
+            return new AiUsageCostResult(
+                log.EstimatedInputCostUsd,
+                log.EstimatedOutputCostUsd
+            );
         }
         catch (Exception ex)
         {
@@ -65,6 +71,7 @@ public class AiUsageLogger(
                 actionType,
                 model
             );
+            return new AiUsageCostResult(null, null);
         }
     }
 

@@ -3,6 +3,7 @@ import { Copy } from 'lucide-react';
 import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
+import { RunMetadataBar } from '@/components/playground/RunMetadataBar';
 import { SegmentTimeline } from '@/components/playground/SegmentTimeline';
 import { scoreColor } from '@/components/wizard/scoreUtils';
 import { Badge } from '@/components/ui/badge';
@@ -219,6 +220,16 @@ export function MatrixComparisonPanel({
                       <p className="text-xs text-foreground-muted">Generating...</p>
                     ) : null}
                   </div>
+
+                  {/* Token & cost metadata */}
+                  {cell.status === 'completed' && !isStreaming && (
+                    <RunMetadataBar
+                      inputTokens={cell.inputTokens}
+                      outputTokens={cell.outputTokens}
+                      estimatedTotalCostUsd={cell.estimatedTotalCostUsd}
+                      elapsedMs={cell.elapsedMs}
+                    />
+                  )}
 
                   {/* Column footer */}
                   {responseText && !isStreaming && (

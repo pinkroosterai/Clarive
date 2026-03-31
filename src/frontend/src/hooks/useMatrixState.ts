@@ -289,7 +289,14 @@ export function useMatrixState(entryId?: string) {
     (
       versionId: string,
       modelId: string,
-      result: { score: number | null; evaluation: Evaluation | null; elapsedMs: number },
+      result: {
+        score: number | null;
+        evaluation: Evaluation | null;
+        elapsedMs: number;
+        inputTokens?: number | null;
+        outputTokens?: number | null;
+        estimatedTotalCostUsd?: number | null;
+      },
     ) =>
       dispatch({
         type: 'UPDATE_CELL',
