@@ -1,11 +1,9 @@
-import { ArrowLeft, Clock, FileText, Play, Square, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Clock, FileText, Play, Square, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface MatrixToolbarProps {
-  entryId: string;
   onRunAll: () => void;
   onAbortAll: () => void;
   isRunning: boolean;
@@ -20,7 +18,6 @@ interface MatrixToolbarProps {
 }
 
 export function MatrixToolbar({
-  entryId,
   onRunAll,
   onAbortAll,
   isRunning,
@@ -33,26 +30,60 @@ export function MatrixToolbar({
   hasCompletedCells,
   onGenerateReport,
 }: MatrixToolbarProps) {
-  const navigate = useNavigate();
-
   return (
     <div className="flex items-center gap-2">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 shrink-0"
-            onClick={() => navigate(`/entry/${entryId}`)}
-            aria-label="Back to editor"
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Back to editor</TooltipContent>
-      </Tooltip>
+      {/* Secondary actions: Clear, History, Report */}
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={onClearMatrix}
+              disabled={!matrixHasCells}
+              aria-label="Clear grid"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Clear all</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={showHistory ? 'secondary' : 'ghost'}
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={onToggleHistory}
+              aria-label="Toggle history"
+            >
+              <Clock className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Test history</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={onGenerateReport}
+              disabled={!hasCompletedCells}
+              aria-label="Generate report"
+            >
+              <FileText className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Generate report</TooltipContent>
+        </Tooltip>
+      </div>
 
-      {/* Run / Stop */}
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Primary action: Run / Stop */}
       {isRunning ? (
         <Button variant="destructive" size="sm" className="gap-2" onClick={onAbortAll}>
           <Square className="size-3.5" />
@@ -76,57 +107,6 @@ export function MatrixToolbar({
           {runDisabledReason && <TooltipContent>{runDisabledReason}</TooltipContent>}
         </Tooltip>
       )}
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Report + History + Clear */}
-      <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 shrink-0"
-              onClick={onGenerateReport}
-              disabled={!hasCompletedCells}
-              aria-label="Generate report"
-            >
-              <FileText className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Generate report</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={showHistory ? 'secondary' : 'ghost'}
-              size="icon"
-              className="size-8 shrink-0"
-              onClick={onToggleHistory}
-              aria-label="Toggle history"
-            >
-              <Clock className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Test history</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 shrink-0"
-              onClick={onClearMatrix}
-              disabled={!matrixHasCells}
-              aria-label="Clear grid"
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Clear all</TooltipContent>
-        </Tooltip>
-      </div>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 import { useMemo, useCallback, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { HelpLink } from '@/components/common/HelpLink';
@@ -11,7 +12,9 @@ import { MatrixGrid } from '@/components/matrix/MatrixGrid';
 import { MatrixHistoryPanel } from '@/components/matrix/MatrixHistoryPanel';
 import { MatrixToolbar } from '@/components/matrix/MatrixToolbar';
 import { ReportPreviewDialog } from '@/components/matrix/report/ReportPreviewDialog';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMatrixExecution } from '@/hooks/useMatrixExecution';
 import { useMatrixPageData } from '@/hooks/useMatrixPageData';
 import { useMatrixPagePersistence } from '@/hooks/useMatrixPagePersistence';
@@ -23,6 +26,7 @@ import { fillTemplateFields } from '@/services/api/playgroundService';
 
 function TestMatrixPage() {
   const { entryId } = useParams<{ entryId: string }>();
+  const navigate = useNavigate();
 
   // ── Data ──
   const { entry, tabs, versions, models, templateFields } = useMatrixPageData(entryId);
@@ -176,6 +180,20 @@ function TestMatrixPage() {
         {/* Page header */}
         <div className="px-4 pt-4">
           <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0"
+                  onClick={() => navigate(`/entry/${entryId}`)}
+                  aria-label="Back to editor"
+                >
+                  <ArrowLeft className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Back to editor</TooltipContent>
+            </Tooltip>
             <h1 className="text-2xl font-bold tracking-tight">Playground</h1>
             <HelpLink section="playground" />
           </div>
@@ -184,7 +202,6 @@ function TestMatrixPage() {
         {/* Action bar */}
         <div className="px-4 py-2 border-b border-border-subtle shrink-0">
           <MatrixToolbar
-            entryId={entryId}
             onRunAll={execution.runAll}
             onAbortAll={execution.abortAll}
             isRunning={execution.isRunning}
