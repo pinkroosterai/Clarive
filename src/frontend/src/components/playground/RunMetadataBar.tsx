@@ -1,23 +1,4 @@
-const tokenFormatter = new Intl.NumberFormat('en-US');
-
-function formatCost(total: number | null): string {
-  if (total == null) return '\u2014';
-  return `~$${total.toFixed(4)}`;
-}
-
-function resolveTotalCost(
-  totalCost: number | null | undefined,
-  inputCost: number | null | undefined,
-  outputCost: number | null | undefined,
-): number | null {
-  if (totalCost != null) return totalCost;
-  if (inputCost != null || outputCost != null) return (inputCost ?? 0) + (outputCost ?? 0);
-  return null;
-}
-
-function formatTokens(count: number): string {
-  return tokenFormatter.format(count);
-}
+import { formatTokenCount, formatCost, formatElapsed, resolveTotalCost } from '@/lib/formatters';
 
 interface RunMetadataBarProps {
   inputTokens: number | null;
@@ -41,12 +22,12 @@ export function RunMetadataBar({
   const parts: string[] = [];
 
   if (elapsedMs != null) {
-    parts.push(elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`);
+    parts.push(formatElapsed(elapsedMs));
   }
 
   if (inputTokens != null || outputTokens != null) {
-    const inStr = inputTokens != null ? formatTokens(inputTokens) : '0';
-    const outStr = outputTokens != null ? formatTokens(outputTokens) : '0';
+    const inStr = inputTokens != null ? formatTokenCount(inputTokens) : '0';
+    const outStr = outputTokens != null ? formatTokenCount(outputTokens) : '0';
     parts.push(`${inStr} in \u00b7 ${outStr} out`);
   }
 

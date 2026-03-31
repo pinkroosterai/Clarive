@@ -1,6 +1,7 @@
 import { ChevronDown, ClipboardCheck } from 'lucide-react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { formatTokenCount, formatCost, formatElapsed } from '@/lib/formatters';
 import { scoreColor } from '@/components/wizard/scoreUtils';
 import { cn } from '@/lib/utils';
 import type { Evaluation } from '@/services/api/playgroundService';
@@ -12,8 +13,6 @@ function scoreBorderColor(score: number) {
   if (score >= 5) return 'border-warning-text';
   return 'border-error-text';
 }
-
-const tokenFormatter = new Intl.NumberFormat('en-US');
 
 interface CellScorecardProps {
   modelName: string;
@@ -122,17 +121,13 @@ export function CellScorecard({
       {(elapsedMs != null || inputTokens != null || outputTokens != null) && (
         <div className="text-xs text-foreground-muted text-center pt-2 border-t border-border-subtle">
           {[
-            elapsedMs != null
-              ? elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`
+            elapsedMs != null ? formatElapsed(elapsedMs) : null,
+            inputTokens != null || outputTokens != null
+              ? `${formatTokenCount((inputTokens ?? 0) + (outputTokens ?? 0))} tok`
               : null,
             inputTokens != null || outputTokens != null
-              ? `${tokenFormatter.format((inputTokens ?? 0) + (outputTokens ?? 0))} tok`
+              ? formatCost(estimatedTotalCostUsd ?? null)
               : null,
-            estimatedTotalCostUsd != null
-              ? `~$${estimatedTotalCostUsd.toFixed(4)}`
-              : inputTokens != null || outputTokens != null
-                ? '\u2014'
-                : null,
           ].filter(Boolean).join(' \u00b7 ')}
         </div>
       )}
