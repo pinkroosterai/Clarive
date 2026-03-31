@@ -10,7 +10,7 @@ public class LogCleanupJob(
     ILogger<LogCleanupJob> logger
 ) : IJob
 {
-    private static readonly TimeSpan MaxAge = TimeSpan.FromDays(30);
+    private static readonly TimeSpan MaxAge = TimeSpan.FromDays(7);
 
     public async Task Execute(IJobExecutionContext context)
     {

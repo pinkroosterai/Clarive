@@ -200,7 +200,7 @@ function TestMatrixPage() {
         </div>
 
         {/* Grid */}
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1">
           <MatrixGrid
             state={state}
             selectedCell={state.selectedCell}
