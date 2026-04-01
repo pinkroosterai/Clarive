@@ -54,6 +54,11 @@ function renderProgressDots(popover: PopoverDOM, state: State) {
     container.appendChild(dot);
   }
 
+  const counter = document.createElement('span');
+  counter.className = 'tour-progress-text';
+  counter.textContent = `${current + 1} / ${total}`;
+  container.appendChild(counter);
+
   popover.footer.prepend(container);
 
   // Inject logo for welcome/closing steps
@@ -101,6 +106,7 @@ export function OnboardingTour() {
       console.warn('[silentCatch] onboarding:complete:', err);
     });
     setUser({ ...currentUser, onboardingCompleted: true });
+    navigateRef.current('/', { replace: true });
   }, [currentUser, setUser]);
 
   useEffect(() => {
@@ -151,8 +157,9 @@ export function OnboardingTour() {
             return;
           }
 
-          // Cross-page navigation
-          if (targetRoute && nextStep.element && locationRef.current !== targetRoute) {
+          // Cross-page navigation (compare pathname only, ignore query params)
+          const targetPath = targetRoute?.split('?')[0];
+          if (targetRoute && nextStep.element && locationRef.current !== targetPath) {
             navigateRef.current(targetRoute);
             const el = await waitForElement(nextStep.element as string);
             if (!el) {

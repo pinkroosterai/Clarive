@@ -22,6 +22,10 @@ export async function completeOnboarding(): Promise<void> {
   await api.post<void>('/api/profile/complete-onboarding');
 }
 
+export async function resetOnboarding(): Promise<void> {
+  await api.post<void>('/api/profile/reset-onboarding');
+}
+
 export async function uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
   const formData = new FormData();
   formData.append('avatar', file);

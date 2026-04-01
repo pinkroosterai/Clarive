@@ -85,6 +85,11 @@ export const useAuthStore = create<AuthState>((rawSet, get) => {
       setRefreshToken(null);
       setActiveWorkspaceId(null);
       queryClient.clear();
+      // Clear per-user hint dismissals to prevent localStorage bloat
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('cl_hint_')) localStorage.removeItem(key);
+      }
       set({
         currentUser: null,
         workspaces: [],

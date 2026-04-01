@@ -133,4 +133,20 @@ public class ProfileService(
 
         return Result.Success;
     }
+
+    public async Task<ErrorOr<Success>> ResetOnboardingAsync(
+        Guid tenantId,
+        Guid userId,
+        CancellationToken ct
+    )
+    {
+        var user = await userRepo.GetByIdAsync(tenantId, userId, ct);
+        if (user is null)
+            return DomainErrors.UserNotFound;
+
+        user.OnboardingCompleted = false;
+        await userRepo.UpdateAsync(user, ct);
+
+        return Result.Success;
+    }
 }

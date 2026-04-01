@@ -17,6 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormControl,
+  FormDescription,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -139,6 +140,7 @@ const RegisterPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
+                    <FormDescription>Must be at least 12 characters</FormDescription>
                     <FormControl>
                       <div className="relative">
                         <Input

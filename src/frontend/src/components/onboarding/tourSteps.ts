@@ -83,7 +83,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     resolveRoute: () => {
       const card = document.querySelector("[data-tour='entry-card']");
       const entryId = card?.getAttribute('data-entry-id');
-      return entryId ? `/entry/${entryId}` : null;
+      return entryId ? `/entry/${entryId}?tab=main` : null;
     },
     element: "[data-tour='prompt-editor']",
     popover: {
@@ -101,7 +101,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
       title: 'System Message',
       description:
         "Set the AI's behavior and persona. This is sent before your prompts to guide the model.",
-      side: 'bottom',
+      side: 'right',
       align: 'start',
     },
   },

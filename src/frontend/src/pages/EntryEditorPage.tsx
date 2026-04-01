@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Redo2, Star, Undo2 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate, useBlocker } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { FirstUseHint } from '@/components/common/FirstUseHint';
@@ -40,6 +40,7 @@ import type { TabInfo } from '@/types';
 
 const EntryEditorPage = () => {
   const { entryId, version } = useParams<{ entryId: string; version?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const currentUser = useAuthStore((s) => s.currentUser);
@@ -79,11 +80,19 @@ const EntryEditorPage = () => {
     }
   }, [activeTabId, mainTab, tabs]);
   useEffect(() => {
+    if (searchParams.get('tab') === 'main') {
+      setViewingPublished(false);
+      shouldDefaultToPublished.current = false;
+      const next = new URLSearchParams(searchParams);
+      next.delete('tab');
+      setSearchParams(next, { replace: true });
+      return;
+    }
     if (shouldDefaultToPublished.current && hasPublishedVersion) {
       setViewingPublished(true);
       shouldDefaultToPublished.current = false;
     }
-  }, [hasPublishedVersion]);
+  }, [hasPublishedVersion, searchParams, setSearchParams]);
 
   // Fetch active tab content (or main entry for version view / published view)
   const {

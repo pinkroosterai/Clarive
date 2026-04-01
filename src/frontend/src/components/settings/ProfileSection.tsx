@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { Camera, Trash2, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Camera, Trash2, Loader2, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { HelpLink } from '@/components/common/HelpLink';
@@ -342,6 +343,41 @@ export default function ProfileSection() {
           </section>
         </>
       )}
+
+      <Separator />
+
+      {/* Onboarding */}
+      <OnboardingSection />
     </div>
+  );
+}
+
+function OnboardingSection() {
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const setUser = useAuthStore((s) => s.setUser);
+  const navigate = useNavigate();
+
+  const resetTour = useMutation({
+    mutationFn: () => import('@/services/api/profileService').then((m) => m.resetOnboarding()),
+    onSuccess: () => {
+      if (currentUser) {
+        setUser({ ...currentUser, onboardingCompleted: false });
+      }
+      navigate('/');
+    },
+    onError: (err: unknown) => handleApiError(err, { fallback: 'Failed to reset onboarding' }),
+  });
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">Onboarding</h2>
+      <p className="text-sm text-foreground-muted">
+        Replay the guided tour to revisit key features of Clarive.
+      </p>
+      <Button variant="outline" onClick={() => resetTour.mutate()} disabled={resetTour.isPending}>
+        <RotateCcw className="mr-1.5 h-4 w-4" />
+        {resetTour.isPending ? 'Restarting...' : 'Restart onboarding tour'}
+      </Button>
+    </section>
   );
 }

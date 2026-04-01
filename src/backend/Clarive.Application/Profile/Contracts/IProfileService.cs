@@ -18,4 +18,10 @@ public interface IProfileService
         Guid userId,
         CancellationToken ct = default
     );
+
+    Task<ErrorOr<Success>> ResetOnboardingAsync(
+        Guid tenantId,
+        Guid userId,
+        CancellationToken ct = default
+    );
 }

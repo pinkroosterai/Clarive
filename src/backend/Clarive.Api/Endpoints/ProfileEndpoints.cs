@@ -15,6 +15,7 @@ public static class ProfileEndpoints
         group.MapGet("/me", HandleGetMe);
         group.MapPatch("/", HandleUpdateProfile);
         group.MapPost("/complete-onboarding", HandleCompleteOnboarding);
+        group.MapPost("/reset-onboarding", HandleResetOnboarding);
 
         group.MapPost("/avatar", HandleUploadAvatar).DisableAntiforgery();
 
@@ -89,6 +90,22 @@ public static class ProfileEndpoints
         var userId = ctx.GetUserId();
 
         var result = await profileService.CompleteOnboardingAsync(tenantId, userId, ct);
+        if (result.IsError)
+            return result.Errors.ToHttpResult(ctx);
+
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> HandleResetOnboarding(
+        HttpContext ctx,
+        IProfileService profileService,
+        CancellationToken ct
+    )
+    {
+        var tenantId = ctx.GetTenantId();
+        var userId = ctx.GetUserId();
+
+        var result = await profileService.ResetOnboardingAsync(tenantId, userId, ct);
         if (result.IsError)
             return result.Errors.ToHttpResult(ctx);
 
