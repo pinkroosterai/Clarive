@@ -163,11 +163,11 @@ public class AiProviderService(
             var modelClient = client.GetOpenAIModelClient();
             var response = await modelClient.GetModelsAsync(cts.Token);
 
-            // Fetch provider-native pricing when UseProviderPricing is enabled
-            Dictionary<string, (decimal Input, decimal Output)>? providerPricing = null;
-            if (provider.UseProviderPricing && !string.IsNullOrWhiteSpace(provider.EndpointUrl))
+            // Fetch provider metadata (pricing + capabilities) when endpoint is configured
+            Dictionary<string, ProviderModelMetadata>? providerMetadata = null;
+            if (!string.IsNullOrWhiteSpace(provider.EndpointUrl))
             {
-                providerPricing = await FetchProviderPricingAsync(
+                providerMetadata = await FetchProviderMetadataAsync(
                     provider.EndpointUrl,
                     apiKey,
                     cts.Token
@@ -182,22 +182,29 @@ public class AiProviderService(
                     continue;
 
                 var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, m.Id, ct);
+                ProviderModelMetadata? meta = null;
+                providerMetadata?.TryGetValue(m.Id, out meta);
 
-                // Use provider pricing if available, otherwise fall back to LiteLLM
-                decimal? inputCost = info?.InputCostPerMillion;
-                decimal? outputCost = info?.OutputCostPerMillion;
-                if (providerPricing is not null && providerPricing.TryGetValue(m.Id, out var pricing))
-                {
-                    inputCost = pricing.Input;
-                    outputCost = pricing.Output;
-                }
+                // Merge pricing: provider pricing wins when UseProviderPricing is enabled
+                var inputCost = provider.UseProviderPricing && meta?.InputCostPerMillion is not null
+                    ? meta.InputCostPerMillion
+                    : info?.InputCostPerMillion;
+                var outputCost = provider.UseProviderPricing && meta?.OutputCostPerMillion is not null
+                    ? meta.OutputCostPerMillion
+                    : info?.OutputCostPerMillion;
+
+                // Merge capabilities: OR logic — either source saying true = true
+                var supportsFunctionCalling =
+                    info?.SupportsFunctionCalling == true || meta?.SupportsFunctionCalling == true;
+                var supportsResponseSchema =
+                    info?.SupportsResponseSchema == true || meta?.SupportsResponseSchema == true;
 
                 models.Add(
                     new FetchedModelItem(
                         m.Id,
                         info?.IsReasoning == true || ReasoningModelDetector.IsReasoningModel(m.Id),
-                        info?.SupportsFunctionCalling == true,
-                        info?.SupportsResponseSchema == true,
+                        supportsFunctionCalling,
+                        supportsResponseSchema,
                         info?.MaxInputTokens,
                         info?.MaxOutputTokens,
                         inputCost,
@@ -355,7 +362,14 @@ public class AiProviderService(
         return Result.Success;
     }
 
-    private async Task<Dictionary<string, (decimal Input, decimal Output)>?> FetchProviderPricingAsync(
+    private record ProviderModelMetadata(
+        decimal? InputCostPerMillion,
+        decimal? OutputCostPerMillion,
+        bool? SupportsFunctionCalling,
+        bool? SupportsResponseSchema
+    );
+
+    private async Task<Dictionary<string, ProviderModelMetadata>?> FetchProviderMetadataAsync(
         string endpointUrl,
         string apiKey,
         CancellationToken ct
@@ -393,7 +407,7 @@ public class AiProviderService(
             var json = await httpClient.GetStringAsync(modelsUrl, ct);
             using var doc = JsonDocument.Parse(json);
 
-            var result = new Dictionary<string, (decimal Input, decimal Output)>(
+            var result = new Dictionary<string, ProviderModelMetadata>(
                 StringComparer.OrdinalIgnoreCase
             );
 
@@ -401,19 +415,19 @@ public class AiProviderService(
             {
                 foreach (var model in dataArray.EnumerateArray())
                 {
-                    if (
-                        !model.TryGetProperty("id", out var idProp)
-                        || !model.TryGetProperty("pricing", out var pricingProp)
-                    )
+                    if (!model.TryGetProperty("id", out var idProp))
                         continue;
 
                     var modelId = idProp.GetString();
                     if (string.IsNullOrEmpty(modelId))
                         continue;
 
-                    // OpenRouter pricing format: { prompt: "0.000003", completion: "0.000015" } (per-token, USD)
+                    // Parse pricing: { prompt: "0.000003", completion: "0.000015" } (per-token, USD)
+                    decimal? inputCost = null;
+                    decimal? outputCost = null;
                     if (
-                        pricingProp.TryGetProperty("prompt", out var promptProp)
+                        model.TryGetProperty("pricing", out var pricingProp)
+                        && pricingProp.TryGetProperty("prompt", out var promptProp)
                         && pricingProp.TryGetProperty("completion", out var completionProp)
                         && decimal.TryParse(
                             promptProp.GetString(),
@@ -429,11 +443,38 @@ public class AiProviderService(
                         )
                     )
                     {
-                        result[modelId] = (
-                            promptPerToken * 1_000_000m,
-                            completionPerToken * 1_000_000m
-                        );
+                        inputCost = promptPerToken * 1_000_000m;
+                        outputCost = completionPerToken * 1_000_000m;
                     }
+
+                    // Parse capabilities from supported_parameters array
+                    bool? supportsFunctionCalling = null;
+                    bool? supportsResponseSchema = null;
+                    if (model.TryGetProperty("supported_parameters", out var paramsArray))
+                    {
+                        var paramSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var param in paramsArray.EnumerateArray())
+                        {
+                            var p = param.GetString();
+                            if (p is not null)
+                                paramSet.Add(p);
+                        }
+
+                        if (paramSet.Contains("tools") || paramSet.Contains("tool_choice"))
+                            supportsFunctionCalling = true;
+                        if (
+                            paramSet.Contains("structured_output")
+                            || paramSet.Contains("response_format")
+                        )
+                            supportsResponseSchema = true;
+                    }
+
+                    result[modelId] = new ProviderModelMetadata(
+                        inputCost,
+                        outputCost,
+                        supportsFunctionCalling,
+                        supportsResponseSchema
+                    );
                 }
             }
 
