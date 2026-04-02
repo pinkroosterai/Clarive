@@ -36,6 +36,7 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         AiActionType,
         (string ModelId, string ProviderName)
     > _actionModelInfo = new();
+    private readonly List<HttpClient> _managedHttpClients = new();
 
     private OpenAIClient? _openAiClient;
     private bool _isConfigured;
@@ -228,41 +229,51 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         Dictionary<AiActionType, (ActionAiConfig Config, ResolvedProvider Provider)> resolvedActions
     )
     {
+        // Pre-compute provider keys to avoid duplicate hash computation
+        var actionKeys = new Dictionary<AiActionType, string>();
+        foreach (var (action, (_, provider)) in resolvedActions)
+            actionKeys[action] = GetProviderKey(provider);
+
         // Group by provider to reuse OpenAIClient instances
         var openAiClients = new Dictionary<string, OpenAIClient>();
+        var newHttpClients = new List<HttpClient>();
         OpenAIClient? firstClient = null;
 
-        foreach (var (_, (config, provider)) in resolvedActions)
+        foreach (var (action, (_, provider)) in resolvedActions)
         {
-            var headersHash = provider.CustomHeaders is { Count: > 0 }
-                ? string.Join(",", provider.CustomHeaders.OrderBy(h => h.Key).Select(h => $"{h.Key}={h.Value}"))
-                : "";
-            var providerKey = $"{provider.ApiKey}|{provider.EndpointUrl}|{headersHash}";
+            var providerKey = actionKeys[action];
             if (!openAiClients.ContainsKey(providerKey))
             {
-                var client = CreateOpenAIClient(provider.ApiKey, provider.EndpointUrl, provider.CustomHeaders);
+                var (client, httpClient) = CreateOpenAIClientWithTracking(
+                    provider.ApiKey,
+                    provider.EndpointUrl,
+                    provider.CustomHeaders
+                );
                 openAiClients[providerKey] = client;
+                if (httpClient is not null)
+                    newHttpClients.Add(httpClient);
                 firstClient ??= client;
             }
         }
 
         WithWriteLock(() =>
         {
-            // Dispose old clients
+            // Dispose old chat clients and managed HttpClients
             foreach (var client in _actionClients.Values)
                 (client as IDisposable)?.Dispose();
+            foreach (var httpClient in _managedHttpClients)
+                httpClient.Dispose();
+            _managedHttpClients.Clear();
 
             _actionClients.Clear();
             _actionModelInfo.Clear();
 
             _openAiClient = firstClient;
+            _managedHttpClients.AddRange(newHttpClients);
 
             foreach (var (action, (config, provider)) in resolvedActions)
             {
-                var innerHeadersHash = provider.CustomHeaders is { Count: > 0 }
-                    ? string.Join(",", provider.CustomHeaders.OrderBy(h => h.Key).Select(h => $"{h.Key}={h.Value}"))
-                    : "";
-                var providerKey = $"{provider.ApiKey}|{provider.EndpointUrl}|{innerHeadersHash}";
+                var providerKey = actionKeys[action];
                 var openAiClient = openAiClients[providerKey];
 
                 var baseClient = openAiClient.GetChatClient(config.Model).AsIChatClient();
@@ -283,10 +294,59 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         });
     }
 
+    private static string GetProviderKey(ResolvedProvider provider)
+    {
+        var headersHash = provider.CustomHeaders is { Count: > 0 }
+            ? string.Join(
+                ",",
+                provider.CustomHeaders
+                    .OrderBy(h => h.Key)
+                    .Select(h => $"{h.Key}={h.Value}")
+            )
+            : "";
+        return $"{provider.ApiKey}|{provider.EndpointUrl}|{headersHash}";
+    }
+
+    private static (OpenAIClient Client, HttpClient? ManagedHttpClient) CreateOpenAIClientWithTracking(
+        string apiKey,
+        string? endpointUrl,
+        Dictionary<string, string>? customHeaders
+    )
+    {
+        var hasHeaders = customHeaders is { Count: > 0 };
+
+        if (!string.IsNullOrWhiteSpace(endpointUrl))
+        {
+            var options = new OpenAIClientOptions { Endpoint = new Uri(endpointUrl) };
+            if (hasHeaders)
+            {
+                var handler = new CustomHeadersHandler(customHeaders!);
+                var httpClient = new HttpClient(handler);
+                options.Transport = new HttpClientPipelineTransport(httpClient);
+                return (new OpenAIClient(new ApiKeyCredential(apiKey), options), httpClient);
+            }
+            return (new OpenAIClient(new ApiKeyCredential(apiKey), options), null);
+        }
+
+        if (hasHeaders)
+        {
+            var options = new OpenAIClientOptions();
+            var handler = new CustomHeadersHandler(customHeaders!);
+            var httpClient = new HttpClient(handler);
+            options.Transport = new HttpClientPipelineTransport(httpClient);
+            return (new OpenAIClient(new ApiKeyCredential(apiKey), options), httpClient);
+        }
+
+        return (new OpenAIClient(apiKey), null);
+    }
+
     private void ResetClients() => WithWriteLock(() =>
     {
         foreach (var client in _actionClients.Values)
             (client as IDisposable)?.Dispose();
+        foreach (var httpClient in _managedHttpClients)
+            httpClient.Dispose();
+        _managedHttpClients.Clear();
 
         _actionClients.Clear();
         _actionModelInfo.Clear();
@@ -359,6 +419,9 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         {
             foreach (var client in _actionClients.Values)
                 (client as IDisposable)?.Dispose();
+            foreach (var httpClient in _managedHttpClients)
+                httpClient.Dispose();
+            _managedHttpClients.Clear();
             _actionClients.Clear();
         });
         _lock.Dispose();
