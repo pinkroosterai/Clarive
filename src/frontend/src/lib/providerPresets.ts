@@ -1,14 +1,16 @@
 import {
-  BrainCircuit,
-  Cloud,
-  Cpu,
-  Globe,
-  MessageSquare,
-  Server,
-  Zap,
-  Settings,
-  type LucideIcon,
-} from 'lucide-react';
+  Anthropic,
+  Azure,
+  Groq,
+  Ollama,
+  OpenAI,
+  OpenRouter,
+  Together,
+} from '@lobehub/icons';
+import { Server, Settings } from 'lucide-react';
+import type { ComponentType } from 'react';
+
+type IconComponent = ComponentType<{ size?: number; className?: string }>;
 
 export interface ProviderPreset {
   id: string;
@@ -19,7 +21,7 @@ export interface ProviderPreset {
   customHeaders: Record<string, string>;
   useProviderPricing: boolean;
   description: string;
-  icon: LucideIcon;
+  icon: IconComponent;
 }
 
 export const PROVIDER_PRESETS: ProviderPreset[] = [
@@ -32,7 +34,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     customHeaders: {},
     useProviderPricing: false,
     description: 'GPT-4o, o3, and other OpenAI models',
-    icon: BrainCircuit,
+    icon: OpenAI,
   },
   {
     id: 'anthropic',
@@ -43,7 +45,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     customHeaders: {},
     useProviderPricing: false,
     description: 'Claude Opus, Sonnet, and Haiku models',
-    icon: MessageSquare,
+    icon: Anthropic,
   },
   {
     id: 'openrouter',
@@ -57,7 +59,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     },
     useProviderPricing: true,
     description: '300+ models from all providers via a single API',
-    icon: Globe,
+    icon: OpenRouter,
   },
   {
     id: 'groq',
@@ -68,7 +70,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     customHeaders: {},
     useProviderPricing: false,
     description: 'Ultra-fast inference for Llama, Mixtral, and more',
-    icon: Zap,
+    icon: Groq,
   },
   {
     id: 'together',
@@ -79,7 +81,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     customHeaders: {},
     useProviderPricing: false,
     description: 'Open-source models with serverless or dedicated GPUs',
-    icon: Cpu,
+    icon: Together,
   },
   {
     id: 'ollama',
@@ -90,7 +92,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     customHeaders: {},
     useProviderPricing: false,
     description: 'Local models — no API key required',
-    icon: Server,
+    icon: Ollama,
   },
   {
     id: 'azure',
@@ -101,7 +103,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     customHeaders: {},
     useProviderPricing: false,
     description: 'OpenAI models via Azure — update the endpoint URL',
-    icon: Cloud,
+    icon: Azure,
   },
 ];
 
@@ -117,19 +119,20 @@ export const CUSTOM_PRESET: ProviderPreset = {
   icon: Settings,
 };
 
-const PROVIDER_ICON_MAP: Record<string, LucideIcon> = {
-  openai: BrainCircuit,
-  anthropic: MessageSquare,
-  openrouter: Globe,
-  groq: Zap,
-  'together ai': Cpu,
-  together: Cpu,
-  ollama: Server,
-  'azure openai': Cloud,
-  azure: Cloud,
+const PROVIDER_ICON_MAP: Record<string, IconComponent> = {
+  openai: OpenAI,
+  anthropic: Anthropic,
+  claude: Anthropic,
+  openrouter: OpenRouter,
+  groq: Groq,
+  'together ai': Together,
+  together: Together,
+  ollama: Ollama,
+  'azure openai': Azure,
+  azure: Azure,
 };
 
-export function getProviderIcon(name: string): LucideIcon {
+export function getProviderIcon(name: string): IconComponent {
   const lower = name.toLowerCase();
   for (const [key, icon] of Object.entries(PROVIDER_ICON_MAP)) {
     if (lower.includes(key)) return icon;

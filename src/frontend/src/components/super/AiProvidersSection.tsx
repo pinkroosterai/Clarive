@@ -311,7 +311,7 @@ export default function AiProvidersSection() {
                       onClick={() => selectPreset(preset)}
                       className="flex items-start gap-3 p-3 rounded-lg border border-border-subtle hover:border-primary hover:bg-elevated/50 text-left transition-colors"
                     >
-                      <Icon className="size-5 mt-0.5 text-foreground-muted shrink-0" />
+                      <Icon size={20} className="mt-0.5 text-foreground-muted shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{preset.label}</p>
                         <p className="text-xs text-foreground-muted line-clamp-2">

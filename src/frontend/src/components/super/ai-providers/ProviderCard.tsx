@@ -57,7 +57,7 @@ export default function ProviderCard({
         <button onClick={onToggle} className="shrink-0">
           {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
         </button>
-        <ProviderIcon className="size-4 text-foreground-muted shrink-0" />
+        <ProviderIcon size={16} className="text-foreground-muted shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">{provider.name}</span>

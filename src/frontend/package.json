@@ -26,6 +26,7 @@
     "@llm-ui/code": "^0.13.3",
     "@llm-ui/markdown": "^0.13.3",
     "@llm-ui/react": "^0.13.3",
+    "@lobehub/icons": "^5.2.0",
     "@microsoft/signalr": "^10.0.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
