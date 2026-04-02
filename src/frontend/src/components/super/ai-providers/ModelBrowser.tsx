@@ -93,14 +93,6 @@ export default function ModelBrowser({
     return items;
   }, [groups, collapsedGroups]);
 
-  const parentRef = useRef<HTMLDivElement>(null);
-  const virtualizer = useVirtualizer({
-    count: flatItems.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: (index) => (flatItems[index].type === 'header' ? 30 : 38),
-    overscan: 10,
-  });
-
   const hasActiveFilters = filters.reasoning || filters.functionCalling || filters.responseSchema;
 
   return (
@@ -173,52 +165,13 @@ export default function ModelBrowser({
               />
             </div>
 
-            {/* Virtualized list */}
-            <div ref={parentRef} className="max-h-[350px] overflow-y-auto">
-              {flatItems.length === 0 ? (
-                <p className="text-xs text-foreground-muted text-center py-6">
-                  No matching models.
-                </p>
-              ) : (
-                <div
-                  style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}
-                >
-                  {virtualizer.getVirtualItems().map((virtualRow) => {
-                    const item = flatItems[virtualRow.index];
-                    return (
-                      <div
-                        key={virtualRow.key}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: `${virtualRow.size}px`,
-                          transform: `translateY(${virtualRow.start}px)`,
-                        }}
-                      >
-                        {item.type === 'header' ? (
-                          <button
-                            onClick={() => toggleGroup(item.provider)}
-                            className="flex items-center gap-1.5 px-3 w-full h-full text-xs font-medium text-foreground-muted hover:text-foreground bg-elevated/50"
-                          >
-                            {collapsedGroups.has(item.provider) ? (
-                              <ChevronRight className="size-3" />
-                            ) : (
-                              <ChevronDown className="size-3" />
-                            )}
-                            {item.provider}
-                            <span className="text-[10px] opacity-60">{item.count}</span>
-                          </button>
-                        ) : (
-                          <ModelRow model={item.model} onAdd={onAddModel} />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {/* Virtualized list — mounted as child so useVirtualizer initializes after scroll element exists */}
+            <VirtualModelList
+              flatItems={flatItems}
+              collapsedGroups={collapsedGroups}
+              onToggleGroup={toggleGroup}
+              onAddModel={onAddModel}
+            />
           </div>
         </PopoverContent>
       </Popover>
@@ -235,6 +188,70 @@ export default function ModelBrowser({
           <RefreshCw className="size-3.5" />
         )}
       </Button>
+    </div>
+  );
+}
+
+function VirtualModelList({
+  flatItems,
+  collapsedGroups,
+  onToggleGroup,
+  onAddModel,
+}: {
+  flatItems: FlatItem[];
+  collapsedGroups: Set<string>;
+  onToggleGroup: (provider: string) => void;
+  onAddModel: (modelId: string) => void;
+}) {
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: flatItems.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => (flatItems[index].type === 'header' ? 30 : 38),
+    overscan: 10,
+  });
+
+  return (
+    <div ref={parentRef} className="max-h-[350px] overflow-y-auto">
+      {flatItems.length === 0 ? (
+        <p className="text-xs text-foreground-muted text-center py-6">No matching models.</p>
+      ) : (
+        <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const item = flatItems[virtualRow.index];
+            return (
+              <div
+                key={virtualRow.key}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                {item.type === 'header' ? (
+                  <button
+                    onClick={() => onToggleGroup(item.provider)}
+                    className="flex items-center gap-1.5 px-3 w-full h-full text-xs font-medium text-foreground-muted hover:text-foreground bg-elevated/50"
+                  >
+                    {collapsedGroups.has(item.provider) ? (
+                      <ChevronRight className="size-3" />
+                    ) : (
+                      <ChevronDown className="size-3" />
+                    )}
+                    {item.provider}
+                    <span className="text-[10px] opacity-60">{item.count}</span>
+                  </button>
+                ) : (
+                  <ModelRow model={item.model} onAdd={onAddModel} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
