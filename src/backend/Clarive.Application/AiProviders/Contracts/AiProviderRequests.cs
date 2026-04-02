@@ -6,7 +6,9 @@ public record CreateAiProviderRequest(
     [property: Required, StringLength(100)] string Name,
     [property: StringLength(500)] string? EndpointUrl,
     [property: Required] string ApiKey,
-    string? ApiMode = null
+    string? ApiMode = null,
+    Dictionary<string, string>? CustomHeaders = null,
+    bool UseProviderPricing = false
 );
 
 public record UpdateAiProviderRequest(
@@ -15,7 +17,9 @@ public record UpdateAiProviderRequest(
     string? ApiKey = null,
     bool? IsActive = null,
     int? SortOrder = null,
-    string? ApiMode = null
+    string? ApiMode = null,
+    Dictionary<string, string>? CustomHeaders = null,
+    bool? UseProviderPricing = null
 );
 
 public record AddAiProviderModelRequest(

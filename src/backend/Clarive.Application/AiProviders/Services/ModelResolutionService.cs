@@ -83,7 +83,8 @@ public class ModelResolutionService(
                 apiKey,
                 providerMatch.Provider.EndpointUrl,
                 model,
-                apiMode
+                apiMode,
+                providerMatch.Provider.CustomHeaders
             );
         }
         else

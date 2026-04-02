@@ -1,22 +1,13 @@
-import { Braces, Brain, ChevronsUpDown, Loader2, Lock, LockOpen, Plus, RefreshCw, SquareFunction, X } from 'lucide-react';
+import { Braces, Brain, Lock, LockOpen, Plus, SquareFunction, Trash2, X } from 'lucide-react';
 
-import ModelCapabilityBadges from '../ai-config/ModelCapabilityBadges';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
+import ModelBrowser from './ModelBrowser';
 import { useDebouncedUpdate } from './useDebouncedUpdate';
 
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -52,106 +43,33 @@ export default function ProviderCardExpanded({
   isFetchingModels,
   fetchedModels,
 }: ProviderCardExpandedProps) {
-  const [selectorOpen, setSelectorOpen] = useState(false);
-  const [typeOverrides, setTypeOverrides] = useState<Map<string, boolean>>(new Map());
-
   const availableModels = useMemo(() => {
     if (!fetchedModels) return [];
-    return fetchedModels
-      .filter((m) => !provider.models.some((pm) => pm.modelId === m.modelId))
-      .map((m) => ({
-        ...m,
-        isReasoning: typeOverrides.has(m.modelId) ? typeOverrides.get(m.modelId)! : m.isReasoning,
-      }));
-  }, [fetchedModels, provider.models, typeOverrides]);
+    return fetchedModels.filter(
+      (m) => !provider.models.some((pm) => pm.modelId === m.modelId)
+    );
+  }, [fetchedModels, provider.models]);
 
-  const handleToggleType = (modelId: string, currentIsReasoning: boolean) => {
-    setTypeOverrides((prev) => {
-      const next = new Map(prev);
-      next.set(modelId, !currentIsReasoning);
-      return next;
-    });
-  };
-
-  const handleAddModel = (modelId: string) => {
-    const model = availableModels.find((m) => m.modelId === modelId);
-    onAddModel(modelId, model?.isReasoning);
-  };
+  const handleAddModel = useCallback(
+    (modelId: string) => {
+      const model = availableModels.find((m) => m.modelId === modelId);
+      onAddModel(modelId, model?.isReasoning);
+    },
+    [availableModels, onAddModel]
+  );
 
   return (
     <div className="border-t border-border-subtle px-4 py-3 space-y-4">
-      {/* Add Model — searchable dropdown + fetch button */}
+      {/* Add Model — smart browser + fetch button */}
       <div className="space-y-2">
         <Label className="text-xs text-foreground-muted">Add Model</Label>
-        <div className="flex items-center gap-2">
-          <Popover open={selectorOpen} onOpenChange={setSelectorOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={selectorOpen}
-                className="max-w-sm w-full justify-between text-xs"
-                size="sm"
-                disabled={!fetchedModels}
-              >
-                {isFetchingModels ? (
-                  <span className="flex items-center gap-2 text-foreground-muted">
-                    <Loader2 className="size-3.5 animate-spin" />
-                    Loading models...
-                  </span>
-                ) : !fetchedModels ? (
-                  <span className="text-foreground-muted">Fetch models first</span>
-                ) : availableModels.length === 0 ? (
-                  <span className="text-foreground-muted">All models added</span>
-                ) : (
-                  <span className="text-foreground-muted">
-                    Select model to add ({availableModels.length} available)
-                  </span>
-                )}
-                <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="max-w-sm w-full p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Search models..." className="text-xs" />
-                <CommandList>
-                  <CommandEmpty>No matching models.</CommandEmpty>
-                  <CommandGroup>
-                    {availableModels.map((m) => (
-                      <CommandItem
-                        key={m.modelId}
-                        value={m.modelId}
-                        onSelect={() => handleAddModel(m.modelId)}
-                        className="text-xs font-mono"
-                      >
-                        <Plus className="mr-2 size-3.5 text-foreground-muted" />
-                        <span className="flex-1">{m.modelId}</span>
-                        <ModelCapabilityBadges
-                          isReasoning={m.isReasoning}
-                          supportsFunctionCalling={m.supportsFunctionCalling}
-                          supportsResponseSchema={m.supportsResponseSchema}
-                        />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onFetchModels}
-            disabled={isFetchingModels}
-            title="Fetch available models from provider"
-          >
-            {isFetchingModels ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="size-3.5" />
-            )}
-          </Button>
-        </div>
+        <ModelBrowser
+          models={availableModels}
+          onAddModel={handleAddModel}
+          isFetchingModels={isFetchingModels}
+          onFetchModels={onFetchModels}
+          fetchedModels={fetchedModels}
+        />
       </div>
 
       {/* Configured models table */}
@@ -171,6 +89,27 @@ export default function ProviderCardExpanded({
           </SelectContent>
         </Select>
       </div>
+
+      {/* Use Provider Pricing */}
+      <div className="flex items-center gap-3">
+        <Label className="text-xs text-foreground-muted whitespace-nowrap">
+          Use provider pricing
+        </Label>
+        <Switch
+          checked={provider.useProviderPricing}
+          onCheckedChange={(checked) => onUpdateProvider({ useProviderPricing: checked })}
+          className="scale-90"
+        />
+        <span className="text-[10px] text-foreground-muted">
+          When enabled, model costs are fetched from this provider instead of the global registry.
+        </span>
+      </div>
+
+      {/* Custom Headers */}
+      <CustomHeadersEditor
+        headers={provider.customHeaders}
+        onUpdate={(headers) => onUpdateProvider({ customHeaders: headers })}
+      />
 
       {provider.models.length > 0 && (
         <div className="space-y-2">
@@ -257,6 +196,102 @@ export default function ProviderCardExpanded({
         <p className="text-xs text-foreground-muted text-center py-4">
           Validate the provider, then fetch models to get started.
         </p>
+      )}
+    </div>
+  );
+}
+
+// ── Custom Headers Editor ──
+
+function CustomHeadersEditor({
+  headers,
+  onUpdate,
+}: {
+  headers: Record<string, string> | null;
+  onUpdate: (headers: Record<string, string>) => void;
+}) {
+  const entries = useMemo(() => Object.entries(headers ?? {}), [headers]);
+  const [expanded, setExpanded] = useState(entries.length > 0);
+
+  const handleAdd = useCallback(() => {
+    const updated = { ...(headers ?? {}), '': '' };
+    onUpdate(updated);
+    setExpanded(true);
+  }, [headers, onUpdate]);
+
+  const handleRemove = useCallback(
+    (key: string) => {
+      const updated = { ...(headers ?? {}) };
+      delete updated[key];
+      onUpdate(updated);
+    },
+    [headers, onUpdate]
+  );
+
+  const handleKeyChange = useCallback(
+    (oldKey: string, newKey: string) => {
+      const updated: Record<string, string> = {};
+      for (const [k, v] of Object.entries(headers ?? {})) {
+        updated[k === oldKey ? newKey : k] = v;
+      }
+      onUpdate(updated);
+    },
+    [headers, onUpdate]
+  );
+
+  const handleValueChange = useCallback(
+    (key: string, newValue: string) => {
+      onUpdate({ ...(headers ?? {}), [key]: newValue });
+    },
+    [headers, onUpdate]
+  );
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-xs text-foreground-muted hover:text-foreground flex items-center gap-1"
+        >
+          Custom Headers
+          {entries.length > 0 && (
+            <span className="text-[10px] bg-elevated px-1.5 py-0.5 rounded">
+              {entries.length}
+            </span>
+          )}
+        </button>
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleAdd}>
+          <Plus className="size-3 mr-1" /> Add
+        </Button>
+      </div>
+      {expanded && entries.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] text-foreground-muted">
+            HTTP headers sent with every API request to this provider.
+          </p>
+          {entries.map(([key, value], index) => (
+            <div key={index} className="flex items-center gap-1.5">
+              <Input
+                value={key}
+                onChange={(e) => handleKeyChange(key, e.target.value)}
+                className="h-6 text-xs flex-1 font-mono"
+                placeholder="Header name"
+              />
+              <Input
+                value={value}
+                onChange={(e) => handleValueChange(key, e.target.value)}
+                className="h-6 text-xs flex-1"
+                placeholder="Value"
+              />
+              <button
+                onClick={() => handleRemove(key)}
+                className="text-destructive hover:text-destructive/80 shrink-0"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

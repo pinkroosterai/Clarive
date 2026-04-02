@@ -2,7 +2,6 @@ import {
   ChevronDown,
   ChevronRight,
   Loader2,
-  Server,
   ShieldCheck,
   Trash2,
   Pencil,
@@ -12,6 +11,7 @@ import ProviderCardExpanded from './ProviderCardExpanded';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { getProviderIcon } from '@/lib/providerPresets';
 import type { AiProviderResponse, FetchedModelItem } from '@/services/api/aiProviderService';
 
 export interface ProviderCardProps {
@@ -48,6 +48,7 @@ export default function ProviderCard({
   fetchedModels,
 }: ProviderCardProps) {
   const activeModels = provider.models.filter((m) => m.isActive);
+  const ProviderIcon = getProviderIcon(provider.name);
 
   return (
     <div className="rounded-lg border border-border-subtle bg-surface">
@@ -56,7 +57,7 @@ export default function ProviderCard({
         <button onClick={onToggle} className="shrink-0">
           {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
         </button>
-        <Server className="size-4 text-foreground-muted shrink-0" />
+        <ProviderIcon className="size-4 text-foreground-muted shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">{provider.name}</span>

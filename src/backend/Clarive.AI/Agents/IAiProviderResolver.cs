@@ -22,5 +22,6 @@ public record ResolvedProvider(
     string ApiKey,
     string? EndpointUrl,
     string ProviderName,
+    Dictionary<string, string>? CustomHeaders,
     AiProviderModel Model
 );

@@ -123,8 +123,8 @@ public class LiteLlmSyncJob(
                     changed = true;
                 }
 
-                // Cost and context fields respect the manual override flag
-                if (!model.HasManualCostOverride)
+                // Cost and context fields respect manual override and provider pricing flags
+                if (!model.HasManualCostOverride && !provider.UseProviderPricing)
                 {
                     if (
                         info.InputCostPerMillion is not null

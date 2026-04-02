@@ -22,7 +22,8 @@ public interface IAgentFactory
         string apiKey,
         string? endpointUrl,
         string model,
-        AiApiMode apiMode = AiApiMode.ResponsesApi
+        AiApiMode apiMode = AiApiMode.ResponsesApi,
+        Dictionary<string, string>? customHeaders = null
     );
     OpenAI.OpenAIClient GetOpenAIClient();
     bool IsConfigured { get; }

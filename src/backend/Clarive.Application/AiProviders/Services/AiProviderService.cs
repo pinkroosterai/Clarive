@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Text.Json;
 using Clarive.Infrastructure.Security;
 using Clarive.Domain.Enums;
 using System.ClientModel;
@@ -16,6 +18,7 @@ public class AiProviderService(
     IAiProviderRepository repo,
     IEncryptionService encryption,
     ILiteLlmRegistryCache liteLlmCache,
+    IHttpClientFactory httpClientFactory,
     ILogger<AiProviderService> logger
 ) : IAiProviderService
 {
@@ -73,6 +76,8 @@ public class AiProviderService(
                         ? AiApiMode.ResponsesApi
                         : AiApiMode.ChatCompletions
                 ),
+            CustomHeaders = request.CustomHeaders,
+            UseProviderPricing = request.UseProviderPricing,
             SortOrder = 0,
             CreatedAt = now,
             UpdatedAt = now,
@@ -115,6 +120,10 @@ public class AiProviderService(
             provider.SortOrder = request.SortOrder.Value;
         if (ParseApiMode(request.ApiMode) is { } parsedMode)
             provider.ApiMode = parsedMode;
+        if (request.CustomHeaders is not null)
+            provider.CustomHeaders = request.CustomHeaders;
+        if (request.UseProviderPricing.HasValue)
+            provider.UseProviderPricing = request.UseProviderPricing.Value;
         provider.UpdatedAt = DateTime.UtcNow;
 
         await repo.UpdateAsync(provider, ct);
@@ -148,6 +157,17 @@ public class AiProviderService(
             var modelClient = client.GetOpenAIModelClient();
             var response = await modelClient.GetModelsAsync(cts.Token);
 
+            // Fetch provider-native pricing when UseProviderPricing is enabled
+            Dictionary<string, (decimal Input, decimal Output)>? providerPricing = null;
+            if (provider.UseProviderPricing && !string.IsNullOrWhiteSpace(provider.EndpointUrl))
+            {
+                providerPricing = await FetchProviderPricingAsync(
+                    provider.EndpointUrl,
+                    apiKey,
+                    cts.Token
+                );
+            }
+
             var models = new List<FetchedModelItem>();
             foreach (var m in response.Value.OrderBy(m => m.Id, StringComparer.OrdinalIgnoreCase))
             {
@@ -156,6 +176,16 @@ public class AiProviderService(
                     continue;
 
                 var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, m.Id, ct);
+
+                // Use provider pricing if available, otherwise fall back to LiteLLM
+                decimal? inputCost = info?.InputCostPerMillion;
+                decimal? outputCost = info?.OutputCostPerMillion;
+                if (providerPricing is not null && providerPricing.TryGetValue(m.Id, out var pricing))
+                {
+                    inputCost = pricing.Input;
+                    outputCost = pricing.Output;
+                }
+
                 models.Add(
                     new FetchedModelItem(
                         m.Id,
@@ -164,8 +194,8 @@ public class AiProviderService(
                         info?.SupportsResponseSchema == true,
                         info?.MaxInputTokens,
                         info?.MaxOutputTokens,
-                        info?.InputCostPerMillion,
-                        info?.OutputCostPerMillion
+                        inputCost,
+                        outputCost
                     )
                 );
             }
@@ -319,6 +349,86 @@ public class AiProviderService(
         return Result.Success;
     }
 
+    private async Task<Dictionary<string, (decimal Input, decimal Output)>?> FetchProviderPricingAsync(
+        string endpointUrl,
+        string apiKey,
+        CancellationToken ct
+    )
+    {
+        try
+        {
+            using var httpClient = httpClientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                "Bearer",
+                apiKey
+            );
+
+            // Normalize endpoint: ensure /models path
+            var baseUrl = endpointUrl.TrimEnd('/');
+            var modelsUrl = baseUrl.EndsWith("/models", StringComparison.OrdinalIgnoreCase)
+                ? baseUrl
+                : $"{baseUrl}/models";
+
+            var json = await httpClient.GetStringAsync(modelsUrl, ct);
+            using var doc = JsonDocument.Parse(json);
+
+            var result = new Dictionary<string, (decimal Input, decimal Output)>(
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            if (doc.RootElement.TryGetProperty("data", out var dataArray))
+            {
+                foreach (var model in dataArray.EnumerateArray())
+                {
+                    if (
+                        !model.TryGetProperty("id", out var idProp)
+                        || !model.TryGetProperty("pricing", out var pricingProp)
+                    )
+                        continue;
+
+                    var modelId = idProp.GetString();
+                    if (string.IsNullOrEmpty(modelId))
+                        continue;
+
+                    // OpenRouter pricing format: { prompt: "0.000003", completion: "0.000015" } (per-token, USD)
+                    if (
+                        pricingProp.TryGetProperty("prompt", out var promptProp)
+                        && pricingProp.TryGetProperty("completion", out var completionProp)
+                        && decimal.TryParse(
+                            promptProp.GetString(),
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            out var promptPerToken
+                        )
+                        && decimal.TryParse(
+                            completionProp.GetString(),
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            out var completionPerToken
+                        )
+                    )
+                    {
+                        result[modelId] = (
+                            promptPerToken * 1_000_000m,
+                            completionPerToken * 1_000_000m
+                        );
+                    }
+                }
+            }
+
+            return result.Count > 0 ? result : null;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Failed to fetch provider pricing from {EndpointUrl} — falling back to LiteLLM",
+                endpointUrl
+            );
+            return null;
+        }
+    }
+
     private static AiApiMode? ParseApiMode(string? value) =>
         value is not null
         && Enum.TryParse<AiApiMode>(value, ignoreCase: true, out var mode)
@@ -332,6 +442,8 @@ public class AiProviderService(
             p.EndpointUrl,
             p.IsActive,
             p.ApiMode.ToString(),
+            p.CustomHeaders,
+            p.UseProviderPricing,
             p.SortOrder,
             !string.IsNullOrEmpty(p.ApiKeyEncrypted),
             p.Models.Select(ToModelResponse).ToList(),

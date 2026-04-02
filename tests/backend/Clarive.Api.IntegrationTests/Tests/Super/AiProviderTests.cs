@@ -428,4 +428,156 @@ public class AiProviderTests : IntegrationTestBase
         status.Should().Be(HttpStatusCode.OK);
         json.GetProperty("hasManualCostOverride").GetBoolean().Should().BeFalse();
     }
+
+    // ── Custom Headers ──
+
+    [Fact]
+    public async Task CreateProvider_WithCustomHeaders_ReturnsHeadersInResponse()
+    {
+        var token = await AuthHelper.GetAdminTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var response = await Client.PostAsJsonAsync(
+            ProvidersUrl,
+            new
+            {
+                name = $"headers-test-{Guid.NewGuid():N}",
+                apiKey = "sk-test-key",
+                customHeaders = new Dictionary<string, string>
+                {
+                    ["HTTP-Referer"] = "https://app.clarive.dev",
+                    ["X-OpenRouter-Title"] = "Clarive",
+                },
+            }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var json = await response.ReadJsonAsync();
+
+        json.GetProperty("customHeaders").GetProperty("HTTP-Referer").GetString().Should().Be("https://app.clarive.dev");
+        json.GetProperty("customHeaders").GetProperty("X-OpenRouter-Title").GetString().Should().Be("Clarive");
+    }
+
+    [Fact]
+    public async Task CreateProvider_WithoutCustomHeaders_ReturnsNullOrMissingHeaders()
+    {
+        var token = await AuthHelper.GetAdminTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var response = await Client.PostAsJsonAsync(
+            ProvidersUrl,
+            new { name = $"no-headers-test-{Guid.NewGuid():N}", apiKey = "sk-test-key" }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var json = await response.ReadJsonAsync();
+
+        // customHeaders may be null or omitted depending on serializer settings
+        if (json.TryGetProperty("customHeaders", out var headers))
+            headers.ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    [Fact]
+    public async Task PatchProvider_UpdateCustomHeaders_ReflectsChanges()
+    {
+        var token = await AuthHelper.GetAdminTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        // Create provider without headers
+        var createResponse = await Client.PostAsJsonAsync(
+            ProvidersUrl,
+            new { name = $"update-headers-test-{Guid.NewGuid():N}", apiKey = "sk-test-key" }
+        );
+        var createJson = await createResponse.ReadJsonAsync();
+        var providerId = createJson.GetProperty("id").GetString()!;
+
+        // Update with headers
+        var patchContent = JsonContent.Create(new
+        {
+            customHeaders = new Dictionary<string, string> { ["X-Custom"] = "value1" },
+        });
+        var patchResponse = await Client.PatchAsync($"{ProvidersUrl}/{providerId}", patchContent);
+
+        patchResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var patchJson = await patchResponse.ReadJsonAsync();
+        patchJson.GetProperty("customHeaders").GetProperty("X-Custom").GetString().Should().Be("value1");
+    }
+
+    // ── UseProviderPricing ──
+
+    [Fact]
+    public async Task CreateProvider_DefaultsUseProviderPricingToFalse()
+    {
+        var token = await AuthHelper.GetAdminTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var response = await Client.PostAsJsonAsync(
+            ProvidersUrl,
+            new { name = $"pricing-default-{Guid.NewGuid():N}", apiKey = "sk-test-key" }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var json = await response.ReadJsonAsync();
+        json.GetProperty("useProviderPricing").GetBoolean().Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task PatchProvider_EnableUseProviderPricing_Persists()
+    {
+        var token = await AuthHelper.GetAdminTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var createResponse = await Client.PostAsJsonAsync(
+            ProvidersUrl,
+            new { name = $"pricing-toggle-{Guid.NewGuid():N}", apiKey = "sk-test-key" }
+        );
+        var createJson = await createResponse.ReadJsonAsync();
+        var providerId = createJson.GetProperty("id").GetString()!;
+
+        // Enable provider pricing
+        var patchContent = JsonContent.Create(new { useProviderPricing = true });
+        var patchResponse = await Client.PatchAsync($"{ProvidersUrl}/{providerId}", patchContent);
+
+        patchResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var patchJson = await patchResponse.ReadJsonAsync();
+        patchJson.GetProperty("useProviderPricing").GetBoolean().Should().BeTrue();
+
+        // Verify via GET
+        var getResponse = await Client.GetAsync(ProvidersUrl);
+        var providers = await getResponse.ReadJsonAsync();
+        var provider = providers
+            .EnumerateArray()
+            .First(p => p.GetProperty("id").GetString() == providerId);
+        provider.GetProperty("useProviderPricing").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetAll_ReturnsCustomHeadersAndUseProviderPricing()
+    {
+        var token = await AuthHelper.GetAdminTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var response = await Client.PostAsJsonAsync(
+            ProvidersUrl,
+            new
+            {
+                name = $"getall-headers-{Guid.NewGuid():N}",
+                apiKey = "sk-test-key",
+                customHeaders = new Dictionary<string, string> { ["X-Test"] = "hello" },
+            }
+        );
+        var createJson = await response.ReadJsonAsync();
+        var providerId = createJson.GetProperty("id").GetString()!;
+
+        var getResponse = await Client.GetAsync(ProvidersUrl);
+        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var providers = await getResponse.ReadJsonAsync();
+        var provider = providers
+            .EnumerateArray()
+            .First(p => p.GetProperty("id").GetString() == providerId);
+
+        provider.GetProperty("customHeaders").GetProperty("X-Test").GetString().Should().Be("hello");
+        provider.GetProperty("useProviderPricing").GetBoolean().Should().BeFalse();
+    }
 }

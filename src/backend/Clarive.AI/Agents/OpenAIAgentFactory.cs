@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Clarive.AI.Configuration;
 using System.ClientModel;
+using System.ClientModel.Primitives;
 using Clarive.Domain.ValueObjects;
 using Clarive.Domain.Entities;
 using Clarive.Domain.Enums;
@@ -132,14 +133,33 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
             .AsAIAgent(instructions: instructions, name: name, loggerFactory: _loggerFactory);
     });
 
-    public static OpenAIClient CreateOpenAIClient(string apiKey, string? endpointUrl)
+    public static OpenAIClient CreateOpenAIClient(
+        string apiKey,
+        string? endpointUrl,
+        Dictionary<string, string>? customHeaders = null
+    )
     {
+        var hasHeaders = customHeaders is { Count: > 0 };
+
         if (!string.IsNullOrWhiteSpace(endpointUrl))
         {
-            return new OpenAIClient(
-                new ApiKeyCredential(apiKey),
-                new OpenAIClientOptions { Endpoint = new Uri(endpointUrl) }
-            );
+            var options = new OpenAIClientOptions { Endpoint = new Uri(endpointUrl) };
+            if (hasHeaders)
+            {
+                var handler = new CustomHeadersHandler(customHeaders!);
+                var httpClient = new HttpClient(handler);
+                options.Transport = new HttpClientPipelineTransport(httpClient);
+            }
+            return new OpenAIClient(new ApiKeyCredential(apiKey), options);
+        }
+
+        if (hasHeaders)
+        {
+            var options = new OpenAIClientOptions();
+            var handler = new CustomHeadersHandler(customHeaders!);
+            var httpClient = new HttpClient(handler);
+            options.Transport = new HttpClientPipelineTransport(httpClient);
+            return new OpenAIClient(new ApiKeyCredential(apiKey), options);
         }
 
         return new OpenAIClient(apiKey);
@@ -214,10 +234,13 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
         foreach (var (_, (config, provider)) in resolvedActions)
         {
-            var providerKey = $"{provider.ApiKey}|{provider.EndpointUrl}";
+            var headersHash = provider.CustomHeaders is { Count: > 0 }
+                ? string.Join(",", provider.CustomHeaders.OrderBy(h => h.Key).Select(h => $"{h.Key}={h.Value}"))
+                : "";
+            var providerKey = $"{provider.ApiKey}|{provider.EndpointUrl}|{headersHash}";
             if (!openAiClients.ContainsKey(providerKey))
             {
-                var client = CreateOpenAIClient(provider.ApiKey, provider.EndpointUrl);
+                var client = CreateOpenAIClient(provider.ApiKey, provider.EndpointUrl, provider.CustomHeaders);
                 openAiClients[providerKey] = client;
                 firstClient ??= client;
             }
@@ -236,7 +259,10 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
 
             foreach (var (action, (config, provider)) in resolvedActions)
             {
-                var providerKey = $"{provider.ApiKey}|{provider.EndpointUrl}";
+                var innerHeadersHash = provider.CustomHeaders is { Count: > 0 }
+                    ? string.Join(",", provider.CustomHeaders.OrderBy(h => h.Key).Select(h => $"{h.Key}={h.Value}"))
+                    : "";
+                var providerKey = $"{provider.ApiKey}|{provider.EndpointUrl}|{innerHeadersHash}";
                 var openAiClient = openAiClients[providerKey];
 
                 var baseClient = openAiClient.GetChatClient(config.Model).AsIChatClient();
@@ -282,10 +308,11 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
         string apiKey,
         string? endpointUrl,
         string model,
-        AiApiMode apiMode = AiApiMode.ResponsesApi
+        AiApiMode apiMode = AiApiMode.ResponsesApi,
+        Dictionary<string, string>? customHeaders = null
     )
     {
-        var client = CreateOpenAIClient(apiKey, endpointUrl);
+        var client = CreateOpenAIClient(apiKey, endpointUrl, customHeaders);
         IChatClient baseClient;
         if (apiMode == AiApiMode.ChatCompletions)
         {

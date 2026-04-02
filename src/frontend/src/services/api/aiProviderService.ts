@@ -25,6 +25,8 @@ export interface AiProviderResponse {
   endpointUrl: string | null;
   isActive: boolean;
   apiMode: string;
+  customHeaders: Record<string, string> | null;
+  useProviderPricing: boolean;
   sortOrder: number;
   isKeyConfigured: boolean;
   models: AiProviderModelResponse[];
@@ -37,6 +39,8 @@ export interface CreateAiProviderRequest {
   endpointUrl?: string;
   apiKey: string;
   apiMode?: string;
+  customHeaders?: Record<string, string>;
+  useProviderPricing?: boolean;
 }
 
 export interface UpdateAiProviderRequest {
@@ -46,6 +50,8 @@ export interface UpdateAiProviderRequest {
   isActive?: boolean;
   sortOrder?: number;
   apiMode?: string;
+  customHeaders?: Record<string, string>;
+  useProviderPricing?: boolean;
 }
 
 export interface AddModelRequest {

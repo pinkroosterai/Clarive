@@ -6,6 +6,8 @@ public record AiProviderResponse(
     string? EndpointUrl,
     bool IsActive,
     string ApiMode,
+    Dictionary<string, string>? CustomHeaders,
+    bool UseProviderPricing,
     int SortOrder,
     bool IsKeyConfigured,
     List<AiProviderModelResponse> Models,

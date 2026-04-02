@@ -10,6 +10,8 @@ public class AiProvider
     public string ApiKeyEncrypted { get; set; } = "";
     public bool IsActive { get; set; } = true;
     public AiApiMode ApiMode { get; set; }
+    public Dictionary<string, string>? CustomHeaders { get; set; }
+    public bool UseProviderPricing { get; set; }
     public int SortOrder { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

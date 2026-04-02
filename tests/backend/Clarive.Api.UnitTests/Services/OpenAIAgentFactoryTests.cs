@@ -145,6 +145,7 @@ public class OpenAIAgentFactoryTests
                 "decrypted-api-key",
                 "https://api.openai.com/v1",
                 "TestProvider",
+                null,
                 new AiProviderModel
                 {
                     Id = Guid.NewGuid(),
