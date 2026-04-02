@@ -9,9 +9,15 @@ public class CustomHeadersHandler(Dictionary<string, string> headers) : Delegati
     {
         foreach (var (key, value) in headers)
         {
+            if (ContainsCrlf(key) || ContainsCrlf(value))
+                continue;
+
             request.Headers.TryAddWithoutValidation(key, value);
         }
 
         return base.SendAsync(request, cancellationToken);
     }
+
+    private static bool ContainsCrlf(string value) =>
+        value.Contains('\r') || value.Contains('\n');
 }

@@ -270,7 +270,7 @@ function CustomHeadersEditor({
             HTTP headers sent with every API request to this provider.
           </p>
           {entries.map(([key, value], index) => (
-            <div key={index} className="flex items-center gap-1.5">
+            <div key={`header-${key || index}`} className="flex items-center gap-1.5">
               <Input
                 value={key}
                 onChange={(e) => handleKeyChange(key, e.target.value)}

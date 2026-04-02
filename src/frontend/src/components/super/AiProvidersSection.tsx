@@ -383,7 +383,7 @@ export default function AiProvidersSection() {
                   {Object.keys(formHeaders).length > 0 && (
                     <div className="space-y-1.5">
                       {Object.entries(formHeaders).map(([key, value], index) => (
-                        <div key={index} className="flex items-center gap-1.5">
+                        <div key={`header-${key || index}`} className="flex items-center gap-1.5">
                           <Input
                             value={key}
                             onChange={(e) => {
