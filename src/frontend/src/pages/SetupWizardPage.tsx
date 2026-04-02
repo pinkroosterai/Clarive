@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
+  ArrowLeft,
   Bot,
   Mail,
   Shield,
@@ -19,6 +20,11 @@ import { AnvilIcon } from '@/components/icons/AnvilIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  PROVIDER_PRESETS,
+  CUSTOM_PRESET,
+  type ProviderPreset,
+} from '@/lib/providerPresets';
 import {
   Select,
   SelectContent,
@@ -47,6 +53,7 @@ const SetupWizardPage = () => {
   }, []);
 
   // AI Provider state
+  const [aiPreset, setAiPreset] = useState<ProviderPreset | null>(null);
   const [aiProviderName, setAiProviderName] = useState('');
   const [aiEndpoint, setAiEndpoint] = useState('');
   const [aiApiKey, setAiApiKey] = useState('');
@@ -76,17 +83,27 @@ const SetupWizardPage = () => {
     },
   });
 
+  const selectAiPreset = (preset: ProviderPreset) => {
+    setAiPreset(preset);
+    setAiProviderName(preset.name);
+    setAiEndpoint(preset.endpointUrl);
+  };
+
   const saveAiConfig = async () => {
     if (!aiApiKey) {
       setStep(step + 1);
       return;
     }
     try {
-      // Create provider via the authenticated providers API
+      const headers = aiPreset?.customHeaders;
+      const hasHeaders = headers && Object.keys(headers).length > 0;
       await api.post('/api/super/ai-providers', {
         name: aiProviderName || 'OpenAI',
         endpointUrl: aiEndpoint || null,
         apiKey: aiApiKey,
+        apiMode: aiPreset?.apiMode || undefined,
+        customHeaders: hasHeaders ? headers : undefined,
+        useProviderPricing: aiPreset?.useProviderPricing || undefined,
       });
       setConfigured((prev) => [...prev, 'AI Provider']);
       toast.success('AI provider configured');
@@ -204,55 +221,101 @@ const SetupWizardPage = () => {
                   evaluation, playground).
                 </p>
               </div>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>Provider Name</Label>
-                  <Input
-                    value={aiProviderName}
-                    onChange={(e) => setAiProviderName(e.target.value)}
-                    placeholder="e.g., OpenAI, Azure OpenAI, Ollama"
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Endpoint URL</Label>
-                  <Input
-                    value={aiEndpoint}
-                    onChange={(e) => setAiEndpoint(e.target.value)}
-                    placeholder="Leave empty for default OpenAI endpoint"
-                    autoComplete="off"
-                  />
-                  <p className="text-xs text-foreground-muted">
-                    For custom providers: https://your-endpoint.com/v1
-                  </p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>API Key</Label>
-                  <Input
-                    type="password"
-                    value={aiApiKey}
-                    onChange={(e) => setAiApiKey(e.target.value)}
-                    placeholder="sk-..."
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(0)} className="gap-1">
-                  <ChevronLeft className="size-4" /> Back
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => setStep(step + 1)}
-                  className="gap-1 text-foreground-muted"
-                >
-                  <SkipForward className="size-4" /> Skip
-                </Button>
-                <Button className="ml-auto gap-1" onClick={saveAiConfig}>
-                  {saveMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-                  Save & Continue <ChevronRight className="size-4" />
-                </Button>
-              </div>
+
+              {!aiPreset ? (
+                <>
+                  {/* Preset selector grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {[...PROVIDER_PRESETS, CUSTOM_PRESET].map((preset) => {
+                      const Icon = preset.icon;
+                      return (
+                        <button
+                          key={preset.id}
+                          onClick={() => selectAiPreset(preset)}
+                          className="flex items-start gap-3 p-3 rounded-lg border border-border-subtle hover:border-primary hover:bg-elevated/50 text-left transition-colors"
+                        >
+                          <Icon size={20} className="mt-0.5 text-foreground-muted shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium">{preset.label}</p>
+                            <p className="text-xs text-foreground-muted line-clamp-2">
+                              {preset.description}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setStep(0)} className="gap-1">
+                      <ChevronLeft className="size-4" /> Back
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setStep(step + 1)}
+                      className="gap-1 text-foreground-muted"
+                    >
+                      <SkipForward className="size-4" /> Skip
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* API key form after preset selection */}
+                  <button
+                    onClick={() => setAiPreset(null)}
+                    className="flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"
+                  >
+                    <ArrowLeft className="size-3" />
+                    Change provider
+                  </button>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label>Provider Name</Label>
+                      <Input
+                        value={aiProviderName}
+                        onChange={(e) => setAiProviderName(e.target.value)}
+                        placeholder="e.g., OpenAI"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Endpoint URL</Label>
+                      <Input
+                        value={aiEndpoint}
+                        onChange={(e) => setAiEndpoint(e.target.value)}
+                        placeholder="Leave empty for default OpenAI endpoint"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>API Key</Label>
+                      <Input
+                        type="password"
+                        value={aiApiKey}
+                        onChange={(e) => setAiApiKey(e.target.value)}
+                        placeholder="sk-..."
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setStep(0)} className="gap-1">
+                      <ChevronLeft className="size-4" /> Back
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setStep(step + 1)}
+                      className="gap-1 text-foreground-muted"
+                    >
+                      <SkipForward className="size-4" /> Skip
+                    </Button>
+                    <Button className="ml-auto gap-1" onClick={saveAiConfig}>
+                      {saveMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                      Save & Continue <ChevronRight className="size-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
