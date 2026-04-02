@@ -1,12 +1,10 @@
-import {
-  Anthropic,
-  Azure,
-  Groq,
-  Ollama,
-  OpenAI,
-  OpenRouter,
-  Together,
-} from '@lobehub/icons';
+import Anthropic from '@lobehub/icons/es/Anthropic/components/Mono';
+import Azure from '@lobehub/icons/es/Azure/components/Mono';
+import Groq from '@lobehub/icons/es/Groq/components/Mono';
+import Ollama from '@lobehub/icons/es/Ollama/components/Mono';
+import OpenAI from '@lobehub/icons/es/OpenAI/components/Mono';
+import OpenRouter from '@lobehub/icons/es/OpenRouter/components/Mono';
+import Together from '@lobehub/icons/es/Together/components/Mono';
 import { Server, Settings } from 'lucide-react';
 import type { ComponentType } from 'react';
 
