@@ -25,7 +25,7 @@ import type {
 interface ProviderCardExpandedProps {
   provider: AiProviderResponse;
   onFetchModels: () => Promise<FetchedModelItem[]>;
-  onAddModel: (modelId: string, isReasoning?: boolean) => void;
+  onAddModel: (model: FetchedModelItem) => void;
   onUpdateModel: (modelId: string, data: Record<string, unknown>) => void;
   onDeleteModel: (modelId: string) => void;
   onUpdateProvider: (data: Record<string, unknown>) => void;
@@ -53,7 +53,7 @@ export default function ProviderCardExpanded({
   const handleAddModel = useCallback(
     (modelId: string) => {
       const model = availableModels.find((m) => m.modelId === modelId);
-      onAddModel(modelId, model?.isReasoning);
+      if (model) onAddModel(model);
     },
     [availableModels, onAddModel]
   );

@@ -121,17 +121,21 @@ export default function AiProvidersSection() {
   const addModelMutation = useMutation({
     mutationFn: ({
       providerId,
-      modelId,
-      isReasoning,
+      model,
     }: {
       providerId: string;
-      modelId: string;
-      isReasoning?: boolean;
+      model: FetchedModelItem;
     }) =>
       addModel(providerId, {
-        modelId,
-        isReasoning,
-        defaultReasoningEffort: isReasoning ? 'medium' : undefined,
+        modelId: model.modelId,
+        isReasoning: model.isReasoning,
+        supportsFunctionCalling: model.supportsFunctionCalling,
+        supportsResponseSchema: model.supportsResponseSchema,
+        maxInputTokens: model.maxInputTokens,
+        maxOutputTokens: model.maxOutputTokens,
+        inputCostPerMillion: model.inputCostPerMillion,
+        outputCostPerMillion: model.outputCostPerMillion,
+        defaultReasoningEffort: model.isReasoning ? 'medium' : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['super', 'ai-providers'] });
@@ -263,8 +267,8 @@ export default function AiProvidersSection() {
               onDelete={() => deleteMutation.mutate(provider.id)}
               onValidate={() => validateMutation.mutate(provider.id)}
               onFetchModels={() => handleFetchAndShow(provider.id)}
-              onAddModel={(modelId, isReasoning) =>
-                addModelMutation.mutate({ providerId: provider.id, modelId, isReasoning })
+              onAddModel={(model) =>
+                addModelMutation.mutate({ providerId: provider.id, model })
               }
               onUpdateModel={(modelId, data) =>
                 updateModelMutation.mutate({ providerId: provider.id, modelId, data })

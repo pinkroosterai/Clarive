@@ -22,7 +22,7 @@ export interface ProviderCardProps {
   onDelete: () => void;
   onValidate: () => void;
   onFetchModels: () => Promise<FetchedModelItem[]>;
-  onAddModel: (modelId: string, isReasoning?: boolean) => void;
+  onAddModel: (model: FetchedModelItem) => void;
   onUpdateModel: (modelId: string, data: Record<string, unknown>) => void;
   onDeleteModel: (modelId: string) => void;
   onUpdateProvider: (data: Record<string, unknown>) => void;
