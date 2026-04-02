@@ -3,6 +3,7 @@ import {
   Cloud,
   Cpu,
   Globe,
+  MessageSquare,
   Server,
   Zap,
   Settings,
@@ -32,6 +33,17 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     useProviderPricing: false,
     description: 'GPT-4o, o3, and other OpenAI models',
     icon: BrainCircuit,
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    label: 'Anthropic',
+    endpointUrl: 'https://api.anthropic.com/v1',
+    apiMode: 'ChatCompletions',
+    customHeaders: {},
+    useProviderPricing: false,
+    description: 'Claude Opus, Sonnet, and Haiku models',
+    icon: MessageSquare,
   },
   {
     id: 'openrouter',
@@ -107,6 +119,7 @@ export const CUSTOM_PRESET: ProviderPreset = {
 
 const PROVIDER_ICON_MAP: Record<string, LucideIcon> = {
   openai: BrainCircuit,
+  anthropic: MessageSquare,
   openrouter: Globe,
   groq: Zap,
   'together ai': Cpu,
