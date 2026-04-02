@@ -35,7 +35,7 @@ FROM node:20-alpine AS frontend-build
 ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION}
 WORKDIR /app
-COPY src/frontend/package.json src/frontend/package-lock.json ./
+COPY src/frontend/package.json src/frontend/package-lock.json src/frontend/.npmrc ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --ignore-scripts
 COPY src/frontend/ .
@@ -53,7 +53,7 @@ CMD ["sh", "-c", "dotnet restore && dotnet watch run --no-launch-profile"]
 # ── Stage: dev-frontend (hot reload) ─────────────────────────
 FROM node:20-alpine AS dev-frontend
 WORKDIR /app
-COPY src/frontend/package.json src/frontend/package-lock.json ./
+COPY src/frontend/package.json src/frontend/package-lock.json src/frontend/.npmrc ./
 RUN npm ci --ignore-scripts
 COPY src/frontend/ .
 EXPOSE 8080
