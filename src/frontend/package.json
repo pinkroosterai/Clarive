@@ -60,7 +60,7 @@
     "@tiptap/markdown": "^3.22.0",
     "@tiptap/pm": "^3.22.0",
     "@tiptap/react": "^3.22.0",
-    "@tiptap/starter-kit": "^3.22.0",
+    "@tiptap/starter-kit": "^3.22.1",
     "@zxcvbn-ts/core": "^3.0.4",
     "@zxcvbn-ts/language-common": "^3.0.4",
     "@zxcvbn-ts/language-en": "^3.0.2",
