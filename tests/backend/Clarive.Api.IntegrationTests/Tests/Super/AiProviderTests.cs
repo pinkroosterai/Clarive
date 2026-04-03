@@ -503,10 +503,10 @@ public class AiProviderTests : IntegrationTestBase
         patchJson.GetProperty("customHeaders").GetProperty("X-Custom").GetString().Should().Be("value1");
     }
 
-    // ── UseProviderPricing ──
+    // ── UseProviderPricing (derived from endpoint URL) ──
 
     [Fact]
-    public async Task CreateProvider_DefaultsUseProviderPricingToFalse()
+    public async Task CreateProvider_NonOpenRouterEndpoint_UseProviderPricingIsFalse()
     {
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
@@ -522,7 +522,28 @@ public class AiProviderTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task PatchProvider_EnableUseProviderPricing_Persists()
+    public async Task CreateProvider_OpenRouterEndpoint_UseProviderPricingIsTrue()
+    {
+        var token = await AuthHelper.GetAdminTokenAsync(Client);
+        Client.WithBearerToken(token);
+
+        var response = await Client.PostAsJsonAsync(
+            ProvidersUrl,
+            new
+            {
+                name = $"pricing-openrouter-{Guid.NewGuid():N}",
+                apiKey = "sk-test-key",
+                endpointUrl = "https://openrouter.ai/api/v1",
+            }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var json = await response.ReadJsonAsync();
+        json.GetProperty("useProviderPricing").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task PatchProvider_ChangeEndpointToOpenRouter_EnablesProviderPricing()
     {
         var token = await AuthHelper.GetAdminTokenAsync(Client);
         Client.WithBearerToken(token);
@@ -534,8 +555,8 @@ public class AiProviderTests : IntegrationTestBase
         var createJson = await createResponse.ReadJsonAsync();
         var providerId = createJson.GetProperty("id").GetString()!;
 
-        // Enable provider pricing
-        var patchContent = JsonContent.Create(new { useProviderPricing = true });
+        // Change endpoint to OpenRouter
+        var patchContent = JsonContent.Create(new { endpointUrl = "https://openrouter.ai/api/v1" });
         var patchResponse = await Client.PatchAsync($"{ProvidersUrl}/{providerId}", patchContent);
 
         patchResponse.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -103,7 +103,6 @@ const SetupWizardPage = () => {
         apiKey: aiApiKey,
         apiMode: aiPreset?.apiMode || undefined,
         customHeaders: hasHeaders ? headers : undefined,
-        useProviderPricing: aiPreset?.useProviderPricing || undefined,
       });
       setConfigured((prev) => [...prev, 'AI Provider']);
       toast.success('AI provider configured');

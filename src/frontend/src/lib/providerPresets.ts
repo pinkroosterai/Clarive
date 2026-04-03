@@ -17,7 +17,7 @@ export interface ProviderPreset {
   endpointUrl: string;
   apiMode: string;
   customHeaders: Record<string, string>;
-  useProviderPricing: boolean;
+
   description: string;
   icon: IconComponent;
 }
@@ -30,7 +30,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     endpointUrl: '',
     apiMode: 'ResponsesApi',
     customHeaders: {},
-    useProviderPricing: false,
+
     description: 'GPT-4o, o3, and other OpenAI models',
     icon: OpenAI,
   },
@@ -41,7 +41,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     endpointUrl: 'https://api.anthropic.com/v1',
     apiMode: 'ChatCompletions',
     customHeaders: {},
-    useProviderPricing: false,
+
     description: 'Claude Opus, Sonnet, and Haiku models',
     icon: Anthropic,
   },
@@ -55,7 +55,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
       'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
       'X-OpenRouter-Title': 'Clarive',
     },
-    useProviderPricing: true,
+
     description: '300+ models from all providers via a single API',
     icon: OpenRouter,
   },
@@ -66,7 +66,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     endpointUrl: 'https://api.groq.com/openai/v1',
     apiMode: 'ChatCompletions',
     customHeaders: {},
-    useProviderPricing: false,
+
     description: 'Ultra-fast inference for Llama, Mixtral, and more',
     icon: Groq,
   },
@@ -77,7 +77,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     endpointUrl: 'https://api.together.xyz/v1',
     apiMode: 'ChatCompletions',
     customHeaders: {},
-    useProviderPricing: false,
+
     description: 'Open-source models with serverless or dedicated GPUs',
     icon: Together,
   },
@@ -88,7 +88,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     endpointUrl: 'http://localhost:11434/v1',
     apiMode: 'ChatCompletions',
     customHeaders: {},
-    useProviderPricing: false,
+
     description: 'Local models — no API key required',
     icon: Ollama,
   },
@@ -99,7 +99,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     endpointUrl: 'https://{resource}.openai.azure.com/openai/deployments/{deployment}/v1',
     apiMode: 'ResponsesApi',
     customHeaders: {},
-    useProviderPricing: false,
+
     description: 'OpenAI models via Azure — update the endpoint URL',
     icon: Azure,
   },
@@ -112,7 +112,6 @@ export const CUSTOM_PRESET: ProviderPreset = {
   endpointUrl: '',
   apiMode: '',
   customHeaders: {},
-  useProviderPricing: false,
   description: 'Any OpenAI-compatible provider',
   icon: Settings,
 };

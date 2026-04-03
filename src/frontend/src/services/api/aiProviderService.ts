@@ -40,7 +40,6 @@ export interface CreateAiProviderRequest {
   apiKey: string;
   apiMode?: string;
   customHeaders?: Record<string, string>;
-  useProviderPricing?: boolean;
 }
 
 export interface UpdateAiProviderRequest {
@@ -51,7 +50,6 @@ export interface UpdateAiProviderRequest {
   sortOrder?: number;
   apiMode?: string;
   customHeaders?: Record<string, string>;
-  useProviderPricing?: boolean;
 }
 
 export interface AddModelRequest {

@@ -46,7 +46,6 @@ export default function AiProvidersSection() {
   const [formApiKey, setFormApiKey] = useState('');
   const [formHeaders, setFormHeaders] = useState<Record<string, string>>({});
   const [formApiMode, setFormApiMode] = useState<string | undefined>(undefined);
-  const [formUseProviderPricing, setFormUseProviderPricing] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<ProviderPreset | null>(null);
 
   // ── Queries ──
@@ -64,7 +63,6 @@ export default function AiProvidersSection() {
         apiKey: formApiKey,
         apiMode: formApiMode || undefined,
         customHeaders: Object.keys(formHeaders).length > 0 ? formHeaders : undefined,
-        useProviderPricing: formUseProviderPricing || undefined,
       }),
     onSuccess: () => {
       toast.success('Provider created');
@@ -177,7 +175,6 @@ export default function AiProvidersSection() {
     setFormApiKey('');
     setFormHeaders({});
     setFormApiMode(undefined);
-    setFormUseProviderPricing(false);
     setDialogOpen(true);
   };
 
@@ -189,7 +186,6 @@ export default function AiProvidersSection() {
     setFormApiKey('');
     setFormHeaders(provider.customHeaders ?? {});
     setFormApiMode(undefined);
-    setFormUseProviderPricing(false);
     setDialogOpen(true);
   };
 
@@ -199,7 +195,6 @@ export default function AiProvidersSection() {
     setFormEndpoint(preset.endpointUrl);
     setFormHeaders({ ...preset.customHeaders });
     setFormApiMode(preset.apiMode || undefined);
-    setFormUseProviderPricing(preset.useProviderPricing);
   };
 
   const closeDialog = () => {

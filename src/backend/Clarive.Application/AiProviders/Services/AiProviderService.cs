@@ -79,7 +79,7 @@ public class AiProviderService(
                         : AiApiMode.ChatCompletions
                 ),
             CustomHeaders = request.CustomHeaders,
-            UseProviderPricing = request.UseProviderPricing,
+            UseProviderPricing = IsOpenRouterEndpoint(request.EndpointUrl),
             SortOrder = 0,
             CreatedAt = now,
             UpdatedAt = now,
@@ -128,8 +128,8 @@ public class AiProviderService(
                 return headersError;
             provider.CustomHeaders = request.CustomHeaders;
         }
-        if (request.UseProviderPricing.HasValue)
-            provider.UseProviderPricing = request.UseProviderPricing.Value;
+        if (request.EndpointUrl is not null)
+            provider.UseProviderPricing = IsOpenRouterEndpoint(request.EndpointUrl);
         provider.UpdatedAt = DateTime.UtcNow;
 
         await repo.UpdateAsync(provider, ct);
@@ -184,6 +184,10 @@ public class AiProviderService(
                 var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, m.Id, ct);
                 ProviderModelMetadata? meta = null;
                 providerMetadata?.TryGetValue(m.Id, out meta);
+
+                // Skip non-chat models identified by provider metadata (e.g. OpenRouter modality)
+                if (meta?.IsChat == false)
+                    continue;
 
                 // Merge pricing: provider pricing wins when UseProviderPricing is enabled
                 var inputCost = provider.UseProviderPricing && meta?.InputCostPerMillion is not null
@@ -366,7 +370,8 @@ public class AiProviderService(
         decimal? InputCostPerMillion,
         decimal? OutputCostPerMillion,
         bool? SupportsFunctionCalling,
-        bool? SupportsResponseSchema
+        bool? SupportsResponseSchema,
+        bool? IsChat
     );
 
     private async Task<Dictionary<string, ProviderModelMetadata>?> FetchProviderMetadataAsync(
@@ -469,11 +474,24 @@ public class AiProviderService(
                             supportsResponseSchema = true;
                     }
 
+                    // Determine if this is a chat model from architecture.modality
+                    // e.g. "text->text", "text+image->text" are chat; "text->image", "text->audio" are not
+                    bool? isChat = null;
+                    if (
+                        model.TryGetProperty("architecture", out var archProp)
+                        && archProp.TryGetProperty("modality", out var modalityProp)
+                        && modalityProp.GetString() is string modality
+                    )
+                    {
+                        isChat = modality.EndsWith("->text", StringComparison.OrdinalIgnoreCase);
+                    }
+
                     result[modelId] = new ProviderModelMetadata(
                         inputCost,
                         outputCost,
                         supportsFunctionCalling,
-                        supportsResponseSchema
+                        supportsResponseSchema,
+                        isChat
                     );
                 }
             }
@@ -604,6 +622,10 @@ public class AiProviderService(
             "Endpoint URL must use HTTPS. HTTP is only allowed for localhost."
         );
     }
+
+    private static bool IsOpenRouterEndpoint(string? endpointUrl) =>
+        endpointUrl is not null
+        && endpointUrl.Contains("openrouter.ai", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsPrivateIp(System.Net.IPAddress ip)
     {

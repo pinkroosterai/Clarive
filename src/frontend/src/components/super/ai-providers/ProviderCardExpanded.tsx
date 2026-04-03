@@ -90,21 +90,6 @@ export default function ProviderCardExpanded({
         </Select>
       </div>
 
-      {/* Use Provider Pricing */}
-      <div className="flex items-center gap-3">
-        <Label className="text-xs text-foreground-muted whitespace-nowrap">
-          Use provider pricing
-        </Label>
-        <Switch
-          checked={provider.useProviderPricing}
-          onCheckedChange={(checked) => onUpdateProvider({ useProviderPricing: checked })}
-          className="scale-90"
-        />
-        <span className="text-[10px] text-foreground-muted">
-          When enabled, model costs are fetched from this provider instead of the global registry.
-        </span>
-      </div>
-
       {/* Custom Headers */}
       <CustomHeadersEditor
         headers={provider.customHeaders}
