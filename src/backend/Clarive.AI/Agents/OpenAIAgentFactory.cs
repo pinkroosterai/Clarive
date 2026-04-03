@@ -276,7 +276,18 @@ public class OpenAIAgentFactory : IAgentFactory, IDisposable
                 var providerKey = actionKeys[action];
                 var openAiClient = openAiClients[providerKey];
 
-                var baseClient = openAiClient.GetChatClient(config.Model).AsIChatClient();
+                IChatClient baseClient;
+                if (provider.ApiMode == AiApiMode.ResponsesApi)
+                {
+#pragma warning disable OPENAI001 // Responses API is experimental
+                    baseClient = openAiClient.GetResponsesClient().AsIChatClient(config.Model);
+#pragma warning restore OPENAI001
+                }
+                else
+                {
+                    baseClient = openAiClient.GetChatClient(config.Model).AsIChatClient();
+                }
+
                 var resilientClient = new ResilientChatClient(baseClient, provider.ProviderName, _logger);
 
                 var wrappedClient = ChatOptionsBuilder.WrapWithRoleOverrides(

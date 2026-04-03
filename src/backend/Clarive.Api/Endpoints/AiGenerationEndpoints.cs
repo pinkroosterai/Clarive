@@ -50,6 +50,7 @@ public static class AiGenerationEndpoints
         HttpContext ctx,
         GeneratePromptRequest request,
         IAiGenerationService aiService,
+        ILoggerFactory loggerFactory,
         CancellationToken ct
     )
     {
@@ -68,6 +69,7 @@ public static class AiGenerationEndpoints
         }
 
         // SSE path
+        var logger = loggerFactory.CreateLogger("Clarive.Api.Endpoints.AiGenerationEndpoints");
         var sse = new SseProgressWriter(ctx.Response);
         await sse.InitAsync(ct);
 
@@ -91,8 +93,14 @@ public static class AiGenerationEndpoints
                 ct
             );
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Web search"))
+        {
+            logger.LogWarning(ex, "Web search unavailable during generation");
+            await sse.WriteErrorAsync("WEB_SEARCH_UNAVAILABLE", ex.Message, ct);
+        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            logger.LogError(ex, "AI generation failed");
             await sse.WriteErrorAsync("GENERATION_FAILED", "Generation failed.", ct);
         }
 

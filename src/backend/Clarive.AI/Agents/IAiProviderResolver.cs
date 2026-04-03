@@ -1,4 +1,5 @@
 using Clarive.Domain.Entities;
+using Clarive.Domain.Enums;
 
 namespace Clarive.AI.Agents;
 
@@ -23,5 +24,6 @@ public record ResolvedProvider(
     string? EndpointUrl,
     string ProviderName,
     Dictionary<string, string>? CustomHeaders,
-    AiProviderModel Model
+    AiProviderModel Model,
+    AiApiMode ApiMode
 );

@@ -153,7 +153,8 @@ public class OpenAIAgentFactoryTests
                     IsActive = true,
                     IsReasoning = false,
                     MaxInputTokens = 128000,
-                }
+                },
+                AiApiMode.ChatCompletions
             ));
 
         return CreateFactory(settings, resolver);

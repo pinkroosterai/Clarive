@@ -76,7 +76,8 @@ public class AiProviderResolver : IAiProviderResolver
             match.Provider.EndpointUrl,
             match.Provider.Name,
             match.Provider.CustomHeaders,
-            match.Model
+            match.Model,
+            match.Provider.ApiMode
         );
     }
 }

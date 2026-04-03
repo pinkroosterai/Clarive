@@ -57,9 +57,15 @@ public class PromptOrchestrator : IPromptOrchestrator
             await onProgress(ProgressEvent.Generating());
 
         // Fetch web search tools if enabled
-        IList<AITool>? webSearchTools = config.EnableWebSearch
-            ? await _tavilyClient.GetToolsAsync(ct)
-            : null;
+        IList<AITool>? webSearchTools = null;
+        if (config.EnableWebSearch)
+        {
+            webSearchTools = await _tavilyClient.GetToolsAsync(ct);
+            if (webSearchTools is null or { Count: 0 })
+                throw new InvalidOperationException(
+                    "Web search is enabled but the search service is unavailable. Check the Tavily API key configuration."
+                );
+        }
 
         // Create the agent session
         var agentSessionId = await _pool.CreateSessionAsync(config, ct, webSearchTools);
