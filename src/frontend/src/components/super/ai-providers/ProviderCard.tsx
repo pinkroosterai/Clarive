@@ -51,7 +51,7 @@ export default function ProviderCard({
   const ProviderIcon = getProviderIcon(provider.name);
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface">
+    <div className="rounded-lg border border-border-subtle bg-card elevation-1 transition-lift hover:elevation-2 hover:-translate-y-0.5">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <button onClick={onToggle} className="shrink-0">

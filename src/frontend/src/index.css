@@ -12,10 +12,10 @@
   /* ── Light Mode (default) ── */
   :root {
     /* ── Background Layers ── */
-    --background: 45 24% 96%; /* #F7F6F2 */
+    --background: 45 24% 94%; /* #F4F3EF — warmer canvas, recessed */
     --background-surface: 0 0% 100%; /* #FFFFFF */
-    --background-elevated: 43 20% 92%; /* #EFEDE8 — Surface Alt */
-    --background-overlay: 40 12% 84%; /* slightly darker for overlays */
+    --background-elevated: 43 20% 90%; /* #E8E5DE — recessed/sunken areas */
+    --background-overlay: 40 12% 82%; /* slightly darker for overlays */
 
     /* ── Foreground / Text ── */
     --foreground: 240 28% 14%; /* #1A1A2E */
@@ -37,11 +37,11 @@
     --popover-foreground: 240 28% 14%;
 
     /* ── Secondary ── */
-    --secondary: 43 20% 92%; /* Surface Alt */
+    --secondary: 43 20% 90%; /* Surface Alt — matches elevated */
     --secondary-foreground: 240 28% 14%;
 
     /* ── Muted ── */
-    --muted: 43 20% 92%; /* Surface Alt */
+    --muted: 43 20% 90%; /* Surface Alt — matches elevated */
     --muted-foreground: 240 8% 46%; /* Text Muted */
 
     /* ── Accent (hover backgrounds) ── */
@@ -59,13 +59,13 @@
     --ring: 234 70% 87%; /* #C7CCF5 — Highlight */
 
     /* ── Sidebar ── */
-    --sidebar-background: 43 20% 92%;
+    --sidebar-background: 45 12% 98%; /* #FAFAF8 — elevated above canvas */
     --sidebar-foreground: 240 8% 36%;
     --sidebar-primary: 231 44% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 233 72% 95%;
+    --sidebar-accent: 233 72% 94%; /* slightly darker than 98%L sidebar for hover */
     --sidebar-accent-foreground: 240 28% 14%;
-    --sidebar-border: 45 10% 85%;
+    --sidebar-border: 45 10% 92%; /* subtle against lighter sidebar */
     --sidebar-ring: 231 44% 56%;
 
     /* ── Status (base + text/bg/border triplets) ── */
@@ -116,7 +116,7 @@
 
     /* ── Disabled / Overlay ── */
     --foreground-disabled: 240 8% 53%;
-    --overlay-bg: 45 24% 96% / 0.8;
+    --overlay-bg: 45 24% 94% / 0.8;
 
     /* ── Radius ── */
     --radius: 0.625rem;
@@ -131,10 +131,10 @@
 
   /* ── Dark Mode ── */
   .dark {
-    --background: 240 30% 8%; /* #0E0E1A */
-    --background-surface: 240 30% 13%; /* #16162A */
-    --background-elevated: 240 29% 16%; /* #1E1E35 — Surface Alt */
-    --background-overlay: 240 26% 22%;
+    --background: 240 30% 6%; /* #0C0C16 — deeper canvas */
+    --background-surface: 240 28% 16%; /* #1A1A30 — matches card */
+    --background-elevated: 240 28% 20%; /* #28284A — raised surface */
+    --background-overlay: 240 26% 26%; /* proportional shift */
 
     --foreground: 240 45% 93%; /* #E8E8F5 */
     --foreground-secondary: 240 14% 60%; /* #8888A8 */
@@ -142,39 +142,39 @@
 
     --primary: 228 66% 70%; /* #7B8FE8 */
     --primary-hover: 228 66% 76%;
-    --primary-foreground: 240 30% 8%; /* dark bg on light accent */
+    --primary-foreground: 240 30% 6%; /* dark bg on light accent */
     --primary-glow: 228 66% 70%;
 
-    --card: 240 30% 13%;
+    --card: 240 28% 16%; /* #1A1A30 — 10% delta from canvas */
     --card-foreground: 240 45% 93%;
 
-    --popover: 240 29% 16%;
+    --popover: 240 28% 20%; /* matches elevated — floats above cards */
     --popover-foreground: 240 45% 93%;
 
-    --secondary: 240 29% 16%; /* Surface Alt */
+    --secondary: 240 28% 20%; /* Surface Alt — matches elevated */
     --secondary-foreground: 240 45% 93%;
 
-    --muted: 240 29% 16%;
+    --muted: 240 28% 20%; /* matches elevated */
     --muted-foreground: 240 14% 60%;
 
-    --accent: 235 39% 19%; /* #1E2145 — Accent Soft dark */
+    --accent: 235 39% 22%; /* Accent Soft dark — shifted up with new surfaces */
     --accent-foreground: 240 45% 93%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 25% 22%; /* #2A2A45 */
-    --border-subtle: 240 25% 19%;
-    --input: 240 25% 22%;
+    --border: 240 25% 24%; /* slightly raised for visibility on 16%L cards */
+    --border-subtle: 240 25% 21%;
+    --input: 240 25% 24%;
     --ring: 234 35% 35%; /* #3A3F7A — Highlight dark */
 
-    --sidebar-background: 240 30% 10%;
+    --sidebar-background: 240 30% 8%; /* #111122 — between canvas and card */
     --sidebar-foreground: 240 20% 72%;
     --sidebar-primary: 228 66% 70%;
-    --sidebar-primary-foreground: 240 30% 8%;
-    --sidebar-accent: 235 39% 19%;
+    --sidebar-primary-foreground: 240 30% 6%;
+    --sidebar-accent: 235 39% 15%; /* subtle hover on 8%L sidebar */
     --sidebar-accent-foreground: 240 45% 90%;
-    --sidebar-border: 240 25% 18%;
+    --sidebar-border: 240 25% 14%; /* visible against 8%L sidebar */
     --sidebar-ring: 228 66% 70%;
 
     --status-draft: 38 92% 50%;
@@ -221,7 +221,7 @@
     --role-viewer-border: 240 4% 46% / 0.3;
 
     --foreground-disabled: 240 14% 48%;
-    --overlay-bg: 240 30% 8% / 0.8;
+    --overlay-bg: 240 30% 6% / 0.8;
 
     --chart-1: 228 66% 70%;
     --chart-2: 217 91% 60%;

@@ -30,8 +30,8 @@ export const StatCard = memo(function StatCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ scale: 1.02, boxShadow: '0 4px 20px -4px hsl(var(--primary) / 0.12)' }}
-      className={`rounded-xl border border-border-subtle bg-surface elevation-1 p-4 flex items-center gap-4 ${to ? 'hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer' : 'cursor-default'}`}
+      whileHover={to ? { scale: 1.02 } : undefined}
+      className={`rounded-xl border border-border-subtle bg-card elevation-2 p-4 flex items-center gap-4 ${to ? 'transition-lift hover:elevation-3 hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/20 cursor-pointer' : 'cursor-default'}`}
     >
       <motion.div
         className="rounded-md bg-primary/10 p-2.5"

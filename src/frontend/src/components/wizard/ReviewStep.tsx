@@ -67,7 +67,7 @@ export function ReviewStep({
                         whileTap={{ scale: 0.97 }}
                         className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                           answers[i] === suggestion
-                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                            ? 'bg-primary text-primary-foreground border-primary elevation-1'
                             : 'bg-elevated border-border-subtle hover:bg-accent hover:border-primary/30 text-foreground-muted'
                         }`}
                       >

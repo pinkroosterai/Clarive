@@ -51,7 +51,7 @@ export const HeroStatCard = memo(function HeroStatCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-xl border border-border-subtle bg-surface elevation-1 p-6 flex flex-col gap-3 cursor-default"
+      className="rounded-xl border border-border-subtle bg-card elevation-2 p-6 flex flex-col gap-3 cursor-default"
     >
       <div className="flex items-center justify-between">
         <motion.div

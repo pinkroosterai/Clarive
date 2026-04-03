@@ -21,7 +21,7 @@ const SYNTAX_ROWS = [
 
 function TemplateSyntaxHelp() {
   return (
-    <div className="rounded-lg bg-surface border border-border p-3 text-xs">
+    <div className="rounded-lg bg-surface border border-border elevation-1 p-3 text-xs">
       <p className="mb-2 font-medium text-foreground">Template tag syntax</p>
       <code className="mb-2 block text-foreground-muted">
         {'{{name}}  {{name|type:opts:default:description}}'}
