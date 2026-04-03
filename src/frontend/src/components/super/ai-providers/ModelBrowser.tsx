@@ -17,10 +17,13 @@ import ModelCapabilityBadges from '../ai-config/ModelCapabilityBadges';
 
 import { type ModelFilters, useModelBrowser } from './useModelBrowser';
 
+import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollBar } from '@/components/ui/scroll-area';
 import type { FetchedModelItem } from '@/services/api/aiProviderService';
 
 interface ModelBrowserProps {
@@ -212,47 +215,54 @@ function VirtualModelList({
   });
 
   return (
-    <div ref={parentRef} className="max-h-[350px] overflow-y-auto">
-      {flatItems.length === 0 ? (
-        <p className="text-xs text-foreground-muted text-center py-6">No matching models.</p>
-      ) : (
-        <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const item = flatItems[virtualRow.index];
-            return (
-              <div
-                key={virtualRow.key}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                {item.type === 'header' ? (
-                  <button
-                    onClick={() => onToggleGroup(item.provider)}
-                    className="flex items-center gap-1.5 px-3 w-full h-full text-xs font-medium text-foreground-muted hover:text-foreground bg-elevated/50"
-                  >
-                    {collapsedGroups.has(item.provider) ? (
-                      <ChevronRight className="size-3" />
-                    ) : (
-                      <ChevronDown className="size-3" />
-                    )}
-                    {item.provider}
-                    <span className="text-[10px] opacity-60">{item.count}</span>
-                  </button>
-                ) : (
-                  <ModelRow model={item.model} onAdd={onAddModel} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <ScrollAreaPrimitive.Root className="relative overflow-hidden">
+      <ScrollAreaPrimitive.Viewport
+        ref={parentRef}
+        className="max-h-[350px] h-full w-full rounded-[inherit] [&>div]:!block"
+      >
+        {flatItems.length === 0 ? (
+          <p className="text-xs text-foreground-muted text-center py-6">No matching models.</p>
+        ) : (
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const item = flatItems[virtualRow.index];
+              return (
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  {item.type === 'header' ? (
+                    <button
+                      onClick={() => onToggleGroup(item.provider)}
+                      className="flex items-center gap-1.5 px-3 w-full h-full text-xs font-medium text-foreground-muted hover:text-foreground bg-elevated/50"
+                    >
+                      {collapsedGroups.has(item.provider) ? (
+                        <ChevronRight className="size-3" />
+                      ) : (
+                        <ChevronDown className="size-3" />
+                      )}
+                      {item.provider}
+                      <span className="text-[10px] opacity-60">{item.count}</span>
+                    </button>
+                  ) : (
+                    <ModelRow model={item.model} onAdd={onAddModel} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </ScrollAreaPrimitive.Viewport>
+      <ScrollBar />
+      <ScrollAreaPrimitive.Corner />
+    </ScrollAreaPrimitive.Root>
   );
 }
 
