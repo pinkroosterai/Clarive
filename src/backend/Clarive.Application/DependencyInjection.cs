@@ -93,13 +93,26 @@ public static class DependencyInjection
                 .WithCronSchedule("*/10 * * * * ?",
                     x => x.WithMisfireHandlingInstructionDoNothing()));
 
-            q.AddJob<LiteLlmSyncJob>(opts => opts
-                .WithIdentity("LiteLlmSync", "Application")
-                .StoreDurably());
-            q.AddTrigger(opts => opts
-                .ForJob("LiteLlmSync", "Application")
-                .WithIdentity("LiteLlmSync-trigger")
-                .WithCronSchedule("0 0 1 * * ?"));
+            if (useNewRegistry)
+            {
+                q.AddJob<ModelRegistrySyncJob>(opts => opts
+                    .WithIdentity("ModelRegistrySync", "Application")
+                    .StoreDurably());
+                q.AddTrigger(opts => opts
+                    .ForJob("ModelRegistrySync", "Application")
+                    .WithIdentity("ModelRegistrySync-trigger")
+                    .WithCronSchedule("0 30 1 * * ?"));
+            }
+            else
+            {
+                q.AddJob<LiteLlmSyncJob>(opts => opts
+                    .WithIdentity("LiteLlmSync", "Application")
+                    .StoreDurably());
+                q.AddTrigger(opts => opts
+                    .ForJob("LiteLlmSync", "Application")
+                    .WithIdentity("LiteLlmSync-trigger")
+                    .WithCronSchedule("0 0 1 * * ?"));
+            }
 
             q.AddJob<McpSyncJob>(opts => opts
                 .WithIdentity("McpSync", "Application")
