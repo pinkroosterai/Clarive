@@ -1,5 +1,6 @@
 using Clarive.Api;
 using Clarive.Api.Auth;
+using Clarive.ModelRegistry.Client;
 using Clarive.Application;
 using Clarive.Auth.Jwt;
 using Clarive.Auth;
@@ -240,6 +241,25 @@ try
     builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
 
     // (Database, Caching, Repositories registered via AddClariveInfrastructure above)
+
+    // ── Model Registry client (conditional on feature flag) ──
+    if (builder.Configuration.GetValue("ModelRegistry:Enabled", false))
+    {
+        builder.Services.AddModelCatalogClient(opts =>
+        {
+            opts.BaseUrl = builder.Configuration["ModelRegistry:BaseUrl"]!;
+            opts.ApiKey = builder.Configuration["ModelRegistry:ApiKey"]!;
+            if (TimeSpan.TryParse(builder.Configuration["ModelRegistry:CacheTtl"], out var ttl))
+                opts.CacheTtl = ttl;
+            if (
+                TimeSpan.TryParse(
+                    builder.Configuration["ModelRegistry:RequestTimeout"],
+                    out var rt
+                )
+            )
+                opts.RequestTimeout = rt;
+        });
+    }
 
     // ── Core (services, settings, background jobs) ──
     builder.Services.AddClariveCore(builder.Configuration);

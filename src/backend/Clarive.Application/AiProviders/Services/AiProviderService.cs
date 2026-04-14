@@ -17,7 +17,7 @@ namespace Clarive.Application.AiProviders.Services;
 public class AiProviderService(
     IAiProviderRepository repo,
     IEncryptionService encryption,
-    ILiteLlmRegistryCache liteLlmCache,
+    IModelRegistryLookup registry,
     IHttpClientFactory httpClientFactory,
     ILogger<AiProviderService> logger
 ) : IAiProviderService
@@ -178,10 +178,10 @@ public class AiProviderService(
             foreach (var m in response.Value.OrderBy(m => m.Id, StringComparer.OrdinalIgnoreCase))
             {
                 // Skip known non-chat models (embeddings, audio, image generation, etc.)
-                if (liteLlmCache.IsKnownNonChatModel(provider.Name, m.Id))
+                if (registry.IsKnownNonChatModel(provider.Name, m.Id))
                     continue;
 
-                var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, m.Id, ct);
+                var info = await registry.TryGetModelInfoAsync(provider.Name, m.Id, ct);
                 ProviderModelMetadata? meta = null;
                 providerMetadata?.TryGetValue(m.Id, out meta);
 
@@ -282,7 +282,7 @@ public class AiProviderService(
         };
 
         // Auto-fill from LiteLLM registry cache
-        var info = await liteLlmCache.TryGetModelInfoAsync(provider.Name, request.ModelId, ct);
+        var info = await registry.TryGetModelInfoAsync(provider.Name, request.ModelId, ct);
         if (info is not null)
         {
             model.InputCostPerMillion ??= info.InputCostPerMillion;

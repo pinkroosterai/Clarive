@@ -60,6 +60,16 @@ public static class DependencyInjection
         services.AddSingleton<ITavilyClientService, TavilyClientService>();
         services.AddSingleton<ILiteLlmRegistryCache, LiteLlmRegistryCache>();
 
+        var useNewRegistry = configuration.GetValue("ModelRegistry:Enabled", defaultValue: false);
+        if (useNewRegistry)
+        {
+            services.AddScoped<IModelRegistryLookup, ModelRegistryServiceLookup>();
+        }
+        else
+        {
+            services.AddScoped<IModelRegistryLookup, LegacyLiteLlmRegistryLookup>();
+        }
+
         // ── Settings ──
         services.Configure<AppSettings>(configuration.GetSection("App"));
 
