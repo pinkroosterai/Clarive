@@ -14,8 +14,9 @@
 # ── Stage: backend-build ─────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
 WORKDIR /repo
-# Copy build infrastructure files needed for restore (CPM, SDK pin, props)
-COPY global.json Directory.Build.props Directory.Packages.props ./
+# Copy build infrastructure files needed for restore (CPM, SDK pin, props, local NuGet feed)
+COPY global.json Directory.Build.props Directory.Packages.props nuget.config ./
+COPY local-packages/ local-packages/
 COPY src/backend/Directory.Build.props src/backend/
 COPY src/backend/Clarive.Domain/Clarive.Domain.csproj src/backend/Clarive.Domain/
 COPY src/backend/Clarive.Infrastructure/Clarive.Infrastructure.csproj src/backend/Clarive.Infrastructure/
