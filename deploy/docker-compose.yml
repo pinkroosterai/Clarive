@@ -62,6 +62,9 @@ services:
       App__FrontendUrl: ${CORS_ORIGINS:-http://localhost:8080}
       AllowedHosts: "*"
       CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?Set CONFIG_ENCRYPTION_KEY in deploy/.env}
+      ModelRegistry__Enabled: ${MODEL_REGISTRY_ENABLED:-false}
+      ModelRegistry__BaseUrl: ${MODEL_REGISTRY_URL:-}
+      ModelRegistry__ApiKey: ${MODEL_REGISTRY_API_KEY:-}
       VITE_API_URL: /api
     volumes:
       - avatars:/app/data/avatars
