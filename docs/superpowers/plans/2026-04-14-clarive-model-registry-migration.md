@@ -8,7 +8,7 @@
 
 **Tech Stack:** .NET 10, Clarive's existing 6-project layered solution, `Clarive.ModelRegistry.Client` 0.1.0+ from GitHub Packages, feature flag in `appsettings.json` + env.
 
-**Prerequisites:** Plan A is complete — service deployed at `https://models.internal.clarive.app`, NuGet package `Clarive.ModelRegistry.Client` 0.1.0 published to `https://nuget.pkg.github.com/clarive/index.json`, and a Clarive-scoped API key exists in `deploy/.env.prod` as `MODEL_REGISTRY_API_KEY` with `MODEL_REGISTRY_URL` set.
+**Prerequisites:** Plan A is complete — service deployed at `https://models.internal.clarive.app`, NuGet package `Clarive.ModelRegistry.Client` 0.1.0 published to `https://nuget.pkg.github.com/pinkroosterai/index.json`, and a Clarive-scoped API key exists in `deploy/.env.prod` as `MODEL_REGISTRY_API_KEY` with `MODEL_REGISTRY_URL` set.
 
 **Reference spec:** `docs/superpowers/specs/2026-04-14-model-registry-service-design.md`, specifically §9.
 
@@ -61,13 +61,13 @@ tests/backend/
 <configuration>
   <packageSources>
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-    <add key="github-clarive" value="https://nuget.pkg.github.com/clarive/index.json" />
+    <add key="github-pinkroosterai" value="https://nuget.pkg.github.com/pinkroosterai/index.json" />
   </packageSources>
   <packageSourceMapping>
     <packageSource key="nuget.org">
       <package pattern="*" />
     </packageSource>
-    <packageSource key="github-clarive">
+    <packageSource key="github-pinkroosterai">
       <package pattern="Clarive.*" />
     </packageSource>
   </packageSourceMapping>
@@ -77,8 +77,8 @@ tests/backend/
 - [ ] **Step 2: Authenticate locally for test restore**
 
 ```bash
-dotnet nuget add source https://nuget.pkg.github.com/clarive/index.json \
-  --name github-clarive \
+dotnet nuget add source https://nuget.pkg.github.com/pinkroosterai/index.json \
+  --name github-pinkroosterai \
   --username <your-gh-user> \
   --password <PAT with read:packages> \
   --store-password-in-clear-text

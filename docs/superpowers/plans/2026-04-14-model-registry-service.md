@@ -277,9 +277,9 @@ git commit -m "chore: initialize solution scaffolding"
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Clarive.ModelRegistry.Client</PackageId>
-    <Authors>Clarive</Authors>
+    <Authors>pinkroosterai</Authors>
     <Description>Typed .NET client for the Clarive Model Registry service.</Description>
-    <RepositoryUrl>https://github.com/clarive/clarive-model-registry</RepositoryUrl>
+    <RepositoryUrl>https://github.com/pinkroosterai/clarive-model-registry</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>0.1.0</Version>
   </PropertyGroup>
@@ -3039,7 +3039,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Wait for the Release workflow to finish publishing `ghcr.io/clarive/clarive-model-registry:v0.1.0` and `Clarive.ModelRegistry.Client` 0.1.0 to GitHub Packages. Verify in the Actions tab.
+Wait for the Release workflow to finish publishing `ghcr.io/pinkroosterai/clarive-model-registry:v0.1.0` and `Clarive.ModelRegistry.Client` 0.1.0 to GitHub Packages. Verify in the Actions tab.
 
 - [ ] **Step 2: Deploy directory on server**
 
@@ -3058,7 +3058,7 @@ Adjust `docker-compose.yml` on the server to use the published image rather than
 ```yaml
 services:
   model-registry:
-    image: ghcr.io/clarive/clarive-model-registry:v0.1.0
+    image: ghcr.io/pinkroosterai/clarive-model-registry:v0.1.0
     container_name: model-registry
     volumes:
       - model-registry-data:/app/data
