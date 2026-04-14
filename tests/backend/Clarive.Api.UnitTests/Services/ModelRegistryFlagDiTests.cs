@@ -25,7 +25,7 @@ public class ModelRegistryFlagDiTests
     public void FlagOn_ResolvesServiceLookup()
     {
         var services = BuildServices(enabled: true);
-        services.AddSingleton(Substitute.For<Clarive.ModelRegistry.Client.IModelCatalogClient>());
+        services.AddSingleton(Substitute.For<ModelCatalog.Client.IModelCatalogClient>());
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
         var lookup = scope.ServiceProvider.GetRequiredService<IModelRegistryLookup>();

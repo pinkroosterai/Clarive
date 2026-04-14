@@ -8,7 +8,7 @@
     <InternalsVisibleTo Include="Clarive.Api.IntegrationTests" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Clarive.ModelRegistry.Client" />
+    <PackageReference Include="ModelCatalog.Client" />
     <PackageReference Include="ErrorOr" />
     <PackageReference Include="Quartz" />
     <PackageReference Include="Humanizer.Core" />

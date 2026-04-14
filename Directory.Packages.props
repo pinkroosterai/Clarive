@@ -58,7 +58,7 @@
     <PackageVersion Include="Quartz.Serialization.Json"        Version="3.*"  />
 
     <!-- ── Model Registry ─────────────────────────────────────────── -->
-    <PackageVersion Include="Clarive.ModelRegistry.Client"     Version="0.1.*" />
+    <PackageVersion Include="ModelCatalog.Client"     Version="0.1.*" />
 
     <!-- ── Utilities ───────────────────────────────────────────────── -->
     <PackageVersion Include="ErrorOr"                          Version="2.*"  />

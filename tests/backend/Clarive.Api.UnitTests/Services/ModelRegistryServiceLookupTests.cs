@@ -1,6 +1,6 @@
 using Clarive.Application.AiProviders.Services;
-using Clarive.ModelRegistry.Client;
-using Clarive.ModelRegistry.Client.Dtos;
+using ModelCatalog.Client;
+using ModelCatalog.Client.Dtos;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;

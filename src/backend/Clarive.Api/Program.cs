@@ -1,6 +1,6 @@
 using Clarive.Api;
 using Clarive.Api.Auth;
-using Clarive.ModelRegistry.Client;
+using ModelCatalog.Client;
 using Clarive.Application;
 using Clarive.Auth.Jwt;
 using Clarive.Auth;
