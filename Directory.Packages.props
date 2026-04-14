@@ -57,6 +57,9 @@
     <PackageVersion Include="Quartz.Extensions.Hosting"        Version="3.*"  />
     <PackageVersion Include="Quartz.Serialization.Json"        Version="3.*"  />
 
+    <!-- ── Model Registry ─────────────────────────────────────────── -->
+    <PackageVersion Include="Clarive.ModelRegistry.Client"     Version="0.1.*" />
+
     <!-- ── Utilities ───────────────────────────────────────────────── -->
     <PackageVersion Include="ErrorOr"                          Version="2.*"  />
     <PackageVersion Include="Humanizer.Core"                   Version="3.*"  />
