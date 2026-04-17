@@ -37,7 +37,7 @@
 
     <!-- ── Email ───────────────────────────────────────────────────── -->
     <PackageVersion Include="MailKit"                          Version="4.*"  />
-    <PackageVersion Include="Resend"                           Version="0.2.*" />
+    <PackageVersion Include="Resend"                           Version="0.4.*" />
 
     <!-- ── Logging ─────────────────────────────────────────────────── -->
     <PackageVersion Include="Serilog"                          Version="4.*"  />
