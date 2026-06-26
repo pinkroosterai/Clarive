@@ -48,7 +48,7 @@
     <PackageVersion Include="Serilog.Enrichers.Thread"         Version="4.*"  />
 
     <!-- ── Image processing ────────────────────────────────────────── -->
-    <PackageVersion Include="SkiaSharp"                        Version="3.*"  />
+    <PackageVersion Include="SkiaSharp"                        Version="4.*"  />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.*" />
 
     <!-- ── Job Scheduling ─────────────────────────────────────────── -->
