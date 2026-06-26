@@ -49,7 +49,7 @@
 
     <!-- ── Image processing ────────────────────────────────────────── -->
     <PackageVersion Include="SkiaSharp"                        Version="3.*"  />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.*" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.*" />
 
     <!-- ── Job Scheduling ─────────────────────────────────────────── -->
     <PackageVersion Include="Quartz"                           Version="3.*"  />
