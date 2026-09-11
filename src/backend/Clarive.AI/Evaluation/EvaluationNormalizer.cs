@@ -24,6 +24,30 @@ public static class EvaluationNormalizer
         return entries.Count > 0 ? entries.Average(e => e.Score) : 0;
     }
 
+    /// <summary>
+    /// Maps the fixed-property wire shape back onto the dictionary the rest of the app stores
+    /// and serves. A null property counts as a missing dimension and gets the default entry.
+    /// </summary>
+    public static PromptEvaluation Normalize(PromptEvaluationResponse raw)
+    {
+        var entries = new Dictionary<string, PromptEvaluationEntry>();
+        Add(entries, "Clarity", raw.Clarity);
+        Add(entries, "Effectiveness", raw.Effectiveness);
+        Add(entries, "Completeness", raw.Completeness);
+        Add(entries, "Faithfulness", raw.Faithfulness);
+        return Normalize(new PromptEvaluation { PromptEvaluations = entries });
+    }
+
+    private static void Add(
+        Dictionary<string, PromptEvaluationEntry> entries,
+        string dimension,
+        PromptEvaluationEntry? entry
+    )
+    {
+        if (entry is not null)
+            entries[dimension] = entry;
+    }
+
     public static PromptEvaluation Normalize(PromptEvaluation raw)
     {
         var normalized = DimensionNormalizer.Normalize(

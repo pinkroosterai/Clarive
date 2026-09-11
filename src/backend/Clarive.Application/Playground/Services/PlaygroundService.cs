@@ -206,7 +206,7 @@ public class PlaygroundService(
                 run.Model
             );
 
-            var response = await agent.RunAsync<OutputEvaluation>(task, cancellationToken: ct);
+            var response = await agent.RunAsync<OutputEvaluationResponse>(task, cancellationToken: ct);
             var evaluation = OutputEvaluationNormalizer.Normalize(response.Result);
             sw.Stop();
 

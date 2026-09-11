@@ -152,4 +152,37 @@ public class OutputEvaluationNormalizerTests
         var eval = new OutputEvaluation();
         eval.AverageScore.Should().Be(0);
     }
+
+    [Fact]
+    public void Normalize_Response_MapsFixedPropertiesToDictionary()
+    {
+        var raw = new OutputEvaluationResponse
+        {
+            Accuracy = new() { Score = 9, Feedback = "Right" },
+            Helpfulness = new() { Score = 8, Feedback = "Useful" },
+            Relevance = new() { Score = 7, Feedback = "On topic" },
+            Coherence = new() { Score = 6, Feedback = "Readable" },
+            Safety = new() { Score = 10, Feedback = "Fine" },
+        };
+
+        var result = OutputEvaluationNormalizer.Normalize(raw);
+
+        result.Dimensions.Should().HaveCount(5);
+        result.Dimensions["Accuracy"].Score.Should().Be(9);
+        result.Dimensions["Helpfulness"].Feedback.Should().Be("Useful");
+        result.Dimensions["Safety"].Score.Should().Be(10);
+        result.AverageScore.Should().Be(8.0);
+    }
+
+    [Fact]
+    public void Normalize_Response_NullPropertyFilledWithDefault()
+    {
+        var raw = new OutputEvaluationResponse { Accuracy = new() { Score = 9, Feedback = "Right" } };
+
+        var result = OutputEvaluationNormalizer.Normalize(raw);
+
+        result.Dimensions.Should().HaveCount(5);
+        result.Dimensions["Safety"].Score.Should().Be(0);
+        result.Dimensions["Safety"].Feedback.Should().Contain("missing");
+    }
 }

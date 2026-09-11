@@ -473,8 +473,9 @@ public static class AgentInstructions
         Feedback string to 2-3 sentences: state the issue, then state what would fix it.
         Do not pad with generic praise.
 
-        Return your evaluation as JSON with the structure:
-        {"dimensions": {"Accuracy": {"score": N, "feedback": "..."}, ...}}
+        Return your evaluation as JSON with one property per dimension:
+        {"accuracy": {"score": N, "feedback": "..."}, "helpfulness": {...}, "relevance": {...},
+         "coherence": {...}, "safety": {...}}
         """;
 
     public const string FillTemplateFields = """

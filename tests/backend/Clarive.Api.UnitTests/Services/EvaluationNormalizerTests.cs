@@ -140,4 +140,40 @@ public class EvaluationNormalizerTests
         result.PromptEvaluations.Should().HaveCount(4);
         result.PromptEvaluations.Values.Should().AllSatisfy(e => e.Score.Should().Be(0));
     }
+
+    [Fact]
+    public void Normalize_Response_MapsFixedPropertiesToDictionary()
+    {
+        var raw = new PromptEvaluationResponse
+        {
+            Clarity = new() { Score = 9, Feedback = "Clear" },
+            Effectiveness = new() { Score = 7, Feedback = "Works" },
+            Completeness = new() { Score = 8, Feedback = "Full" },
+            Faithfulness = new() { Score = 6, Feedback = "Drifts" },
+        };
+
+        var result = EvaluationNormalizer.Normalize(raw);
+
+        result.PromptEvaluations.Should().HaveCount(4);
+        result.PromptEvaluations["Clarity"].Score.Should().Be(9);
+        result.PromptEvaluations["Effectiveness"].Feedback.Should().Be("Works");
+        result.PromptEvaluations["Completeness"].Score.Should().Be(8);
+        result.PromptEvaluations["Faithfulness"].Score.Should().Be(6);
+    }
+
+    [Fact]
+    public void Normalize_Response_NullPropertyFilledWithDefault()
+    {
+        var raw = new PromptEvaluationResponse
+        {
+            Clarity = new() { Score = 9, Feedback = "Clear" },
+        };
+
+        var result = EvaluationNormalizer.Normalize(raw);
+
+        result.PromptEvaluations.Should().HaveCount(4);
+        result.PromptEvaluations["Clarity"].Score.Should().Be(9);
+        result.PromptEvaluations["Faithfulness"].Score.Should().Be(0);
+        result.PromptEvaluations["Faithfulness"].Feedback.Should().Contain("missing");
+    }
 }

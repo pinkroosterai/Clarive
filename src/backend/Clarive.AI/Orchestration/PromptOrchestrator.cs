@@ -414,7 +414,7 @@ public class PromptOrchestrator : IPromptOrchestrator
             var agent = _factory.CreateAgent(
                 AiActionType.Evaluation, AgentInstructions.BuildEvaluation(config), "PromptEvaluator");
             var task = TaskBuilder.BuildEvaluationTask(config, prompts);
-            var response = await agent.RunAsync<PromptEvaluation>(task, cancellationToken: ct);
+            var response = await agent.RunAsync<PromptEvaluationResponse>(task, cancellationToken: ct);
             return (EvaluationNormalizer.Normalize(response.Result), response.Usage);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
