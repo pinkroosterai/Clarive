@@ -4,6 +4,45 @@ All notable changes to Clarive are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-09-11
+
+### Added
+
+- **OpenRouter provider support**: Custom HTTP headers per provider, `UseProviderPricing`
+  flag for live cost sync from the provider's `/v1/models`, key-value header editor in
+  the provider card UI
+- **Provider presets — one-click setup**: Built-in presets for OpenAI, Anthropic,
+  OpenRouter, Groq, Together AI, Ollama, and Azure OpenAI; picking one auto-fills
+  endpoint, API mode, headers, and `UseProviderPricing`
+- **Setup wizard preset grid**: Onboarding AI step now shows the same preset selector as
+  Super Admin > AI Providers
+- **Provider brand icons**: Provider cards and preset grid now show real brand logos
+  (`@lobehub/icons`) instead of generic icons
+
+### Changed
+
+- Model browser merges provider capability data with the LiteLLM registry (OR logic on
+  capabilities; provider pricing wins when `UseProviderPricing=true`)
+- Full model capabilities now passed through when adding a model from the browser
+- Surface hierarchy widened: larger lightness deltas between canvas/sidebar/card layers,
+  `shadow-*` utilities replaced by semantic `elevation-*` classes across 16 components
+- Removed SaaS/hosted/demo references from docs and config
+
+### Fixed
+
+- Custom provider headers hardened with CRLF validation, size limits, and SSRF
+  protection
+- `HttpClient` disposed on provider swap; provider key hash deduplicated
+- `UseProviderPricing` auto-derived from the OpenRouter endpoint URL
+- Model browser virtual scrolling fixed by deferring virtualizer init
+- Model browser uses `ScrollArea` and filters non-chat models
+- Agent factory respects provider `ApiMode` and fails fast on websearch errors
+
+### Maintenance
+
+- Added `@testing-library/dom` peer dependency, `es-toolkit` dependency, and
+  `.npmrc` legacy-peer-deps for `@lobehub/icons` on React 19
+
 ## [1.4.0] - 2026-04-02
 
 ### Added
