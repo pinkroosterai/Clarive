@@ -4,6 +4,15 @@ All notable changes to Clarive are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-09-11
+
+### Fixed
+
+- AI evaluation and playground judge failed on providers with strict structured output
+  (`invalid_json_schema`: dictionary-shaped `promptEvaluations` / `dimensions`). The
+  agents now return one fixed property per dimension, mapped back to the existing
+  dictionaries by the normalizers; stored data and the API keep their shape
+
 ## [1.5.0] - 2026-09-11
 
 ### Added
