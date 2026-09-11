@@ -25,7 +25,7 @@ These are the only settings you need in your `.env` file. Run `make setup` to ge
 |----------|-------------|---------|
 | `CORS_ORIGINS` | Allowed CORS origin (your frontend URL). Requires container restart to change. | `http://localhost:8080` |
 | `CLARIVE_PORT` | Host port to expose | `8080` |
-| `CLARIVE_VERSION` | Docker Hub image tag (self-host only) | `latest` |
+| `CLARIVE_VERSION` | Docker Hub image tag | `latest` |
 | `POSTGRES_USER` | PostgreSQL username | `clarive` |
 | `POSTGRES_DB` | Database name | `clarive` |
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET environment | `Production` |
@@ -70,7 +70,7 @@ AI providers, models, and API keys are all configured through the dashboard.
 | From Name | `Email:FromName` | Sender display name | `Clarive` |
 
 **Provider details:**
-- **`none`** (default) — No emails sent. New users are auto-verified. Works fine for self-hosted setups that don't need email.
+- **`none`** (default) — No emails sent. New users are auto-verified. Works fine for setups that don't need email.
 - **`resend`** — Sends via the [Resend](https://resend.com) API. Set the API key in the dashboard.
 - **`smtp`** — Sends via any SMTP server. Configure host and credentials in the dashboard.
 
